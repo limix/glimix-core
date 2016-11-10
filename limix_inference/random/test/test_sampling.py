@@ -24,6 +24,7 @@ def test_binomial_sampler():
     binom = BinomialLik(12, link)
     assert_equal(binom.sample(0, random), 7)
 
+
 def test_poisson_sampler():
     random = RandomState(4503)
     link = LogLink()
@@ -119,12 +120,14 @@ def test_GLMMSampler_binomial():
     assert_equal(
         sampler.sample(random), [99, 93, 99, 75, 77, 0, 0, 100, 99, 12])
 
+
 def test_canonical_bernoulli_sampler():
     random = RandomState(9)
     G = random.randn(10, 5)
 
     y = bernoulli_sample(0.1, G, random_state=random)
     assert_array_less(y, [2] * 10)
+
 
 def test_canonical_binomial_sampler():
     random = RandomState(9)
@@ -136,6 +139,7 @@ def test_canonical_binomial_sampler():
     ntrials = [2, 3, 1, 1, 4, 5, 1, 2, 1, 1]
     y = binomial_sample(ntrials, -0.1, G, random_state=random)
     assert_array_less(y, [i + 1 for i in ntrials])
+
 
 def test_canonical_poisson_sampler():
     random = RandomState(9)

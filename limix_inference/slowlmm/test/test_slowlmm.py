@@ -133,5 +133,6 @@ def test_maximize_2():
     lmm.feed().maximize()
     assert_almost_equal(lmm.feed().value(), -79.365136339619610)
 
+
 if __name__ == '__main__':
     __import__('pytest').main([__file__, '-s'])

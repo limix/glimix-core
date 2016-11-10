@@ -22,8 +22,12 @@ from ._glmm import GLMMSampler
 from ..fruits import Apples
 
 
-def bernoulli_sample(offset, G, heritability=0.5, causal_variants=None,
-                     causal_variance=0, random_state=None):
+def bernoulli_sample(offset,
+                     G,
+                     heritability=0.5,
+                     causal_variants=None,
+                     causal_variance=0,
+                     random_state=None):
 
     link = LogitLink()
     mean, cov = _mean_cov(offset, G, heritability, causal_variants,
@@ -35,12 +39,12 @@ def bernoulli_sample(offset, G, heritability=0.5, causal_variants=None,
 
 
 def binomial_sample(ntrials,
-             offset,
-             G,
-             heritability=0.5,
-             causal_variants=None,
-             causal_variance=0,
-             random_state=None):
+                    offset,
+                    G,
+                    heritability=0.5,
+                    causal_variants=None,
+                    causal_variance=0,
+                    random_state=None):
 
     link = LogitLink()
     mean, cov = _mean_cov(offset, G, heritability, causal_variants,
@@ -51,8 +55,12 @@ def binomial_sample(ntrials,
     return sampler.sample(random_state)
 
 
-def poisson_sample(offset, G, heritability=0.5, causal_variants=None,
-            causal_variance=0, random_state=None):
+def poisson_sample(offset,
+                   G,
+                   heritability=0.5,
+                   causal_variants=None,
+                   causal_variance=0,
+                   random_state=None):
 
     mean, cov = _mean_cov(offset, G, heritability, causal_variants,
                           causal_variance, random_state)
@@ -79,6 +87,7 @@ def _causal_mean(causal_variants, causal_variance, random):
     mean.set_data((causal_variants, ), 'sample')
     mean.effsizes = directions
     return mean
+
 
 def _mean_cov(offset, G, heritability, causal_variants, causal_variance,
               random_state):

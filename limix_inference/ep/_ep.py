@@ -169,7 +169,6 @@ class EP(object):
 
         make_sure_reasonable_conditioning(S)
 
-
         self._S = S
         self._Q = Q
         self.__QSQt = None

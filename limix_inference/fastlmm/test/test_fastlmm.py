@@ -19,7 +19,7 @@ from limix_inference.random import GLMMSampler
 def test_learn():
     random = np.random.RandomState(9458)
     N = 50
-    X = random.randn(N, N+1)
+    X = random.randn(N, N + 1)
     X -= X.mean(0)
     X /= X.std(0)
     X /= np.sqrt(X.shape[1])
@@ -52,6 +52,7 @@ def test_learn():
     assert_allclose(flmm.beta[0], 0.709180072285, rtol=1e-5)
     assert_allclose(flmm.genetic_variance, 2.26638555117, rtol=1e-5)
     assert_allclose(flmm.environmental_variance, 1.02391614253, rtol=1e-5)
+
 
 #
 # def test_predict_1():
@@ -93,7 +94,6 @@ def test_learn():
 #     y6 = y[6]
 #     assert_allclose(p.logpdf(y5), -1.02552843174, rtol=1e-5)
 #     assert_allclose(p.logpdf(y6), -5.39355862337, rtol=1e-5)
-
 
 if __name__ == '__main__':
     __import__('pytest').main([__file__, '-s'])

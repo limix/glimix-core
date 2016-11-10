@@ -157,7 +157,6 @@ class FastLMMCore(object):
     def beta(self, value):
         self._tbeta = self._svd_S12 * dot(self._svd_V.T, value)
 
-
     @property
     def scale(self):
         return self._scale

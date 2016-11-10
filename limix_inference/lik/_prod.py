@@ -109,6 +109,7 @@ class DeltaProdLik(ProdLik):
     def sample_size(self):
         return len(self.outcome)
 
+
 class BernoulliProdLik(ProdLik):
     def __init__(self, link):
         super(BernoulliProdLik, self).__init__(None)
@@ -160,6 +161,7 @@ class BernoulliProdLik(ProdLik):
     @property
     def sample_size(self):
         return len(self.outcome)
+
 
 class BinomialProdLik(ProdLik):
     def __init__(self, ntrials, link):
@@ -219,6 +221,7 @@ class BinomialProdLik(ProdLik):
     @property
     def sample_size(self):
         return len(self.nsuccesses)
+
 
 class PoissonProdLik(ProdLik):
     def __init__(self, link):

@@ -9,6 +9,7 @@ from ..fastlmm import FastLMM
 from .liknorm import create_liknorm
 from ._ep import EP
 
+
 class ExpFamEP(EP):
     def __init__(self, prodlik, covariates, Q0, Q1, S0):
         super(ExpFamEP, self).__init__(covariates, Q0, S0, True)
@@ -33,7 +34,6 @@ class ExpFamEP(EP):
         self._liknorm.moments(self._phenotype, ceta, ctau, lmom0, self._hmu,
                               self._hvar)
 
-
     @property
     def genetic_variance(self):
         r"""Returns :math:`\sigma_b^2`."""
@@ -51,6 +51,7 @@ class ExpFamEP(EP):
         total = self.genetic_variance + self.covariates_variance
         total += self.environmental_variance
         return self.genetic_variance / total
+
 
 def _initialize(prodlik, covariates, Q0, Q1, S0):
     y = prodlik.to_normal()

@@ -10,6 +10,7 @@ from limix_inference.ep import ExpFamEP
 from limix_inference.lik import BernoulliProdLik
 from limix_inference.link import LogitLink
 
+
 def test_bernoulli_lml():
     n = 3
     M = ones((n, 1)) * 1.
@@ -57,7 +58,7 @@ def test_bernoulli_gradient_over_v():
 def test_bernoulli_optimize():
     random = RandomState(139)
     nsamples = 100
-    nfeatures = nsamples+10
+    nfeatures = nsamples + 10
 
     G = random.randn(nsamples, nfeatures) / sqrt(nfeatures)
 

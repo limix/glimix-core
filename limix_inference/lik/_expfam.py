@@ -47,6 +47,7 @@ class ExpFamLik(object):
     def sample(self, x):
         raise NotImplementedError
 
+
 class DeltaLik(ExpFamLik):
     def __init__(self, link=None):
         super(DeltaLik, self).__init__()
@@ -87,6 +88,7 @@ class DeltaLik(ExpFamLik):
 
     def sample(self, x, random_state=None):
         return self.mean(x)
+
 
 class BernoulliLik(ExpFamLik):
     def __init__(self, link):
