@@ -18,7 +18,8 @@ def setup_package():
     setup_requires = ['cffi>=1.7', 'six'] + pytest_runner
     install_requires = [
         'pytest>=2.9', 'scipy>=0.17', 'numpy>=1.10', 'cffi>=1.7',
-        'limix_math>=1.1.8', 'optimix>=1.0.12', 'cachetools>=2.0'
+        'limix_math>=1.1.8', 'optimix>=1.0.12', 'cachetools>=2.0',
+        'progressbar2>=3.10'
     ]
     tests_require = ['pytest']
 

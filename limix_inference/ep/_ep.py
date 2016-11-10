@@ -1,5 +1,7 @@
 from __future__ import absolute_import, division, unicode_literals
 
+from progressbar import NullBar
+
 import logging
 from math import fsum
 from time import time
