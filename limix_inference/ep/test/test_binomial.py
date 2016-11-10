@@ -6,7 +6,7 @@ from numpy.testing import assert_almost_equal
 
 from limix_math import economic_qs_linear
 
-from limix_inference.inference.ep import ExpFamEP
+from limix_inference.ep import ExpFamEP
 from limix_inference.genetics.phenotype import BinomialPhenotype
 
 

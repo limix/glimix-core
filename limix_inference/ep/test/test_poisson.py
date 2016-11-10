@@ -5,7 +5,7 @@ from numpy.random import RandomState
 from numpy.testing import assert_almost_equal
 
 from limix_math import economic_qs_linear
-from limix_inference.inference.ep import ExpFamEP
+from limix_inference.ep import ExpFamEP
 from limix_inference.genetics.phenotype import PoissonPhenotype
 
 
@@ -22,7 +22,7 @@ def test_poisson_lml():
     ep.delta = 0
     assert_almost_equal(ep.lml(), -6.79376561763983)
 
-# 
+#
 # def test_poisson_optimize():
 #     random = RandomState(139)
 #     nsamples = 30

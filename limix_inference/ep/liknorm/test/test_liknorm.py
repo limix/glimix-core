@@ -3,7 +3,7 @@ from __future__ import division
 from numpy import array, empty, set_printoptions
 from numpy.testing import assert_allclose
 
-from limix_inference.inference.ep.liknorm import create_liknorm
+from limix_inference.ep.liknorm import create_liknorm
 from limix_inference.genetics.phenotype import BinomialPhenotype, PoissonPhenotype
 
 

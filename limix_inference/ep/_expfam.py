@@ -10,18 +10,18 @@ from .liknorm import create_liknorm
 from ._ep import EP
 
 class ExpFamEP(EP):
-    def __init__(self, phenotype, covariates, Q0, Q1, S0):
+    def __init__(self, prodlik, covariates, Q0, Q1, S0):
         super(ExpFamEP, self).__init__(covariates, Q0, S0, True)
         self._logger = logging.getLogger(__name__)
 
         self._Q1 = Q1
-        self._liknorm = create_liknorm(phenotype.likelihood_name, 350)
+        self._liknorm = create_liknorm(prodlik.name, 350)
 
-        h2, m = _initialize(phenotype, covariates, Q0, Q1, S0)
+        h2, m = _initialize(prodlik, covariates, Q0, Q1, S0)
 
-        n = phenotype.sample_size
+        n = prodlik.sample_size
 
-        self._phenotype = phenotype
+        self._phenotype = prodlik
         self._tbeta = lstsq(self._tM, full(n, m))[0]
         self.delta = 1 - h2
         self.v = 1.
@@ -52,8 +52,8 @@ class ExpFamEP(EP):
         total += self.environmental_variance
         return self.genetic_variance / total
 
-def _initialize(phenotype, covariates, Q0, Q1, S0):
-    y = phenotype.to_normal()
+def _initialize(prodlik, covariates, Q0, Q1, S0):
+    y = prodlik.to_normal()
     flmm = FastLMM(y, Q0, Q1, S0, covariates=covariates)
     flmm.learn()
     gv = flmm.genetic_variance

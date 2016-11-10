@@ -53,6 +53,7 @@ class BernoulliLik(ExpFamLik):
         super(BernoulliLik, self).__init__()
         self._link = link
         self._outcome = None
+        self.name = 'Bernoulli'
 
     @property
     def outcome(self):
@@ -97,6 +98,7 @@ class BinomialLik(ExpFamLik):
         self._link = link
         self._nsuccesses = None
         self._ntrials = ntrials
+        self.name = 'Binomial'
 
     @property
     def nsuccesses(self):
@@ -140,6 +142,7 @@ class PoissonLik(ExpFamLik):
         super(PoissonLik, self).__init__()
         self._link = link
         self._noccurrences = None
+        self.name = 'Poisson'
 
     @property
     def noccurrences(self):

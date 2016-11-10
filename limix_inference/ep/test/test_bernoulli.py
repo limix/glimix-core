@@ -6,8 +6,9 @@ from numpy.testing import assert_almost_equal, assert_allclose
 
 from limix_math import economic_qs_linear
 
-from limix_inference.inference.ep import ExpFamEP
-from limix_inference.genetics.phenotype import BernoulliPhenotype
+from limix_inference.ep import ExpFamEP
+from limix_inference.lik import BernoulliProdLik
+from limix_inference.link import LogitLink
 
 def test_bernoulli_lml():
     n = 3
@@ -15,7 +16,9 @@ def test_bernoulli_lml():
     G = array([[1.2, 3.4], [-.1, 1.2], [0.0, .2]])
     (Q, S0) = economic_qs_linear(G)
     y = array([1., 0., 1.])
-    ep = ExpFamEP(BernoulliPhenotype(y), M, Q[0], Q[1], S0 + 1.0)
+    lik = BernoulliProdLik(LogitLink())
+    lik.outcome = y
+    ep = ExpFamEP(lik, M, Q[0], Q[1], S0 + 1.0)
     ep.beta = array([1.])
     assert_almost_equal(ep.beta, array([1.]))
     ep.v = 1.
@@ -31,7 +34,9 @@ def test_bernoulli_gradient_over_v():
     G = array([[1.2, 3.4], [-.1, 1.2], [0.0, .2]])
     (Q, S0) = economic_qs_linear(G)
     y = array([1., 0., 1.])
-    ep = ExpFamEP(BernoulliPhenotype(y), M, Q[0], Q[1], S0 + 1.0)
+    lik = BernoulliProdLik(LogitLink())
+    lik.outcome = y
+    ep = ExpFamEP(lik, M, Q[0], Q[1], S0 + 1.0)
     ep.beta = array([1.])
     assert_almost_equal(ep.beta, array([1.]))
     ep.v = 1.
@@ -68,7 +73,9 @@ def test_bernoulli_optimize():
 
     (Q, S0) = economic_qs_linear(G)
 
-    ep = ExpFamEP(BernoulliPhenotype(y), M, Q[0], Q[1], S0)
+    lik = BernoulliProdLik(LogitLink())
+    lik.outcome = y
+    ep = ExpFamEP(lik, M, Q[0], Q[1], S0)
     ep.optimize()
     assert_allclose(ep.lml(), -67.68161933698035, rtol=1e-5)
     assert_allclose(ep.heritability, 0.931995296712, rtol=1e-5)
