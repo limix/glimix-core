@@ -6,16 +6,16 @@ from numpy.testing import assert_allclose
 
 from limix_math import economic_qs_linear
 
-from lim.util.transformation import DesignMatrixTrans
+from limix_inference.util.transformation import DesignMatrixTrans
 
-from lim.inference.fastlmm import FastLMM
-from lim.util.fruits import Apples
-from lim.cov import LinearCov
-from lim.cov import EyeCov
-from lim.cov import SumCov
-from lim.mean import OffsetMean
-from lim.random import RegGPSampler
-from lim.random import FastLMMSampler
+from limix_inference.inference.fastlmm import FastLMM
+from limix_inference.util.fruits import Apples
+from limix_inference.cov import LinearCov
+from limix_inference.cov import EyeCov
+from limix_inference.cov import SumCov
+from limix_inference.mean import OffsetMean
+from limix_inference.random import RegGPSampler
+from limix_inference.random import FastLMMSampler
 
 
 def test_learn():

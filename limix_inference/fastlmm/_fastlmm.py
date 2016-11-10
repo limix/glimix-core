@@ -10,8 +10,7 @@ from optimix import maximize_scalar
 from optimix import Function
 from optimix import Scalar
 
-from .fastlmm_core import FastLMMCore
-from ..genetics.model import CanonicalModel
+from ._core import FastLMMCore
 
 
 class FastLMM(Function):
@@ -90,10 +89,3 @@ class FastLMM(Function):
         Cp = Xp.dot(X.T)
         Cpp = Xp.dot(Xp.T)
         return self._flmmc.predict(covariates, Cp, Cpp)
-
-    def model(self):
-        total_var = (self.fixed_effects_variance + self.genetic_variance +
-                     self.environmental_variance)
-        return CanonicalModel(self.beta, self.fixed_effects_variance,
-                              self.heritability, self.genetic_variance,
-                              self.environmental_variance, total_var)

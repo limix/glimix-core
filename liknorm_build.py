@@ -44,7 +44,7 @@ def _make():
     logger.debug('Libraries: %s', str(libraries))
 
     ffi.set_source(
-        'lim.inference.ep.liknorm._liknorm_ffi',
+        'limix_inference.inference.ep.liknorm._liknorm_ffi',
         '''#include "liknorm.h"''',
         include_dirs=incls,
         sources=sources,

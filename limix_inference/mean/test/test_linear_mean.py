@@ -6,7 +6,7 @@ from numpy.testing import assert_almost_equal
 from optimix import check_grad
 from optimix import approx_fprime
 
-from lim.mean import LinearMean
+from limix_inference.mean import LinearMean
 
 
 def test_value():

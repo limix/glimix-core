@@ -6,9 +6,9 @@ from numpy import exp
 
 from optimix import check_grad
 
-from lim.cov import EyeCov
-from lim.util.fruits import Oranges
-from lim.util.fruits import Apples
+from limix_inference.cov import EyeCov
+from limix_inference.util.fruits import Oranges
+from limix_inference.util.fruits import Apples
 
 
 def test_eye_value():

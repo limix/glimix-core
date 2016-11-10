@@ -3,8 +3,8 @@ from __future__ import division
 from numpy import array, empty, set_printoptions
 from numpy.testing import assert_allclose
 
-from lim.inference.ep.liknorm import create_liknorm
-from lim.genetics.phenotype import BinomialPhenotype, PoissonPhenotype
+from limix_inference.inference.ep.liknorm import create_liknorm
+from limix_inference.genetics.phenotype import BinomialPhenotype, PoissonPhenotype
 
 
 def test_liknorm_binomial():

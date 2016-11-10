@@ -1,8 +1,8 @@
 import numpy as np
 import numpy.testing as npt
 
-from lim.cov import SumCov
-from lim.cov import LinearCov
+from limix_inference.cov import SumCov
+from limix_inference.cov import LinearCov
 from optimix import check_grad
 
 

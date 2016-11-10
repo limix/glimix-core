@@ -1,6 +1,6 @@
 from numpy.testing import assert_allclose
 
-from lim.link import ProbitLink
+from limix_inference.link import ProbitLink
 
 
 def test_probit_link():

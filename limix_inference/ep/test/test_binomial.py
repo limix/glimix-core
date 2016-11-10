@@ -6,8 +6,8 @@ from numpy.testing import assert_almost_equal
 
 from limix_math import economic_qs_linear
 
-from lim.inference.ep import ExpFamEP
-from lim.genetics.phenotype import BinomialPhenotype
+from limix_inference.inference.ep import ExpFamEP
+from limix_inference.genetics.phenotype import BinomialPhenotype
 
 
 def test_binomial_lml():

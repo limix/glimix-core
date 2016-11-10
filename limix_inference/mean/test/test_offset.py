@@ -4,7 +4,7 @@ from numpy.testing import assert_almost_equal
 
 from optimix import check_grad
 
-from lim.mean import OffsetMean
+from limix_inference.mean import OffsetMean
 
 
 def test_value():

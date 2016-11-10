@@ -6,8 +6,8 @@ from numpy.testing import assert_almost_equal, assert_allclose
 
 from limix_math import economic_qs_linear
 
-from lim.inference.ep import ExpFamEP
-from lim.genetics.phenotype import BernoulliPhenotype
+from limix_inference.inference.ep import ExpFamEP
+from limix_inference.genetics.phenotype import BernoulliPhenotype
 
 def test_bernoulli_lml():
     n = 3
