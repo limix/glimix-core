@@ -31,7 +31,7 @@ def setup_package():
         license="MIT",
         url='https://github.com/Horta/limix-inference',
         packages=find_packages(),
-        zip_safe=True,
+        zip_safe=False,
         install_requires=install_requires,
         setup_requires=setup_requires,
         tests_require=tests_require,
