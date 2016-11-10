@@ -7,8 +7,8 @@ from numpy import exp
 from optimix import check_grad
 
 from limix_inference.cov import EyeCov
-from limix_inference.util.fruits import Oranges
-from limix_inference.util.fruits import Apples
+from limix_inference.fruits import Oranges
+from limix_inference.fruits import Apples
 
 
 def test_eye_value():

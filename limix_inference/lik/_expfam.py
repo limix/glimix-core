@@ -1,10 +1,10 @@
 from __future__ import division
 
 from numpy import exp
-from numpy import pi
 from numpy import log
 from numpy import log1p
 
+import scipy.stats as st
 from scipy.special import gammaln
 
 from limix_math.special import logbinom
@@ -49,20 +49,9 @@ class ExpFamLik(object):
 
 
 class BernoulliLik(ExpFamLik):
-    def __init__(self, outcome, link):
+    def __init__(self, link):
         super(BernoulliLik, self).__init__()
-        self._outcome = outcome
         self._link = link
-
-    @staticmethod
-    def latent_variance(link):
-        from ..link import ProbitLink
-        from ..link import LogitLink
-        if isinstance(link, ProbitLink):
-            return 1
-        elif isinstance(link, LogitLink):
-            return pi**2 / 3
-        raise ValueError()
 
     @property
     def y(self):
@@ -89,27 +78,15 @@ class BernoulliLik(ExpFamLik):
         return 0
 
     def sample(self, x, random_state=None):
-        import scipy.stats as st
         p = self.mean(x)
         return st.bernoulli(p).rvs(random_state=random_state)
 
 
 class BinomialLik(ExpFamLik):
-    def __init__(self, k, n, link):
+    def __init__(self, ntrials, link):
         super(BinomialLik, self).__init__()
-        self._k = k
-        self._n = n
+        self._ntrials = ntrials
         self._link = link
-
-    @staticmethod
-    def latent_variance(link):
-        from ..link import ProbitLink
-        from ..link import LogitLink
-        if isinstance(link, ProbitLink):
-            return 1
-        elif isinstance(link, LogitLink):
-            return pi**2 / 3
-        raise ValueError()
 
     @property
     def y(self):
@@ -136,15 +113,13 @@ class BinomialLik(ExpFamLik):
         return logbinom(self.phi, self.y * self.phi)
 
     def sample(self, x, random_state=None):
-        import scipy.stats as st
         p = self.mean(x)
         return st.binom(self._n, p).rvs(random_state=random_state)
 
 
 class PoissonLik(ExpFamLik):
-    def __init__(self, k, link):
+    def __init__(self, link):
         super(PoissonLik, self).__init__()
-        self._k = k
         self._link = link
 
     @property
@@ -172,10 +147,5 @@ class PoissonLik(ExpFamLik):
         return gammaln(self._k + 1)
 
     def sample(self, x, random_state=None):
-        import scipy.stats as st
         lam = self.mean(x)
         return st.poisson(mu=lam).rvs(random_state=random_state)
-
-
-if __name__ == '__main__':
-    print(gammaln(3))
