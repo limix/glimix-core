@@ -7,7 +7,6 @@ from numpy.testing import assert_almost_equal
 from limix_inference.inference import SlowLMM
 from optimix import check_grad
 from limix_inference.cov import LinearCov
-from limix_inference.cov import SumCov
 from limix_inference.mean import OffsetMean
 from limix_inference.mean import LinearMean
 

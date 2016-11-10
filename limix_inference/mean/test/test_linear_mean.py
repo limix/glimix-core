@@ -1,10 +1,7 @@
-from numpy import ones
-from numpy import array
 from numpy.random import RandomState
 from numpy.testing import assert_almost_equal
 
 from optimix import check_grad
-from optimix import approx_fprime
 
 from limix_inference.mean import LinearMean
 
