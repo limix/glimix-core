@@ -5,9 +5,9 @@ import logging
 from numpy import clip, full
 from numpy.linalg import lstsq
 
-from ...inference import FastLMM
+from ..fastlmm import FastLMM
 from .liknorm import create_liknorm
-from .ep import EP
+from ._ep import EP
 
 class ExpFamEP(EP):
     def __init__(self, phenotype, covariates, Q0, Q1, S0):
