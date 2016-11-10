@@ -24,7 +24,7 @@ def _make():
 
     ffi = FFI()
 
-    rfolder = join('lim', 'inference', 'ep', 'liknorm', 'clib')
+    rfolder = join('limix_inference', 'ep', 'liknorm', 'clib')
 
     sources = glob(join(rfolder, 'liknorm', '*.c'))
     sources += [join(rfolder, 'liknorm.c')]
@@ -44,7 +44,7 @@ def _make():
     logger.debug('Libraries: %s', str(libraries))
 
     ffi.set_source(
-        'limix_inference.inference.ep.liknorm._liknorm_ffi',
+        'limix_inference.ep.liknorm._liknorm_ffi',
         '''#include "liknorm.h"''',
         include_dirs=incls,
         sources=sources,
