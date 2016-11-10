@@ -4,7 +4,8 @@ from numpy import array, empty, set_printoptions
 from numpy.testing import assert_allclose
 
 from limix_inference.ep.liknorm import create_liknorm
-from limix_inference.genetics.phenotype import BinomialPhenotype, PoissonPhenotype
+from limix_inference.link import LogitLink, LogLink
+from limix_inference.lik import BinomialProdLik, PoissonProdLik
 
 
 def test_liknorm_binomial():
@@ -22,7 +23,9 @@ def test_liknorm_binomial():
     mean = empty(4)
     variance = empty(4)
 
-    ln.moments(BinomialPhenotype(K, N), eta, tau, log_zeroth, mean, variance)
+    lik = BinomialProdLik(N, LogitLink())
+    lik.nsuccesses = K
+    ln.moments(lik, eta, tau, log_zeroth, mean, variance)
 
     assert_allclose([
         -1.9523944026844868, -2.8039404963019825, -0.3788565926515431,
@@ -54,7 +57,9 @@ def test_liknorm_poisson():
     mean = empty(4)
     variance = empty(4)
 
-    ln.moments(PoissonPhenotype(k), eta, tau, log_zeroth, mean, variance)
+    lik = PoissonProdLik(LogLink())
+    lik.noccurrences = k
+    ln.moments(lik, eta, tau, log_zeroth, mean, variance)
 
     assert_allclose([
         -2.9206093278791672, -0.9585584570898347, -1.649214737245454,

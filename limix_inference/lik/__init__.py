@@ -1,2 +1,3 @@
-from ._expfam import (BernoulliLik, BinomialLik, PoissonLik)
-from ._prod import (BernoulliProdLik, BinomialProdLik, PoissonProdLik)
+from ._expfam import (DeltaLik, BernoulliLik, BinomialLik, PoissonLik)
+from ._prod import (DeltaProdLik, BernoulliProdLik, BinomialProdLik,
+                    PoissonProdLik)

@@ -47,6 +47,46 @@ class ExpFamLik(object):
     def sample(self, x):
         raise NotImplementedError
 
+class DeltaLik(ExpFamLik):
+    def __init__(self, link=None):
+        super(DeltaLik, self).__init__()
+        self._link = link
+        self._outcome = None
+        self.name = 'Delta'
+
+    @property
+    def outcome(self):
+        return self._outcome
+
+    @outcome.setter
+    def outcome(self, v):
+        self._outcome = v
+
+    @property
+    def y(self):
+        return self._outcome
+
+    def mean(self, x):
+        return x
+
+    def theta(self, x):
+        return 0
+
+    @property
+    def phi(self):
+        return 1
+
+    def a(self):
+        return 1
+
+    def b(self, theta):
+        return theta
+
+    def c(self):
+        return 0
+
+    def sample(self, x, random_state=None):
+        return self.mean(x)
 
 class BernoulliLik(ExpFamLik):
     def __init__(self, link):
