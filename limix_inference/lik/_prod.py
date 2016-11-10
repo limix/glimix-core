@@ -108,11 +108,11 @@ class BernoulliProdLik(ProdLik):
 
 
 class BinomialProdLik(ProdLik):
-    def __init__(self, link):
+    def __init__(self, ntrials, link):
         super(BinomialProdLik, self).__init__(None)
         self._link = link
         self._nsuccesses = None
-        self._ntrials = None
+        self._ntrials = ntrials
 
     @property
     def nsuccesses(self):
@@ -121,14 +121,6 @@ class BinomialProdLik(ProdLik):
     @nsuccesses.setter
     def nsuccesses(self, v):
         self._nsuccesses = aca(v)
-
-    @property
-    def ntrials(self):
-        return self._ntrials
-
-    @ntrials.setter
-    def ntrials(self, v):
-        self._ntrials = aca(v)
 
     @property
     def y(self):
