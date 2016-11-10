@@ -1,3 +1,3 @@
-from .link import LogitLink
-from .link import LogLink
-from .link import ProbitLink
+from ._link import LogitLink
+from ._link import LogLink
+from ._link import ProbitLink
