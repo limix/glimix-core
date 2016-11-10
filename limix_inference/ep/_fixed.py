@@ -1,3 +1,5 @@
+from __future__ import division
+
 from numpy import sum
 from numpy import dot
 from numpy import newaxis

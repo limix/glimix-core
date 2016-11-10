@@ -1,3 +1,5 @@
+from __future__ import division
+
 from numpy import exp
 from numpy import log
 

@@ -207,7 +207,8 @@ class BinomialProdLik(ProdLik):
 
     def sample(self, x, random_state=None):
         p = self.mean(x)
-        return st.binom(self._ntrials, p).rvs(random_state=random_state)
+        nt = ascontiguousarray(self._ntrials, dtype=int)
+        return st.binom(nt, p).rvs(random_state=random_state)
 
     def to_normal(self):
         y = self.nsuccesses / self.ntrials
