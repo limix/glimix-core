@@ -4,8 +4,8 @@ from numpy import exp
 from numpy import log
 from numpy import log1p
 
-import scipy.stats as st
 from scipy.special import gammaln
+import scipy.stats as st
 
 from limix_math.special import logbinom
 
@@ -52,6 +52,15 @@ class BernoulliLik(ExpFamLik):
     def __init__(self, link):
         super(BernoulliLik, self).__init__()
         self._link = link
+        self._outcome = None
+
+    @property
+    def outcome(self):
+        return self._outcome
+
+    @outcome.setter
+    def outcome(self, v):
+        self._outcome = v
 
     @property
     def y(self):
@@ -83,14 +92,31 @@ class BernoulliLik(ExpFamLik):
 
 
 class BinomialLik(ExpFamLik):
-    def __init__(self, ntrials, link):
+    def __init__(self, link):
         super(BinomialLik, self).__init__()
-        self._ntrials = ntrials
         self._link = link
+        self._nsuccesses = None
+        self._ntrials = None
+
+    @property
+    def nsuccesses(self):
+        return self._nsuccesses
+
+    @nsuccesses.setter
+    def nsuccesses(self, v):
+        self._nsuccesses = v
+
+    @property
+    def ntrials(self):
+        return self._ntrials
+
+    @ntrials.setter
+    def ntrials(self, v):
+        self._ntrials = v
 
     @property
     def y(self):
-        return self._k / self._n
+        return self._nsuccesses / self._ntrials
 
     def mean(self, x):
         return self._link.inv(x)
@@ -101,7 +127,7 @@ class BinomialLik(ExpFamLik):
 
     @property
     def phi(self):
-        return self._n
+        return self._ntrials
 
     def a(self):
         return 1 / self.phi
@@ -114,17 +140,26 @@ class BinomialLik(ExpFamLik):
 
     def sample(self, x, random_state=None):
         p = self.mean(x)
-        return st.binom(self._n, p).rvs(random_state=random_state)
+        return st.binom(self._ntrials, p).rvs(random_state=random_state)
 
 
 class PoissonLik(ExpFamLik):
     def __init__(self, link):
         super(PoissonLik, self).__init__()
         self._link = link
+        self._noccurrences = None
+
+    @property
+    def noccurrences(self):
+        return self._noccurrences
+
+    @noccurrences.setter
+    def noccurrences(self, v):
+        self._noccurrences = v
 
     @property
     def y(self):
-        return self._k
+        return self._noccurrences
 
     def mean(self, x):
         return self._link.inv(x)
@@ -144,7 +179,7 @@ class PoissonLik(ExpFamLik):
         return exp(theta)
 
     def c(self):
-        return gammaln(self._k + 1)
+        return gammaln(self._noccurrences + 1)
 
     def sample(self, x, random_state=None):
         lam = self.mean(x)

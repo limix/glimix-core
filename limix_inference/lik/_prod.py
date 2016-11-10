@@ -3,6 +3,7 @@ from __future__ import division
 from limix_math.special import logbinom
 
 from scipy.special import gammaln
+import scipy.stats as st
 
 from numpy import ascontiguousarray as aca
 from numpy import log1p
@@ -64,10 +65,18 @@ class ProdLik(object):
 
 
 class BernoulliProdLik(ProdLik):
-    def __init__(self, outcome, link):
+    def __init__(self, link):
         super(BernoulliProdLik, self).__init__(None)
-        self._outcome = outcome
         self._link = link
+        self._outcome = None
+
+    @property
+    def outcome(self):
+        return self._outcome
+
+    @outcome.setter
+    def outcome(self, v):
+        self._outcome = aca(v)
 
     @property
     def y(self):
@@ -94,21 +103,36 @@ class BernoulliProdLik(ProdLik):
         return logbinom(self.phi, self.y * self.phi)
 
     def sample(self, x, random_state=None):
-        import scipy.stats as st
         p = self.mean(x)
         return st.bernoulli(p).rvs(random_state=random_state)
 
 
 class BinomialProdLik(ProdLik):
-    def __init__(self, k, n, link):
+    def __init__(self, link):
         super(BinomialProdLik, self).__init__(None)
-        self._k = k
-        self._n = aca(n)
         self._link = link
+        self._nsuccesses = None
+        self._ntrials = None
+
+    @property
+    def nsuccesses(self):
+        return self._nsuccesses
+
+    @nsuccesses.setter
+    def nsuccesses(self, v):
+        self._nsuccesses = aca(v)
+
+    @property
+    def ntrials(self):
+        return self._ntrials
+
+    @ntrials.setter
+    def ntrials(self, v):
+        self._ntrials = aca(v)
 
     @property
     def y(self):
-        return self._k / self._n
+        return self._nsuccesses / self._ntrials
 
     def mean(self, x):
         return self._link.inv(x)
@@ -119,7 +143,7 @@ class BinomialProdLik(ProdLik):
 
     @property
     def phi(self):
-        return self._n
+        return self._ntrials
 
     def a(self):
         return 1 / self.phi
@@ -131,20 +155,27 @@ class BinomialProdLik(ProdLik):
         return logbinom(self.phi, self.y * self.phi)
 
     def sample(self, x, random_state=None):
-        import scipy.stats as st
         p = self.mean(x)
-        return st.binom(self._n, p).rvs(random_state=random_state)
+        return st.binom(self._ntrials, p).rvs(random_state=random_state)
 
 
 class PoissonProdLik(ProdLik):
-    def __init__(self, nsuccesses, link):
+    def __init__(self, link):
         super(PoissonProdLik, self).__init__(None)
-        self._nsuccesses = nsuccesses
         self._link = link
+        self._noccurrences = None
+
+    @property
+    def noccurrences(self):
+        return self._noccurrences
+
+    @noccurrences.setter
+    def noccurrences(self, v):
+        self._noccurrences = aca(v)
 
     @property
     def y(self):
-        return self._nsuccesses
+        return self._noccurrences
 
     def mean(self, x):
         return self._link.inv(x)
@@ -164,9 +195,8 @@ class PoissonProdLik(ProdLik):
         return exp(theta)
 
     def c(self):
-        return gammaln(self._nsuccesses + 1)
+        return gammaln(self._noccurrences + 1)
 
     def sample(self, x, random_state=None):
-        import scipy.stats as st
         lam = self.mean(x)
         return st.poisson(mu=lam).rvs(random_state=random_state)

@@ -8,8 +8,8 @@ from limix_math import economic_qs_linear
 
 from limix_inference.util.transformation import DesignMatrixTrans
 
-from limix_inference.inference.fastlmm import FastLMM
-from limix_inference.util.fruits import Apples
+from limix_inference.fastlmm import FastLMM
+from limix_inference.fruits import Apples
 from limix_inference.cov import LinearCov
 from limix_inference.cov import EyeCov
 from limix_inference.cov import SumCov
