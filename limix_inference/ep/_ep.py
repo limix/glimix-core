@@ -4,6 +4,7 @@ from progressbar import NullBar
 
 import logging
 from math import fsum
+from time import time
 
 from cachetools import LRUCache
 from operator import attrgetter
@@ -23,7 +24,6 @@ from limix_math import (cho_solve, ddot, dotd, economic_svd, solve, sum2diag,
 
 from ._conditioning import make_sure_reasonable_conditioning
 from limix_math import epsilon
-from limix_util.time import Timer
 
 from ._fixed import FixedEP
 
@@ -734,15 +734,15 @@ class EP(object):
 
         (klass, x0, bounds) = self._start_optimizer()
 
-        with Timer(False) as timer:
-            with progress as pbar:
-                func = klass(self, pbar)
-                x = fmin_tnc(func, x0, bounds=bounds, **_magic_numbers)[0]
+        start = time()
+        with progress as pbar:
+            func = klass(self, pbar)
+            x = fmin_tnc(func, x0, bounds=bounds, **_magic_numbers)[0]
 
         self._finish_optimizer(x)
 
         msg = "End of optimization (%.3f seconds, %d function calls)."
-        self._logger.info(msg, timer.elapsed, func.nfev)
+        self._logger.info(msg, time() - start, func.nfev)
 
     @cachedmethod(attrgetter('_cache_A'))
     def _A(self):
