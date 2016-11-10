@@ -17,7 +17,7 @@ from ..cov import LinearCov
 from ..cov import SumCov
 from ..cov import EyeCov
 
-from .glmm import GLMMSampler
+from ._glmm import GLMMSampler
 
 from ..fruits import Apples
 

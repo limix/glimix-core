@@ -3,32 +3,31 @@ from __future__ import division
 from numpy.random import RandomState
 from numpy.testing import (assert_equal, assert_array_less)
 
-from lim.random import GLMMSampler
-from lim.random.canonical import bernoulli
-from lim.random.canonical import binomial
-from lim.random.canonical import poisson
-from lim.mean import OffsetMean
-from lim.cov import LinearCov
-from lim.cov import EyeCov
-from lim.cov import SumCov
-from lim.lik import BinomialLik
-from lim.lik import PoissonLik
-from lim.link import LogitLink
-from lim.link import LogLink
-from lim.util.fruits import Apples
+from limix_inference.random import GLMMSampler
+from limix_inference.random import bernoulli_sample
+from limix_inference.random import binomial_sample
+from limix_inference.random import poisson_sample
+from limix_inference.mean import OffsetMean
+from limix_inference.cov import LinearCov
+from limix_inference.cov import EyeCov
+from limix_inference.cov import SumCov
+from limix_inference.lik import BinomialLik
+from limix_inference.lik import PoissonLik
+from limix_inference.link import LogitLink
+from limix_inference.link import LogLink
+from limix_inference.fruits import Apples
 
 
 def test_binomial_sampler():
     random = RandomState(4503)
     link = LogitLink()
-    binom = BinomialLik(5, 12, link)
+    binom = BinomialLik(12, link)
     assert_equal(binom.sample(0, random), 7)
-
 
 def test_poisson_sampler():
     random = RandomState(4503)
     link = LogLink()
-    poisson = PoissonLik(5, link)
+    poisson = PoissonLik(link)
     assert_equal(poisson.sample(0, random), 1)
     assert_equal(poisson.sample(0, random), 0)
     assert_equal(poisson.sample(0, random), 2)
@@ -41,7 +40,7 @@ def test_GLMMSampler_poisson():
     random = RandomState(4503)
     X = random.randn(10, 15)
     link = LogLink()
-    lik = PoissonLik(5, link)
+    lik = PoissonLik(link)
 
     mean = OffsetMean()
     mean.offset = 1.2
@@ -81,7 +80,7 @@ def test_GLMMSampler_binomial():
     random = RandomState(4503)
     X = random.randn(10, 15)
     link = LogitLink()
-    lik = BinomialLik(3, 5, link)
+    lik = BinomialLik(5, link)
 
     mean = OffsetMean()
     mean.offset = 1.2
@@ -110,7 +109,7 @@ def test_GLMMSampler_binomial():
 
     cov = SumCov([cov1, cov2])
 
-    lik = BinomialLik(3, 100, link)
+    lik = BinomialLik(100, link)
     sampler = GLMMSampler(lik, mean, cov)
     assert_equal(
         sampler.sample(random), [56, 56, 55, 51, 59, 45, 47, 43, 51, 38])
@@ -124,25 +123,25 @@ def test_canonical_bernoulli_sampler():
     random = RandomState(9)
     G = random.randn(10, 5)
 
-    y = bernoulli(0.1, G, random_state=random)
+    y = bernoulli_sample(0.1, G, random_state=random)
     assert_array_less(y, [2] * 10)
 
 def test_canonical_binomial_sampler():
     random = RandomState(9)
     G = random.randn(10, 5)
 
-    y = binomial(5, 0.1, G, random_state=random)
+    y = binomial_sample(5, 0.1, G, random_state=random)
     assert_array_less(y, [5 + 1] * 10)
 
     ntrials = [2, 3, 1, 1, 4, 5, 1, 2, 1, 1]
-    y = binomial(ntrials, -0.1, G, random_state=random)
+    y = binomial_sample(ntrials, -0.1, G, random_state=random)
     assert_array_less(y, [i + 1 for i in ntrials])
 
 def test_canonical_poisson_sampler():
     random = RandomState(9)
     G = random.randn(10, 5)
 
-    y = poisson(0.1, G, random_state=random)
+    y = poisson_sample(0.1, G, random_state=random)
     assert_array_less(y, [20] * len(y))
 
 

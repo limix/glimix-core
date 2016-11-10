@@ -92,11 +92,11 @@ class BernoulliLik(ExpFamLik):
 
 
 class BinomialLik(ExpFamLik):
-    def __init__(self, link):
+    def __init__(self, ntrials, link):
         super(BinomialLik, self).__init__()
         self._link = link
         self._nsuccesses = None
-        self._ntrials = None
+        self._ntrials = ntrials
 
     @property
     def nsuccesses(self):
@@ -105,14 +105,6 @@ class BinomialLik(ExpFamLik):
     @nsuccesses.setter
     def nsuccesses(self, v):
         self._nsuccesses = v
-
-    @property
-    def ntrials(self):
-        return self._ntrials
-
-    @ntrials.setter
-    def ntrials(self, v):
-        self._ntrials = v
 
     @property
     def y(self):

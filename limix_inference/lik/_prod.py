@@ -112,7 +112,7 @@ class BinomialProdLik(ProdLik):
         super(BinomialProdLik, self).__init__(None)
         self._link = link
         self._nsuccesses = None
-        self._ntrials = ntrials
+        self._ntrials = aca(ntrials)
 
     @property
     def nsuccesses(self):

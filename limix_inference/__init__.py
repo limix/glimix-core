@@ -5,3 +5,4 @@ from . import cov
 from . import lik
 from . import mean
 from . import link
+from . import random
