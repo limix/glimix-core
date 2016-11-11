@@ -91,6 +91,7 @@ def _causal_mean(causal_variants, causal_variance, random):
 
 def _mean_cov(offset, G, heritability, causal_variants, causal_variance,
               random_state):
+    G = ascontiguousarray(G, dtype=float)
     nsamples = G.shape[0]
     G = _stdnorm(G, axis=0)
 
@@ -121,7 +122,7 @@ def _mean_cov(offset, G, heritability, causal_variants, causal_variance,
 
 
 def _stdnorm(X, axis=None, out=None):
-    X = ascontiguousarray(X)
+    X = ascontiguousarray(X, dtype=float)
     if out is None:
         out = X.copy()
 
