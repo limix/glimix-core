@@ -1,0 +1,141 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Installation &#8212; limix-inference 1.0.0.dev2 documentation</title>
+    
+    <link rel="stylesheet" href="_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0.0.dev2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="limix-inference 1.0.0.dev2 documentation" href="index.html" />
+    <link rel="prev" title="Limix-inference’s documentation" href="index.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Limix-inference’s documentation"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">limix-inference 1.0.0.dev2 documentation</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="installation">
+<h1>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h1>
+<p>For those new to the scientific Python community, we strongly recommend first
+getting to know about <a class="reference external" href="https://www.continuum.io/downloads">Anaconda</a>
+platform.
+In particular, we will refer to its package manager
+<a class="reference external" href="http://conda.pydata.org/docs/intro.html">Conda</a> in this documentation.</p>
+<p>Limix-inference can be installed via</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="go">pip install limix-inference</span>
+</pre></div>
+</div>
+<p>The above command should install the latest Lim version. If that doesn&#8217;t
+happen, try instead</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="go">pip install limix-inference --no-cache-dir</span>
+</pre></div>
+</div>
+<p>to prevent the use of a cached version in your system. And if you already have
+Lim previously installed, you can upgrade it via</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="go">pip install limix-inference --upgrade</span>
+</pre></div>
+</div>
+<p>In any case, make sure you have the latest version</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="go">python -c &quot;import limix_inference; print(&#39;Limix-inference &#39; + limix_inference.__version__)&quot;</span>
+</pre></div>
+</div>
+<div class="highlight-text"><div class="highlight"><pre><span></span>Limix-inference 1.0.0.dev2
+</pre></div>
+</div>
+<p>and that it is actually working</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="go">python -c &quot;import limix_inference; limix_inference.test()&quot;</span>
+</pre></div>
+</div>
+<div class="highlight-text"><div class="highlight"><pre><span></span>......................................
+38 passed in 5.68 seconds
+Congratulations. All tests have passed!
+</pre></div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">Limix-inference&#8217;s documentation</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/installation.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Limix-inference’s documentation"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">limix-inference 1.0.0.dev2 documentation</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2016, Danilo Horta.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.6.
+    </div>
+  </body>
+</html>
