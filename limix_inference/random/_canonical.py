@@ -36,7 +36,8 @@ def bernoulli_sample(offset,
 
         \mathbf y \sim \prod_{i=1}^n
         \text{Bernoulli}(\mu_i = \text{logit}(z_i))
-        \mathcal N(~ o \mathbf 1; ~ (h^2 - v_c)\mathrm G^\intercal\mathrm G +
+        \mathcal N(~ o \mathbf 1 + \mathbf a^\intercal \boldsymbol\alpha;
+        ~ (h^2 - v_c)\mathrm G^\intercal\mathrm G +
         (1-h^2-v_c)\mathrm I ~)
 
     """
