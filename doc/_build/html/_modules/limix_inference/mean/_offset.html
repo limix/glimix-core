@@ -55,7 +55,7 @@
 <span class="kn">from</span> <span class="nn">optimix</span> <span class="k">import</span> <span class="n">Scalar</span>
 
 
-<div class="viewcode-block" id="OffsetMean"><a class="viewcode-back" href="../../../limix_inference.mean.html#limix_inference.mean.OffsetMean">[docs]</a><span class="k">class</span> <span class="nc">OffsetMean</span><span class="p">(</span><span class="n">Function</span><span class="p">):</span>
+<div class="viewcode-block" id="OffsetMean"><a class="viewcode-back" href="../../../mean.html#limix_inference.mean.OffsetMean">[docs]</a><span class="k">class</span> <span class="nc">OffsetMean</span><span class="p">(</span><span class="n">Function</span><span class="p">):</span>
     <span class="sd">r&quot;&quot;&quot;Offset mean function.</span>
 
 <span class="sd">    The mathematical representation is</span>
@@ -69,7 +69,7 @@
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">Function</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="n">Scalar</span><span class="p">(</span><span class="mf">1.0</span><span class="p">))</span>
 
-<div class="viewcode-block" id="OffsetMean.value"><a class="viewcode-back" href="../../../limix_inference.mean.html#limix_inference.mean.OffsetMean.value">[docs]</a>    <span class="k">def</span> <span class="nf">value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="p">):</span>
+<div class="viewcode-block" id="OffsetMean.value"><a class="viewcode-back" href="../../../mean.html#limix_inference.mean.OffsetMean.value">[docs]</a>    <span class="k">def</span> <span class="nf">value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="p">):</span>
         <span class="sd">r&quot;&quot;&quot;Offset function evaluated for `size` samples.</span>
 
 <span class="sd">        Args:</span>
@@ -80,7 +80,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">full</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;offset&#39;</span><span class="p">))</span></div>
 
-<div class="viewcode-block" id="OffsetMean.derivative_offset"><a class="viewcode-back" href="../../../limix_inference.mean.html#limix_inference.mean.OffsetMean.derivative_offset">[docs]</a>    <span class="k">def</span> <span class="nf">derivative_offset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="p">):</span>
+<div class="viewcode-block" id="OffsetMean.derivative_offset"><a class="viewcode-back" href="../../../mean.html#limix_inference.mean.OffsetMean.derivative_offset">[docs]</a>    <span class="k">def</span> <span class="nf">derivative_offset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="p">):</span>
         <span class="sd">r&quot;&quot;&quot;Offset function derivative.</span>
 
 <span class="sd">        Args:</span>

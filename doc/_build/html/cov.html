@@ -1,0 +1,288 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Covariance functions &#8212; limix-inference 1.0.0.dev2 documentation</title>
+    
+    <link rel="stylesheet" href="_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0.0.dev2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="limix-inference 1.0.0.dev2 documentation" href="index.html" />
+    <link rel="next" title="Linear Mixed Models" href="lmm.html" />
+    <link rel="prev" title="Mean functions" href="mean.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="lmm.html" title="Linear Mixed Models"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="mean.html" title="Mean functions"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">limix-inference 1.0.0.dev2 documentation</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <span class="target" id="module-limix_inference.cov"></span><div class="section" id="covariance-functions">
+<h1>Covariance functions<a class="headerlink" href="#covariance-functions" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><a class="reference internal" href="#limix_inference.cov.LinearCov" title="limix_inference.cov.LinearCov"><code class="xref py py-class docutils literal"><span class="pre">LinearCov</span></code></a></li>
+<li><a class="reference internal" href="#limix_inference.cov.SumCov" title="limix_inference.cov.SumCov"><code class="xref py py-class docutils literal"><span class="pre">SumCov</span></code></a></li>
+<li><a class="reference internal" href="#limix_inference.cov.EyeCov" title="limix_inference.cov.EyeCov"><code class="xref py py-class docutils literal"><span class="pre">EyeCov</span></code></a></li>
+</ul>
+<div class="section" id="linear-covariance">
+<h2>Linear covariance<a class="headerlink" href="#linear-covariance" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="limix_inference.cov.LinearCov">
+<em class="property">class </em><code class="descclassname">limix_inference.cov.</code><code class="descname">LinearCov</code><a class="reference internal" href="_modules/limix_inference/cov/_linear.html#LinearCov"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#limix_inference.cov.LinearCov" title="Permalink to this definition">¶</a></dt>
+<dd><p>Linear covariance function.</p>
+<p>The mathematical representation is</p>
+<div class="math">
+\[f(\mathrm x_0, \mathrm x_1) = s \mathrm x_0^\intercal \mathrm x_1\]</div>
+<p>where <span class="math">\(s\)</span> is the scale parameter.</p>
+<dl class="method">
+<dt id="limix_inference.cov.LinearCov.derivative_logscale">
+<code class="descname">derivative_logscale</code><span class="sig-paren">(</span><em>x0</em>, <em>x1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/limix_inference/cov/_linear.html#LinearCov.derivative_logscale"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#limix_inference.cov.LinearCov.derivative_logscale" title="Permalink to this definition">¶</a></dt>
+<dd><p>Derivative of the covariance function evaluated at <cite>(x0, x1)</cite>.</p>
+<p>Derivative of the covariance function over <span class="math">\(\log(s)\)</span>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>x0</strong> (<em>array_like</em>) &#8211; left-hand side sample or samples.</li>
+<li><strong>x1</strong> (<em>array_like</em>) &#8211; right-hand side sample or samples.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><span class="math">\(s \mathrm x_0^\intercal \mathrm x_1\)</span>.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="limix_inference.cov.LinearCov.scale">
+<code class="descname">scale</code><a class="headerlink" href="#limix_inference.cov.LinearCov.scale" title="Permalink to this definition">¶</a></dt>
+<dd><p>Scale parameter.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="limix_inference.cov.LinearCov.value">
+<code class="descname">value</code><span class="sig-paren">(</span><em>x0</em>, <em>x1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/limix_inference/cov/_linear.html#LinearCov.value"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#limix_inference.cov.LinearCov.value" title="Permalink to this definition">¶</a></dt>
+<dd><p>Covariance function evaluated at <cite>(x0, x1)</cite>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>x0</strong> (<em>array_like</em>) &#8211; left-hand side sample or samples.</li>
+<li><strong>x1</strong> (<em>array_like</em>) &#8211; right-hand side sample or samples.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><span class="math">\(s \mathrm x_0^\intercal \mathrm x_1\)</span>.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="sum-covariance">
+<h2>Sum covariance<a class="headerlink" href="#sum-covariance" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="limix_inference.cov.SumCov">
+<em class="property">class </em><code class="descclassname">limix_inference.cov.</code><code class="descname">SumCov</code><span class="sig-paren">(</span><em>covariances</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/limix_inference/cov/_sum.html#SumCov"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#limix_inference.cov.SumCov" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sum covariance function.</p>
+<p>The mathematical representation is</p>
+<div class="math">
+\[f(f_0, f_1, \dots) = f_0 + f_1 + \dots\]</div>
+<dl class="method">
+<dt id="limix_inference.cov.SumCov.derivative_reduce">
+<code class="descname">derivative_reduce</code><span class="sig-paren">(</span><em>derivatives</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/limix_inference/cov/_sum.html#SumCov.derivative_reduce"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#limix_inference.cov.SumCov.derivative_reduce" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sum of covariance function derivatives.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><span class="math">\(f_0' + f_1' + \dots\)</span></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="limix_inference.cov.SumCov.value_reduce">
+<code class="descname">value_reduce</code><span class="sig-paren">(</span><em>values</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/limix_inference/cov/_sum.html#SumCov.value_reduce"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#limix_inference.cov.SumCov.value_reduce" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sum covariance function evaluated at <cite>(f_0, f_1, ...)</cite>.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="identity-covariance">
+<h2>Identity covariance<a class="headerlink" href="#identity-covariance" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="limix_inference.cov.EyeCov">
+<em class="property">class </em><code class="descclassname">limix_inference.cov.</code><code class="descname">EyeCov</code><a class="reference internal" href="_modules/limix_inference/cov/_eye.html#EyeCov"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#limix_inference.cov.EyeCov" title="Permalink to this definition">¶</a></dt>
+<dd><p>Identity covariance function.</p>
+<p>The mathematical representation is</p>
+<div class="math">
+\[f(\mathrm x_0, \mathrm x_1) = s \delta[\mathrm x_0 = \mathrm x_1]\]</div>
+<p>where <span class="math">\(s\)</span> is the scale parameter and <span class="math">\(\delta\)</span> is the Kronecker
+delta.</p>
+<dl class="method">
+<dt id="limix_inference.cov.EyeCov.derivative_logscale">
+<code class="descname">derivative_logscale</code><span class="sig-paren">(</span><em>x0</em>, <em>x1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/limix_inference/cov/_eye.html#EyeCov.derivative_logscale"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#limix_inference.cov.EyeCov.derivative_logscale" title="Permalink to this definition">¶</a></dt>
+<dd><p>Derivative of the covariance function evaluated at <cite>(x0, x1)</cite>.</p>
+<p>Derivative of the covariance function over <span class="math">\(\log(s)\)</span>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>x0</strong> (<em>array_like</em>) &#8211; left-hand side sample or samples.</li>
+<li><strong>x1</strong> (<em>array_like</em>) &#8211; right-hand side sample or samples.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><span class="math">\(s \delta[\mathrm x_0 = \mathrm x_1]\)</span>.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="limix_inference.cov.EyeCov.scale">
+<code class="descname">scale</code><a class="headerlink" href="#limix_inference.cov.EyeCov.scale" title="Permalink to this definition">¶</a></dt>
+<dd><p>Scale parameter.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="limix_inference.cov.EyeCov.value">
+<code class="descname">value</code><span class="sig-paren">(</span><em>x0</em>, <em>x1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/limix_inference/cov/_eye.html#EyeCov.value"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#limix_inference.cov.EyeCov.value" title="Permalink to this definition">¶</a></dt>
+<dd><p>Covariance function evaluated at <cite>(x0, x1)</cite>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>x0</strong> (<em>array_like</em>) &#8211; left-hand side sample or samples.</li>
+<li><strong>x1</strong> (<em>array_like</em>) &#8211; right-hand side sample or samples.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><span class="math">\(s \delta[\mathrm x_0 = \mathrm x_1]\)</span>.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Covariance functions</a><ul>
+<li><a class="reference internal" href="#linear-covariance">Linear covariance</a></li>
+<li><a class="reference internal" href="#sum-covariance">Sum covariance</a></li>
+<li><a class="reference internal" href="#identity-covariance">Identity covariance</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="mean.html"
+                        title="previous chapter">Mean functions</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="lmm.html"
+                        title="next chapter">Linear Mixed Models</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/cov.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="lmm.html" title="Linear Mixed Models"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="mean.html" title="Mean functions"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">limix-inference 1.0.0.dev2 documentation</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2016, Danilo Horta.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.6.
+    </div>
+  </body>
+</html>

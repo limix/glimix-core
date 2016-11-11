@@ -32,6 +32,20 @@ class ExpFamEP(EP):
     :math:`g(\cdot)` is a link function, and :math:`\text{ExpFam}(\cdot)` is
     an exponential-family distribution.
 
+    For convenience, let us define the following variables:
+
+    .. math::
+        :nowrap:
+
+        \begin{eqnarray}
+            \sigma_b^2          & = & v (1-\delta) \\
+            \sigma_{\epsilon}^2 & = & v \delta\\
+            \mathbf m           & = & \mathrm M \boldsymbol\beta \\
+            \mathrm K           & = & \sigma_b^2 \mathrm Q_0 \mathrm S_0
+                                      \mathrm Q_0^{\intercal} +
+                                      \sigma_{\epsilon}^2 \mathrm I
+        \end{eqnarray}
+
     Args:
         prodlik (object): likelihood product.
         covariates (array_like): fixed-effect covariates :math:`\mathrm M`.

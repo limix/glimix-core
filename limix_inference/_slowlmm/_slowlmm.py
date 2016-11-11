@@ -10,6 +10,21 @@ from optimix import Composite
 
 
 class SlowLMM(Composite):
+    r"""General Linear Mixed Models.
+
+    Models
+
+    .. math::
+
+        \mathbf y \sim \mathcal N\big(~ \mathbf m;~ \mathrm K ~\big)
+
+    for any mean :math:`\mathbf m` and covariance matrix :math:`\mathrm K`.
+
+    Args:
+        y (array_like): real-valued outcome.
+        mean (mean_function): mean function defined. (Refer to :doc:`mean`.)
+        cov (covariance_function): covariance function defined. (Refer to :doc:`cov`.)
+    """
     def __init__(self, y, mean, cov):
         if var(y) < 1e-8:
             raise ValueError("The phenotype variance is too low: %e." % var(y))

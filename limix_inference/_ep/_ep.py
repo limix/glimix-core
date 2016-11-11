@@ -256,7 +256,7 @@ class EP(object):
         r"""Covariance matrix of the prior.
 
         Returns:
-            :math:`\mathrm K`.
+            :math:`\sigma_b^2 \mathrm Q_0 \mathrm S_0 \mathrm Q_0^{\intercal} + \sigma_{\epsilon}^2 \mathrm I`.
         """
         return sum2diag(self.sigma2_b * self._QSQt(), self.sigma2_epsilon)
 
@@ -284,7 +284,7 @@ class EP(object):
         r"""Mean vector of the prior.
 
         Returns:
-            :math:`\mathbf m = \mathrm M \boldsymbol\beta`.
+            :math:`\mathrm M \boldsymbol\beta`.
         """
         return dot(self._tM, self._tbeta)
 

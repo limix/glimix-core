@@ -53,7 +53,7 @@
 <span class="kn">from</span> <span class="nn">optimix</span> <span class="k">import</span> <span class="n">FunctionReduce</span>
 
 
-<div class="viewcode-block" id="SumMean"><a class="viewcode-back" href="../../../limix_inference.mean.html#limix_inference.mean.SumMean">[docs]</a><span class="k">class</span> <span class="nc">SumMean</span><span class="p">(</span><span class="n">FunctionReduce</span><span class="p">):</span>
+<div class="viewcode-block" id="SumMean"><a class="viewcode-back" href="../../../mean.html#limix_inference.mean.SumMean">[docs]</a><span class="k">class</span> <span class="nc">SumMean</span><span class="p">(</span><span class="n">FunctionReduce</span><span class="p">):</span>
     <span class="sd">r&quot;&quot;&quot;Sum mean function.</span>
 
 <span class="sd">    The mathematical representation is</span>
@@ -66,11 +66,11 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_means</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">means</span><span class="p">]</span>
         <span class="n">FunctionReduce</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_means</span><span class="p">,</span> <span class="s1">&#39;sum&#39;</span><span class="p">)</span>
 
-<div class="viewcode-block" id="SumMean.value_reduce"><a class="viewcode-back" href="../../../limix_inference.mean.html#limix_inference.mean.SumMean.value_reduce">[docs]</a>    <span class="k">def</span> <span class="nf">value_reduce</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">values</span><span class="p">):</span>
+<div class="viewcode-block" id="SumMean.value_reduce"><a class="viewcode-back" href="../../../mean.html#limix_inference.mean.SumMean.value_reduce">[docs]</a>    <span class="k">def</span> <span class="nf">value_reduce</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">values</span><span class="p">):</span>
         <span class="sd">r&quot;&quot;&quot;Sum mean function evaluated at `(f_0, f_1, ...)`.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">add</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span><span class="n">values</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="SumMean.derivative_reduce"><a class="viewcode-back" href="../../../limix_inference.mean.html#limix_inference.mean.SumMean.derivative_reduce">[docs]</a>    <span class="k">def</span> <span class="nf">derivative_reduce</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">derivatives</span><span class="p">):</span>
+<div class="viewcode-block" id="SumMean.derivative_reduce"><a class="viewcode-back" href="../../../mean.html#limix_inference.mean.SumMean.derivative_reduce">[docs]</a>    <span class="k">def</span> <span class="nf">derivative_reduce</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">derivatives</span><span class="p">):</span>
         <span class="sd">r&quot;&quot;&quot;Sum of mean function derivatives.</span>
 
 <span class="sd">        Returns:</span>

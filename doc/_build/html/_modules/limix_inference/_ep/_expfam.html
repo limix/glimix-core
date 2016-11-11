@@ -60,7 +60,7 @@
 <span class="kn">from</span> <span class="nn">._ep</span> <span class="k">import</span> <span class="n">EP</span>
 
 
-<div class="viewcode-block" id="ExpFamEP"><a class="viewcode-back" href="../../../limix_inference.glmm.html#limix_inference.ExpFamEP">[docs]</a><span class="k">class</span> <span class="nc">ExpFamEP</span><span class="p">(</span><span class="n">EP</span><span class="p">):</span>
+<div class="viewcode-block" id="ExpFamEP"><a class="viewcode-back" href="../../../glmm.html#limix_inference.ExpFamEP">[docs]</a><span class="k">class</span> <span class="nc">ExpFamEP</span><span class="p">(</span><span class="n">EP</span><span class="p">):</span>
     <span class="sd">r&quot;&quot;&quot;Expectation Propagation for exponential family distributions.</span>
 
 <span class="sd">    Models</span>
@@ -77,13 +77,24 @@
 <span class="sd">            \sigma_b^2 \mathrm Q_0 \mathrm S_0 \mathrm Q_0^{\intercal} +</span>
 <span class="sd">                    \sigma_{\epsilon}^2 \mathrm I ~~\big)</span>
 
-<span class="sd">    where</span>
+<span class="sd">    where :math:`\mathrm Q_0 \mathrm S_0 \mathrm Q_0^\intercal`</span>
+<span class="sd">    is the economic eigen decomposition of a semi-definite positive matrix,</span>
+<span class="sd">    :math:`g(\cdot)` is a link function, and :math:`\text{ExpFam}(\cdot)` is</span>
+<span class="sd">    an exponential-family distribution.</span>
+
+<span class="sd">    For convenience, let us define the following variables:</span>
 
 <span class="sd">    .. math::</span>
+<span class="sd">        :nowrap:</span>
 
-<span class="sd">        \mathrm Q_0 \mathrm S_0 \mathrm Q_0^\intercal</span>
-
-<span class="sd">    is the economic eigen decomposition of a semi-definite positive matrix.</span>
+<span class="sd">        \begin{eqnarray}</span>
+<span class="sd">            \sigma_b^2          &amp; = &amp; v (1-\delta) \\</span>
+<span class="sd">            \sigma_{\epsilon}^2 &amp; = &amp; v \delta\\</span>
+<span class="sd">            \mathbf m           &amp; = &amp; \mathrm M \boldsymbol\beta \\</span>
+<span class="sd">            \mathrm K           &amp; = &amp; \sigma_b^2 \mathrm Q_0 \mathrm S_0</span>
+<span class="sd">                                      \mathrm Q_0^{\intercal} +</span>
+<span class="sd">                                      \sigma_{\epsilon}^2 \mathrm I</span>
+<span class="sd">        \end{eqnarray}</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        prodlik (object): likelihood product.</span>
