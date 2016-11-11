@@ -13,3 +13,4 @@ You can get the source and open issues `on Github.`_
     installation
     limix_inference.mean
     limix_inference.cov
+    limix_inference.glmm

@@ -11,6 +11,15 @@ from ._ep import EP
 
 
 class ExpFamEP(EP):
+    r"""Expectation Propagation for exponential family distributions.
+
+    Args:
+        prodlik (object): bla.
+        covariates (array_like): bla.
+        Q0 (array_like): bla.
+        Q1 (array_like): bla.
+        S0 (array_like): bla.
+    """
     def __init__(self, prodlik, covariates, Q0, Q1, S0):
         super(ExpFamEP, self).__init__(covariates, Q0, S0, True)
         self._logger = logging.getLogger(__name__)
