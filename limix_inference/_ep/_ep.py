@@ -243,7 +243,7 @@ class EP(object):
                 \boldsymbol\mu & = & \mathrm K^{-1} \mathbf m
             \end{eqnarray}
         """
-        self._joint_tau[:] = 1 / self.diagK()
+        self._joint_tau[:] = 1 / self._diagK()
         self._joint_eta[:] = self.m()
         self._joint_eta[:] *= self._joint_tau
 
@@ -256,7 +256,7 @@ class EP(object):
         r"""Returns :math:`\mathrm K`."""
         return sum2diag(self.sigma2_b * self._QSQt(), self.sigma2_epsilon)
 
-    def Kdot(self, x):
+    def _Kdot(self, x):
         Q = self._Q
         S = self._S
         out = dot(Q.T, x)
@@ -268,7 +268,7 @@ class EP(object):
         return out
 
     @cachedmethod(attrgetter('_cache_diagK'))
-    def diagK(self):
+    def _diagK(self):
         r"""Returns the diagonal of :math:`\mathrm K`."""
         return self.sigma2_b * self._diagQSQt() + self.sigma2_epsilon
 
@@ -460,7 +460,7 @@ class EP(object):
 
         uBiQtAK0, uBiQtAK1 = self._uBiQtAK()
 
-        out = dot(u, self.Kdot(u))
+        out = dot(u, self._Kdot(u))
         out /= v
         out -= (1 - delta) * trace2(AQ, SQt)
         out -= delta * A.sum()
@@ -507,7 +507,7 @@ class EP(object):
 
         out *= v
 
-        out -= dot(u, self.Kdot(u)) / (1 - delta)
+        out -= dot(u, self._Kdot(u)) / (1 - delta)
 
         return out / 2
 
@@ -537,7 +537,7 @@ class EP(object):
         Eu = Cteta - A * self._QBiQtCteta()
 
         u = Em - Eu
-        uKu = dot(u, self.Kdot(u))
+        uKu = dot(u, self._Kdot(u))
         tr1 = trace2(AQ, uBiQtAK0)
         tr2 = trace2(AQ, uBiQtAK1)
 
@@ -634,7 +634,7 @@ class EP(object):
         teta = self._sitelik_eta
         jtau = self._joint_tau
         jeta = self._joint_eta
-        Kteta = self.Kdot(teta)
+        Kteta = self._Kdot(teta)
 
         BiQt = self._BiQt()
         uBiQtAK0, uBiQtAK1 = self._uBiQtAK()
@@ -643,7 +643,7 @@ class EP(object):
         jtau *= 1 - delta
         jtau -= delta * dotd(Q, uBiQtAK1)
         jtau *= v
-        jtau += self.diagK()
+        jtau += self._diagK()
 
         jtau[:] = 1 / jtau
 
