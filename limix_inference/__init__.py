@@ -1,8 +1,8 @@
 from __future__ import absolute_import as _absolute_import
 
-from .fastlmm import FastLMM
-from .slowlmm import SlowLMM
-from .ep import ExpFamEP
+from ._fastlmm import FastLMM
+from ._slowlmm import SlowLMM
+from ._ep import ExpFamEP
 from . import cov
 from . import lik
 from . import mean

@@ -5,7 +5,7 @@ import logging
 from numpy import clip, full
 from numpy.linalg import lstsq
 
-from ..fastlmm import FastLMM
+from .._fastlmm import FastLMM
 from .liknorm import create_liknorm
 from ._ep import EP
 

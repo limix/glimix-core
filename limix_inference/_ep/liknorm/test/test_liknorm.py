@@ -3,7 +3,7 @@ from __future__ import division
 from numpy import array, empty, set_printoptions
 from numpy.testing import assert_allclose
 
-from limix_inference.ep.liknorm import create_liknorm
+from limix_inference._ep.liknorm import create_liknorm
 from limix_inference.link import LogitLink, LogLink
 from limix_inference.lik import BinomialProdLik, PoissonProdLik
 
