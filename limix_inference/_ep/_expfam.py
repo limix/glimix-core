@@ -13,12 +13,26 @@ from ._ep import EP
 class ExpFamEP(EP):
     r"""Expectation Propagation for exponential family distributions.
 
+    Models
+
+    .. math::
+
+        y_i ~|~ z_i \sim \text{ExpFam}(y_i ~|~ \mu_i = g(z_i))
+
+    for
+
+    .. math::
+
+        \mathbf z \sim \mathcal N\big(~~ \mathbf a^\intercal \boldsymbol\alpha;~
+            \sigma_b^2 \mathrm Q_0 \mathrm S_0 \mathrm Q_0^{\intercal} +
+                    \sigma_{\epsilon}^2 \mathrm I ~~\big)
+
     Args:
-        prodlik (object): bla.
-        covariates (array_like): bla.
-        Q0 (array_like): bla.
-        Q1 (array_like): bla.
-        S0 (array_like): bla.
+        prodlik (object): likelihood product.
+        covariates (array_like): fixed-effect covariates.
+        Q0 (array_like): eigenvectors of positive eigenvalues.
+        Q1 (array_like): eigenvectors of zero eigenvalues.
+        S0 (array_like): positive eigenvalues.
     """
     def __init__(self, prodlik, covariates, Q0, Q1, S0):
         super(ExpFamEP, self).__init__(covariates, Q0, S0, True)
@@ -45,18 +59,29 @@ class ExpFamEP(EP):
 
     @property
     def genetic_variance(self):
-        r"""Returns :math:`\sigma_b^2`."""
+        r"""Genetic variance.
+
+        Returns:
+            :math:`\sigma_b^2`.
+        """
         return self.sigma2_b
 
     @property
     def environmental_variance(self):
-        r"""Returns :math:`\sigma_{\epsilon}^2`."""
+        r"""Environmental variance.
+
+        Returns:
+            :math:`\sigma_{\epsilon}^2`.
+        """
         return self.sigma2_epsilon
 
     @property
     def heritability(self):
-        r"""Returns
-:math:`\sigma_b^2/(\sigma_a^2+\sigma_b^2+\sigma_{\epsilon}^2)`."""
+        r"""Narrow-sense heritability.
+
+        Returns:
+            :math:`\sigma_b^2/(\sigma_a^2+\sigma_b^2+\sigma_{\epsilon}^2)`.
+        """
         total = self.genetic_variance + self.covariates_variance
         total += self.environmental_variance
         return self.genetic_variance / total

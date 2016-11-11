@@ -63,12 +63,26 @@
 <div class="viewcode-block" id="ExpFamEP"><a class="viewcode-back" href="../../../limix_inference.glmm.html#limix_inference.ExpFamEP">[docs]</a><span class="k">class</span> <span class="nc">ExpFamEP</span><span class="p">(</span><span class="n">EP</span><span class="p">):</span>
     <span class="sd">r&quot;&quot;&quot;Expectation Propagation for exponential family distributions.</span>
 
+<span class="sd">    Models</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        y_i ~|~ z_i \sim \text{ExpFam}(y_i ~|~ \mu_i = g(z_i))</span>
+
+<span class="sd">    for</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        \mathbf z \sim \mathcal N\big(~~ \mathbf a^\intercal \boldsymbol\alpha;~</span>
+<span class="sd">            \sigma_b^2 \mathrm Q_0 \mathrm S_0 \mathrm Q_0^{\intercal} +</span>
+<span class="sd">                    \sigma_{\epsilon}^2 \mathrm I ~~\big)</span>
+
 <span class="sd">    Args:</span>
-<span class="sd">        prodlik (object): bla.</span>
-<span class="sd">        covariates (array_like): bla.</span>
-<span class="sd">        Q0 (array_like): bla.</span>
-<span class="sd">        Q1 (array_like): bla.</span>
-<span class="sd">        S0 (array_like): bla.</span>
+<span class="sd">        prodlik (object): likelihood product.</span>
+<span class="sd">        covariates (array_like): fixed-effect covariates.</span>
+<span class="sd">        Q0 (array_like): eigenvectors of positive eigenvalues.</span>
+<span class="sd">        Q1 (array_like): eigenvectors of zero eigenvalues.</span>
+<span class="sd">        S0 (array_like): positive eigenvalues.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prodlik</span><span class="p">,</span> <span class="n">covariates</span><span class="p">,</span> <span class="n">Q0</span><span class="p">,</span> <span class="n">Q1</span><span class="p">,</span> <span class="n">S0</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">ExpFamEP</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">covariates</span><span class="p">,</span> <span class="n">Q0</span><span class="p">,</span> <span class="n">S0</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
@@ -95,18 +109,29 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">genetic_variance</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">r&quot;&quot;&quot;Returns :math:`\sigma_b^2`.&quot;&quot;&quot;</span>
+        <span class="sd">r&quot;&quot;&quot;Genetic variance.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            :math:`\sigma_b^2`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">sigma2_b</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">environmental_variance</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">r&quot;&quot;&quot;Returns :math:`\sigma_{\epsilon}^2`.&quot;&quot;&quot;</span>
+        <span class="sd">r&quot;&quot;&quot;Environmental variance.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            :math:`\sigma_{\epsilon}^2`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">sigma2_epsilon</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">heritability</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">r&quot;&quot;&quot;Returns</span>
-<span class="sd">:math:`\sigma_b^2/(\sigma_a^2+\sigma_b^2+\sigma_{\epsilon}^2)`.&quot;&quot;&quot;</span>
+        <span class="sd">r&quot;&quot;&quot;Narrow-sense heritability.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            :math:`\sigma_b^2/(\sigma_a^2+\sigma_b^2+\sigma_{\epsilon}^2)`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">total</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">genetic_variance</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">covariates_variance</span>
         <span class="n">total</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">environmental_variance</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">genetic_variance</span> <span class="o">/</span> <span class="n">total</span></div>
