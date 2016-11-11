@@ -32,7 +32,7 @@ dependencies:
 - ruamel_yaml=0.11.14=py27_0
 - scipy=0.18.1=np111py27_nomkl_0
 - setuptools=23.0.0=py27_0
-- sin§gledispatch=3.4.0.3=py27_0
+- singledispatch=3.4.0.3=py27_0
 - six=1.10.0=py27_0
 - snowballstemmer=1.2.1=py27_0
 - sphinx=1.4.8=py27_0
