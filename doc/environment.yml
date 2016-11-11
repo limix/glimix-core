@@ -43,3 +43,4 @@ dependencies:
 - zlib=1.2.8=3
 - pip:
   - ruamel-yaml-==VERSION
+  - sphinxcontrib-programoutput==0.8
