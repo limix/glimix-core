@@ -60,7 +60,7 @@
 \[y_i ~|~ z_i \sim \text{ExpFam}(y_i ~|~ \mu_i = g(z_i))\]</div>
 <p>for</p>
 <div class="math">
-\[\mathbf z \sim \mathcal N\big(~~ \mathbf a^\intercal \boldsymbol\beta;~
+\[\mathbf z \sim \mathcal N\big(~~ \mathrm M^\intercal \boldsymbol\beta;~
     \sigma_b^2 \mathrm Q_0 \mathrm S_0 \mathrm Q_0^{\intercal} +
             \sigma_{\epsilon}^2 \mathrm I ~~\big)\]</div>
 <p>where</p>
@@ -73,7 +73,7 @@
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>prodlik</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><em>object</em></a>) &#8211; likelihood product.</li>
-<li><strong>covariates</strong> (<em>array_like</em>) &#8211; fixed-effect covariates <span class="math">\(\mathbf a\)</span>.</li>
+<li><strong>covariates</strong> (<em>array_like</em>) &#8211; fixed-effect covariates <span class="math">\(\mathrm M\)</span>.</li>
 <li><strong>Q0</strong> (<em>array_like</em>) &#8211; eigenvectors of positive eigenvalues.</li>
 <li><strong>Q1</strong> (<em>array_like</em>) &#8211; eigenvectors of zero eigenvalues.</li>
 <li><strong>S0</strong> (<em>array_like</em>) &#8211; positive eigenvalues.</li>

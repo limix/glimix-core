@@ -23,7 +23,7 @@ class ExpFamEP(EP):
 
     .. math::
 
-        \mathbf z \sim \mathcal N\big(~~ \mathbf a^\intercal \boldsymbol\beta;~
+        \mathbf z \sim \mathcal N\big(~~ \mathrm M^\intercal \boldsymbol\beta;~
             \sigma_b^2 \mathrm Q_0 \mathrm S_0 \mathrm Q_0^{\intercal} +
                     \sigma_{\epsilon}^2 \mathrm I ~~\big)
 
@@ -37,7 +37,7 @@ class ExpFamEP(EP):
 
     Args:
         prodlik (object): likelihood product.
-        covariates (array_like): fixed-effect covariates :math:`\mathbf a`.
+        covariates (array_like): fixed-effect covariates :math:`\mathrm M`.
         Q0 (array_like): eigenvectors of positive eigenvalues.
         Q1 (array_like): eigenvectors of zero eigenvalues.
         S0 (array_like): positive eigenvalues.

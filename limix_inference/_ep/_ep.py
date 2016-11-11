@@ -253,7 +253,11 @@ class EP(object):
 
     @cachedmethod(attrgetter('_cache_K'))
     def K(self):
-        r"""Returns :math:`\mathrm K`."""
+        r"""Covariance matrix of the prior.
+
+        Returns:
+            :math:`\mathrm K`.
+        """
         return sum2diag(self.sigma2_b * self._QSQt(), self.sigma2_epsilon)
 
     def _Kdot(self, x):
@@ -277,7 +281,11 @@ class EP(object):
 
     @cachedmethod(attrgetter('_cache_m'))
     def m(self):
-        r"""Returns :math:`\mathbf m = \mathrm M \boldsymbol\beta`."""
+        r"""Mean vector of the prior.
+
+        Returns:
+            :math:`\mathbf m = \mathrm M \boldsymbol\beta`.
+        """
         return dot(self._tM, self._tbeta)
 
     @property
