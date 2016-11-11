@@ -28,7 +28,18 @@ def bernoulli_sample(offset,
                      causal_variants=None,
                      causal_variance=0,
                      random_state=None):
-    """Bernoulli likelihood sampling."""
+    r"""Bernoulli likelihood sampling.
+
+    Sample according to
+
+    .. math::
+
+        \mathbf y \sim \prod_{i=1}^n
+        \text{Bernoulli}(\mu_i = \text{logit}(z_i))
+        \mathcal N(~ o \mathbf 1; ~ (h^2 - v_c)\mathrm G^\intercal\mathrm G +
+        (1-h^2-v_c)\mathrm I ~)
+
+    """
     link = LogitLink()
     mean, cov = _mean_cov(offset, G, heritability, causal_variants,
                           causal_variance, random_state)
