@@ -1,0 +1,217 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Mean functions &#8212; limix-inference 1.0.0.dev2 documentation</title>
+    
+    <link rel="stylesheet" href="_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0.0.dev2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="limix-inference 1.0.0.dev2 documentation" href="index.html" />
+    <link rel="next" title="Covariance functions" href="limix_inference.cov.html" />
+    <link rel="prev" title="Installation" href="installation.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="limix_inference.cov.html" title="Covariance functions"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="installation.html" title="Installation"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">limix-inference 1.0.0.dev2 documentation</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-limix_inference.mean">
+<span id="mean-functions"></span><h1>Mean functions<a class="headerlink" href="#module-limix_inference.mean" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="limix_inference.mean.LinearMean">
+<em class="property">class </em><code class="descclassname">limix_inference.mean.</code><code class="descname">LinearMean</code><span class="sig-paren">(</span><em>size</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/limix_inference/mean/_linear.html#LinearMean"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#limix_inference.mean.LinearMean" title="Permalink to this definition">¶</a></dt>
+<dd><p>Linear mean function.</p>
+<p>The mathematical representation is</p>
+<div class="math">
+\[f(\mathbf x) = \mathbf x^\intercal \boldsymbol\alpha\]</div>
+<p>where <span class="math">\(\boldsymbol\alpha\)</span> is a vector of effect sizes.</p>
+<dl class="method">
+<dt id="limix_inference.mean.LinearMean.derivative_effsizes">
+<code class="descname">derivative_effsizes</code><span class="sig-paren">(</span><em>x</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/limix_inference/mean/_linear.html#LinearMean.derivative_effsizes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#limix_inference.mean.LinearMean.derivative_effsizes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Linear mean function derivative.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>size</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) &#8211; sample size.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><span class="math">\(\mathbf x\)</span>.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="limix_inference.mean.LinearMean.effsizes">
+<code class="descname">effsizes</code><a class="headerlink" href="#limix_inference.mean.LinearMean.effsizes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Effect-sizes parameter.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="limix_inference.mean.LinearMean.value">
+<code class="descname">value</code><span class="sig-paren">(</span><em>x</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/limix_inference/mean/_linear.html#LinearMean.value"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#limix_inference.mean.LinearMean.value" title="Permalink to this definition">¶</a></dt>
+<dd><p>Mean function evaluated at <cite>x</cite>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>x</strong> (<em>array_like</em>) &#8211; sample or samples.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><span class="math">\(\mathbf x^\intercal \boldsymbol\alpha\)</span>.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="limix_inference.mean.OffsetMean">
+<em class="property">class </em><code class="descclassname">limix_inference.mean.</code><code class="descname">OffsetMean</code><a class="reference internal" href="_modules/limix_inference/mean/_offset.html#OffsetMean"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#limix_inference.mean.OffsetMean" title="Permalink to this definition">¶</a></dt>
+<dd><p>Offset mean function.</p>
+<p>The mathematical representation is</p>
+<div class="math">
+\[f(n) = o \mathbf 1\]</div>
+<p>where <span class="math">\(\mathbf 1\)</span> is a <span class="math">\(n\)</span>-sized vector of ones.</p>
+<dl class="method">
+<dt id="limix_inference.mean.OffsetMean.derivative_offset">
+<code class="descname">derivative_offset</code><span class="sig-paren">(</span><em>size</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/limix_inference/mean/_offset.html#OffsetMean.derivative_offset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#limix_inference.mean.OffsetMean.derivative_offset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Offset function derivative.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>size</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) &#8211; sample size.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><span class="math">\(\mathbf 1\)</span>.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="limix_inference.mean.OffsetMean.offset">
+<code class="descname">offset</code><a class="headerlink" href="#limix_inference.mean.OffsetMean.offset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Offset parameter.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="limix_inference.mean.OffsetMean.value">
+<code class="descname">value</code><span class="sig-paren">(</span><em>size</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/limix_inference/mean/_offset.html#OffsetMean.value"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#limix_inference.mean.OffsetMean.value" title="Permalink to this definition">¶</a></dt>
+<dd><p>Offset function evaluated for <cite>size</cite> samples.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>size</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) &#8211; sample size.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><span class="math">\(o \mathbf 1\)</span>.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="limix_inference.mean.SumMean">
+<em class="property">class </em><code class="descclassname">limix_inference.mean.</code><code class="descname">SumMean</code><span class="sig-paren">(</span><em>means</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/limix_inference/mean/_sum.html#SumMean"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#limix_inference.mean.SumMean" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="installation.html"
+                        title="previous chapter">Installation</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="limix_inference.cov.html"
+                        title="next chapter">Covariance functions</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/limix_inference.mean.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="limix_inference.cov.html" title="Covariance functions"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="installation.html" title="Installation"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">limix-inference 1.0.0.dev2 documentation</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2016, Danilo Horta.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.6.
+    </div>
+  </body>
+</html>

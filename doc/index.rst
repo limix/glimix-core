@@ -11,4 +11,5 @@ You can get the source and open issues `on Github.`_
     :maxdepth: 2
 
     installation
+    limix_inference.mean
     limix_inference.cov
