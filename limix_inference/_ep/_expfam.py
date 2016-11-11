@@ -23,13 +23,21 @@ class ExpFamEP(EP):
 
     .. math::
 
-        \mathbf z \sim \mathcal N\big(~~ \mathbf a^\intercal \boldsymbol\alpha;~
+        \mathbf z \sim \mathcal N\big(~~ \mathbf a^\intercal \boldsymbol\beta;~
             \sigma_b^2 \mathrm Q_0 \mathrm S_0 \mathrm Q_0^{\intercal} +
                     \sigma_{\epsilon}^2 \mathrm I ~~\big)
 
+    where
+
+    .. math::
+
+        \mathrm Q_0 \mathrm S_0 \mathrm Q_0^\intercal
+
+    is the economic eigen decomposition of a semi-definite positive matrix.
+
     Args:
         prodlik (object): likelihood product.
-        covariates (array_like): fixed-effect covariates.
+        covariates (array_like): fixed-effect covariates :math:`\mathbf a`.
         Q0 (array_like): eigenvectors of positive eigenvalues.
         Q1 (array_like): eigenvectors of zero eigenvalues.
         S0 (array_like): positive eigenvalues.

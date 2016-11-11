@@ -5,4 +5,4 @@ Generalized Linear Mixed Models
   :members:
 
   .. autoclass:: ExpFamEP
-    :members:
+    :members: covariates_variance, genetic_variance, environmental_variance, heritability

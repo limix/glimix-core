@@ -73,13 +73,21 @@
 
 <span class="sd">    .. math::</span>
 
-<span class="sd">        \mathbf z \sim \mathcal N\big(~~ \mathbf a^\intercal \boldsymbol\alpha;~</span>
+<span class="sd">        \mathbf z \sim \mathcal N\big(~~ \mathbf a^\intercal \boldsymbol\beta;~</span>
 <span class="sd">            \sigma_b^2 \mathrm Q_0 \mathrm S_0 \mathrm Q_0^{\intercal} +</span>
 <span class="sd">                    \sigma_{\epsilon}^2 \mathrm I ~~\big)</span>
 
+<span class="sd">    where</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        \mathrm Q_0 \mathrm S_0 \mathrm Q_0^\intercal</span>
+
+<span class="sd">    is the economic eigen decomposition of a semi-definite positive matrix.</span>
+
 <span class="sd">    Args:</span>
 <span class="sd">        prodlik (object): likelihood product.</span>
-<span class="sd">        covariates (array_like): fixed-effect covariates.</span>
+<span class="sd">        covariates (array_like): fixed-effect covariates :math:`\mathbf a`.</span>
 <span class="sd">        Q0 (array_like): eigenvectors of positive eigenvalues.</span>
 <span class="sd">        Q1 (array_like): eigenvectors of zero eigenvalues.</span>
 <span class="sd">        S0 (array_like): positive eigenvalues.</span>

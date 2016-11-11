@@ -60,16 +60,20 @@
 \[y_i ~|~ z_i \sim \text{ExpFam}(y_i ~|~ \mu_i = g(z_i))\]</div>
 <p>for</p>
 <div class="math">
-\[\mathbf z \sim \mathcal N\big(~~ \mathbf a^\intercal \boldsymbol\alpha;~
+\[\mathbf z \sim \mathcal N\big(~~ \mathbf a^\intercal \boldsymbol\beta;~
     \sigma_b^2 \mathrm Q_0 \mathrm S_0 \mathrm Q_0^{\intercal} +
             \sigma_{\epsilon}^2 \mathrm I ~~\big)\]</div>
+<p>where</p>
+<div class="math">
+\[\mathrm Q_0 \mathrm S_0 \mathrm Q_0^\intercal\]</div>
+<p>is the economic eigen decomposition of a semi-definite positive matrix.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>prodlik</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><em>object</em></a>) &#8211; likelihood product.</li>
-<li><strong>covariates</strong> (<em>array_like</em>) &#8211; fixed-effect covariates.</li>
+<li><strong>covariates</strong> (<em>array_like</em>) &#8211; fixed-effect covariates <span class="math">\(\mathbf a\)</span>.</li>
 <li><strong>Q0</strong> (<em>array_like</em>) &#8211; eigenvectors of positive eigenvalues.</li>
 <li><strong>Q1</strong> (<em>array_like</em>) &#8211; eigenvectors of zero eigenvalues.</li>
 <li><strong>S0</strong> (<em>array_like</em>) &#8211; positive eigenvalues.</li>
@@ -78,6 +82,23 @@
 </tr>
 </tbody>
 </table>
+<dl class="attribute">
+<dt id="limix_inference.ExpFamEP.covariates_variance">
+<code class="descname">covariates_variance</code><a class="headerlink" href="#limix_inference.ExpFamEP.covariates_variance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Variance explained by the covariates.</p>
+<p>It is defined as</p>
+<div class="math">
+\[\sigma_a^2 = \sum_{s=1}^p \left\{ \sum_{i=1}^n \left(
+    \mathrm M_{i,s}\beta_s - \sum_{j=1}^n
+    \frac{\mathrm M_{j,s}\beta_s}{n} \right)^2 \Big/ n
+\right\}\]</div>
+<p>where <span class="math">\(p\)</span> is the number of covariates and <span class="math">\(n\)</span> is the number
+of individuals. One can show that it amounts to
+<span class="math">\(\sum_s \beta_s^2\)</span> whenever the columns of <span class="math">\(\mathrm M\)</span>
+are normalized to have mean and standard deviation equal to zero and
+one, respectively.</p>
+</dd></dl>
+
 <dl class="attribute">
 <dt id="limix_inference.ExpFamEP.environmental_variance">
 <code class="descname">environmental_variance</code><a class="headerlink" href="#limix_inference.ExpFamEP.environmental_variance" title="Permalink to this definition">¶</a></dt>
@@ -109,8 +130,15 @@
 <dl class="attribute">
 <dt id="limix_inference.ExpFamEP.heritability">
 <code class="descname">heritability</code><a class="headerlink" href="#limix_inference.ExpFamEP.heritability" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns
-<span class="math">\(\sigma_b^2/(\sigma_a^2+\sigma_b^2+\sigma_{\epsilon}^2)\)</span>.</p>
+<dd><p>Narrow-sense heritability.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><span class="math">\(\sigma_b^2/(\sigma_a^2+\sigma_b^2+\sigma_{\epsilon}^2)\)</span>.</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </dd></dl>
