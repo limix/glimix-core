@@ -1,22 +1,13 @@
-.. limix-inference documentation master file, created by
-   sphinx-quickstart on Fri Nov 11 09:56:32 2016.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+Limix-inference's documentation
+===============================
 
-Welcome to limix-inference's documentation!
-===========================================
+You can get the source and open issues `on Github.`_
 
-Contents:
+.. _on Github.: https://github.com/Horta/limix-inference
 
 .. toctree::
-   :maxdepth: 2
+    :caption: Table of contents
+    :name: mastertoc
+    :maxdepth: 2
 
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
-
+    installation
