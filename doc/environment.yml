@@ -1,6 +1,6 @@
-name: root
+name: py27
 channels:
-- 'defaults'
+- defaults
 dependencies:
 - alabaster=0.7.9=py27_0
 - babel=2.3.4=py27_0
