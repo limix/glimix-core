@@ -27,13 +27,10 @@ class ExpFamEP(EP):
             \sigma_b^2 \mathrm Q_0 \mathrm S_0 \mathrm Q_0^{\intercal} +
                     \sigma_{\epsilon}^2 \mathrm I ~~\big)
 
-    where
-
-    .. math::
-
-        \mathrm Q_0 \mathrm S_0 \mathrm Q_0^\intercal
-
-    is the economic eigen decomposition of a semi-definite positive matrix.
+    where :math:`\mathrm Q_0 \mathrm S_0 \mathrm Q_0^\intercal`
+    is the economic eigen decomposition of a semi-definite positive matrix,
+    :math:`g(\cdot)` is a link function, and :math:`\text{ExpFam}(\cdot)` is
+    an exponential-family distribution.
 
     Args:
         prodlik (object): likelihood product.
