@@ -154,7 +154,31 @@
 <dl class="class">
 <dt id="limix_inference.mean.SumMean">
 <em class="property">class </em><code class="descclassname">limix_inference.mean.</code><code class="descname">SumMean</code><span class="sig-paren">(</span><em>means</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/limix_inference/mean/_sum.html#SumMean"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#limix_inference.mean.SumMean" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Sum mean function.</p>
+<p>The mathematical representation is</p>
+<div class="math">
+\[f(f_0, f_1, \dots) = f_0 + f_1 + \dots\]</div>
+<dl class="method">
+<dt id="limix_inference.mean.SumMean.derivative_reduce">
+<code class="descname">derivative_reduce</code><span class="sig-paren">(</span><em>derivatives</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/limix_inference/mean/_sum.html#SumMean.derivative_reduce"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#limix_inference.mean.SumMean.derivative_reduce" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sum of mean function derivatives.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><span class="math">\(f_0' + f_1' + \dots\)</span></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="limix_inference.mean.SumMean.value_reduce">
+<code class="descname">value_reduce</code><span class="sig-paren">(</span><em>values</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/limix_inference/mean/_sum.html#SumMean.value_reduce"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#limix_inference.mean.SumMean.value_reduce" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sum mean function evaluated at <cite>(f_0, f_1, ...)</cite>.</p>
+</dd></dl>
+
+</dd></dl>
 
 </div>
 

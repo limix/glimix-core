@@ -23,7 +23,7 @@ class SumCov(FunctionReduce):
         return add.reduce(values)
 
     def derivative_reduce(self, derivatives):
-        r"""Derivative over each covariance function.
+        r"""Sum of covariance function derivatives.
 
         Returns:
             :math:`f_0' + f_1' + \dots`
