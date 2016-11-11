@@ -4,9 +4,6 @@ Generalized Linear Mixed Models
 
 Example:
 
-
-    import numpy as np
-
 .. doctest::
 
     >>> from limix_inference.random import bernoulli_sample

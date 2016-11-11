@@ -28,7 +28,7 @@ def bernoulli_sample(offset,
                      causal_variants=None,
                      causal_variance=0,
                      random_state=None):
-
+    """Bernoulli likelihood sampling."""
     link = LogitLink()
     mean, cov = _mean_cov(offset, G, heritability, causal_variants,
                           causal_variance, random_state)
@@ -45,7 +45,7 @@ def binomial_sample(ntrials,
                     causal_variants=None,
                     causal_variance=0,
                     random_state=None):
-
+    """Binomial likelihood sampling."""
     link = LogitLink()
     mean, cov = _mean_cov(offset, G, heritability, causal_variants,
                           causal_variance, random_state)
@@ -61,7 +61,7 @@ def poisson_sample(offset,
                    causal_variants=None,
                    causal_variance=0,
                    random_state=None):
-
+    """Poisson likelihood sampling."""
     mean, cov = _mean_cov(offset, G, heritability, causal_variants,
                           causal_variance, random_state)
     link = LogLink()
