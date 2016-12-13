@@ -5,6 +5,11 @@ import sys
 
 from setuptools import find_packages, setup
 
+try:
+    import pypandoc
+    long_description = pypandoc.convert('README.md', 'rst')
+except(IOError, ImportError):
+    long_description = open('README.md').read()
 
 def setup_package():
     src_path = os.path.dirname(os.path.abspath(sys.argv[0]))
@@ -18,13 +23,12 @@ def setup_package():
     setup_requires = ['cffi>=1.7', 'six'] + pytest_runner
     install_requires = [
         'pytest>=2.9', 'scipy>=0.17', 'numpy>=1.10', 'cffi>=1.7',
-        'limix_math>=1.1.8', 'optimix>=1.0.12', 'cachetools>=2.0',
-        'progressbar2>=3.10'
+        'numpy-sugar', 'optimix>=1.1.1', 'cachetools>=2.0'
     ]
     tests_require = ['pytest']
 
     metadata = dict(
-        name='limix_inference',
+        name='limix-inference',
         version='1.0.1',
         maintainer="Limix Developers",
         maintainer_email="horta@ebi.ac.uk",
@@ -35,17 +39,7 @@ def setup_package():
         install_requires=install_requires,
         setup_requires=setup_requires,
         tests_require=tests_require,
-        include_package_data=True,
-        cffi_modules=['liknorm_build.py:liknorm'])
-
-    try:
-        from distutils.command.bdist_conda import CondaDistribution
-    except ImportError:
-        pass
-    else:
-        metadata['distclass'] = CondaDistribution
-        metadata['conda_buildnum'] = 1
-        metadata['conda_features'] = ['mkl']
+        include_package_data=True)
 
     try:
         setup(**metadata)

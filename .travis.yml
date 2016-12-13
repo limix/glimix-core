@@ -43,14 +43,3 @@ script:
 - popd
 notifications:
   email: false
-branches:
-  only:
-  - master
-deploy:
-  provider: pypi
-  user: dhorta
-  password:
-    secure: h7YjlGpmltbpuWUrdNpxcut/Er7ZcBOWoHaE45QSNgR1ZGJFgdduYBc1u6TnvLQsVC4iUUbksMEfyR+1R7Fywda48B16aSC09BTgi/MT8vfNfojlolxBdVeVibIVS7p1/9HdfYt7cnMWRWM3SyhGmO0Wu8d2q85aek6Fy0dqZ47NpfgInNvYEFZYKiM+O+S4fHgcjOOiKRXrJPHN9E1gCWBw2gD6yBsnX+yFliF7AdmNHrYlriVnu/YbsFokWIkPUbinaP4H1n/sqAtsFy12VCU6GegBlFjK/QFRJPwEYNDf1jYJuPk0Tolj9Df6beA+4lnZBWxfqP66zn+tHCWwqamNLZdQKLXUaTsEdkmnVmxrJSIOgScFGm+/fNlURLdZXcmSeQKBRYydB1xKFYfIgq1xngC1uExaOCAf4VDJTgUnZ7LZcA3xOb9WeXtzlNMV+vhJN60pqFlCsVWXWj0r6RIa/05etqqiDSNQgpy9dVQveJ+K8viTRMJeomm/KbZpkB+N/swXmkbMR7D/1Tupc/jjrOgpena56xYTzZc3yvp/m6F1rmWF90cJk9OucA3YixFlQ2fnppLtSgkEVKCjLxwinvJCISB40qIICvtgM5ZZlyxcPWg2PIxOSHlJnwVGZvHMCgg3neWx2SzNDiEmYEU6imuGZr3Dc0fAShGzAJU=
-  on:
-    distributions: sdist bdist_wheel
-    repo: Horta/limix-inference
