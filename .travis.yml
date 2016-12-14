@@ -22,15 +22,17 @@ before_script:
   - sudo apt-get install -qq -y clang-3.8 zlib1g-dev libbz2-dev || true
   - if [ "${TRAVIS_PYTHON_VERSION}" == "2.7" ]; then pip install enum34; fi
   - sudo apt-get update -y || true
+  - export CXX="clang++-3.8"
   - git clone https://github.com/numba/llvmlite.git --depth 1
   - pushd llvmlite
   - python setup.py install
   - popd
 script:
-- python setup.py sdist
-- pip install dist/`ls dist | grep -i -E '\.(gz)$' | head -1`
-- pushd /
-- python -c "import limix_inference; limix_inference.test()"
-- popd
+  - export CXX="clang++-3.8"
+  - python setup.py sdist
+  - pip install dist/`ls dist | grep -i -E '\.(gz)$' | head -1`
+  - pushd /
+  - python -c "import limix_inference; limix_inference.test()"
+  - popd
 notifications:
   email: false
