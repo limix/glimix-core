@@ -8,7 +8,7 @@ from setuptools import find_packages, setup
 try:
     import pypandoc
     long_description = pypandoc.convert('README.md', 'rst')
-except(IOError, ImportError):
+except(OSError, IOError, ImportError):
     long_description = open('README.md').read()
 
 def setup_package():
@@ -22,14 +22,14 @@ def setup_package():
 
     setup_requires = ['cffi>=1.7', 'six'] + pytest_runner
     install_requires = [
-        'pytest>=2.9', 'scipy>=0.17', 'numpy>=1.10',
-        'numpy-sugar', 'optimix>=1.1.1', 'cachetools>=2.0'
+        'pytest>=2.9', 'scipy', 'numpy',
+        'numpy-sugar', 'optimix', 'cachetools>=2.0'
     ]
     tests_require = ['pytest']
 
     metadata = dict(
         name='limix-inference',
-        version='1.0.2dev0',
+        version='1.0.2dev1',
         maintainer="Limix Developers",
         maintainer_email="horta@ebi.ac.uk",
         license="MIT",
@@ -39,7 +39,15 @@ def setup_package():
         install_requires=install_requires,
         setup_requires=setup_requires,
         tests_require=tests_require,
-        include_package_data=True)
+        include_package_data=True,
+        classifiers=[
+            "Development Status :: 5 - Production/Stable",
+            "Intended Audience :: Developers",
+            "License :: OSI Approved :: MIT License",
+            "Programming Language :: Python :: 2.7",
+            "Programming Language :: Python :: 3.5",
+            "Operating System :: OS Independent",
+        ])
 
     try:
         setup(**metadata)
