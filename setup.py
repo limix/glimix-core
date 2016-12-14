@@ -8,8 +8,9 @@ from setuptools import find_packages, setup
 try:
     import pypandoc
     long_description = pypandoc.convert('README.md', 'rst')
-except(OSError, IOError, ImportError):
+except (OSError, IOError, ImportError):
     long_description = open('README.md').read()
+
 
 def setup_package():
     src_path = os.path.dirname(os.path.abspath(sys.argv[0]))
@@ -22,17 +23,19 @@ def setup_package():
 
     setup_requires = ['cffi>=1.7', 'six'] + pytest_runner
     install_requires = [
-        'pytest>=2.9', 'scipy', 'numpy',
-        'numpy-sugar', 'optimix', 'cachetools>=2.0'
+        'pytest>=2.9', 'scipy', 'numpy', 'numpy-sugar', 'optimix',
+        'cachetools>=2.0'
     ]
     tests_require = ['pytest']
 
     metadata = dict(
         name='limix-inference',
-        version='1.0.2dev1',
+        version='1.0.2dev2',
         maintainer="Limix Developers",
         maintainer_email="horta@ebi.ac.uk",
         license="MIT",
+        description="Fast inference for Generalized Linear Mixed Models.",
+        long_description=long_description,
         url='https://github.com/glimix/limix-inference',
         packages=find_packages(),
         zip_safe=False,
