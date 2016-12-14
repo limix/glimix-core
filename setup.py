@@ -22,7 +22,7 @@ def setup_package():
 
     setup_requires = ['cffi>=1.7', 'six'] + pytest_runner
     install_requires = [
-        'pytest>=2.9', 'scipy>=0.17', 'numpy>=1.10', 'cffi>=1.7',
+        'pytest>=2.9', 'scipy>=0.17', 'numpy>=1.10',
         'numpy-sugar', 'optimix>=1.1.1', 'cachetools>=2.0'
     ]
     tests_require = ['pytest']
