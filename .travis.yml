@@ -1,6 +1,8 @@
 language: python
 sudo: required
 dist: trusty
+compiler: clang-3.8
+env: LLVM_VERSION="3.8" CXX="clang++-3.8" LLVM_CONFIG="llvm-config-3.8" LD_LIBRARY_PATH="$HOME/liknorm/lib:$LD_LIBRARY_PATH"
 git:
   depth: 5
 before_install:
@@ -13,12 +15,8 @@ matrix:
   include:
   - os: linux
     python: '2.7'
-    compiler: clang-3.8
-    env: LLVM_VERSION="3.8" CXX="clang++-3.8" LLVM_CONFIG="llvm-config-3.8"
   - os: linux
     python: '3.5'
-    compiler: clang-3.8
-    env: LLVM_VERSION="3.8" CXX="clang++-3.8" LLVM_CONFIG="llvm-config-3.8"
 install:
 - mkdir $HOME/liknorm
 - wget https://github.com/glimix/liknorm/archive/v1.2.0.tar.gz
@@ -29,7 +27,6 @@ install:
 script:
 - export C_INCLUDE_PATH=$HOME/liknorm/include:$C_INCLUDE_PATH
 - export CPLUS_INCLUDE_PATH=$HOME/liknorm/include:$CPLUS_INCLUDE_PATH
-- export LD_LIBRARY_PATH=$HOME/liknorm/lib:$LD_LIBRARY_PATH
 - if [ "${TRAVIS_PYTHON_VERSION}" == "2.7" ]; then pip install enum34; fi
 - pip install pypandoc
 - git clone https://github.com/numba/llvmlite.git --depth 1
