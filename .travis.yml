@@ -1,7 +1,6 @@
 language: python
 sudo: required
 dist: trusty
-compiler: clang-3.8
 env: LLVM_VERSION="3.8" CXX="clang++-3.8" LLVM_CONFIG="llvm-config-3.8" LD_LIBRARY_PATH="$HOME/liknorm/lib:$LD_LIBRARY_PATH"
 git:
   depth: 5
@@ -15,8 +14,12 @@ matrix:
   include:
   - os: linux
     python: '2.7'
+    compiler: clang-3.8
+    env: LLVM_VERSION="3.8" CC="clang-3.8" CXX="clang++-3.8" LLVM_CONFIG="llvm-config-3.8"
   - os: linux
     python: '3.5'
+    compiler: clang-3.8
+    env: LLVM_VERSION="3.8" CC="clang-3.8" CXX="clang++-3.8" LLVM_CONFIG="llvm-config-3.8"
 install:
 - mkdir $HOME/liknorm
 - wget https://github.com/glimix/liknorm/archive/v1.2.0.tar.gz
@@ -49,6 +52,6 @@ deploy:
   password:
     secure: r2RcXyoga4bMjmaj7CgOKMXtOAh2Azaz/Jtesk1/Kn28satpVyd1UWeeqOcK93m1TE4AGrQXjoEaxu0XqzNtGJ1m98eUybEvJy0MirxgQ30FfxUZVYVaa68/IbOWMz8UO9MSPVWYRwZoPnywsD4WHmF8s8rs9LT2p+kQQFaHm4uaSWyuW426DAluBaGwtSziV/q3fOOIiFOngAlztjA2cMvMpvcSa/l/mJlk+BvDVGC8yPrAj2lH30BAo4pxcbmxaOgtCTejC743zVRVyvyEbjicuTRIH46pztlzjIxR/Z+1pddzQQ/Ev7mJCUaNFwSycvJWWRmQvCVz7XJ9A+RuQxlLjs0tDeFV1HZ+3gJO2osASi/RJ9MidnmJrpCuMnDabGmmt5Rr00ubbObh5eHUCsRwirKexPfZLpyw6KqxU5JNt3e45JiWcqvFwR994916Ms9ydKDQ4h4FWc93U6SLei7vvweTiEeCKETGXaID4PCTQVC3AWJgZpIrfgA+SgW5cIOgLi38ECdc5lkPJ0wg6fM/YyLFgfJWS7Zlq68t5CPCBq7WrOw0fS/zOz0mnvO/9mjygY1F0RlZugQcWGhHj2B6nxTnV01ljKMlRCK7Rsfqss8F3rRMmw7p2OjgPF0ua/38nErWup/2HU3Mhm4Aj4d3fXYQBMYVNVeSLyfdx9A=
   on:
-    distributions: sdist bdist_wheel
+    distributions: sdist
     repo: glimix/limix-inference
     branch: liknorm
