@@ -1,13 +1,9 @@
 language: python
+sudo: required
+dist: trusty
 addons:
   apt:
     packages:
-    - libatlas-dev
-    - libatlas-base-dev
-    - liblapack-dev
-    - gfortran
-    - libgmp-dev
-    - libmpfr-dev
     - ccache
 cache:
   directories:
@@ -15,19 +11,17 @@ cache:
 matrix:
   include:
   - os: linux
-    sudo: false
-    dist: trusty
     python: '2.7'
   - os: linux
-    sudo: false
-    dist: trusty
     python: '3.4'
   - os: linux
-    sudo: false
-    dist: trusty
     python: '3.5'
 before_script:
+  - sudo add-apt-repository -y 'deb http://llvm.org/apt/trusty/ llvm-toolchain-trusty-3.8 main' || true
+  - wget -O - http://llvm.org/apt/llvm-snapshot.gpg.key | sudo apt-key add - || true
+  - sudo apt-get install -qq -y clang-3.8 zlib1g-dev libbz2-dev || true
   - if [ "${TRAVIS_PYTHON_VERSION}" == "2.7" ]; then pip install enum34; fi
+  - sudo apt-get update -y || true
   - git clone https://github.com/numba/llvmlite.git --depth 1
   - pushd llvmlite
   - python setup.py install
