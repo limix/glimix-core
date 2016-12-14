@@ -1,4 +1,14 @@
 language: python
+addons:
+  apt:
+    packages:
+    - libatlas-dev
+    - libatlas-base-dev
+    - liblapack-dev
+    - gfortran
+    - libgmp-dev
+    - libmpfr-dev
+    - ccache
 matrix:
   include:
   - os: linux
