@@ -9,6 +9,9 @@ addons:
     - libgmp-dev
     - libmpfr-dev
     - ccache
+cache:
+  directories:
+    - $HOME/.ccache
 matrix:
   include:
   - os: linux
@@ -23,6 +26,11 @@ matrix:
     sudo: false
     dist: trusty
     python: '3.5'
+before_script:
+  - git clone https://github.com/numba/llvmlite.git --depth 1
+  - pushd llvmlite
+  - python setup.py install
+  - popd
 script:
 - python setup.py sdist
 - pip install dist/`ls dist | grep -i -E '\.(gz)$' | head -1`
