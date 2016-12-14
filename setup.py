@@ -24,7 +24,7 @@ def setup_package():
     setup_requires = ['cffi>=1.7', 'six'] + pytest_runner
     install_requires = [
         'pytest>=2.9', 'scipy', 'numpy', 'numpy-sugar', 'optimix',
-        'cachetools>=2.0'
+        'cachetools>=2.0', 'cffi>=1.7'
     ]
     tests_require = ['pytest']
 
@@ -50,7 +50,9 @@ def setup_package():
             "Programming Language :: Python :: 2.7",
             "Programming Language :: Python :: 3.5",
             "Operating System :: OS Independent",
-        ])
+        ],
+        cffi_modules=["limix_inference/_liknorm_build.py:ffibuilder"],
+    )
 
     try:
         setup(**metadata)

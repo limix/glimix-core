@@ -2,7 +2,7 @@ from cffi import FFI
 
 ffibuilder = FFI()
 
-ffibuilder.set_source("_arr_liknorm",
+ffibuilder.set_source("limix_inference._liknorm",
 r"""
     #include "liknorm/liknorm.h"
 
@@ -18,22 +18,25 @@ r"""
         GEOMETRIC
     };
 
-    void set_lik[] = {liknorm_set_bernoulli,
-                      liknorm_set_binomial,
-                      liknorm_set_poisson,
-                      liknorm_set_exponential,
-                      liknorm_set_gamma,
-                      liknorm_set_geometric};
+    typedef void lik1d(LikNormMachine*, double);
 
-    void apply1d(enum Lik lik, double *x, double *tau, double *eta,
+    void* set_lik[] = {liknorm_set_bernoulli,
+                       liknorm_set_binomial,
+                       liknorm_set_poisson,
+                       liknorm_set_exponential,
+                       liknorm_set_gamma,
+                       liknorm_set_geometric};
+
+    void apply1d(LikNormMachine *machine,
+                 enum Lik lik, double *x, double *tau, double *eta,
                  size_t size, double *log_zeroth, double *mean,
                  double *variance)
     {
         size_t i;
         for (i = 0; i < size; ++i)
         {
-            set_lik[lik](machine, x[i]);
-            set_prior(machine, tau[i], eta[i]);
+            ((lik1d*) set_lik[lik])(machine, x[i]);
+            liknorm_set_prior(machine, tau[i], eta[i]);
             liknorm_integrate(machine, log_zeroth+i, mean+i, variance+i);
         }
     }
