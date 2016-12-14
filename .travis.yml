@@ -19,6 +19,12 @@ matrix:
     python: '3.5'
     compiler: clang-3.8
     env: LLVM_VERSION="3.8" CXX="clang++-3.8" LLVM_CONFIG="llvm-config-3.8"
+install:
+- wget https://github.com/glimix/liknorm/archive/v1.2.0.tar.gz
+- tar xzf v1.2.0.tar.gz && mkdir liknorm-1.2.0/build
+- pushd liknorm-1.2.0/build
+- cmake .. && make && make install
+- popd && rm -rf liknorm-1.2.0/ && rm v1.2.0.tar.gz
 script:
 - if [ "${TRAVIS_PYTHON_VERSION}" == "2.7" ]; then pip install enum34; fi
 - pip install pypandoc
@@ -29,11 +35,6 @@ script:
 - python -c "from pypandoc import download_pandoc as dp; dp(targetfolder='~/bin/');"
 - export PATH=~/bin:$PATH
 - "~/bin/pandoc -v"
-- wget https://github.com/glimix/liknorm/archive/v1.2.0.tar.gz
-- tar xzf v1.2.0.tar.gz && mkdir liknorm-1.2.0/build
-- pushd liknorm-1.2.0/build
-- cmake .. && make && make install
-- popd && rm -rf liknorm-1.2.0/ && rm v1.2.0.tar.gz
 - python setup.py sdist
 - pip install dist/`ls dist | grep -i -E '\.(gz)$' | head -1`
 - pushd /
