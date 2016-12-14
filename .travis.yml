@@ -20,12 +20,16 @@ matrix:
     compiler: clang-3.8
     env: LLVM_VERSION="3.8" CXX="clang++-3.8" LLVM_CONFIG="llvm-config-3.8"
 install:
+- mkdir $HOME/liknorm
 - wget https://github.com/glimix/liknorm/archive/v1.2.0.tar.gz
 - tar xzf v1.2.0.tar.gz && mkdir liknorm-1.2.0/build
 - pushd liknorm-1.2.0/build
-- cmake .. && make && make install
+- cmake -DCMAKE_INSTALL_PREFIX=$HOME/liknorm .. && make && make install
 - popd && rm -rf liknorm-1.2.0/ && rm v1.2.0.tar.gz
 script:
+- export C_INCLUDE_PATH=$HOME/liknorm/include:$C_INCLUDE_PATH
+- export CPLUS_INCLUDE_PATH=$HOME/liknorm/include:$CPLUS_INCLUDE_PATH
+- export LD_LIBRARY_PATH=$HOME/liknorm/lib:$LD_LIBRARY_PATH
 - if [ "${TRAVIS_PYTHON_VERSION}" == "2.7" ]; then pip install enum34; fi
 - pip install pypandoc
 - git clone https://github.com/numba/llvmlite.git --depth 1
