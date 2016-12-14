@@ -29,11 +29,11 @@ def setup_package():
 
     metadata = dict(
         name='limix-inference',
-        version='1.0.1',
+        version='1.0.2dev0',
         maintainer="Limix Developers",
         maintainer_email="horta@ebi.ac.uk",
         license="MIT",
-        url='https://github.com/Horta/limix-inference',
+        url='https://github.com/glimix/limix-inference',
         packages=find_packages(),
         zip_safe=False,
         install_requires=install_requires,

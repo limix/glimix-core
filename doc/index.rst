@@ -3,7 +3,7 @@ Limix-inference's documentation
 
 You can get the source and open issues `on Github.`_
 
-.. _on Github.: https://github.com/Horta/limix-inference
+.. _on Github.: https://github.com/glimix/limix-inference
 
 .. toctree::
     :caption: Table of contents
