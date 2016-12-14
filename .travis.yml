@@ -27,6 +27,7 @@ matrix:
     dist: trusty
     python: '3.5'
 before_script:
+  - if [ "${TRAVIS_PYTHON_VERSION}" == "2.7" ]; then pip install enum34; fi
   - git clone https://github.com/numba/llvmlite.git --depth 1
   - pushd llvmlite
   - python setup.py install
