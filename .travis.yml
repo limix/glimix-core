@@ -1,42 +1,44 @@
 language: python
 sudo: required
 dist: trusty
+git:
+  depth: 5
 before_install:
-  - sudo add-apt-repository -y 'deb http://llvm.org/apt/trusty/ llvm-toolchain-trusty-3.8 main' || true
-  - wget -O - http://llvm.org/apt/llvm-snapshot.gpg.key | sudo apt-key add - || true
-  - sudo apt-get update -y || true
-  - sudo apt-get install -qq -y clang-3.8 zlib1g-dev libbz2-dev || true
-addons:
-  apt:
-    packages:
-    - ccache
-cache:
-  directories:
-    - $HOME/.ccache
+- sudo add-apt-repository -y 'deb http://llvm.org/apt/trusty/ llvm-toolchain-trusty-3.8
+  main' || true
+- wget -O - http://llvm.org/apt/llvm-snapshot.gpg.key | sudo apt-key add - || true
+- sudo apt-get update -y || true
+- sudo apt-get install -qq -y clang-3.8 zlib1g-dev libbz2-dev || true
 matrix:
   include:
   - os: linux
-    compiler: clang-3.8
-    install: export CXX="clang++-3.8"
     python: '2.7'
-  - os: linux
     compiler: clang-3.8
-    install: export CXX="clang++-3.8"
-    python: '3.4'
+    env: LLVM_VERSION="3.8" CXX="clang++-3.8" LLVM_CONFIG="llvm-config-3.8"
   - os: linux
-    compiler: clang-3.8
-    install: export CXX="clang++-3.8"
     python: '3.5'
+    compiler: clang-3.8
+    env: LLVM_VERSION="3.8" CXX="clang++-3.8" LLVM_CONFIG="llvm-config-3.8"
 script:
-  - if [ "${TRAVIS_PYTHON_VERSION}" == "2.7" ]; then pip install enum34; fi
-  - git clone https://github.com/numba/llvmlite.git --depth 1
-  - pushd llvmlite
-  - python setup.py install
-  - popd
-  - python setup.py sdist
-  - pip install dist/`ls dist | grep -i -E '\.(gz)$' | head -1`
-  - pushd /
-  - python -c "import limix_inference; limix_inference.test()"
-  - popd
+- if [ "${TRAVIS_PYTHON_VERSION}" == "2.7" ]; then pip install enum34; fi
+- pip install pypandoc
+- git clone https://github.com/numba/llvmlite.git --depth 1
+- pushd llvmlite
+- CXX_FLTO_FLAGS= LD_FLTO_FLAGS= python setup.py install
+- popd
+- python -c "from pypandoc import download_pandoc as dp; dp(targetfolder='~/bin/');"
+- export PATH=~/bin:$PATH
+- "~/bin/pandoc -v"
+- python setup.py sdist
+- pip install dist/`ls dist | grep -i -E '\.(gz)$' | head -1`
+- pushd /
+- python -c "import limix_inference; limix_inference.test()"
+- popd
 notifications:
   email: false
+deploy:
+  provider: pypi
+  user: dhorta
+  on:
+    distributions: sdist bdist_wheel
+    repo: glimix/limix-inference
