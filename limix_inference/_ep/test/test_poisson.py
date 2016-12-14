@@ -4,7 +4,7 @@ from numpy import array, dot, ones, sqrt, zeros, exp
 from numpy.random import RandomState
 from numpy.testing import assert_almost_equal
 
-from limix_math import economic_qs_linear
+from numpy_sugar.linalg import economic_qs_linear
 from limix_inference._ep import ExpFamEP
 from limix_inference.lik import PoissonProdLik
 from limix_inference.link import LogLink

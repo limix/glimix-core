@@ -18,12 +18,12 @@ from scipy.linalg import cho_factor
 from scipy.optimize import fmin_tnc
 from numpy.linalg import LinAlgError
 
-from limix_math import is_all_finite
-from limix_math import (cho_solve, ddot, dotd, economic_svd, solve, sum2diag,
+from numpy_sugar import is_all_finite
+from numpy_sugar.linalg import (cho_solve, ddot, dotd, economic_svd, solve, sum2diag,
                         trace2)
 
 from ._conditioning import make_sure_reasonable_conditioning
-from limix_math import epsilon
+from numpy_sugar import epsilon
 
 from ._fixed import FixedEP
 
