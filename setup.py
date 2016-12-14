@@ -51,7 +51,7 @@ def setup_package():
             "Programming Language :: Python :: 3.5",
             "Operating System :: OS Independent",
         ],
-        cffi_modules=["limix_inference/_liknorm_build.py:ffibuilder"],
+        cffi_modules=["limix_inference/liknorm/_build.py:ffibuilder"],
     )
 
     try:

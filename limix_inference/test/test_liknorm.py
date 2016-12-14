@@ -3,11 +3,11 @@ from __future__ import division
 from numpy import array, empty, set_printoptions
 from numpy.testing import assert_allclose
 
-from limix_inference._ep.liknorm import create_liknorm
+from limix_inference.liknorm import create_machine
 from limix_inference.link import LogitLink, LogLink
 from limix_inference.lik import BinomialProdLik, PoissonProdLik
 
-# 
+#
 # def test_liknorm_binomial():
 #     set_printoptions(precision=16)
 #

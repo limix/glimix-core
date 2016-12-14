@@ -2,7 +2,7 @@ from cffi import FFI
 
 ffibuilder = FFI()
 
-ffibuilder.set_source("limix_inference._liknorm",
+ffibuilder.set_source("limix_inference.liknorm._liknorm_ffi",
 r"""
     #include "liknorm/liknorm.h"
 
