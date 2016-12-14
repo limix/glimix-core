@@ -7,7 +7,7 @@ from numpy import log1p
 from scipy.special import gammaln
 import scipy.stats as st
 
-from limix_math.special import logbinom
+from numpy_sugar.special import logbinom
 
 
 class ExpFamLik(object):

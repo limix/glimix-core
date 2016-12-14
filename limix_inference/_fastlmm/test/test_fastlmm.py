@@ -4,7 +4,7 @@ import numpy as np
 from numpy import ones
 from numpy.testing import assert_allclose
 
-from limix_math import economic_qs_linear
+from numpy_sugar.linalg import economic_qs_linear
 
 from limix_inference import FastLMM
 from limix_inference.fruits import Apples

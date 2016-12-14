@@ -4,7 +4,7 @@ from numpy import exp
 from numpy import clip
 from numpy import atleast_2d
 
-from limix_math import is_all_finite
+from numpy_sugar import is_all_finite
 
 from optimix import maximize_scalar
 from optimix import Function

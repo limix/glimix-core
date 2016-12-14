@@ -2,7 +2,7 @@ from __future__ import division
 
 from numpy import log
 from numpy import exp
-from limix_math.special import (normal_cdf, normal_icdf)
+from numpy_sugar.special import (normal_cdf, normal_icdf)
 
 
 class Link(object):

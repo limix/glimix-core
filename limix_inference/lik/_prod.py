@@ -1,6 +1,6 @@
 from __future__ import division
 
-from limix_math.special import logbinom
+from numpy_sugar.special import logbinom
 
 from scipy.special import gammaln
 import scipy.stats as st

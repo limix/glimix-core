@@ -2,7 +2,7 @@ from __future__ import absolute_import as _absolute_import
 
 from ._fastlmm import FastLMM
 from ._slowlmm import SlowLMM
-from ._ep import ExpFamEP
+# from ._ep import ExpFamEP
 from . import cov
 from . import lik
 from . import mean

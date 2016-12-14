@@ -1,9 +1,9 @@
 from __future__ import division
 
 from numpy.random import RandomState
-from limix_math import sum2diag
-from limix_math import epsilon
-from limix_math import multivariate_normal
+from numpy_sugar.linalg import sum2diag
+from numpy_sugar import epsilon
+from numpy_sugar.random import multivariate_normal
 
 
 class GLMMSampler(object):
