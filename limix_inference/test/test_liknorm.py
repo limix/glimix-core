@@ -7,7 +7,7 @@ from limix_inference.liknorm import create_machine
 from limix_inference.link import LogitLink, LogLink
 from limix_inference.lik import BinomialProdLik, PoissonProdLik
 
-#
+
 # def test_liknorm_binomial():
 #     set_printoptions(precision=16)
 #
@@ -43,10 +43,10 @@ from limix_inference.lik import BinomialProdLik, PoissonProdLik
 #     ln.destroy()
 #
 #
-# def test_liknorm_poisson():
-#     set_printoptions(precision=16)
-#
-#     ln = create_liknorm('Poisson', 500)
+def test_liknorm_poisson():
+    set_printoptions(precision=16)
+
+    machine = LikNormMachine(500)
 #
 #     k = array([2, 0, 1, 66], float)
 #

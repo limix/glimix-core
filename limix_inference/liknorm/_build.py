@@ -2,12 +2,22 @@ from cffi import FFI
 
 ffibuilder = FFI()
 
+ffibuilder.cdef(r"""
+    typedef struct LikNormMachine LikNormMachine;
+    enum Lik;
+
+    LikNormMachine* create_machine(int);
+    void apply1d(LikNormMachine *, enum Lik, double *, double *, double *,
+                 size_t, double *, double *, double *);
+    void destroy_machine(LikNormMachine *);
+""")
+
 ffibuilder.set_source("limix_inference.liknorm._liknorm_ffi",
 r"""
     #include "liknorm/liknorm.h"
 
-    LikNormMachine* initialize(int n) { return liknorm_create_machine(n); }
-    void destroy(LikNormMachine *machine) { liknorm_destroy_machine(machine); }
+    LikNormMachine* create_machine(int n) { return liknorm_create_machine(n); }
+    void destroy_machine(LikNormMachine *machine) { liknorm_destroy_machine(machine); }
 
     enum Lik {
         BERNOULLI,
