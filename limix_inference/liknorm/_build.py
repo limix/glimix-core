@@ -4,20 +4,26 @@ ffibuilder = FFI()
 
 ffibuilder.cdef(r"""
     typedef struct LikNormMachine LikNormMachine;
-    enum Lik;
+    enum Lik {
+        BERNOULLI,
+        BINOMIAL,
+        POISSON,
+        EXPONENTIAL,
+        GAMMA,
+        GEOMETRIC
+    };
 
     LikNormMachine* create_machine(int);
     void apply1d(LikNormMachine *, enum Lik, double *, double *, double *,
                  size_t, double *, double *, double *);
+    void apply2d(LikNormMachine *, enum Lik, double *, double *, double *,
+                 double *, size_t, double *, double *, double *);
     void destroy_machine(LikNormMachine *);
 """)
 
 ffibuilder.set_source("limix_inference.liknorm._liknorm_ffi",
 r"""
     #include "liknorm/liknorm.h"
-
-    LikNormMachine* create_machine(int n) { return liknorm_create_machine(n); }
-    void destroy_machine(LikNormMachine *machine) { liknorm_destroy_machine(machine); }
 
     enum Lik {
         BERNOULLI,
@@ -28,7 +34,11 @@ r"""
         GEOMETRIC
     };
 
+    LikNormMachine* create_machine(int n) { return liknorm_create_machine(n); }
+    void destroy_machine(LikNormMachine *machine) { liknorm_destroy_machine(machine); }
+
     typedef void lik1d(LikNormMachine*, double);
+    typedef void lik2d(LikNormMachine*, double, double);
 
     void* set_lik[] = {liknorm_set_bernoulli,
                        liknorm_set_binomial,
@@ -46,6 +56,20 @@ r"""
         for (i = 0; i < size; ++i)
         {
             ((lik1d*) set_lik[lik])(machine, x[i]);
+            liknorm_set_prior(machine, tau[i], eta[i]);
+            liknorm_integrate(machine, log_zeroth+i, mean+i, variance+i);
+        }
+    }
+
+    void apply2d(LikNormMachine *machine,
+                 enum Lik lik, double *x0, double *x1, double *tau,
+                 double *eta, size_t size, double *log_zeroth, double *mean,
+                 double *variance)
+    {
+        size_t i;
+        for (i = 0; i < size; ++i)
+        {
+            ((lik2d*) set_lik[lik])(machine, x0[i], x1[i]);
             liknorm_set_prior(machine, tau[i], eta[i]);
             liknorm_integrate(machine, log_zeroth+i, mean+i, variance+i);
         }
