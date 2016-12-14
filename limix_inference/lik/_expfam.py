@@ -25,6 +25,10 @@ class ExpFamLik(object):
     def y(self):
         raise NotImplementedError
 
+    @property
+    def ytuple(self):
+        raise NotImplementedError
+
     def mean(self, x):
         raise NotImplementedError
 
@@ -67,6 +71,10 @@ class DeltaLik(ExpFamLik):
     def y(self):
         return self._outcome
 
+    @property
+    def ytuple(self):
+        raise (self._outcome,)
+
     def mean(self, x):
         return x
 
@@ -108,6 +116,10 @@ class BernoulliLik(ExpFamLik):
     @property
     def y(self):
         return self._outcome
+
+    @property
+    def ytuple(self):
+        raise (self._outcome,)
 
     def mean(self, x):
         return self._link.inv(x)
@@ -154,6 +166,10 @@ class BinomialLik(ExpFamLik):
     def y(self):
         return self._nsuccesses / self._ntrials
 
+    @property
+    def ytuple(self):
+        raise (self._nsuccesses, self._ntrials)
+
     def mean(self, x):
         return self._link.inv(x)
 
@@ -197,6 +213,10 @@ class PoissonLik(ExpFamLik):
     @property
     def y(self):
         return self._noccurrences
+
+    @property
+    def ytuple(self):
+        raise (self._noccurrences,)
 
     def mean(self, x):
         return self._link.inv(x)

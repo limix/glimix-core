@@ -6,7 +6,7 @@ from numpy import clip, full
 from numpy.linalg import lstsq
 
 from .._fastlmm import FastLMM
-from .liknorm import create_liknorm
+from ..liknorm import LikNormMachine
 from ._ep import EP
 
 
@@ -58,7 +58,8 @@ class ExpFamEP(EP):
         self._logger = logging.getLogger(__name__)
 
         self._Q1 = Q1
-        self._liknorm = create_liknorm(prodlik.name, 350)
+        self._machine = LikNormMachine(500)
+        self._likname = prodlik.name
 
         h2, m = _initialize(prodlik, covariates, Q0, Q1, S0)
 
@@ -73,8 +74,8 @@ class ExpFamEP(EP):
         ctau = self._cav_tau
         ceta = self._cav_eta
         lmom0 = self._loghz
-        self._liknorm.moments(self._phenotype, ceta, ctau, lmom0, self._hmu,
-                              self._hvar)
+        self._machine.moments(self._likname, self._phenotype.ytuple, ceta, ctau,
+                              lmom0, self._hmu, self._hvar)
 
     @property
     def genetic_variance(self):

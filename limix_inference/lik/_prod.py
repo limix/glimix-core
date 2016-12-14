@@ -29,6 +29,12 @@ class ProdLik(object):
         n = len(liks)
         return _aca([liks[i].y for i in range(n)])
 
+    @property
+    def ytuple(self):
+        liks = self._likelihoods
+        n = len(liks)
+        return _aca([liks[i].ytuple for i in range(n)])
+
     def mean(self, x):
         liks = self._likelihoods
         n = len(liks)
@@ -83,6 +89,10 @@ class DeltaProdLik(ProdLik):
     def y(self):
         return self._outcome
 
+    @property
+    def ytuple(self):
+        return (self._outcome,)
+
     def mean(self, x):
         return x
 
@@ -128,6 +138,10 @@ class BernoulliProdLik(ProdLik):
     @property
     def y(self):
         return self._outcome
+
+    @property
+    def ytuple(self):
+        return (self._outcome,)
 
     def mean(self, x):
         return self._link.inv(x)
@@ -187,6 +201,10 @@ class BinomialProdLik(ProdLik):
     def y(self):
         return self._nsuccesses / self._ntrials
 
+    @property
+    def ytuple(self):
+        return (self._nsuccesses, self._ntrials)
+
     def mean(self, x):
         return self._link.inv(x)
 
@@ -241,6 +259,10 @@ class PoissonProdLik(ProdLik):
     @property
     def y(self):
         return self._noccurrences
+
+    @property
+    def ytuple(self):
+        return (self._noccurrences,)
 
     def mean(self, x):
         return self._link.inv(x)
