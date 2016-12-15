@@ -1,16 +1,21 @@
 language: python
 sudo: required
 dist: trusty
-compiler: clang-3.8
 env: >
-  LLVM_VERSION="3.8" CC="clang-3.8" CXX="clang++-3.8"
-  LLVM_CONFIG="llvm-config-3.8"
   LD_LIBRARY_PATH="$HOME/liknorm/lib:$LD_LIBRARY_PATH"
   C_INCLUDE_PATH="$HOME/liknorm/include:$C_INCLUDE_PATH"
   CPLUS_INCLUDE_PATH="$HOME/liknorm/include:$CPLUS_INCLUDE_PATH"
-python:
-- 2.7
-- 3.5
+# LLVM_VERSION="3.8" CC="clang-3.8" CXX="clang++-3.8"
+# LLVM_CONFIG="llvm-config-3.8"
+# compiler: clang-3.8
+# env: >
+#   LLVM_VERSION="3.8" CC="clang-3.8" CXX="clang++-3.8"
+#   LLVM_CONFIG="llvm-config-3.8"
+#   LD_LIBRARY_PATH="$HOME/liknorm/lib:$LD_LIBRARY_PATH"
+#   C_INCLUDE_PATH="$HOME/liknorm/include:$C_INCLUDE_PATH"
+#   CPLUS_INCLUDE_PATH="$HOME/liknorm/include:$CPLUS_INCLUDE_PATH"
+python: 2.7
+# - 3.5
 git:
   depth: 5
 before_install:
@@ -29,7 +34,7 @@ install:
 - if [ "${TRAVIS_PYTHON_VERSION}" == "2.7" ]; then pip install enum34; fi
 - git clone https://github.com/numba/llvmlite.git --depth 1
 - pushd llvmlite
-- CXX_FLTO_FLAGS= LD_FLTO_FLAGS= python setup.py install
+- LLVM_VERSION="3.8" CXX="clang++-3.8" LLVM_CONFIG="llvm-config-3.8" CXX_FLTO_FLAGS= LD_FLTO_FLAGS= python setup.py install
 script:
 - pip install pypandoc -q
 - python -c "from pypandoc import download_pandoc as dp; dp(targetfolder='~/bin/');"
