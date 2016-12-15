@@ -21,8 +21,8 @@ Example
     >>> glmm.lml()
     23.3
 
-ExpFamEP
-^^^^^^^^
+Expectation propagation
+^^^^^^^^^^^^^^^^^^^^^^^
 
 .. autoclass:: ExpFamEP
     :members: covariates_variance, genetic_variance, environmental_variance,

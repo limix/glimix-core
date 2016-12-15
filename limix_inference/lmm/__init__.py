@@ -6,14 +6,14 @@ Linear Mixed Models
 - :class:`.FastLMM`
 - :class:`.SlowLMM`
 
-Linear mean
-^^^^^^^^^^^
+Fast implementation
+^^^^^^^^^^^^^^^^^^^
 
 .. autoclass:: FastLMM
   :members:
 
-Offset mean
-^^^^^^^^^^^
+General implementation
+^^^^^^^^^^^^^^^^^^^^^^
 
 .. autoclass:: SlowLMM
   :members:
