@@ -28,6 +28,10 @@ script:
 - export CFLAGS="$(python-config --cflags)"
 - echo $LDFLAGS
 - echo $CFLAGS
+- ls /opt/python/
+- ls /opt/python/2.7.12/
+- ls /opt/python/2.7.12/include/
+- find /opt/python/
 - python setup.py sdist
 # - pip install dist/`ls dist | grep -i -E '\.(gz)$' | head -1` -vvv
 # - pushd /
