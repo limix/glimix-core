@@ -30,7 +30,7 @@ def setup_package():
         'optimix',
         'cachetools>=2.0',
         'cffi>=1.7',
-        'tqdm>=4',
+        'tqdm',
     ]
     tests_require = ['pytest']
 
