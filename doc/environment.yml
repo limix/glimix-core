@@ -1,6 +1,7 @@
 name: root
 channels:
 - defaults
+- horta
 dependencies:
 - alabaster=0.7.9=py35_0
 - babel=2.3.4=py35_0
