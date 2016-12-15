@@ -1,19 +1,6 @@
 language: python
 sudo: required
 dist: trusty
-env: >
-  LD_LIBRARY_PATH="$HOME/liknorm/lib:$LD_LIBRARY_PATH"
-  C_INCLUDE_PATH="$HOME/liknorm/include:$C_INCLUDE_PATH"
-  CPLUS_INCLUDE_PATH="$HOME/liknorm/include:$CPLUS_INCLUDE_PATH"
-# LLVM_VERSION="3.8" CC="clang-3.8" CXX="clang++-3.8"
-# LLVM_CONFIG="llvm-config-3.8"
-# compiler: clang-3.8
-# env: >
-#   LLVM_VERSION="3.8" CC="clang-3.8" CXX="clang++-3.8"
-#   LLVM_CONFIG="llvm-config-3.8"
-#   LD_LIBRARY_PATH="$HOME/liknorm/lib:$LD_LIBRARY_PATH"
-#   C_INCLUDE_PATH="$HOME/liknorm/include:$C_INCLUDE_PATH"
-#   CPLUS_INCLUDE_PATH="$HOME/liknorm/include:$CPLUS_INCLUDE_PATH"
 python: 2.7
 # - 3.5
 git:
@@ -24,36 +11,23 @@ before_install:
 - wget -O - http://llvm.org/apt/llvm-snapshot.gpg.key | sudo apt-key add -
 - sudo apt-get update -y
 - sudo apt-get install -qq -y clang-3.8 zlib1g-dev libbz2-dev
+- LLVM_VERSION="3.8" CXX="clang++-3.8" LLVM_CONFIG="llvm-config-3.8" CXX_FLTO_FLAGS= LD_FLTO_FLAGS= pip install llvmlite -q
 install:
-- python-config --prefix
-- python-config --exec-prefix
-- python-config --includes
-- python-config --libs
-- python-config --cflags
-- python-config --ldflags
-- mkdir $HOME/liknorm
 - wget https://github.com/glimix/liknorm/archive/v1.2.0.tar.gz
 - tar xzf v1.2.0.tar.gz && mkdir liknorm-1.2.0/build
 - pushd liknorm-1.2.0/build
+- export LDFLAGS="$(python-config --ldflags) -L$(python-config --prefix)/lib"
+- export CFLAGS="$(python-config --cflags)"
 - cmake -DCMAKE_INSTALL_PREFIX=`python-config --prefix` .. && make && sudo make install
 - popd && rm -rf liknorm-1.2.0/ && rm v1.2.0.tar.gz
 - if [ "${TRAVIS_PYTHON_VERSION}" == "2.7" ]; then pip install enum34; fi
-# - git clone https://github.com/numba/llvmlite.git --depth 1
-# - pushd llvmlite
-# - LLVM_VERSION="3.8" CXX="clang++-3.8" LLVM_CONFIG="llvm-config-3.8" CXX_FLTO_FLAGS= LD_FLTO_FLAGS= python setup.py install
-- LLVM_VERSION="3.8" CXX="clang++-3.8" LLVM_CONFIG="llvm-config-3.8" CXX_FLTO_FLAGS= LD_FLTO_FLAGS= pip install llvmlite -q
-- LLVM_VERSION="3.8" CXX="clang++-3.8" LLVM_CONFIG="llvm-config-3.8" pip install numpy-sugar -q
 script:
 - pip install pypandoc -q
 - python -c "from pypandoc import download_pandoc as dp; dp(targetfolder='~/bin/');"
 - export PATH=~/bin:$PATH
+- export LDFLAGS="$(python-config --ldflags) -L$(python-config --prefix)/lib"
+- export CFLAGS="$(python-config --cflags)"
 - python setup.py sdist
-- python-config --prefix
-- python-config --exec-prefix
-- python-config --includes
-- python-config --libs
-- python-config --cflags
-- python-config --ldflags
 - pip install dist/`ls dist | grep -i -E '\.(gz)$' | head -1` -vvv
 # - pushd /
 # - python -c "import limix_inference; limix_inference.test()"
