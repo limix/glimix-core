@@ -2,18 +2,19 @@ language: python
 sudo: required
 dist: trusty
 python:
-  - 2.7
-  - 3.5
+- 2.7
+- 3.5
 git:
   depth: 5
 before_install:
-- sudo add-apt-repository -y 'deb http://llvm.org/apt/trusty/
-  llvm-toolchain-trusty-3.8 main'
+- sudo add-apt-repository -y 'deb http://llvm.org/apt/trusty/ llvm-toolchain-trusty-3.8
+  main'
 - wget -O - http://llvm.org/apt/llvm-snapshot.gpg.key | sudo apt-key add -
 - sudo apt-get update -y
 - sudo apt-get install -qq -y clang-3.8 zlib1g-dev libbz2-dev
 - if [ "${TRAVIS_PYTHON_VERSION}" == "2.7" ]; then pip install enum34 -q; fi
-- LLVM_VERSION="3.8" CXX="clang++-3.8" LLVM_CONFIG="llvm-config-3.8" CXX_FLTO_FLAGS= LD_FLTO_FLAGS= pip install llvmlite -q
+- LLVM_VERSION="3.8" CXX="clang++-3.8" LLVM_CONFIG="llvm-config-3.8" CXX_FLTO_FLAGS=
+  LD_FLTO_FLAGS= pip install llvmlite -q
 install:
 - wget https://github.com/glimix/liknorm/archive/v1.2.0.tar.gz
 - tar xzf v1.2.0.tar.gz && mkdir liknorm-1.2.0/build
@@ -39,7 +40,8 @@ notifications:
 deploy:
   provider: pypi
   user: dhorta
+  password:
+    secure: PbMLq/wKSX3Ex03hlN0E8bbo5ap0iQkAy+IMDNs5MG8neZZTe68uN029IscFAnp8gkAu9CTtit8f7wGri8CMCmniqJnpnnUyKz5YyQAYH2dlRskLq1Ebaz6cfMVm/EZJm8quA6wSf8SHoPquGjXFrJSoFLArw4qHr2ki9vava1IrxgkwwPnyH1iXERLgiEO+4gNAx+3qbmik1O7Ee7+53Kx8pcsaERXg/skLznW2HMgWjGUEhJ/9lY2vouKuWp8kABZEPTC6NoujxQhyprLFkhmwYZSWx+a5bjKlFs+jA1pmMak4T5ougHNlbjgrzp/EauiCaJOnbgHQt8aPCUpbZ2uVRVGDn6ld/i6GzPaTXdwmDioAHvDczyBHgXpJyx0aAkUawLOVNQMF852pL1+G+pCD03VBWOL/qLph0iRmRtAdRfSVIGaAD14grNyllQ8rEAGe3s+rBNsaesQJEjDp6aQDH1ynrG+WXUFEVlCnCzMIYz1YUPx2jWJajYPoK2dDC8rAHAwez3YEjb3+MHLqWi6KVs5yai10Ee8x+53bKWF3X5IE5M+L3pz+WDRK/yiQWyRv9x1RMAnbailb5vmlUFG7/UVkkd3EbnJu8mWEmfI6mrSffCw2rsXE5WGL72zXTPdBXy4ksf4FJvc+KBj2PcBT3C3IEwqGH6FQclx/Z6I=
   on:
-    distributions: sdist
+    distributions: sdist bdist_wheel
     repo: glimix/limix-inference
-    branch: master
