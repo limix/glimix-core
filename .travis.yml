@@ -1,7 +1,11 @@
 language: python
 sudo: required
 dist: trusty
+compiler: clang-3.8
 env: LLVM_VERSION="3.8" CXX="clang++-3.8" LLVM_CONFIG="llvm-config-3.8" LD_LIBRARY_PATH="$HOME/liknorm/lib:$LD_LIBRARY_PATH"
+python:
+- 2.5
+- 3.5
 git:
   depth: 5
 before_install:
@@ -10,17 +14,6 @@ before_install:
 - wget -O - http://llvm.org/apt/llvm-snapshot.gpg.key | sudo apt-key add - || true
 - sudo apt-get update -y || true
 - sudo apt-get install -qq -y clang-3.8 zlib1g-dev libbz2-dev || true
-
-matrix:
-  include:
-  - os: linux
-    python: '2.7'
-    compiler: clang-3.8
-    env: LLVM_VERSION="3.8" CC="clang-3.8" CXX="clang++-3.8" LLVM_CONFIG="llvm-config-3.8"
-  - os: linux
-    python: '3.5'
-    compiler: clang-3.8
-    env: LLVM_VERSION="3.8" CC="clang-3.8" CXX="clang++-3.8" LLVM_CONFIG="llvm-config-3.8"
 install:
 - mkdir $HOME/liknorm
 - wget https://github.com/glimix/liknorm/archive/v1.2.0.tar.gz
