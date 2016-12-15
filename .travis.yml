@@ -36,12 +36,13 @@ install:
 - pushd llvmlite
 - LLVM_VERSION="3.8" CXX="clang++-3.8" LLVM_CONFIG="llvm-config-3.8" CXX_FLTO_FLAGS= LD_FLTO_FLAGS= python setup.py install
 script:
-- python -m llvmlite.tests
-# - pip install pypandoc -q
-# - python -c "from pypandoc import download_pandoc as dp; dp(targetfolder='~/bin/');"
-# - export PATH=~/bin:$PATH
-# - python setup.py sdist
-# - pip install dist/`ls dist | grep -i -E '\.(gz)$' | head -1`
+- pip install pypandoc -q
+- python -c "from pypandoc import download_pandoc as dp; dp(targetfolder='~/bin/');"
+- export PATH=~/bin:$PATH
+- python setup.py sdist
+- which python
+- which pip
+- pip install dist/`ls dist | grep -i -E '\.(gz)$' | head -1`
 # - pushd /
 # - python -c "import limix_inference; limix_inference.test()"
 # - popd
