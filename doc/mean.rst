@@ -1,6 +1,2 @@
-**************
-Mean functions
-**************
-
 .. automodule:: limix_inference.mean
   :members:

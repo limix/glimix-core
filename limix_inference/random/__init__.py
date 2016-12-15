@@ -1,6 +1,7 @@
 """
-Random sample
--------------
+**************
+Random sampler
+**************
 
 - :func:`.bernoulli_sample`
 - :func:`.binomial_sample`

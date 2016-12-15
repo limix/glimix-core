@@ -1,6 +1,7 @@
 """
+********************
 Covariance functions
---------------------
+********************
 
 - :class:`.LinearCov`
 - :class:`.SumCov`

@@ -23,14 +23,20 @@ def setup_package():
 
     setup_requires = ['cffi>=1.7', 'six'] + pytest_runner
     install_requires = [
-        'pytest>=2.9', 'scipy', 'numpy', 'numpy-sugar', 'optimix',
-        'cachetools>=2.0', 'cffi>=1.7', 'tqdm>=4',
+        'pytest>=2.9',
+        'scipy',
+        'numpy',
+        'numpy-sugar',
+        'optimix',
+        'cachetools>=2.0',
+        'cffi>=1.7',
+        'tqdm>=4',
     ]
     tests_require = ['pytest']
 
     metadata = dict(
         name='limix-inference',
-        version='1.0.2rc0',
+        version='1.0.2rc1',
         maintainer="Limix Developers",
         maintainer_email="horta@ebi.ac.uk",
         license="MIT",
@@ -51,8 +57,7 @@ def setup_package():
             "Programming Language :: Python :: 3.5",
             "Operating System :: OS Independent",
         ],
-        cffi_modules=["limix_inference/liknorm/_build.py:ffibuilder"],
-    )
+        cffi_modules=["limix_inference/liknorm/_build.py:ffibuilder"], )
 
     try:
         setup(**metadata)

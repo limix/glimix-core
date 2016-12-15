@@ -1,6 +1,7 @@
 """
+**************
 Mean functions
---------------
+**************
 
 - :class:`.LinearMean`
 - :class:`.OffsetMean`
