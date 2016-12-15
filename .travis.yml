@@ -1,8 +1,9 @@
 language: python
 sudo: required
 dist: trusty
-python: 2.7
-# - 3.5
+python:
+  - 2.7
+  - 3.5
 git:
   depth: 5
 before_install:
@@ -32,19 +33,13 @@ script:
 - pip install dist/`ls dist | grep -i -E '\.(gz)$' | head -1` -q
 - pushd /
 - python -c "import limix_inference; limix_inference.test()"
-# - popd
-# notifications:
-#   email: false
-# deploy:
-#   provider: pypi
-#   user: dhorta
-#   password:
-#     secure: r2RcXyoga4bMjmaj7CgOKMXtOAh2Azaz/Jtesk1/Kn28satpVyd1UWeeqOcK93m1TE4AGrQXjoEaxu0XqzNtGJ1m98eUybEvJy0MirxgQ30FfxUZVYVaa68/IbOWMz8UO9MSPVWYRwZoPnywsD4WHmF8s8rs9LT2p+kQQFaHm4uaSWyuW426DAluBaGwtSziV/q3fOOIiFOngAlztjA2cMvMpvcSa/l/mJlk+BvDVGC8yPrAj2lH30BAo4pxcbmxaOgtCTejC743zVRVyvyEbjicuTRIH46pztlzjIxR/Z+1pddzQQ/Ev7mJCUaNFwSycvJWWRmQvCVz7XJ9A+RuQxlLjs0tDeFV1HZ+3gJO2osASi/RJ9MidnmJrpCuMnDabGmmt5Rr00ubbObh5eHUCsRwirKexPfZLpyw6KqxU5JNt3e45JiWcqvFwR994916Ms9ydKDQ4h4FWc93U6SLei7vvweTiEeCKETGXaID4PCTQVC3AWJgZpIrfgA+SgW5cIOgLi38ECdc5lkPJ0wg6fM/YyLFgfJWS7Zlq68t5CPCBq7WrOw0fS/zOz0mnvO/9mjygY1F0RlZugQcWGhHj2B6nxTnV01ljKMlRCK7Rsfqss8F3rRMmw7p2OjgPF0ua/38nErWup/2HU3Mhm4Aj4d3fXYQBMYVNVeSLyfdx9A=
-#   on:
-#     distributions: sdist
-#     repo: glimix/limix-inference
-#     branch: liknorm
-# -- Installing: /opt/python/2.7.12/lib/libliknorm.so.1.2.0
-# -- Installing: /opt/python/2.7.12/lib/libliknorm.so
-# -- Installing: /opt/python/2.7.12/include/liknorm/liknorm.h
-# -- Installing: /opt/python/2.7.12/lib/libliknorm_static.a
+- popd
+notifications:
+  email: false
+deploy:
+  provider: pypi
+  user: dhorta
+  on:
+    distributions: sdist
+    repo: glimix/limix-inference
+    branch: master
