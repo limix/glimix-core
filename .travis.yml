@@ -31,8 +31,6 @@ script:
 - export PATH=~/bin:$PATH
 - export LDFLAGS="-L$($PYTHON_CONFIG --prefix)/lib"
 - export CFLAGS="$($PYTHON_CONFIG --cflags) -I$($PYTHON_CONFIG --prefix)/include"
-- echo $LDFLAGS
-- echo $CFLAGS
 - python setup.py sdist
 - pip install dist/`ls dist | grep -i -E '\.(gz)$' | head -1` -q
 - pushd /
