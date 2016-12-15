@@ -5,8 +5,8 @@ import logging
 from numpy import clip, full
 from numpy.linalg import lstsq
 
-from .._fastlmm import FastLMM
-from ..liknorm import LikNormMachine
+from ...lmm import FastLMM
+from ...liknorm import LikNormMachine
 from ._ep import EP
 
 

@@ -27,6 +27,5 @@ ExpFamEP
     :members: covariates_variance, genetic_variance, environmental_variance,
               heritability, K, m, beta, v, delta, lml, optimize, fixed_ep
 """
-from __future__ import absolute_import
 
-from ._expfam import ExpFamEP
+from ._ep import ExpFamEP

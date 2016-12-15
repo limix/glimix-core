@@ -6,7 +6,7 @@ from numpy.testing import assert_allclose
 
 from numpy_sugar.linalg import economic_qs_linear
 
-from limix_inference import FastLMM
+from limix_inference.lmm import FastLMM
 from limix_inference.fruits import Apples
 from limix_inference.lik import DeltaProdLik
 from limix_inference.cov import LinearCov

@@ -1,8 +1,4 @@
-*******************
-Linear Mixed Models
-*******************
-
-.. automodule:: limix_inference
+.. automodule:: limix_inference.lmm
   :members:
 
   .. autoclass:: SlowLMM
