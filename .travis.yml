@@ -29,14 +29,14 @@ install:
 - wget https://github.com/glimix/liknorm/archive/v1.2.0.tar.gz
 - tar xzf v1.2.0.tar.gz && mkdir liknorm-1.2.0/build
 - pushd liknorm-1.2.0/build
-- cmake -DCMAKE_INSTALL_PREFIX=$HOME/liknorm .. && make && make install
+- cmake -DCMAKE_INSTALL_PREFIX=`python-config --prefix` .. && make && sudo make install
 - popd && rm -rf liknorm-1.2.0/ && rm v1.2.0.tar.gz
 - if [ "${TRAVIS_PYTHON_VERSION}" == "2.7" ]; then pip install enum34; fi
 # - git clone https://github.com/numba/llvmlite.git --depth 1
 # - pushd llvmlite
 # - LLVM_VERSION="3.8" CXX="clang++-3.8" LLVM_CONFIG="llvm-config-3.8" CXX_FLTO_FLAGS= LD_FLTO_FLAGS= python setup.py install
-- LLVM_VERSION="3.8" CXX="clang++-3.8" LLVM_CONFIG="llvm-config-3.8" CXX_FLTO_FLAGS= LD_FLTO_FLAGS= pip install llvmlite
-- LLVM_VERSION="3.8" CXX="clang++-3.8" LLVM_CONFIG="llvm-config-3.8" pip install numpy-sugar
+- LLVM_VERSION="3.8" CXX="clang++-3.8" LLVM_CONFIG="llvm-config-3.8" CXX_FLTO_FLAGS= LD_FLTO_FLAGS= pip install llvmlite -q
+- LLVM_VERSION="3.8" CXX="clang++-3.8" LLVM_CONFIG="llvm-config-3.8" pip install numpy-sugar -q
 script:
 - pip install pypandoc -q
 - python -c "from pypandoc import download_pandoc as dp; dp(targetfolder='~/bin/');"
