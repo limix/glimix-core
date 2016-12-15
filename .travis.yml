@@ -25,15 +25,11 @@ script:
 - python -c "from pypandoc import download_pandoc as dp; dp(targetfolder='~/bin/');"
 - export PATH=~/bin:$PATH
 - export LDFLAGS="-L$(python-config --prefix)/lib"
-- export CFLAGS="$(python-config --cflags)"
+- export CFLAGS="$(python-config --cflags) -I$(python-config --prefix)/include"
 - echo $LDFLAGS
 - echo $CFLAGS
-- ls /opt/python/
-- ls /opt/python/2.7.12/
-- ls /opt/python/2.7.12/include/
-- find /opt/python/
 - python setup.py sdist
-# - pip install dist/`ls dist | grep -i -E '\.(gz)$' | head -1` -vvv
+- pip install dist/`ls dist | grep -i -E '\.(gz)$' | head -1` -vvv
 # - pushd /
 # - python -c "import limix_inference; limix_inference.test()"
 # - popd
@@ -48,3 +44,7 @@ script:
 #     distributions: sdist
 #     repo: glimix/limix-inference
 #     branch: liknorm
+# -- Installing: /opt/python/2.7.12/lib/libliknorm.so.1.2.0
+# -- Installing: /opt/python/2.7.12/lib/libliknorm.so
+# -- Installing: /opt/python/2.7.12/include/liknorm/liknorm.h
+# -- Installing: /opt/python/2.7.12/lib/libliknorm_static.a
