@@ -1,9 +1,12 @@
 language: python
 sudo: required
 dist: trusty
-python:
-- 2.7
-- 3.5
+matrix:
+  include:
+  - python: 2.7
+    env: PYTHON_CONFIG=python2.7-config
+  - python: 3.5
+    env: PYTHON_CONFIG=python3.5-config
 git:
   depth: 5
 before_install:
@@ -19,15 +22,15 @@ install:
 - wget https://github.com/glimix/liknorm/archive/v1.2.0.tar.gz
 - tar xzf v1.2.0.tar.gz && mkdir liknorm-1.2.0/build
 - pushd liknorm-1.2.0/build
-- export LDFLAGS="-L$(python-config --prefix)/lib"
-- cmake -DCMAKE_INSTALL_PREFIX=`python-config --prefix` .. && make && sudo make install
+- export LDFLAGS="-L$($PYTHON_CONFIG --prefix)/lib"
+- cmake -DCMAKE_INSTALL_PREFIX=`$PYTHON_CONFIG --prefix` .. && make && sudo make install
 - popd && rm -rf liknorm-1.2.0/ && rm v1.2.0.tar.gz
 script:
 - pip install pypandoc -q
 - python -c "from pypandoc import download_pandoc as dp; dp(targetfolder='~/bin/');"
 - export PATH=~/bin:$PATH
-- export LDFLAGS="-L$(python-config --prefix)/lib"
-- export CFLAGS="$(python-config --cflags) -I$(python-config --prefix)/include"
+- export LDFLAGS="-L$($PYTHON_CONFIG --prefix)/lib"
+- export CFLAGS="$($PYTHON_CONFIG --cflags) -I$($PYTHON_CONFIG --prefix)/include"
 - echo $LDFLAGS
 - echo $CFLAGS
 - python setup.py sdist
