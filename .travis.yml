@@ -2,7 +2,10 @@ language: python
 sudo: required
 dist: trusty
 compiler: clang-3.8
-env: LLVM_VERSION="3.8" CC="clang-3.8" CXX="clang++-3.8" LLVM_CONFIG="llvm-config-3.8" LD_LIBRARY_PATH="$HOME/liknorm/lib:$LD_LIBRARY_PATH"
+env: >
+  LLVM_VERSION="3.8" CC="clang-3.8" CXX="clang++-3.8"
+  LLVM_CONFIG="llvm-config-3.8"
+  LD_LIBRARY_PATH="$HOME/liknorm/lib:$LD_LIBRARY_PATH"
 python:
 - 2.7
 - 3.5
@@ -25,7 +28,7 @@ script:
 - export C_INCLUDE_PATH=$HOME/liknorm/include:$C_INCLUDE_PATH
 - export CPLUS_INCLUDE_PATH=$HOME/liknorm/include:$CPLUS_INCLUDE_PATH
 - if [ "${TRAVIS_PYTHON_VERSION}" == "2.7" ]; then pip install enum34; fi
-- pip install pypandoc
+- pip install pypandoc -q
 - git clone https://github.com/numba/llvmlite.git --depth 1
 - pushd llvmlite
 - CXX_FLTO_FLAGS= LD_FLTO_FLAGS= python setup.py install
@@ -34,7 +37,7 @@ script:
 - export PATH=~/bin:$PATH
 - "~/bin/pandoc -v"
 - python setup.py sdist
-- pip install dist/`ls dist | grep -i -E '\.(gz)$' | head -1`
+- pip install dist/`ls dist | grep -i -E '\.(gz)$' | head -1` -q
 - pushd /
 - python -c "import limix_inference; limix_inference.test()"
 - popd
