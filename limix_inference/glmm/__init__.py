@@ -3,7 +3,8 @@
 Generalized Linear Mixed Models
 *******************************
 
-Example:
+Example
+^^^^^^^
 
 .. doctest::
 

@@ -14,6 +14,8 @@ from ._core import FastLMMCore
 
 
 class FastLMM(Function):
+    r"""Fast Linear Mixed Models inference based on the covariance rank."""
+
     def __init__(self, y, Q0, Q1, S0, covariates=None):
         super(FastLMM, self).__init__(logistic=Scalar(0.0))
 
