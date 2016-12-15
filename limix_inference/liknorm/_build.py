@@ -1,4 +1,6 @@
 from cffi import FFI
+from os.path import join
+from sysconfig import get_config_var
 
 ffibuilder = FFI()
 
@@ -74,7 +76,9 @@ r"""
             liknorm_integrate(machine, log_zeroth+i, mean+i, variance+i);
         }
     }
-""", libraries=['liknorm'])
+""", libraries=['liknorm'],
+     library_dirs=[join(get_config_var('prefix'), 'lib')],
+     include_dirs=[join(get_config_var('prefix'), 'include')])
 
 if __name__ == "__main__":
     ffibuilder.compile(verbose=True)
