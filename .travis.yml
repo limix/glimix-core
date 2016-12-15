@@ -11,8 +11,8 @@ before_install:
 - wget -O - http://llvm.org/apt/llvm-snapshot.gpg.key | sudo apt-key add -
 - sudo apt-get update -y
 - sudo apt-get install -qq -y clang-3.8 zlib1g-dev libbz2-dev
-- if [ "${TRAVIS_PYTHON_VERSION}" == "2.7" ]; then pip install enum34; fi
-- LLVM_VERSION="3.8" CXX="clang++-3.8" LLVM_CONFIG="llvm-config-3.8" CXX_FLTO_FLAGS= LD_FLTO_FLAGS= pip install llvmlite
+- if [ "${TRAVIS_PYTHON_VERSION}" == "2.7" ]; then pip install enum34 -q; fi
+- LLVM_VERSION="3.8" CXX="clang++-3.8" LLVM_CONFIG="llvm-config-3.8" CXX_FLTO_FLAGS= LD_FLTO_FLAGS= pip install llvmlite -q
 install:
 - wget https://github.com/glimix/liknorm/archive/v1.2.0.tar.gz
 - tar xzf v1.2.0.tar.gz && mkdir liknorm-1.2.0/build
@@ -29,7 +29,7 @@ script:
 - echo $LDFLAGS
 - echo $CFLAGS
 - python setup.py sdist
-- pip install dist/`ls dist | grep -i -E '\.(gz)$' | head -1` -vvv
+- pip install dist/`ls dist | grep -i -E '\.(gz)$' | head -1` -q
 - pushd /
 - python -c "import limix_inference; limix_inference.test()"
 # - popd

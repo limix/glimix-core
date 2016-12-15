@@ -1,6 +1,6 @@
 from __future__ import absolute_import, division, unicode_literals
 
-from progressbar import NullBar
+from tqdm import tqdm
 
 import logging
 from math import fsum
@@ -737,7 +737,7 @@ class EP(object):
 
     def optimize(self, progress=None):
         self._logger.info("Start of optimization.")
-        progress = NullBar() if progress is None else progress
+        progress = tqdm() if progress is None else progress
 
         (klass, x0, bounds) = self._start_optimizer()
 
@@ -837,7 +837,8 @@ class FunCostOverdispersion(object):
         self._ep.v = x[0]
         self._ep.delta = x[1]
         self._ep._optimize_beta()
-        self._pbar.update(self.nfev)
+        # self._pbar.update(self.nfev)
+        self._pbar.update()
         self.nfev += 1
         return (-self._ep.lml(), -self._ep._gradient_over_both())
 
@@ -852,6 +853,7 @@ class FunCost(object):
     def __call__(self, x):
         self._ep.v = x[0]
         self._ep._optimize_beta()
-        self._pbar.update(self.nfev)
+        # self._pbar.update(self.nfev)
+        self._pbar.update()
         self.nfev += 1
         return (-self._ep.lml(), -self._ep._gradient_over_v())
