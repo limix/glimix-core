@@ -21,6 +21,9 @@ An alternative way would be via pip
 pip install limix-inference
 ```
 
+Refer to [documentation](http://limix-inference.readthedocs.io/en/latest/)
+for more information.
+
 ## Running the tests
 
 After installation, you can test it
