@@ -10,6 +10,7 @@ before_install:
 - wget -O - http://llvm.org/apt/llvm-snapshot.gpg.key | sudo apt-key add - || true
 - sudo apt-get update -y || true
 - sudo apt-get install -qq -y clang-3.8 zlib1g-dev libbz2-dev || true
+
 matrix:
   include:
   - os: linux
