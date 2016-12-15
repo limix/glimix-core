@@ -11,8 +11,9 @@ before_install:
 - wget -O - http://llvm.org/apt/llvm-snapshot.gpg.key | sudo apt-key add -
 - sudo apt-get update -y
 - sudo apt-get install -qq -y clang-3.8 zlib1g-dev libbz2-dev
+- if [ "${TRAVIS_PYTHON_VERSION}" == "2.7" ]; then pip install enum34; fi
+- LLVM_VERSION="3.8" CXX="clang++-3.8" LLVM_CONFIG="llvm-config-3.8" CXX_FLTO_FLAGS= LD_FLTO_FLAGS= pip install llvmlite
 install:
-- LLVM_VERSION="3.8" CXX="clang++-3.8" LLVM_CONFIG="llvm-config-3.8" CXX_FLTO_FLAGS= LD_FLTO_FLAGS= pip install llvmlite -q
 - wget https://github.com/glimix/liknorm/archive/v1.2.0.tar.gz
 - tar xzf v1.2.0.tar.gz && mkdir liknorm-1.2.0/build
 - pushd liknorm-1.2.0/build
@@ -20,7 +21,6 @@ install:
 - export CFLAGS="$(python-config --cflags)"
 - cmake -DCMAKE_INSTALL_PREFIX=`python-config --prefix` .. && make && sudo make install
 - popd && rm -rf liknorm-1.2.0/ && rm v1.2.0.tar.gz
-- if [ "${TRAVIS_PYTHON_VERSION}" == "2.7" ]; then pip install enum34; fi
 script:
 - pip install pypandoc -q
 - python -c "from pypandoc import download_pandoc as dp; dp(targetfolder='~/bin/');"
