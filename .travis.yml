@@ -25,6 +25,12 @@ before_install:
 - sudo apt-get update -y
 - sudo apt-get install -qq -y clang-3.8 zlib1g-dev libbz2-dev
 install:
+- python-config --prefix
+- python-config --exec-prefix
+- python-config --includes
+- python-config --libs
+- python-config --cflags
+- python-config --ldflags
 - mkdir $HOME/liknorm
 - wget https://github.com/glimix/liknorm/archive/v1.2.0.tar.gz
 - tar xzf v1.2.0.tar.gz && mkdir liknorm-1.2.0/build
@@ -42,6 +48,12 @@ script:
 - python -c "from pypandoc import download_pandoc as dp; dp(targetfolder='~/bin/');"
 - export PATH=~/bin:$PATH
 - python setup.py sdist
+- python-config --prefix
+- python-config --exec-prefix
+- python-config --includes
+- python-config --libs
+- python-config --cflags
+- python-config --ldflags
 - pip install dist/`ls dist | grep -i -E '\.(gz)$' | head -1` -vvv
 # - pushd /
 # - python -c "import limix_inference; limix_inference.test()"
