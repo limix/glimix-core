@@ -27,7 +27,7 @@ from numpy_sugar import epsilon
 
 from ._fixed import FixedEP
 
-MAX_EP_ITER = 10
+MAX_EP_ITER = 30
 EP_EPS = 1e-5
 
 _magic_numbers = dict(xtol=1e-5, rescale=10, pgtol=1e-5, ftol=1e-5, disp=0)
@@ -746,7 +746,7 @@ class EP(object):
 
     def optimize(self, progress=None):
         self._logger.info("Start of optimization.")
-        progress = tqdm() if progress is None else progress
+        progress = tqdm(desc='EP') if progress is None else progress
 
         (klass, x0, bounds) = self._start_optimizer()
 
