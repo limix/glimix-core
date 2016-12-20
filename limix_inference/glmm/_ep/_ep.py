@@ -709,10 +709,19 @@ class EP(object):
 
         step = inf
         i = 0
-        while step > 1e-7 and i < 5:
+        alpha = 1.0
+        while step > epsilon.small:
             ptbeta[:] = self._tbeta
             self._optimal_tbeta()
-            step = sum((self._tbeta - ptbeta)**2)
+
+            self._tbeta = alpha * (self._tbeta - ptbeta) + ptbeta
+
+            nstep = sum((self._tbeta - ptbeta)**2)
+
+            if nstep > step:
+                alpha /= 10
+            step = nstep
+
             i += 1
 
     def _start_optimizer(self):

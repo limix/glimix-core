@@ -79,8 +79,8 @@ def test_bernoulli_optimize():
     ep = ExpFamEP(lik, M, Q[0], Q[1], S0)
     ep.optimize()
     assert_allclose(ep.lml(), -67.68161933698035, rtol=1e-5)
-    assert_allclose(ep.heritability, 0.9324343813261352, rtol=1e-5)
-    assert_allclose(ep.beta[0], -0.160768510926853, rtol=1e-5)
+    assert_allclose(ep.heritability, 0.952635979147327, rtol=1e-5)
+    assert_allclose(ep.beta[0], -0.15856727011101007, rtol=1e-5)
 
 
 if __name__ == '__main__':
