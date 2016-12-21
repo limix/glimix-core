@@ -26,9 +26,9 @@ script:
   - python setup.py sdist
   - >
     if [ "${NUMBA}" == "true" ]; then
-      pip install dist/`ls dist | grep -i -E '\.(gz)$' | head -1`[numba];
+      pip install dist/`ls dist | grep -i -E '\.(gz)$' | head -1`[numba] -vvv;
     else
-      pip install dist/`ls dist | grep -i -E '\.(gz)$' | head -1`;
+      pip install dist/`ls dist | grep -i -E '\.(gz)$' | head -1` -vvv;
     fi
   - pushd /
   - python -c "import sys; import limix_inference; sys.exit(limix_inference.test())"
