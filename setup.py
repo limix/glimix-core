@@ -21,22 +21,20 @@ def setup_package():
     needs_pytest = {'pytest', 'test', 'ptr'}.intersection(sys.argv)
     pytest_runner = ['pytest-runner>=2.9'] if needs_pytest else []
 
-    setup_requires = ['cffi>=1.7'] + pytest_runner
+    setup_requires = [] + pytest_runner
     install_requires = [
-        'pytest>=2.9',
         'scipy',
         'numpy',
         'numpy-sugar',
         'optimix',
         'cachetools>=2.0',
-        'cffi>=1.7',
-        'tqdm',
+        'tqdm>=4',
     ]
     tests_require = ['pytest']
 
     metadata = dict(
         name='limix-inference',
-        version='1.0.5.dev0',
+        version='1.0.5.dev1',
         maintainer="Limix Developers",
         maintainer_email="horta@ebi.ac.uk",
         license="MIT",
