@@ -16,10 +16,10 @@ ffibuilder.cdef(r"""
     };
 
     LikNormMachine* create_machine(int);
-    void apply1d(LikNormMachine *, enum Lik, double *, double *, double *,
-                 size_t, double *, double *, double *);
-    void apply2d(LikNormMachine *, enum Lik, double *, double *, double *,
-                 double *, size_t, double *, double *, double *);
+    void apply1d(LikNormMachine *, enum Lik, size_t, double *, double *,
+                 double *, double *, double *, double *);
+    void apply2d(LikNormMachine *, enum Lik, size_t, double *, double *,
+                 double *, double *, double *, double *, double *);
     void destroy_machine(LikNormMachine *);
 """)
 
@@ -50,8 +50,8 @@ r"""
                        liknorm_set_geometric};
 
     void apply1d(LikNormMachine *machine,
-                 enum Lik lik, double *x, double *tau, double *eta,
-                 size_t size, double *log_zeroth, double *mean,
+                 enum Lik lik, size_t size, double *x, double *tau, double *eta,
+                 double *log_zeroth, double *mean,
                  double *variance)
     {
         size_t i;
@@ -64,8 +64,8 @@ r"""
     }
 
     void apply2d(LikNormMachine *machine,
-                 enum Lik lik, double *x0, double *x1, double *tau,
-                 double *eta, size_t size, double *log_zeroth, double *mean,
+                 enum Lik lik, size_t size, double *x0, double *x1, double *tau,
+                 double *eta, double *log_zeroth, double *mean,
                  double *variance)
     {
         size_t i;

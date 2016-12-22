@@ -24,17 +24,22 @@ class LikNormMachine(object):
 
         size = len(log_zeroth)
 
-        tau = ptr(tau)
-        eta = ptr(eta)
-        log_zeroth = ptr(log_zeroth)
-        mean = ptr(mean)
-        variance = ptr(variance)
+        # tau = ptr(tau)
+        # eta = ptr(eta)
+        # log_zeroth = ptr(log_zeroth)
+        # mean = ptr(mean)
+        # variance = ptr(variance)
 
-        y = [ptr(yi) for yi in y]
+        # y = [ptr(yi) for yi in y]
+
+        args = y + (tau, eta, log_zeroth, mean, variance)
 
         if likname.lower() == 'binomial':
-            lib.apply2d(self._machine, lik, y[0], y[1], tau, eta, size,
-                        log_zeroth, mean, variance)
+            lib.apply2d(self._machine, lik, size, *(ptr(arg) for arg in args))
         else:
-            lib.apply1d(self._machine, lik, y[0], tau, eta, size, log_zeroth,
-                        mean, variance)
+            lib.apply1d(self._machine, lik, size, *(ptr(arg) for arg in args))
+
+        import numpy as np
+        if not np.all(np.isfinite(log_zeroth)):
+            import pdb; pdb.set_trace()
+            pass

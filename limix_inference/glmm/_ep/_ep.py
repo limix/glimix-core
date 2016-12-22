@@ -358,6 +358,7 @@ class EP(object):
         self._cache_BiQt.clear()
         self._cache_QBiQtAm.clear()
         self._cache_QBiQtCteta.clear()
+        print(v)
         assert 0 <= v
         self._v = max(v, epsilon.small)
 
