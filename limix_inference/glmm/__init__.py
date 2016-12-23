@@ -9,7 +9,7 @@ Example
 .. doctest::
 
     >>> from limix_inference.random import bernoulli_sample
-    >>> from limix_inference import ExpFamEP
+    >>> from limix_inference.glmm import ExpFamEP
     >>> from numpy.random import RandomState
     >>> offset = 5
     >>> G = [[1, -1], [2, 1]]
