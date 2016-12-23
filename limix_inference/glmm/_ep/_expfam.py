@@ -2,11 +2,11 @@ from __future__ import absolute_import, division, unicode_literals
 
 import logging
 
-from numpy import clip, full
+from numpy import ascontiguousarray, clip, full
 from numpy.linalg import lstsq
 
-from ...lmm import FastLMM
 from ...liknorm import LikNormMachine
+from ...lmm import FastLMM
 from ._ep import EP
 
 
@@ -53,7 +53,13 @@ class ExpFamEP(EP):
         Q1 (array_like): eigenvectors of zero eigenvalues.
         S0 (array_like): positive eigenvalues.
     """
+
     def __init__(self, prodlik, covariates, Q0, Q1, S0):
+        covariates = ascontiguousarray(covariates, float)
+        Q0 = ascontiguousarray(Q0, float)
+        Q1 = ascontiguousarray(Q1, float)
+        S0 = ascontiguousarray(S0, float)
+
         super(ExpFamEP, self).__init__(covariates, Q0, S0, True)
         self._logger = logging.getLogger(__name__)
 
@@ -74,8 +80,8 @@ class ExpFamEP(EP):
         ctau = self._cav_tau
         ceta = self._cav_eta
         lmom0 = self._loghz
-        self._machine.moments(self._likname, self._phenotype.ytuple, ceta, ctau,
-                              lmom0, self._hmu, self._hvar)
+        self._machine.moments(self._likname, self._phenotype.ytuple, ceta,
+                              ctau, lmom0, self._hmu, self._hvar)
 
     @property
     def genetic_variance(self):
