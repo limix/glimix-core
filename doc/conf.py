@@ -1,5 +1,3 @@
-import sphinx_rtd_theme
-
 try:
     import limix_inference
     version = limix_inference.__version__
