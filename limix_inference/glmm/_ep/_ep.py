@@ -207,7 +207,7 @@ class EP(object):
         self._tM = ddot(self._svd_U, self._svd_S12, left=False)
 
     def _init_ep_params(self):
-        self._logger.info("EP parameters initialization.")
+        self._logger.debug("EP parameters initialization.")
 
         if self._ep_params_initialized:
             self._joint_update()
@@ -573,7 +573,7 @@ class EP(object):
     def _update(self):
         self._init_ep_params()
 
-        self._logger.info('EP loop has started.')
+        self._logger.debug('EP loop has started.')
 
         pttau = self._previous_sitelik_tau
         pteta = self._previous_sitelik_eta
@@ -630,7 +630,7 @@ class EP(object):
             self._logger.warning('Maximum number of EP iterations has' +
                                  ' been attained.')
 
-        self._logger.info('EP loop has performed %d iterations.', i)
+        self._logger.debug('EP loop has performed %d iterations.', i)
 
     def _joint_update(self):
         A = self._A()
@@ -745,7 +745,7 @@ class EP(object):
         self._optimize_beta()
 
     def optimize(self, progress=None):
-        self._logger.info("Start of optimization.")
+        self._logger.debug("Start of optimization.")
         progress = tqdm(desc='EP') if progress is None else progress
 
         (klass, x0, bounds) = self._start_optimizer()
@@ -758,7 +758,7 @@ class EP(object):
         self._finish_optimizer(x)
 
         msg = "End of optimization (%.3f seconds, %d function calls)."
-        self._logger.info(msg, time() - start, func.nfev)
+        self._logger.debug(msg, time() - start, func.nfev)
 
     @cachedmethod(attrgetter('_cache_A'))
     def _A(self):
