@@ -161,7 +161,7 @@ def test_binomial_optimize():
     ep = ExpFamEP(lik, M, Q[0], Q[1], S0)
     ep.optimize()
 
-    assert_almost_equal(ep.lml(), -144.0932675879119, decimal=3)
+    assert_almost_equal(ep.lml(), -144.2381842202486, decimal=3)
 
 
 if __name__ == '__main__':

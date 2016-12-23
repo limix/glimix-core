@@ -23,7 +23,7 @@ def test_poisson_lml():
     assert_almost_equal(ep.beta, array([1.]))
     ep.v = 1.
     ep.delta = 0
-    assert_almost_equal(ep.lml(), -6.79376561763983)
+    assert_almost_equal(ep.lml(), -6.793765561069963)
 
 
 def test_poisson_optimize():
