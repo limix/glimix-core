@@ -22,8 +22,8 @@ before_install:
       travis/install_llvmlite.sh;
     fi
   - travis/install_pandoc.sh
-script:
   - travis/install_liknorm.sh
+script:
   - python setup.py sdist
   - >
     if [ "${NUMBA}" == "true" ]; then
