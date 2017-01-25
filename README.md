@@ -3,7 +3,7 @@
 [![PyPIl](https://img.shields.io/pypi/l/limix-inference.svg?style=flat-square)](https://pypi.python.org/pypi/limix-inference/)
 [![PyPIv](https://img.shields.io/pypi/v/limix-inference.svg?style=flat-square)](https://pypi.python.org/pypi/limix-inference/)
 [![Anaconda-Server Badge](https://anaconda.org/conda-forge/limix-inference/badges/version.svg)](https://anaconda.org/conda-forge/limix-inference)
-[![Documentation Status](https://readthedocs.org/projects/limix-inference/badge/?style=flat-square&version=latest)](http://limix-inference.readthedocs.io/en/latest/?badge=latest)
+[![Documentation Status](https://readthedocs.org/projects/limix-inference/badge/?style=flat-square&version=latest)](https://limix-inference.readthedocs.io/en/latest/)
 
 
 Fast inference for Generalized Linear Mixed Models.
