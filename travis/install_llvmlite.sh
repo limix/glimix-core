@@ -5,8 +5,9 @@ then
   pip install enum34
 fi
 
-git clone https://github.com/numba/llvmlite.git --depth 1
+wget https://github.com/numba/llvmlite/archive/v0.15.0.tar.gz
+tar xzf v0.15.0.tar.gz
 
-pushd llvmlite
+pushd llvmlite-0.15.0
 CXX_FLTO_FLAGS= LD_FLTO_FLAGS= python setup.py install
 popd
