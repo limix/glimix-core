@@ -4,7 +4,7 @@ from numpy import ix_
 from numpy import dot
 from numpy import ones
 from numpy import zeros
-from numpy import empty_like
+from numpy import zeros_like
 from numpy import tril_indices_from
 from numpy import atleast_1d
 from numpy import ascontiguousarray
@@ -55,16 +55,10 @@ class FreeFormCov(Function):
 
     def derivative_Lu(self, x0, x1):
         Lu = self.get('Lu')
-        d = empty_like(Lu)
-        for ii in range(len(self._tril)):
+        d = zeros_like(Lu)
+        for ii in range(len(self._tril[0])):
             i0, j0 = self._tril[0][ii], self._tril[1][ii]
             if x0 == i0 and x1 == j0:
                 d[ii] = 2 * Lu[ii]
-            elif x0 == i0 and x1 != j0:
-                d[ii] = Lu[ii]
-            elif x0 != i0 and x1 == j0:
-                d[ii] = Lu[ii]
-            else:
-                d[ii] = 0
 
         return d
