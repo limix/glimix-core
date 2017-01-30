@@ -1,5 +1,6 @@
 from __future__ import division
 
+from numpy import isscalar
 from numpy import ix_
 from numpy import dot
 from numpy import ones
@@ -50,14 +51,22 @@ class FreeFormCov(Function):
         self.set('Lu', value)
 
     def value(self, x0, x1):
-        x0 = ascontiguousarray(atleast_1d(x0), int)
-        x1 = ascontiguousarray(atleast_1d(x1), int)
-
         L = self.L
         K = dot(L, L.T)
 
+        if isscalar(x0) and isscalar(x1):
+            return K[x0, x1]
+
+        one_scalar = isscalar(x0) or isscalar(x1)
+
+        x0 = ascontiguousarray(atleast_1d(x0), int)
+        x1 = ascontiguousarray(atleast_1d(x1), int)
+
         x0 = x0.ravel()
         x1 = x1.ravel()
+
+        if one_scalar:
+            return K[ix_(x0, x1)].ravel()
 
         return K[ix_(x0, x1)]
 

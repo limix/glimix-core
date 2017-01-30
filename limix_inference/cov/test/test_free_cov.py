@@ -7,6 +7,13 @@ from limix_inference.cov import FreeFormCov
 from numpy_sugar import cartesian
 from optimix import check_grad
 
+from optimix.testing import Assertion
+
+def test_freeform_interface():
+    item0 = 0
+    item1 = 1
+    a = Assertion(lambda: FreeFormCov(2), item0, item1, 0.0)
+    a.assert_value_shape()
 
 def test_freeform_value():
     cov = FreeFormCov(2)
