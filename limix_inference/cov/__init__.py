@@ -29,3 +29,4 @@ Identity covariance
 from ._linear import LinearCov
 from ._sum import SumCov
 from ._eye import EyeCov
+from ._free import FreeFormCov

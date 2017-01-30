@@ -1,10 +1,13 @@
 from __future__ import division
 
+from numpy import ix_
 from numpy import dot
 from numpy import ones
-from numpy import empty
+from numpy import zeros
 from numpy import empty_like
-from numyp import tril_indices_from
+from numpy import tril_indices_from
+from numpy import atleast_1d
+from numpy import ascontiguousarray
 
 from optimix import Vector
 from optimix import Function
@@ -22,8 +25,10 @@ class FreeFormCov(Function):
                         (default value: 1e-4)
         """
         tsize = ((size + 1) * size) / 2;
-        self._L = empty((size, size))
+        tsize = int(tsize)
+        self._L = zeros((size, size))
         self._tril = tril_indices_from(self._L)
+        self._L[self._tril] = 1
         Function.__init__(self, Lu=Vector(ones(tsize)))
 
     @property
@@ -37,8 +42,16 @@ class FreeFormCov(Function):
         self.set('Lu', self._L[self._tril])
 
     def value(self, x0, x1):
-        L = self.L()[x0,:][:,x1]
-        return dot(L, L.T)
+        x0 = ascontiguousarray(atleast_1d(x0), int)
+        x1 = ascontiguousarray(atleast_1d(x1), int)
+
+        L = self.L
+        K = dot(L, L.T)
+
+        x0 = x0.ravel()
+        x1 = x1.ravel()
+
+        return K[ix_(x0, x1)]
 
     def derivative_Lu(self, x0, x1):
         Lu = self.get('Lu')
