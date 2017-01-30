@@ -1,5 +1,22 @@
 from numpy import nan
+from numpy import eye
+from numpy import dot
+from numpy import copyto
 from numpy.random import RandomState
+
+from limix_inference.mean import KronSumMean
+
+def _gower_normalization(K, out=None):
+    """Perform Gower normalizion on covariance matrix K.
+
+    The rescaled covariance matrix has sample variance of 1.
+    """
+    c = (K.shape[0] - 1) / (K.trace() - K.mean(0).sum())
+    if out is None:
+        return c * K
+
+    copyto(out, K)
+    out *= c
 
 def test_kron_two():
     random = RandomState(1)
@@ -13,21 +30,23 @@ def test_kron_two():
     Ym = Y.copy()
     Im = random.rand(N, P) < 0.2
     Ym[Im] = nan
-    #
+
     # # define fixed effects
-    # F = []; A = []
-    # F.append(1.*(sp.rand(N,2)<0.5))
-    # A.append(sp.eye(P))
+    F = 1.*(random.rand(N,2) < 0.5)
+    A = eye(P)
+
     # mean = MeanKronSum(Y, F=F, A=A)
+    mean = KronSumMean(F, A)
+
     # mean_m = MeanKronSum(Ym, F=F, A=A)
-    #
-    # # define row caoriance
-    # f = 10
-    # X = 1.*(sp.rand(N, f)<0.2)
-    # R = covar_rescale(sp.dot(X,X.T))
-    # R+= 1e-4 * sp.eye(N)
-    #
-    # # define col covariances
+
+    # define row covariance
+    f = 10
+    X = 1.*(random.rand(N, f)<0.2)
+    R = _gower_normalization(dot(X,X.T))
+    R+= 1e-4 * eye(N)
+
+    # define col covariances
     # Cg = FreeFormCov(P)
     # Cn = FreeFormCov(P)
     # Cg.setRandomParams()
@@ -35,13 +54,13 @@ def test_kron_two():
     #
     # # define covariance matrices
     # covar1 = KronCov(Cg, R)
-    # covar2 = KronCov(Cn, sp.eye(N))
+    # covar2 = KronCov(Cn, eye(N))
     # covar  = SumCov(covar1,covar2)
     #
     # # define covariance matrice with missing data
     # Iok = (~Im).reshape(N * P, order='F')
     # covar1_m = KronCov(copy.copy(Cg), R, Iok=Iok)
-    # covar2_m = KronCov(copy.copy(Cn), sp.eye(N), Iok=Iok)
+    # covar2_m = KronCov(copy.copy(Cn), eye(N), Iok=Iok)
     # covar_m  = SumCov(covar1_m,covar2_m)
     #
     # # define gp
