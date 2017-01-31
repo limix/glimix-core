@@ -70,11 +70,11 @@ def test_GLMMSampler_poisson():
 
     sampler = GLMMSampler(lik, mean, cov)
 
-    assert_equal(sampler.sample(random), [2, 0, 1, 2, 1, 1, 1, 2, 0, 0])
+    assert_equal(sampler.sample(random), [2, 0, 1, 4, 0, 0, 1, 2, 1, 0])
 
     cov2.scale = 100.
     sampler = GLMMSampler(lik, mean, cov)
-    assert_equal(sampler.sample(random), [0, 0, 0, 0, 1, 0, 0, 1196, 0, 0])
+    assert_equal(sampler.sample(random), [2, 1, 0, 5, 0, 5, 1, 1, 1, 1])
 
 
 def test_GLMMSampler_binomial():
@@ -113,12 +113,12 @@ def test_GLMMSampler_binomial():
     lik = BinomialLik(100, link)
     sampler = GLMMSampler(lik, mean, cov)
     assert_equal(
-        sampler.sample(random), [56, 56, 55, 51, 59, 45, 47, 43, 51, 38])
+        sampler.sample(random), [44, 30, 33, 78, 36, 14, 95, 21, 29, 84])
 
     cov2.scale = 100.
     sampler = GLMMSampler(lik, mean, cov)
     assert_equal(
-        sampler.sample(random), [99, 93, 99, 75, 77, 0, 0, 100, 99, 12])
+        sampler.sample(random), [49, 84,  9, 38, 55, 83, 58, 81, 74, 82])
 
 
 def test_canonical_bernoulli_sampler():
@@ -142,7 +142,7 @@ def test_canonical_binomial_sampler():
 
 
 def test_canonical_poisson_sampler():
-    random = RandomState(9)
+    random = RandomState(10)
     G = random.randn(10, 5)
 
     y = poisson_sample(0.1, G, random_state=random)

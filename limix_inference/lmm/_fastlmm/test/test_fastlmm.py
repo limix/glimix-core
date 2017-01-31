@@ -18,7 +18,7 @@ from limix_inference.random import GLMMSampler
 
 def test_learn():
     random = np.random.RandomState(9458)
-    N = 50
+    N = 500
     X = random.randn(N, N + 1)
     X -= X.mean(0)
     X /= X.std(0)
@@ -49,9 +49,9 @@ def test_learn():
 
     flmm.learn()
 
-    assert_allclose(flmm.beta[0], 0.709180072285, rtol=1e-5)
-    assert_allclose(flmm.genetic_variance, 2.26638555117, rtol=1e-5)
-    assert_allclose(flmm.environmental_variance, 1.02391614253, rtol=1e-5)
+    assert_allclose(flmm.beta[0], 0.9181586388911765, rtol=1e-5)
+    assert_allclose(flmm.genetic_variance, 1.680063468013535, rtol=1e-5)
+    assert_allclose(flmm.environmental_variance, 0.8541808790979367, rtol=1e-5)
 
 
 #
