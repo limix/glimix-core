@@ -1,6 +1,6 @@
 from __future__ import division
 
-from numpy import sqrt, std, ascontiguousarray
+from numpy import sqrt, std, ascontiguousarray, arange
 
 from ..link import LogitLink
 from ..link import LogLink
@@ -18,8 +18,6 @@ from ..cov import SumCov
 from ..cov import EyeCov
 
 from ._glmm import GLMMSampler
-
-from ..fruits import Apples
 
 
 def bernoulli_sample(offset,
@@ -133,7 +131,7 @@ def _mean_cov(offset, G, heritability, causal_variants, causal_variance,
 
     mean1.set_data(nsamples, 'sample')
     cov1.set_data((G, G), 'sample')
-    a = Apples(nsamples)
+    a = arange(nsamples)
     cov2.set_data((a, a), 'sample')
 
     cov1.scale = heritability - causal_variance

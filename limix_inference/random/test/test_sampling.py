@@ -1,5 +1,6 @@
 from __future__ import division
 
+from numpy import arange
 from numpy.random import RandomState
 from numpy.testing import (assert_equal, assert_array_less)
 
@@ -15,7 +16,6 @@ from limix_inference.lik import BinomialLik
 from limix_inference.lik import PoissonLik
 from limix_inference.link import LogitLink
 from limix_inference.link import LogLink
-from limix_inference.fruits import Apples
 
 
 def test_binomial_sampler():
@@ -60,7 +60,7 @@ def test_GLMMSampler_poisson():
     cov1.set_data((X, X), 'sample')
 
     cov2 = EyeCov()
-    a = Apples(10)
+    a = arange(10)
     cov2.set_data((a, a), 'sample')
 
     cov1.scale = 1e-4
@@ -102,7 +102,7 @@ def test_GLMMSampler_binomial():
     cov1.set_data((X, X), 'sample')
 
     cov2 = EyeCov()
-    a = Apples(10)
+    a = arange(10)
     cov2.set_data((a, a), 'sample')
 
     cov1.scale = 1e-4

@@ -9,7 +9,7 @@ from optimix import check_grad
 
 from optimix.testing import Assertion
 
-def test_freeform_interface():
+def test_freeform_optimix():
     item0 = 0
     item1 = 1
     a = Assertion(lambda: FreeFormCov(2), item0, item1, 0.0)

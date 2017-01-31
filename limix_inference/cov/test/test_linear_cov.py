@@ -1,9 +1,17 @@
 import numpy as np
+from numpy import array
 import numpy.testing as npt
 
 from limix_inference.cov import LinearCov
 from optimix import check_grad
 
+from optimix.testing import Assertion
+
+def test_linearcov_optimix():
+    item0 = array([-1.5, 1.0])
+    item1 = array([+1.24, 1.0])
+    a = Assertion(lambda: LinearCov(), item0, item1, 0.0)
+    a.assert_value_shape()
 
 def test_value():
     random = np.random.RandomState(0)
@@ -34,3 +42,6 @@ def test_gradient():
         return [cov.derivative_logscale(x0, x1)]
 
     npt.assert_almost_equal(check_grad(func, grad, [2.0]), 0, decimal=6)
+
+if __name__ == '__main__':
+    __import__('pytest').main([__file__, '-s'])

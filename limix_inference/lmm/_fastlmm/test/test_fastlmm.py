@@ -2,12 +2,12 @@ from __future__ import division
 
 import numpy as np
 from numpy import ones
+from numpy import arange
 from numpy.testing import assert_allclose
 
 from numpy_sugar.linalg import economic_qs_linear
 
 from limix_inference.lmm import FastLMM
-from limix_inference.fruits import Apples
 from limix_inference.lik import DeltaProdLik
 from limix_inference.cov import LinearCov
 from limix_inference.cov import EyeCov
@@ -35,7 +35,7 @@ def test_learn():
 
     cov_right = EyeCov()
     cov_right.scale = 1.5
-    cov_right.set_data((Apples(N), Apples(N)), purpose='sample')
+    cov_right.set_data((arange(N), arange(N)), purpose='sample')
 
     cov = SumCov([cov_left, cov_right])
 
