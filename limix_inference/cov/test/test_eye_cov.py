@@ -14,7 +14,7 @@ def test_eyecov_optimix():
     item0 = 0
     item1 = 1
     a = Assertion(lambda: EyeCov(), item0, item1, 0.0)
-    a.assert_value_shape()
+    a.assert_layout()
 
 def test_eye_value():
     cov = EyeCov()

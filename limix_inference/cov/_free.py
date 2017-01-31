@@ -70,29 +70,8 @@ class FreeFormCov(Function):
 
         return K[ix_(x0, x1)]
 
-    # def derivative_Lu(self, x0, x1):
-    #     x0 = ascontiguousarray(atleast_1d(x0), int)
-    #     x1 = ascontiguousarray(atleast_1d(x1), int)
-    #
-    #     x0 = x0.ravel()
-    #     x1 = x1.ravel()
-    #
-    #     Lu = self.get('Lu')
-    #     d = zeros((len(x0), len(x1), len(Lu)))
-    #     for ii in range(len(self._tril[0])):
-    #         for xi0 in range(len(x0)):
-    #             for xi1 in range(len(x1)):
-    #                 i0, j0 = self._tril[0][ii], self._tril[1][ii]
-    #                 if x0[xi0] == i0 and x1[xi1] == j0:
-    #                     d[xi0, xi1, ii] = 2 * Lu[ii]
-    #                 elif x0[xi0] == i0 and x1[xi1] != j0:
-    #                     d[xi0, xi1, ii] = Lu[(xi1, ii[1])]
-    #                 elif x0[xi0] != i0 and x1[xi1] == j0:
-    #                     d[xi0, xi1, ii] = Lu[(xi0, ii[0])]
-    #
-    #     return d
-
     def derivative_Lu(self, x0, x1):
+        
         x0 = ascontiguousarray(atleast_1d(x0), int)
         x1 = ascontiguousarray(atleast_1d(x1), int)
 

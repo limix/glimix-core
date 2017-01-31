@@ -12,7 +12,7 @@ def test_freeform_optimix():
     item0 = 0
     item1 = 1
     a = Assertion(lambda: FreeFormCov(2), item0, item1, 0.0)
-    a.assert_value_shape()
+    a.assert_layout()
 
 def test_freeform_value():
     cov = FreeFormCov(2)
