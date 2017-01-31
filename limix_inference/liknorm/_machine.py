@@ -41,5 +41,4 @@ class LikNormMachine(object):
 
         import numpy as np
         if not np.all(np.isfinite(log_zeroth)):
-            import pdb; pdb.set_trace()
             pass

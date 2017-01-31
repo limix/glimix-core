@@ -12,7 +12,6 @@ def test_linearcov_optimix():
     item1 = array([+1.24, 1.0])
     a = Assertion(lambda: LinearCov(), item0, item1, 0.0)
     a.assert_value_shape()
-    import pdb; pdb.set_trace()
     a.assert_derivative_shape()
 
 def test_value():

@@ -57,4 +57,6 @@ class LinearCov(Function):
         Returns:
             :math:`s \mathrm x_0^\intercal \mathrm x_1`.
         """
+        x0 = stack(x0, axis=0)
+        x1 = stack(x1, axis=0)
         return self.scale * x0.dot(x1.T)

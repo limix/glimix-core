@@ -4,7 +4,6 @@ from numpy import array, newaxis
 from numpy.testing import assert_allclose
 
 from limix_inference.cov import FreeFormCov
-from numpy_sugar import cartesian
 from optimix import check_grad
 
 from optimix.testing import Assertion
