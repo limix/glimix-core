@@ -2,20 +2,14 @@ from __future__ import division
 
 from numpy import arange
 from numpy.random import RandomState
-from numpy.testing import (assert_equal, assert_array_less)
+from numpy.testing import assert_array_less, assert_equal
 
-from limix_inference.random import GLMMSampler
-from limix_inference.random import bernoulli_sample
-from limix_inference.random import binomial_sample
-from limix_inference.random import poisson_sample
+from limix_inference.cov import EyeCov, LinearCov, SumCov
+from limix_inference.lik import BinomialLik, PoissonLik
+from limix_inference.link import LogitLink, LogLink
 from limix_inference.mean import OffsetMean
-from limix_inference.cov import LinearCov
-from limix_inference.cov import EyeCov
-from limix_inference.cov import SumCov
-from limix_inference.lik import BinomialLik
-from limix_inference.lik import PoissonLik
-from limix_inference.link import LogitLink
-from limix_inference.link import LogLink
+from limix_inference.random import (GLMMSampler, bernoulli_sample,
+                                    binomial_sample, poisson_sample)
 
 
 def test_binomial_sampler():
@@ -70,11 +64,11 @@ def test_GLMMSampler_poisson():
 
     sampler = GLMMSampler(lik, mean, cov)
 
-    assert_equal(sampler.sample(random), [2, 0, 1, 4, 0, 0, 1, 2, 1, 0])
+    assert_equal(sampler.sample(random), [2, 0, 1, 2, 1, 1, 1, 2, 0, 0])
 
     cov2.scale = 100.
     sampler = GLMMSampler(lik, mean, cov)
-    assert_equal(sampler.sample(random), [2, 1, 0, 5, 0, 5, 1, 1, 1, 1])
+    assert_equal(sampler.sample(random), [0, 0, 0, 0, 1, 0, 0, 1196, 0, 0])
 
 
 def test_GLMMSampler_binomial():
@@ -113,12 +107,12 @@ def test_GLMMSampler_binomial():
     lik = BinomialLik(100, link)
     sampler = GLMMSampler(lik, mean, cov)
     assert_equal(
-        sampler.sample(random), [44, 30, 33, 78, 36, 14, 95, 21, 29, 84])
+        sampler.sample(random), [56, 56, 55, 51, 59, 45, 47, 43, 51, 38])
 
     cov2.scale = 100.
     sampler = GLMMSampler(lik, mean, cov)
     assert_equal(
-        sampler.sample(random), [49, 84,  9, 38, 55, 83, 58, 81, 74, 82])
+        sampler.sample(random), [99, 93, 99, 75, 77, 0, 0, 100, 99, 12])
 
 
 def test_canonical_bernoulli_sampler():

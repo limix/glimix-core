@@ -10,7 +10,7 @@ from optimix.testing import Assertion
 def test_linearcov_optimix():
     item0 = array([-1.5, 1.0])
     item1 = array([+1.24, 1.0])
-    a = Assertion(lambda: LinearCov(), item0, item1, 0.0)
+    a = Assertion(lambda: LinearCov(), item0, item1, 0.0, logscale=0.0)
     a.assert_layout()
 
 def test_value():

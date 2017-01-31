@@ -59,6 +59,7 @@ class EyeCov(Function):
 
         I = eye(len(x0), len(x1))
         I = I[ix_(x0, x1)]
+        I *= self.scale
 
         if one_scalar:
             return I.ravel()
