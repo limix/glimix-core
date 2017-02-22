@@ -48,5 +48,5 @@ deploy:
   password:
     secure: PbMLq/wKSX3Ex03hlN0E8bbo5ap0iQkAy+IMDNs5MG8neZZTe68uN029IscFAnp8gkAu9CTtit8f7wGri8CMCmniqJnpnnUyKz5YyQAYH2dlRskLq1Ebaz6cfMVm/EZJm8quA6wSf8SHoPquGjXFrJSoFLArw4qHr2ki9vava1IrxgkwwPnyH1iXERLgiEO+4gNAx+3qbmik1O7Ee7+53Kx8pcsaERXg/skLznW2HMgWjGUEhJ/9lY2vouKuWp8kABZEPTC6NoujxQhyprLFkhmwYZSWx+a5bjKlFs+jA1pmMak4T5ougHNlbjgrzp/EauiCaJOnbgHQt8aPCUpbZ2uVRVGDn6ld/i6GzPaTXdwmDioAHvDczyBHgXpJyx0aAkUawLOVNQMF852pL1+G+pCD03VBWOL/qLph0iRmRtAdRfSVIGaAD14grNyllQ8rEAGe3s+rBNsaesQJEjDp6aQDH1ynrG+WXUFEVlCnCzMIYz1YUPx2jWJajYPoK2dDC8rAHAwez3YEjb3+MHLqWi6KVs5yai10Ee8x+53bKWF3X5IE5M+L3pz+WDRK/yiQWyRv9x1RMAnbailb5vmlUFG7/UVkkd3EbnJu8mWEmfI6mrSffCw2rsXE5WGL72zXTPdBXy4ksf4FJvc+KBj2PcBT3C3IEwqGH6FQclx/Z6I=
   on:
-    distributions: sdist
+    distributions: sdist bdist_wheel
     repo: glimix/limix-inference

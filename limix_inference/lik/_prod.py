@@ -1,6 +1,7 @@
 from __future__ import division
 
 from numpy_sugar.special import logbinom
+from scipy_sugar.stats import quantile_gaussianize
 
 from scipy.special import gammaln
 import scipy.stats as st
@@ -168,9 +169,7 @@ class BernoulliProdLik(ProdLik):
         return st.bernoulli(p).rvs(random_state=random_state)
 
     def to_normal(self):
-        y = self.outcome / self.outcome.std()
-        y -= y.mean()
-        return y
+        return quantile_gaussianize(self.outcome)
 
     @property
     def sample_size(self):
@@ -231,10 +230,7 @@ class BinomialProdLik(ProdLik):
         return st.binom(nt, p).rvs(random_state=random_state)
 
     def to_normal(self):
-        y = self.nsuccesses / self.ntrials
-        y = y / y.std()
-        y -= y.mean()
-        return y
+        return quantile_gaussianize(self.nsuccesses / self.ntrials)
 
     @property
     def sample_size(self):
@@ -289,8 +285,7 @@ class PoissonProdLik(ProdLik):
         return st.poisson(mu=lam).rvs(random_state=random_state)
 
     def to_normal(self):
-        y = self.noccurrences
-        return (y - y.mean()) / y.std()
+        return quantile_gaussianize(self.noccurrences)
 
     @property
     def sample_size(self):

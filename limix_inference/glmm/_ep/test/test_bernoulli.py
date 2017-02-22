@@ -82,6 +82,25 @@ def test_bernoulli_optimize():
     assert_allclose(ep.heritability, 0.952635979147327, rtol=1e-5)
     assert_allclose(ep.beta[0], -0.15856727011101007, rtol=1e-5)
 
+def test_bernoulli_exceptions():
+    from limix_inference.random import bernoulli_sample
+    from limix_inference.glmm import ExpFamEP
+    from limix_inference.lik import BernoulliProdLik
+    from limix_inference.link import LogLink
+    from numpy_sugar.linalg import economic_qs_linear
+    from numpy.random import RandomState
+
+    offset = 5
+    G = [[1, -1], [2, 1]]
+    (Q0, Q1), S0 = economic_qs_linear(G)
+    y = bernoulli_sample(offset, G, random_state=RandomState(0))
+    covariates = [[1.], [0.6]]
+    lik = BernoulliProdLik(LogLink)
+    lik.outcome = y
+    glmm = ExpFamEP(lik, covariates, Q0, Q1, S0)
+    # glmm.optimize()
+    # glmm.lml()
+
 
 if __name__ == '__main__':
     __import__('pytest').main([__file__, '-s'])

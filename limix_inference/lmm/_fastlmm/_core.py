@@ -2,14 +2,28 @@ from __future__ import division
 
 from scipy.stats import multivariate_normal
 from numpy import (dot, log, var, zeros, sqrt, ascontiguousarray)
+from numpy.random import RandomState
 
+from numpy_sugar import epsilon
 from numpy_sugar.linalg import (sum2diag, solve, economic_svd, ddot)
 
 
+def _make_sure_has_variance(y):
+
+    v = var(y)
+    if v < epsilon.small:
+        if v <= epsilon.tiny:
+            random = RandomState(0)
+            y = random.randn(len(y))
+            y *= epsilon.small
+        else:
+            y = y / v
+            y *= epsilon.small
+    return y
+
 class FastLMMCore(object):
     def __init__(self, y, M, Q0, Q1, S0):
-        if var(y) < 1e-8:
-            raise ValueError("The phenotype variance is too low: %e." % var(y))
+        y = _make_sure_has_variance(y)
 
         self._n = y.shape[0]
         self._p = self._n - S0.shape[0]
