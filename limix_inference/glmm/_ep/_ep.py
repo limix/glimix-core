@@ -857,7 +857,6 @@ class FunCostOverdispersion(object):
         self._ep.v = x[0]
         self._ep.delta = x[1]
         self._ep._optimize_beta()
-        # self._pbar.update(self.nfev)
         self._pbar.update()
         self.nfev += 1
         return (-self._ep.lml(), -self._ep._gradient_over_both())
@@ -873,7 +872,6 @@ class FunCost(object):
     def __call__(self, x):
         self._ep.v = x[0]
         self._ep._optimize_beta()
-        # self._pbar.update(self.nfev)
         self._pbar.update()
         self.nfev += 1
         return (-self._ep.lml(), -self._ep._gradient_over_v())
