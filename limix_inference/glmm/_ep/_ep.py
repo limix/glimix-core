@@ -834,6 +834,17 @@ class EP(object):
 
         return dot(BiQtAQS, Q.T), BiQtA
 
+    def covariance(self):
+        K = self.K()
+        return sum2diag(K, 1/self._sitelik_tau)
+
+    def _paolo(self):
+        tK = self.covariance()
+        tmu = self._sitelik_eta / self._sitelik_tau
+        tS = 1 / self._sitelik_tau
+        sigg2 = self.sigma2_b
+        sige2 = self.sigma2_epsilon
+        return dict(tK=tK, tmu=tmu, tS=tS, sigg2=sigg2, sige2=sige2)
 
 class FunCostOverdispersion(object):
     def __init__(self, ep, pbar):
