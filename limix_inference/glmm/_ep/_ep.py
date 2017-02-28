@@ -253,7 +253,7 @@ class EP(object):
         self._svd_V = SVD[2]
         self._tM = ddot(self._svd_U, self._svd_S12, left=False)
         if self.__tbeta is not None:
-            self.__tbeta = resize(self.__tbeta, M.shape[1])
+            self.__tbeta = resize(self.__tbeta, self._tM.shape[1])
 
     def _init_ep_params(self):
         self._logger.debug("EP parameters initialization.")
