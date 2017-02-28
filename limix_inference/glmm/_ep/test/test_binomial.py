@@ -1,6 +1,6 @@
 from __future__ import division
 
-from numpy import array, dot, ones, pi, sqrt, zeros
+from numpy import array, dot, ones, pi, sqrt, zeros, c_
 from numpy.random import RandomState
 from numpy.testing import assert_almost_equal
 
@@ -162,6 +162,44 @@ def test_binomial_optimize():
     ep.optimize()
 
     assert_almost_equal(ep.lml(), -144.2381842202486, decimal=3)
+
+def test_binomial_optimize_refit():
+    random = RandomState(139)
+    nsamples = 30
+    nfeatures = 31
+
+    G = random.randn(nsamples, nfeatures) / sqrt(nfeatures)
+
+    u = random.randn(nfeatures)
+
+    z = 0.1 + 2 * dot(G, u) + random.randn(nsamples)
+
+    ntrials = random.randint(10, 500, size=nsamples)
+
+    y = zeros(nsamples)
+    for i in range(len(ntrials)):
+        y[i] = sum(z[i] + random.logistic(
+            scale=pi / sqrt(3), size=ntrials[i]) > 0)
+    (Q, S0) = economic_qs_linear(G)
+
+    M = ones((nsamples, 1))
+    lik = BinomialProdLik(ntrials, LogitLink())
+    lik.nsuccesses = y
+    ep = ExpFamEP(lik, M, Q[0], Q[1], S0)
+    ep.optimize()
+
+    assert_almost_equal(ep.lml(), -144.2381842202486, decimal=3)
+
+    nep = ep.copy()
+
+    assert_almost_equal(ep.lml(), -144.2381842202486, decimal=3)
+    assert_almost_equal(nep.lml(), -144.2381842202486, decimal=3)
+
+    nep.M = c_[M, random.randn(nsamples)]
+
+    assert_almost_equal(nep.lml(), -145.7076758124364, decimal=3)
+    nep.optimize()
+    assert_almost_equal(nep.lml(), -143.98475638974728, decimal=3)
 
 
 if __name__ == '__main__':

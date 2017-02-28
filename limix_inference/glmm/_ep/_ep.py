@@ -13,7 +13,7 @@ from cachetools import cachedmethod
 from numpy import var as variance
 from numpy import (abs, all, any, asarray, diagonal, dot, empty, empty_like,
                    errstate, inf, isfinite, log, maximum, sqrt, sum, zeros,
-                   zeros_like)
+                   zeros_like, resize)
 from scipy.linalg import cho_factor
 from scipy.optimize import fmin_tnc
 from numpy.linalg import LinAlgError
@@ -198,13 +198,63 @@ class EP(object):
         self._hvar = empty(nsamples)
         self._ep_params_initialized = False
 
+    def _copy_to(self, ep):
+        ep._cache_SQt = LRUCache(maxsize=1)
+        ep._cache_m = LRUCache(maxsize=1)
+        ep._cache_K = LRUCache(maxsize=1)
+        ep._cache_diagK = LRUCache(maxsize=1)
+        ep._cache_update = LRUCache(maxsize=1)
+        ep._cache_lml_components = LRUCache(maxsize=1)
+        ep._cache_L = LRUCache(maxsize=1)
+        ep._cache_A = LRUCache(maxsize=1)
+        ep._cache_C = LRUCache(maxsize=1)
+        ep._cache_BiQt = LRUCache(maxsize=1)
+        ep._cache_QBiQtAm = LRUCache(maxsize=1)
+        ep._cache_QBiQtCteta = LRUCache(maxsize=1)
+
+        ep._logger = logging.getLogger(__name__)
+
+        ep._S = self._S
+        ep._Q = self._Q
+        ep.__QSQt = self.__QSQt
+
+        ep._previous_sitelik_tau = self._previous_sitelik_tau.copy()
+        ep._previous_sitelik_eta = self._previous_sitelik_eta.copy()
+
+        ep._sitelik_tau = self._sitelik_tau.copy()
+        ep._sitelik_eta = self._sitelik_eta.copy()
+
+        ep._cav_tau = self._cav_tau.copy()
+        ep._cav_eta = self._cav_eta.copy()
+
+        ep._joint_tau = self._joint_tau.copy()
+        ep._joint_eta = self._joint_eta.copy()
+
+        ep._v = self._v
+        ep._delta = self._delta
+        ep._overdispersion = self._overdispersion
+        ep._tM = self._tM
+        ep.__tbeta = self.__tbeta.copy()
+        ep._M = self._M
+        ep._svd_U = self._svd_U
+        ep._svd_S12 = self._svd_S12
+        ep._svd_V = self._svd_V
+
+        ep._loghz = self._loghz.copy()
+        ep._hmu = self._hmu.copy()
+        ep._hvar = self._hvar.copy()
+        ep._ep_params_initialized = self._ep_params_initialized
+
     def _covariate_setup(self, M):
+        if self.__tbeta is not None:
+            self.__tbeta = resize(self.__tbeta, M.shape[1])
         self._M = M
         SVD = economic_svd(M)
         self._svd_U = SVD[0]
         self._svd_S12 = sqrt(SVD[1])
         self._svd_V = SVD[2]
         self._tM = ddot(self._svd_U, self._svd_S12, left=False)
+
 
     def _init_ep_params(self):
         self._logger.debug("EP parameters initialization.")

@@ -112,6 +112,20 @@ class ExpFamEP(EP):
         total += self.environmental_variance
         return self.genetic_variance / total
 
+    def copy(self):
+        ep = ExpFamEP.__new__(ExpFamEP)
+        self._copy_to(ep)
+
+        ep._machine = LikNormMachine(500)
+        ep._likname = self._likname
+
+        ep._phenotype = self._phenotype
+        ep._tbeta = self._tbeta.copy()
+        ep.delta = self.delta
+        self.v = self.v
+
+        return ep
+
 
 def _initialize(prodlik, covariates, Q0, Q1, S0):
     y = prodlik.to_normal()
