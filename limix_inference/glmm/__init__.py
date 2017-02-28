@@ -22,7 +22,7 @@ Example
     >>> lik = BernoulliProdLik(LogLink)
     >>> lik.outcome = y
     >>> glmm = ExpFamEP(lik, covariates, Q0, Q1, S0)
-    >>> glmm.optimize()
+    >>> glmm.learn()
     >>> glmm.lml()
     -1.2067335984780192
 
@@ -31,7 +31,7 @@ Expectation propagation
 
 .. autoclass:: ExpFamEP
     :members: covariates_variance, genetic_variance, environmental_variance,
-              heritability, K, m, beta, v, delta, lml, optimize, fixed_ep
+              heritability, K, m, beta, v, delta, lml, learn, fixed_ep
 """
 
 from ._ep import ExpFamEP

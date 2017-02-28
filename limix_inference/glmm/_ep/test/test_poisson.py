@@ -46,7 +46,7 @@ def test_poisson_optimize():
     lik = PoissonProdLik(LogLink())
     lik.noccurrences = y
     ep = ExpFamEP(lik, M, Q0, Q1, S0)
-    ep.optimize()
+    ep.learn()
     assert_almost_equal(ep.lml(), -77.90919831238075, decimal=2)
     assert_almost_equal(ep.beta[0], 0.314709077094, decimal=1)
     assert_almost_equal(ep.heritability, 0.797775054939, decimal=1)

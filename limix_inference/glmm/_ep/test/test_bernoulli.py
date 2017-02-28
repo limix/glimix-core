@@ -77,7 +77,7 @@ def test_bernoulli_optimize():
     lik = BernoulliProdLik(LogitLink())
     lik.outcome = y
     ep = ExpFamEP(lik, M, Q[0], Q[1], S0)
-    ep.optimize()
+    ep.learn()
     assert_allclose(ep.lml(), -67.68161933698035, rtol=1e-5)
     assert_allclose(ep.heritability, 0.952635979147327, rtol=1e-5)
     assert_allclose(ep.beta[0], -0.15856727011101007, rtol=1e-5)
@@ -98,7 +98,7 @@ def test_bernoulli_exceptions():
     lik = BernoulliProdLik(LogLink)
     lik.outcome = y
     glmm = ExpFamEP(lik, covariates, Q0, Q1, S0)
-    # glmm.optimize()
+    # glmm.learn()
     # glmm.lml()
 
 
