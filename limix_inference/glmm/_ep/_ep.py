@@ -246,15 +246,14 @@ class EP(object):
         ep._ep_params_initialized = self._ep_params_initialized
 
     def _covariate_setup(self, M):
-        if self.__tbeta is not None:
-            self.__tbeta = resize(self.__tbeta, M.shape[1])
         self._M = M
         SVD = economic_svd(M)
         self._svd_U = SVD[0]
         self._svd_S12 = sqrt(SVD[1])
         self._svd_V = SVD[2]
         self._tM = ddot(self._svd_U, self._svd_S12, left=False)
-
+        if self.__tbeta is not None:
+            self.__tbeta = resize(self.__tbeta, M.shape[1])
 
     def _init_ep_params(self):
         self._logger.debug("EP parameters initialization.")
