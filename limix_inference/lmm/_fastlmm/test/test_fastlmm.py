@@ -47,7 +47,7 @@ def test_learn():
 
     flmm = FastLMM(y, Q0, Q1, S0, covariates=ones((N, 1)))
 
-    flmm.learn()
+    flmm.learn(progress=False)
 
     assert_allclose(flmm.beta[0], 0.8997652129631661, rtol=1e-5)
     assert_allclose(flmm.genetic_variance, 1.7303981309775553, rtol=1e-5)

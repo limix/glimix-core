@@ -22,7 +22,7 @@ Example
     >>> lik = BernoulliProdLik(LogLink)
     >>> lik.outcome = y
     >>> glmm = ExpFamEP(lik, covariates, Q0, Q1, S0)
-    >>> glmm.learn()
+    >>> glmm.learn(progress=False)
     >>> glmm.lml()
     -1.2067335984780192
 

@@ -159,7 +159,7 @@ def test_binomial_optimize():
     lik = BinomialProdLik(ntrials, LogitLink())
     lik.nsuccesses = y
     ep = ExpFamEP(lik, M, Q[0], Q[1], S0)
-    ep.learn()
+    ep.learn(progress=False)
 
     assert_almost_equal(ep.lml(), -144.2381842202486, decimal=3)
 
@@ -186,7 +186,7 @@ def test_binomial_optimize_refit():
     lik = BinomialProdLik(ntrials, LogitLink())
     lik.nsuccesses = y
     ep = ExpFamEP(lik, M, Q[0], Q[1], S0)
-    ep.learn()
+    ep.learn(progress=False)
 
     assert_almost_equal(ep.lml(), -144.2381842202486, decimal=3)
 
@@ -198,7 +198,7 @@ def test_binomial_optimize_refit():
     nep.M = c_[M, random.randn(nsamples)]
 
     assert_almost_equal(nep.lml(), -145.7076758124364, decimal=3)
-    nep.learn()
+    nep.learn(progress=False)
     assert_almost_equal(nep.lml(), -143.98475638974728, decimal=3)
 
 

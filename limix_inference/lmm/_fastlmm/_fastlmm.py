@@ -71,7 +71,7 @@ class FastLMM(Function):
     def m(self):
         return self._flmmc.m
 
-    def learn(self, progress=None):
+    def learn(self, progress=True):
         maximize_scalar(self, progress=progress)
         self._flmmc.delta = self._delta()
 

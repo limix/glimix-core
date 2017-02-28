@@ -793,9 +793,9 @@ class EP(object):
 
         self._optimize_beta()
 
-    def learn(self, progress=None):
+    def learn(self, progress=True):
         self._logger.debug("Start of optimization.")
-        progress = tqdm(desc='EP') if progress is None else progress
+        progress = tqdm(desc='EP', disable=not progress)
 
         (klass, x0, bounds) = self._start_optimizer()
 

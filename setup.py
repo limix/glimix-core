@@ -28,7 +28,7 @@ def setup_package():
         'numpy',
         'numpy-sugar',
         'scipy-sugar>=1.0.1',
-        'optimix>=1.1.5',
+        'optimix>=1.1.6',
         'cachetools>=2.0',
         'tqdm>=4',
     ]
@@ -36,7 +36,7 @@ def setup_package():
 
     metadata = dict(
         name='limix-inference',
-        version='1.0.13',
+        version='1.0.14',
         maintainer="Limix Developers",
         maintainer_email="horta@ebi.ac.uk",
         license="MIT",
