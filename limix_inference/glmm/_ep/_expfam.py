@@ -130,7 +130,7 @@ class ExpFamEP(EP):
 def _initialize(prodlik, covariates, Q0, Q1, S0):
     y = prodlik.to_normal()
     flmm = FastLMM(y, Q0, Q1, S0, covariates=covariates)
-    flmm.learn()
+    flmm.learn(progress=False)
     gv = flmm.genetic_variance
     nv = flmm.environmental_variance
     h2 = gv / (gv + nv)
