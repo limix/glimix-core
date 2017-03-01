@@ -2,6 +2,7 @@ from __future__ import absolute_import, division, unicode_literals
 
 import logging
 
+from numpy_sugar import is_all_finite
 from numpy import ascontiguousarray, clip, full
 from numpy.linalg import lstsq
 
@@ -82,6 +83,12 @@ class ExpFamEP(EP):
         lmom0 = self._loghz
         self._machine.moments(self._likname, self._phenotype.ytuple, ceta,
                               ctau, lmom0, self._hmu, self._hvar)
+        if not is_all_finite(lmom0):
+            raise ValueError("lmom0 should not be %s." % str(lmom0))
+        if not is_all_finite(self._hmu):
+            raise ValueError("hmu should not be %s." % str(self._hmu))
+        if not is_all_finite(self._hvar):
+            raise ValueError("hvar should not be %s." % str(self._hvar))
 
     @property
     def genetic_variance(self):

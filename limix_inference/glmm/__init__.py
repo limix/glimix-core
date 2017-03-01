@@ -24,7 +24,7 @@ Example
     >>> glmm = ExpFamEP(lik, covariates, Q0, Q1, S0)
     >>> glmm.learn(progress=False)
     >>> glmm.lml()
-    -1.2067335984780192
+    -1.200917510720108
 
 Expectation propagation
 ^^^^^^^^^^^^^^^^^^^^^^^

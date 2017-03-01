@@ -12,7 +12,7 @@ from cachetools import cachedmethod
 
 from numpy import var as variance
 from numpy import (abs, all, any, asarray, diagonal, dot, empty, empty_like,
-                   errstate, inf, isfinite, log, maximum, sqrt, sum, zeros,
+                   errstate, inf, isfinite, log, sqrt, sum, zeros, clip,
                    zeros_like, resize)
 from scipy.linalg import cho_factor
 from scipy.optimize import fmin_tnc
@@ -386,7 +386,8 @@ class EP(object):
         self._cache_BiQt.clear()
         self._cache_QBiQtAm.clear()
         self._cache_QBiQtCteta.clear()
-        assert 0 <= v <= 1
+        if not (0 <= v <= 1):
+            raise ValueError("delta should not be %f." % v)
         self._delta = v
 
     @property
@@ -407,7 +408,8 @@ class EP(object):
         self._cache_BiQt.clear()
         self._cache_QBiQtAm.clear()
         self._cache_QBiQtCteta.clear()
-        assert 0 <= v
+        if v < 0:
+            raise ValueError("v should not be %f." % v)
         self._v = max(v, epsilon.small)
 
     @property
@@ -420,6 +422,8 @@ class EP(object):
         self._cache_QBiQtAm.clear()
         self._cache_m.clear()
         self._cache_update.clear()
+        if not is_all_finite(value):
+            raise ValueError("tbeta should not be %s." % str(value))
         if self.__tbeta is None:
             self.__tbeta = asarray(value, float).copy()
         else:
@@ -432,6 +436,8 @@ class EP(object):
 
     @beta.setter
     def beta(self, value):
+        if not is_all_finite(value):
+            raise ValueError("beta should not be %s." % str(value))
         self._tbeta = self._svd_S12 * dot(self._svd_V.T, value)
 
     @property
@@ -490,6 +496,9 @@ class EP(object):
         return (w1, w2, w3, w4, w5, w6, w7)
 
     def lml(self):
+        v = fsum(self._lml_components())
+        if not isfinite(v):
+            raise ValueError("LML should not be %f." % v)
         return fsum(self._lml_components())
 
     def _gradient_over_v(self):
@@ -616,7 +625,12 @@ class EP(object):
         ddelta -= uKu / (1 - delta)
         ddelta /= 2
 
-        return asarray([dv, ddelta])
+        v = asarray([dv, ddelta])
+
+        if not is_all_finite(v):
+            raise ValueError("LML gradient should not be %s." % str(v))
+
+        return v
 
     @cachedmethod(attrgetter('_cache_update'))
     def _update(self):
@@ -716,7 +730,7 @@ class EP(object):
         hvar = self._hvar
         tau = self._cav_tau
         eta = self._cav_eta
-        self._sitelik_tau[:] = maximum(1.0 / hvar - tau, 1e-16)
+        self._sitelik_tau[:] = clip(1.0 / hvar - tau, epsilon.tiny, 1/epsilon.small)
         self._sitelik_eta[:] = hmu / hvar - eta
 
     def _optimal_beta_nom(self):
@@ -724,14 +738,20 @@ class EP(object):
         C = self._C()
         teta = self._sitelik_eta
         Cteta = C * teta
-        return Cteta - A * self._QBiQtCteta()
+        v = Cteta - A * self._QBiQtCteta()
+        if not is_all_finite(v):
+            raise ValueError("beta_nom should not be %s." % str(v))
+        return v
 
     def _optimal_tbeta_denom(self):
         L = self._L()
         Q = self._Q
         AM = ddot(self._A(), self._tM, left=True)
         QBiQtAM = dot(Q, cho_solve(L, dot(Q.T, AM)))
-        return dot(self._tM.T, AM) - dot(AM.T, QBiQtAM)
+        v = dot(self._tM.T, AM) - dot(AM.T, QBiQtAM)
+        if not is_all_finite(v):
+            raise ValueError("tbeta_denom should not be %s." % str(v))
+        return v
 
     def _optimal_tbeta(self):
         self._update()
@@ -762,7 +782,6 @@ class EP(object):
         while step > epsilon.small:
             ptbeta[:] = self._tbeta
             self._optimal_tbeta()
-
             self._tbeta = alpha * (self._tbeta - ptbeta) + ptbeta
 
             nstep = sum((self._tbeta - ptbeta)**2)
@@ -775,12 +794,12 @@ class EP(object):
 
     def _start_optimizer(self):
         x0 = [self.v]
-        bounds = [(1e-3, inf)]
+        bounds = [(1e-3, 1/epsilon.large)]
 
         if self._overdispersion:
             klass = FunCostOverdispersion
             x0 += [self.delta]
-            bounds += [(0, 1 - epsilon.small)]
+            bounds += [(0, 1 - epsilon.small*10)]
         else:
             klass = FunCost
 
@@ -908,7 +927,9 @@ class FunCostOverdispersion(object):
         self._ep._optimize_beta()
         self._pbar.update()
         self.nfev += 1
-        return (-self._ep.lml(), -self._ep._gradient_over_both())
+        nlml = -self._ep.lml()
+        ngrad = -self._ep._gradient_over_both()
+        return (nlml, ngrad)
 
 
 class FunCost(object):
