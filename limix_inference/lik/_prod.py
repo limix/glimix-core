@@ -147,6 +147,10 @@ class BernoulliProdLik(ProdLik):
     def mean(self, x):
         return self._link.inv(x)
 
+    @property
+    def latent_variance(self):
+        return self._link.latent_variance
+
     def theta(self, x):
         m = self.mean(x)
         return log(m / (1 - m))

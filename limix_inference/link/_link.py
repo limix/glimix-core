@@ -1,8 +1,8 @@
 from __future__ import division
 
-from numpy import log
-from numpy import exp
-from numpy_sugar.special import (normal_cdf, normal_icdf)
+from numpy import exp, log, pi
+
+from numpy_sugar.special import normal_cdf, normal_icdf
 
 
 class Link(object):
@@ -13,6 +13,10 @@ class Link(object):
         raise NotImplementedError
 
     def inv(self, x):
+        raise NotImplementedError
+
+    @property
+    def latent_variance(self):
         raise NotImplementedError
 
 
@@ -26,6 +30,10 @@ class LogitLink(Link):
     def inv(self, x):
         return 1 / (1 + exp(-x))
 
+    @property
+    def latent_variance(self):
+        return pi**2 / 3.0
+
 
 class ProbitLink(Link):
     def __init__(self):
@@ -36,6 +44,10 @@ class ProbitLink(Link):
 
     def inv(self, x):
         return normal_cdf(x)
+
+    @property
+    def latent_variance(self):
+        return 1.0
 
 
 class LogLink(Link):

@@ -32,6 +32,10 @@ class ExpFamLik(object):
     def mean(self, x):
         raise NotImplementedError
 
+    @property
+    def latent_variance(self):
+        raise NotImplementedError
+
     def theta(self, x):
         raise NotImplementedError
 
@@ -123,6 +127,10 @@ class BernoulliLik(ExpFamLik):
 
     def mean(self, x):
         return self._link.inv(x)
+
+    @property
+    def latent_variance(self):
+        return self._lik.latent_variance
 
     def theta(self, x):
         m = self.mean(x)
