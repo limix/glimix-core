@@ -55,18 +55,18 @@ class ExpFamEP(EP):
         S0 (array_like): positive eigenvalues.
     """
 
-    def __init__(self, prodlik, covariates, Q0, Q1, S0):
+    def __init__(self, prodlik, covariates, Q0, Q1, S0, overdispersion=True):
         covariates = ascontiguousarray(covariates, float)
         Q0 = ascontiguousarray(Q0, float)
         Q1 = ascontiguousarray(Q1, float)
         S0 = ascontiguousarray(S0, float)
 
-        super(ExpFamEP, self).__init__(covariates, Q0, S0, True)
+        super(ExpFamEP, self).__init__(covariates, Q0, S0, overdispersion)
         self._logger = logging.getLogger(__name__)
 
         self._Q1 = Q1
         self._machine = LikNormMachine(500)
-        self._likname = prodlik.name
+        self._prodlik = prodlik
 
         h2, m = _initialize(prodlik, covariates, Q0, Q1, S0)
 
@@ -74,14 +74,19 @@ class ExpFamEP(EP):
 
         self._phenotype = prodlik
         self._tbeta = lstsq(self._tM, full(n, m))[0]
-        self.delta = 1 - h2
-        self.v = 1.
+
+        if overdispersion:
+            self.delta = 1 - h2
+            self.v = 1.
+        else:
+            self.delta = 0
+            self.v = (h2 * prodlik.latent_variance) / (1 - h2)
 
     def _tilted_params(self):
         ctau = self._cav_tau
         ceta = self._cav_eta
         lmom0 = self._loghz
-        self._machine.moments(self._likname, self._phenotype.ytuple, ceta,
+        self._machine.moments(self._prodlik.name, self._phenotype.ytuple, ceta,
                               ctau, lmom0, self._hmu, self._hvar)
         if not is_all_finite(lmom0):
             raise ValueError("lmom0 should not be %s." % str(lmom0))
@@ -106,7 +111,9 @@ class ExpFamEP(EP):
         Returns:
             :math:`\sigma_{\epsilon}^2`.
         """
-        return self.sigma2_epsilon
+        if self._overdispersion:
+            return self.sigma2_epsilon
+        return self._prodlik.latent_variance
 
     @property
     def heritability(self):
@@ -124,7 +131,7 @@ class ExpFamEP(EP):
         self._copy_to(ep)
 
         ep._machine = LikNormMachine(500)
-        ep._likname = self._likname
+        ep._prodlik = self._prodlik
 
         ep._phenotype = self._phenotype
         ep._tbeta = self._tbeta.copy()
