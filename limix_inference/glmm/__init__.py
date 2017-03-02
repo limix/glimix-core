@@ -25,8 +25,8 @@ Example
     >>> lik.outcome = y
     >>> glmm = ExpFamEP(lik, covariates, Q0, Q1, S0)
     >>> glmm.learn(progress=False)
-    >>> glmm.lml()
-    -69.06103454352352
+    >>> '%.4f' % glmm.lml()
+    '-69.0610'
 
 Expectation propagation
 ^^^^^^^^^^^^^^^^^^^^^^^
