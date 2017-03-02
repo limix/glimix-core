@@ -14,17 +14,19 @@ Example
     >>> from limix_inference.link import LogLink
     >>> from numpy_sugar.linalg import economic_qs_linear
     >>> from numpy.random import RandomState
-    >>> offset = 5
-    >>> G = [[1, -1], [2, 1], [1, 3], [2, 1]]
+    >>>
+    >>> offset = 0.2
+    >>> random = RandomState(0)
+    >>> G = random.randn(100, 200)
     >>> (Q0, Q1), S0 = economic_qs_linear(G)
-    >>> y = bernoulli_sample(offset, G, random_state=RandomState(0))
-    >>> covariates = [[1.], [0.6], [1.], [-0.6]]
+    >>> y = bernoulli_sample(offset, G, random_state=random)
+    >>> covariates = random.randn(100, 1)
     >>> lik = BernoulliProdLik(LogLink)
     >>> lik.outcome = y
     >>> glmm = ExpFamEP(lik, covariates, Q0, Q1, S0)
     >>> glmm.learn(progress=False)
     >>> glmm.lml()
-    -1.200917510720108
+    -69.06103454352352
 
 Expectation propagation
 ^^^^^^^^^^^^^^^^^^^^^^^
