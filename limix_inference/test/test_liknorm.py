@@ -1,6 +1,6 @@
 from __future__ import division
 
-from numpy import array, empty, set_printoptions
+from numpy import array, empty
 from numpy.testing import assert_allclose
 
 from limix_inference.liknorm import LikNormMachine
