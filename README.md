@@ -16,7 +16,9 @@ The recommended way of installing it is via
 conda install -c conda-forge limix-inference
 ```
 
-An alternative way would be via pip
+An alternative way would be via [pip](https://pypi.python.org/pypi/pip).
+First you need to install [liknorm](http://liknorm.readthedocs.io/en/latest/)
+library and then
 ```bash
 pip install limix-inference
 ```
