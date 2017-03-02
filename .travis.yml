@@ -29,7 +29,7 @@ before_install:
   - travis/install_pandoc.sh
   - travis/install_liknorm.sh
 script:
-  - python setup.py sdist bdist_wheel
+  - python setup.py sdist
   - >
     if [ "${NUMBA}" == "true" ]; then
       pip install dist/`ls dist | grep -i -E '\.(gz)$' | head -1`[numba] -vvv;
