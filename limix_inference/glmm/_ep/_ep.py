@@ -30,7 +30,7 @@ from ._fixed import FixedEP
 MAX_EP_ITER = 30
 EP_EPS = 1e-5
 
-_magic_numbers = dict(xtol=1e-5, rescale=10, pgtol=1e-5, ftol=1e-5, disp=5)
+_magic_numbers = dict(xtol=1e-5, rescale=10, pgtol=1e-5, ftol=1e-5, disp=0)
 
 
 class EP(object):
@@ -785,19 +785,17 @@ class EP(object):
             self._optimal_tbeta()
             self._tbeta = clip(alpha * (self._tbeta - ptbeta) + ptbeta,
                                -10, +10)
-            print(self._tbeta)
-
             nstep = sum((self._tbeta - ptbeta)**2)
 
             if nstep > step:
-                print("alpha")
                 alpha /= 10
             step = nstep
 
             i += 1
 
         if i == maxiter:
-            print("reached beta max iter!")
+            self._logger.warning('Maximum number of beta iterations has' +
+                                 ' been attained.')
 
     @property
     def bounds(self):
@@ -936,14 +934,12 @@ class FunCostOverdispersion(object):
         self.nfev = 0
 
     def __call__(self, x):
-        print(x)
         self._ep.v = x[0]
         self._ep.delta = x[1]
         self._ep._optimize_beta()
         self._pbar.update()
         self.nfev += 1
         nlml = -self._ep.lml()
-        print("nlml: %f" % nlml)
         ngrad = -self._ep._gradient_over_both()
         return (nlml, ngrad)
 

@@ -201,6 +201,20 @@ def test_binomial_optimize_refit():
     nep.learn(progress=False)
     assert_almost_equal(nep.lml(), -143.98475638974728, decimal=3)
 
+def test_binomial_extreme():
+    import numpy as np
+    import os
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    data = np.load(os.path.join(dir_path, 'data', 'extreme.npz'))
+    from limix_inference.glmm import ExpFamEP
+    from limix_inference.lik import BinomialProdLik
+    from limix_inference.link import LogitLink
+    link = LogitLink()
+    lik = BinomialProdLik(data['ntrials'], link)
+    lik.nsuccesses = data['nsuccesses']
+    ep = ExpFamEP(lik, data['covariates'], Q0=data['Q0'], Q1=data['Q1'], S0=data['S0'])
+    ep.learn(progress=False)
+    assert_almost_equal(ep.lml(), -627.8816497398326, decimal=3)
 
 if __name__ == '__main__':
     __import__('pytest').main([__file__, '-s'])
