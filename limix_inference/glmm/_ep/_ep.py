@@ -30,7 +30,7 @@ from ._fixed import FixedEP
 MAX_EP_ITER = 30
 EP_EPS = 1e-5
 
-_magic_numbers = dict(xtol=1e-5, rescale=10, pgtol=1e-5, ftol=1e-5, disp=0)
+_magic_numbers = dict(xtol=1e-5, rescale=10, pgtol=1e-5, ftol=1e-5, disp=5)
 
 
 class EP(object):
@@ -779,27 +779,41 @@ class EP(object):
         step = inf
         i = 0
         alpha = 1.0
-        while step > epsilon.small:
+        maxiter = 30
+        while step > epsilon.small and i < maxiter:
             ptbeta[:] = self._tbeta
             self._optimal_tbeta()
-            self._tbeta = alpha * (self._tbeta - ptbeta) + ptbeta
+            self._tbeta = clip(alpha * (self._tbeta - ptbeta) + ptbeta,
+                               -10, +10)
+            print(self._tbeta)
 
             nstep = sum((self._tbeta - ptbeta)**2)
 
             if nstep > step:
+                print("alpha")
                 alpha /= 10
             step = nstep
 
             i += 1
 
+        if i == maxiter:
+            print("reached beta max iter!")
+
+    @property
+    def bounds(self):
+        bounds = dict(v=(1e-3, 1/epsilon.large),
+                      delta=(0, 1 - epsilon.small))
+        return bounds
+
     def _start_optimizer(self):
+        bound = self.bounds
         x0 = [self.v]
-        bounds = [(1e-3, 1/epsilon.large)]
+        bounds = [bound['v']]
 
         if self._overdispersion:
             klass = FunCostOverdispersion
             x0 += [self.delta]
-            bounds += [(0, 1 - epsilon.small*10)]
+            bounds += [bound['delta']]
         else:
             klass = FunCost
 
@@ -922,12 +936,14 @@ class FunCostOverdispersion(object):
         self.nfev = 0
 
     def __call__(self, x):
+        print(x)
         self._ep.v = x[0]
         self._ep.delta = x[1]
         self._ep._optimize_beta()
         self._pbar.update()
         self.nfev += 1
         nlml = -self._ep.lml()
+        print("nlml: %f" % nlml)
         ngrad = -self._ep._gradient_over_both()
         return (nlml, ngrad)
 
