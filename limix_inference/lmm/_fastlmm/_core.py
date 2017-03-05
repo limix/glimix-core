@@ -10,16 +10,16 @@ from numpy_sugar.linalg import (sum2diag, solve, economic_svd, ddot)
 
 
 def fast_scan(M, Q0, Q1, yTQ0, yTQ1, diag0, diag1, a0, a1, markers):
-    r"""Find LMLs of markers by fitting `beta` and `scale`.
+    r"""LMLs of markers by fitting scale and fixed-effect sizes parameters.
 
     The likelihood is given by
 
     .. math::
 
-        \mathcal N(\mathbf y | \boldsymbol\beta^{\intercal} [\mathrm M ~~ \text{marker}],  s \mathrm K),
+        \mathcal N\big(~\mathbf y ~|~ \boldsymbol\beta^{\intercal} [\mathrm M ~~ \tilde{\mathrm M}],  s \mathrm K~\big),
 
-    where :math:`s` is the scale parameter and :math:`\mathbf\beta` is the
-    fixed-effect sizes.
+    where :math:`s` is the scale parameter and :math:`\boldsymbol\beta` is the
+    fixed-effect sizes; :math:`\tilde{\mathrm M}` is a marker. to be scanned.
     """
 
     assert markers.ndim == 2

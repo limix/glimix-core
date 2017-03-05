@@ -5,7 +5,7 @@ Linear Mixed Models
 
 - :class:`.FastLMM`
 - :class:`.SlowLMM`
-- :function:`.fast_scan`
+- :func:`.fast_scan`
 
 Fast implementation
 ^^^^^^^^^^^^^^^^^^^
