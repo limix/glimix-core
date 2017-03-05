@@ -1,8 +1,8 @@
 from __future__ import division
 
 import numpy as np
-from numpy import ones
-from numpy import arange
+from numpy import ones, concatenate
+from numpy import arange, newaxis
 from numpy.testing import assert_allclose
 
 from numpy_sugar.linalg import economic_qs_linear
@@ -14,7 +14,57 @@ from limix_inference.cov import EyeCov
 from limix_inference.cov import SumCov
 from limix_inference.mean import OffsetMean
 from limix_inference.random import GLMMSampler
+from limix_inference.lmm import fast_scan
 
+def test_fast_scan():
+    random = np.random.RandomState(9458)
+    N = 500
+    X = random.randn(N, N + 1)
+    X -= X.mean(0)
+    X /= X.std(0)
+    X /= np.sqrt(X.shape[1])
+    offset = 1.0
+
+    mean = OffsetMean()
+    mean.offset = offset
+    mean.set_data(N, purpose='sample')
+
+    cov_left = LinearCov()
+    cov_left.scale = 1.5
+    cov_left.set_data((X, X), purpose='sample')
+
+    cov_right = EyeCov()
+    cov_right.scale = 1.5
+    cov_right.set_data((arange(N), arange(N)), purpose='sample')
+
+    cov = SumCov([cov_left, cov_right])
+
+    lik = DeltaProdLik()
+
+    y = GLMMSampler(lik, mean, cov).sample(random)
+
+    (Q0, Q1), S0 = economic_qs_linear(X)
+
+    flmm = FastLMM(y, Q0, Q1, S0, covariates=ones((N, 1)))
+
+    flmm.learn(progress=False)
+
+    markers = random.randn(N, 2)
+
+    flmm_ = flmm.copy()
+    flmm_.M = concatenate([flmm.M, markers[:,0][:,newaxis]], axis=1)
+    lml0 = flmm_.lml()
+
+    flmm_ = flmm.copy()
+    flmm_.M = concatenate([flmm.M, markers[:,1][:,newaxis]], axis=1)
+    lml1 = flmm_.lml()
+
+    lmls = fast_scan(flmm.M, flmm._flmmc._Q0, flmm._flmmc._Q1,
+                     flmm._flmmc._yTQ0, flmm._flmmc._yTQ1,
+                     flmm._flmmc._diag0, flmm._flmmc._diag1,
+                     flmm._flmmc._a0, flmm._flmmc._a1,
+                     markers)
+    assert_allclose(lmls, [lml0, lml1], rtol=1e-5)
 
 def test_learn():
     random = np.random.RandomState(9458)

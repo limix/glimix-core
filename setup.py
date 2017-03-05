@@ -36,7 +36,7 @@ def setup_package():
 
     metadata = dict(
         name='limix-inference',
-        version='1.0.15',
+        version='1.0.16',
         maintainer="Limix Developers",
         maintainer_email="horta@ebi.ac.uk",
         license="MIT",

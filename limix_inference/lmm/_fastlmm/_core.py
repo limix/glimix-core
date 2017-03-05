@@ -1,12 +1,60 @@
 from __future__ import division
 
 from scipy.stats import multivariate_normal
-from numpy import (dot, log, var, zeros, sqrt, ascontiguousarray)
+from numpy import (dot, log, var, zeros, sqrt, ascontiguousarray, concatenate,
+                   newaxis, asarray)
 from numpy.random import RandomState
 
 from numpy_sugar import epsilon
 from numpy_sugar.linalg import (sum2diag, solve, economic_svd, ddot)
 
+
+def fast_scan(M, Q0, Q1, yTQ0, yTQ1, diag0, diag1, a0, a1, markers):
+    r"""Find LMLs of markers by fitting `beta` and `scale`.
+
+    The likelihood is given by
+
+    .. math::
+
+        \mathcal N(\mathbf y | \boldsymbol\beta^{\intercal} [\mathrm M ~~ \text{marker}],  s \mathrm K),
+
+    where :math:`s` is the scale parameter and :math:`\mathbf\beta` is the
+    fixed-effect sizes.
+    """
+
+    assert markers.ndim == 2
+
+    lmls = []
+    for marker in markers.T:
+
+        MTQ0 = dot(concatenate([M, marker[:,newaxis]], axis=1).T, Q0)
+        MTQ1 = dot(concatenate([M, marker[:,newaxis]], axis=1).T, Q1)
+
+        b0 = (yTQ0 / diag0).dot(MTQ0.T)
+        c0 = (MTQ0 / diag0).dot(MTQ0.T)
+
+        b1 = (yTQ1 / diag1).dot(MTQ1.T)
+        c1 = (MTQ1 / diag1).dot(MTQ1.T)
+
+        nominator = b1 - b0
+        denominator = c1 - c0
+
+        beta = solve(denominator, nominator)
+
+        p0 = a1 - 2 * b1.dot(beta) + beta.dot(c1.dot(beta))
+        p1 = a0 - 2 * b0.dot(beta) + beta.dot(c0).dot(beta)
+
+        n = markers.shape[0]
+
+        scale = (p0 + p1) / n
+
+        LOG2PI = 1.837877066409345339081937709124758839607238769531250
+        lml = -n * LOG2PI - n - n * log(scale)
+        lml += -sum(log(diag0)) - (n - len(diag0)) * log(diag1)
+        lml /= 2
+        lmls.append(lml)
+
+    return asarray(lmls, float)
 
 def _make_sure_has_variance(y):
 
@@ -56,8 +104,8 @@ class FastLMMCore(object):
         self._yTQ1 = dot(y.T, Q1)
         self._yTQ1_2x = self._yTQ1**2
 
-        self._oneTQ0 = self._tM.T.dot(Q0)
-        self._oneTQ1 = self._tM.T.dot(Q1)
+        self._tMTQ0 = self._tM.T.dot(Q0)
+        self._tMTQ1 = self._tM.T.dot(Q1)
 
         self._valid_update = 0
         self.__Q0tymD0 = None
@@ -100,8 +148,8 @@ class FastLMMCore(object):
         o._yTQ1 = self._yTQ1
         o._yTQ1_2x = self._yTQ1_2x
 
-        o._oneTQ0 = self._oneTQ0
-        o._oneTQ1 = self._oneTQ1
+        o._tMTQ0 = self._tMTQ0
+        o._tMTQ1 = self._tMTQ1
 
         o._valid_update = self._valid_update
         from copy import copy
@@ -127,8 +175,8 @@ class FastLMMCore(object):
         self._b0 = zeros(d)
         self._c0 = zeros((d, d))
 
-        self._oneTQ0 = self._tM.T.dot(self._Q0)
-        self._oneTQ1 = self._tM.T.dot(self._Q1)
+        self._tMTQ0 = self._tM.T.dot(self._Q0)
+        self._tMTQ1 = self._tM.T.dot(self._Q1)
 
         self._valid_update = 0
         self.__Q0tymD0 = None
@@ -141,13 +189,13 @@ class FastLMMCore(object):
 
     def _Q0tymD0(self):
         if self.__Q0tymD0 is None:
-            Q0tym = self._yTQ0 - self.__tbeta.dot(self._oneTQ0)
+            Q0tym = self._yTQ0 - self.__tbeta.dot(self._tMTQ0)
             self.__Q0tymD0 = Q0tym / self._diag0
         return self.__Q0tymD0
 
     def _Q1tymD1(self):
         if self.__Q1tymD1 is None:
-            Q1tym = self._yTQ1 - self.__tbeta.dot(self._oneTQ1)
+            Q1tym = self._yTQ1 - self.__tbeta.dot(self._tMTQ1)
             self.__Q1tymD1 = Q1tym / self._diag1
         return self.__Q1tymD1
 
@@ -191,12 +239,12 @@ class FastLMMCore(object):
         yTQ1_2x = self._yTQ1_2x
 
         self._a1 = yTQ1_2x.sum() / self._diag1
-        self._b1[:] = (self._yTQ1 / self._diag1).dot(self._oneTQ1.T)
-        self._c1[:] = (self._oneTQ1 / self._diag1).dot(self._oneTQ1.T)
+        self._b1[:] = (self._yTQ1 / self._diag1).dot(self._tMTQ1.T)
+        self._c1[:] = (self._tMTQ1 / self._diag1).dot(self._tMTQ1.T)
 
         self._a0 = (yTQ0_2x / self._diag0).sum()
-        self._b0[:] = (self._yTQ0 / self._diag0).dot(self._oneTQ0.T)
-        self._c0[:] = (self._oneTQ0 / self._diag0).dot(self._oneTQ0.T)
+        self._b0[:] = (self._yTQ0 / self._diag0).dot(self._tMTQ0.T)
+        self._c0[:] = (self._tMTQ0 / self._diag0).dot(self._tMTQ0.T)
 
     def _update_fixed_effects(self):
         nominator = self._b1 - self._b0

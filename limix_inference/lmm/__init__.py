@@ -19,5 +19,5 @@ General implementation
   :members:
 """
 
-from ._fastlmm import FastLMM
+from ._fastlmm import FastLMM, fast_scan
 from ._slowlmm import SlowLMM
