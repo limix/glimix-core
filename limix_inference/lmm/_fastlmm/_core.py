@@ -1,5 +1,6 @@
 from __future__ import division
 
+from .scan import NormalLikTrick
 from scipy.stats import multivariate_normal
 from numpy import (dot, log, var, zeros, sqrt, ascontiguousarray, concatenate,
                    newaxis, asarray)
@@ -118,6 +119,11 @@ class FastLMMCore(object):
         self._svd_S12 = sqrt(SVD[1])
         self._svd_V = SVD[2]
         self._tM = ddot(self._svd_U, self._svd_S12, left=False)
+
+    def get_normal_likelihood_trick(self):
+        return NormalLikTrick(self.M, self._Q0, self._Q1, self._yTQ0,
+                              self._yTQ1, self._diag0, self._diag1, self._a0,
+                              self._a1)
 
     def copy(self):
         o = FastLMMCore.__new__(FastLMMCore)

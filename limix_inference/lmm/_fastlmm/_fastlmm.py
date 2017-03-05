@@ -25,6 +25,9 @@ class FastLMM(Function):
         self._flmmc = FastLMMCore(y, covariates, Q0, Q1, S0)
         self.set_nodata()
 
+    def get_normal_likelihood_trick(self):
+        return self._flmmc.get_normal_likelihood_trick()
+
     @property
     def M(self):
         return self._flmmc.M

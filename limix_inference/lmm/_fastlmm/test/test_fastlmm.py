@@ -14,7 +14,6 @@ from limix_inference.cov import EyeCov
 from limix_inference.cov import SumCov
 from limix_inference.mean import OffsetMean
 from limix_inference.random import GLMMSampler
-from limix_inference.lmm import fast_scan
 
 def test_fast_scan():
     random = np.random.RandomState(9458)
@@ -59,11 +58,9 @@ def test_fast_scan():
     flmm_.M = concatenate([flmm.M, markers[:,1][:,newaxis]], axis=1)
     lml1 = flmm_.lml()
 
-    lmls = fast_scan(flmm.M, flmm._flmmc._Q0, flmm._flmmc._Q1,
-                     flmm._flmmc._yTQ0, flmm._flmmc._yTQ1,
-                     flmm._flmmc._diag0, flmm._flmmc._diag1,
-                     flmm._flmmc._a0, flmm._flmmc._a1,
-                     markers)
+    lik_trick = flmm.get_normal_likelihood_trick()
+
+    lmls = lik_trick.fast_scan(markers)
     assert_allclose(lmls, [lml0, lml1], rtol=1e-5)
 
 def test_learn():

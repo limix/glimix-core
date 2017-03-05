@@ -1,2 +1,4 @@
 from ._fastlmm import FastLMM
-from ._core import fast_scan
+from .scan import NormalLikTrick
+
+__all__ = ['FastLMM', 'NormalLikTrick']

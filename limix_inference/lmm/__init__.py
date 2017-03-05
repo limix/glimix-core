@@ -5,7 +5,7 @@ Linear Mixed Models
 
 - :class:`.FastLMM`
 - :class:`.SlowLMM`
-- :func:`.fast_scan`
+- :class:`.NormalLikTrick`
 
 Fast implementation
 ^^^^^^^^^^^^^^^^^^^
@@ -13,7 +13,8 @@ Fast implementation
 .. autoclass:: FastLMM
   :members:
 
-.. autofunction:: fast_scan
+.. autoclass:: NormalLikTrick
+  :members:
 
 General implementation
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -22,5 +23,5 @@ General implementation
   :members:
 """
 
-from ._fastlmm import FastLMM, fast_scan
+from ._fastlmm import FastLMM, NormalLikTrick
 from ._slowlmm import SlowLMM
