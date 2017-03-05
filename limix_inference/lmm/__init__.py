@@ -5,12 +5,15 @@ Linear Mixed Models
 
 - :class:`.FastLMM`
 - :class:`.SlowLMM`
+- :function:`.fast_scan`
 
 Fast implementation
 ^^^^^^^^^^^^^^^^^^^
 
 .. autoclass:: FastLMM
   :members:
+
+.. autofunction:: fast_scan
 
 General implementation
 ^^^^^^^^^^^^^^^^^^^^^^
