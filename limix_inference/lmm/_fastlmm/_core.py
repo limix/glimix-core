@@ -1,62 +1,15 @@
 from __future__ import division
 
-from .scan import NormalLikTrick
-from scipy.stats import multivariate_normal
-from numpy import (dot, log, var, zeros, sqrt, ascontiguousarray, concatenate,
-                   newaxis, asarray)
+from numpy import (asarray, ascontiguousarray, concatenate, dot, log, newaxis,
+                   sqrt, var, zeros)
 from numpy.random import RandomState
+from scipy.stats import multivariate_normal
 
 from numpy_sugar import epsilon
-from numpy_sugar.linalg import (sum2diag, solve, economic_svd, ddot)
+from numpy_sugar.linalg import ddot, economic_svd, solve, sum2diag
 
+from .scan import NormalLikTrick
 
-def fast_scan(M, Q0, Q1, yTQ0, yTQ1, diag0, diag1, a0, a1, markers):
-    r"""LMLs of markers by fitting scale and fixed-effect sizes parameters.
-
-    The likelihood is given by
-
-    .. math::
-
-        \mathcal N\big(~\mathbf y ~|~ \boldsymbol\beta^{\intercal}
-        [\mathrm M ~~ \tilde{\mathrm M}],  s \mathrm K~\big),
-
-    where :math:`s` is the scale parameter and :math:`\boldsymbol\beta` is the
-    fixed-effect sizes; :math:`\tilde{\mathrm M}` is a marker to be scanned.
-    """
-
-    assert markers.ndim == 2
-
-    lmls = []
-    for marker in markers.T:
-
-        MTQ0 = dot(concatenate([M, marker[:,newaxis]], axis=1).T, Q0)
-        MTQ1 = dot(concatenate([M, marker[:,newaxis]], axis=1).T, Q1)
-
-        b0 = (yTQ0 / diag0).dot(MTQ0.T)
-        c0 = (MTQ0 / diag0).dot(MTQ0.T)
-
-        b1 = (yTQ1 / diag1).dot(MTQ1.T)
-        c1 = (MTQ1 / diag1).dot(MTQ1.T)
-
-        nominator = b1 - b0
-        denominator = c1 - c0
-
-        beta = solve(denominator, nominator)
-
-        p0 = a1 - 2 * b1.dot(beta) + beta.dot(c1.dot(beta))
-        p1 = a0 - 2 * b0.dot(beta) + beta.dot(c0).dot(beta)
-
-        n = markers.shape[0]
-
-        scale = (p0 + p1) / n
-
-        LOG2PI = 1.837877066409345339081937709124758839607238769531250
-        lml = -n * LOG2PI - n - n * log(scale)
-        lml += -sum(log(diag0)) - (n - len(diag0)) * log(diag1)
-        lml /= 2
-        lmls.append(lml)
-
-    return asarray(lmls, float)
 
 def _make_sure_has_variance(y):
 
@@ -70,6 +23,7 @@ def _make_sure_has_variance(y):
             y = y / v
             y *= epsilon.small
     return y
+
 
 class FastLMMCore(object):
     def __init__(self, y, M, Q0, Q1, S0):
