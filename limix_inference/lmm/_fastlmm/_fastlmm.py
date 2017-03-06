@@ -82,7 +82,7 @@ class FastLMM(Function):
         self._flmmc.delta = self._delta()
         return self._flmmc.lml()
 
-    def lml(self):
+    def lml(self, fast=False):
         self._flmmc.delta = self._delta()
         return self._flmmc.lml()
 

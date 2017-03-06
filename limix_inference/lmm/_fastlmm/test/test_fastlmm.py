@@ -60,7 +60,7 @@ def test_fast_scan():
 
     lik_trick = flmm.get_normal_likelihood_trick()
 
-    lmls = lik_trick.fast_scan(markers)
+    lmls = lik_trick.fast_scan(markers)[0]
     assert_allclose(lmls, [lml0, lml1], rtol=1e-5)
 
 def test_learn():
