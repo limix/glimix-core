@@ -256,7 +256,7 @@ def test_binomial_extreme():
     ep = ExpFamEP(
         lik, data['covariates'], Q0=data['Q0'], Q1=data['Q1'], S0=data['S0'])
     ep.learn(progress=False)
-    assert_allclose(ep.lml(), -627.8816497398326, rtol=1e-3)
+    assert_allclose(ep.lml(), -189.4155176306314, rtol=1e-3)
 
 
 if __name__ == '__main__':

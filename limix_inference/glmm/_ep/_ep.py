@@ -13,7 +13,7 @@ from cachetools import cachedmethod
 from numpy import var as variance
 from numpy import (abs, all, any, asarray, diagonal, dot, empty, empty_like,
                    errstate, inf, isfinite, log, sqrt, sum, zeros, clip,
-                   zeros_like, resize)
+                   zeros_like, resize, maximum)
 from scipy.linalg import cho_factor
 from scipy.optimize import fmin_tnc
 from numpy.linalg import LinAlgError
@@ -760,7 +760,7 @@ class EP(object):
         hvar = self._hvar
         tau = self._cav_tau
         eta = self._cav_eta
-        self._sitelik_tau[:] = clip(1.0 / hvar - tau, epsilon.tiny, 1/epsilon.small)
+        self._sitelik_tau[:] = maximum(1.0 / hvar - tau, epsilon.tiny)
         self._sitelik_eta[:] = hmu / hvar - eta
 
     def _optimal_beta_nom(self):
@@ -809,12 +809,10 @@ class EP(object):
         step = inf
         i = 0
         alpha = 1.0
-        maxiter = 30
-        while step > epsilon.small and i < maxiter:
+        while step > epsilon.small:
             ptbeta[:] = self._tbeta
             self._optimal_tbeta()
-            self._tbeta = clip(alpha * (self._tbeta - ptbeta) + ptbeta,
-                               -10, +10)
+            self._tbeta = alpha * (self._tbeta - ptbeta) + ptbeta
             nstep = sum((self._tbeta - ptbeta)**2)
 
             if nstep > step:
@@ -823,13 +821,9 @@ class EP(object):
 
             i += 1
 
-        if i == maxiter:
-            self._logger.warning('Maximum number of beta iterations has' +
-                                 ' been attained.')
-
     @property
     def bounds(self):
-        bounds = dict(v=(1e-3, 1/epsilon.large),
+        bounds = dict(v=(1e-3, inf),
                       delta=(0, 1 - epsilon.small))
         return bounds
 

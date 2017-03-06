@@ -79,9 +79,9 @@ def test_bernoulli_optimize():
     lik.outcome = y
     ep = ExpFamEP(lik, M, Q[0], Q[1], S0)
     ep.learn(progress=False)
-    assert_allclose(ep.lml(), -67.67727582268618, rtol=1e-5)
-    assert_allclose(ep.heritability, 0.6243068813130619, rtol=1e-5)
-    assert_allclose(ep.beta[0], -0.2561108097463372, rtol=1e-5)
+    assert_allclose(ep.lml(), -67.68131174198994, rtol=1e-5)
+    assert_allclose(ep.heritability, 0.9526383041916363, rtol=1e-5)
+    assert_allclose(ep.beta[0], -0.158567025222405, rtol=1e-5)
 
 def test_bernoulli_exceptions():
     from limix_inference.random import bernoulli_sample
