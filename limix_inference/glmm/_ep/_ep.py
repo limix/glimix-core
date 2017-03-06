@@ -20,7 +20,7 @@ from numpy.linalg import LinAlgError
 
 from numpy_sugar import is_all_finite
 from numpy_sugar.linalg import (cho_solve, ddot, dotd, economic_svd, solve, sum2diag,
-                        trace2)
+                        trace2, economic_qs)
 
 from ._conditioning import make_sure_reasonable_conditioning
 from numpy_sugar import epsilon
@@ -917,6 +917,46 @@ class EP(object):
     def covariance(self):
         K = self.K()
         return sum2diag(K, 1/self._sitelik_tau)
+
+    def get_normal_likelihood_trick(self):
+        # Covariance: nK = K + \tilde\Sigma = K + 1/self._sitelik_tau
+        # via (K + 1/self._sitelik_tau)^{-1} = A1 - A1QB1^-1QTA1
+        # Mean: \mathbf m
+        # New phenotype: \tilde\mu
+        #
+        # I.e.: \tilde\mu \sim N(\mathbf m, K + \tilde\Sigma)
+        #
+        #
+        # We transform the above Normal in an equivalent but more robust
+        # one: \tilde\y \sim N(\tilde\m, \tilde\nK + \Sigma^{-1})
+        #
+        # \tilde\y = \tilde\Sigma^{-1} \tilde\mu
+        # \tilde\m = \tilde\Sigma^{-1} \tilde\m
+        # \tilde\nK = \tilde\Sigma^{-1} \nK \tilde\Sigma^{-1}
+
+        m = self.m()
+        ttau = self._sitelik_tau
+        teta = self._sitelik_eta
+
+        # NEW PHENOTYPE
+        y = teta.copy()
+
+        # NEW MEAN
+        m = ttau * m
+
+        # NEW COVARIANCE
+        K = self.K()
+        K = ddot(ttau, ddot(K, ttau, left=False), left=True)
+        sum2diag(K, ttau, out=K)
+        (Q, S0) = economic_qs(K)
+        Q0, Q1 = Q
+
+        from ...lmm import FastLMM
+        from numpy import newaxis
+
+        fastlmm = FastLMM(y, Q0, Q1, S0, covariates=m[:, newaxis])
+        fastlmm.learn(progress=False)
+        return fastlmm.get_normal_likelihood_trick()
 
     def _paolo(self):
         tK = self.covariance()
