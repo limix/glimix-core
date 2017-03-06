@@ -37,7 +37,7 @@ def test_binomial_get_normal_likelihood_trick():
 
     nlt = ep.get_normal_likelihood_trick()
     assert_allclose(
-        nlt.fast_scan(G), [
+        nlt.fast_scan(G)[0], [
             -143.48903288, -144.32031587, -144.03889888, -144.31806561,
             -143.90248659, -144.303103, -144.47854112, -144.44469341,
             -144.285027, -144.31240175, -143.11590263, -142.81623878,

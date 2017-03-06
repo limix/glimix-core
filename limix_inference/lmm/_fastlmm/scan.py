@@ -72,6 +72,8 @@ class NormalLikTrick(object):
 
         n = markers.shape[0]
         lmls = empty(markers.shape[1])
+        effect_sizes = empty(markers.shape[1])
+
         LOG2PI = 1.837877066409345339081937709124758839607238769531250
         lmls[:] = -n * LOG2PI - n
         lmls[:] += -sum(log(self.diag0)) - (n - len(self.diag0)
@@ -96,6 +98,7 @@ class NormalLikTrick(object):
             denominator = C1 - C0
 
             beta = solve(denominator, nominator)
+            effect_sizes[i] = beta[-1]
 
             p0 = self.a1 - 2 * b11m.dot(beta) + beta.dot(C1.dot(beta))
             p1 = self.a0 - 2 * b00m.dot(beta) + beta.dot(C0).dot(beta)
@@ -105,4 +108,4 @@ class NormalLikTrick(object):
             lmls[i] -= n * log(scale)
 
         lmls /= 2
-        return lmls
+        return lmls, effect_sizes

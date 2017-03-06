@@ -495,11 +495,41 @@ class EP(object):
 
         return (w1, w2, w3, w4, w5, w6, w7)
 
-    def lml(self):
-        v = fsum(self._lml_components())
-        if not isfinite(v):
-            raise ValueError("LML should not be %f." % v)
-        return fsum(self._lml_components())
+    def lml(self, fast=False):
+        if fast:
+            return self._normal_lml()
+        else:
+            v = fsum(self._lml_components())
+            if not isfinite(v):
+                raise ValueError("LML should not be %f." % v)
+            return fsum(self._lml_components())
+
+    def _normal_lml(self):
+        self._update()
+
+        m = self.m()
+        ttau = self._sitelik_tau
+        teta = self._sitelik_eta
+
+        # NEW PHENOTYPE
+        y = teta.copy()
+
+        # NEW MEAN
+        m = ttau * m
+
+        # NEW COVARIANCE
+        K = self.K()
+        K = ddot(ttau, ddot(K, ttau, left=False), left=True)
+        sum2diag(K, ttau, out=K)
+        (Q, S0) = economic_qs(K)
+        Q0, Q1 = Q
+
+        from ...lmm import FastLMM
+        from numpy import newaxis
+
+        fastlmm = FastLMM(y, Q0, Q1, S0, covariates=m[:, newaxis])
+        fastlmm.learn(progress=False)
+        return fastlmm.lml()
 
     def _gradient_over_v(self):
         self._update()
