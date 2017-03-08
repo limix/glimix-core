@@ -16,8 +16,9 @@ from ._core import FastLMMCore
 class FastLMM(Function):
     r"""Fast Linear Mixed Models inference based on the covariance rank."""
 
-    def __init__(self, y, Q0, Q1, S0, covariates=None):
+    def __init__(self, y, Q0, Q1, S0, covariates=None, options=None):
         super(FastLMM, self).__init__(logistic=Scalar(0.0))
+        self._options = options
 
         if not is_all_finite(y):
             raise ValueError("There are non-finite values in the phenotype.")
@@ -82,7 +83,7 @@ class FastLMM(Function):
         self._flmmc.delta = self._delta()
         return self._flmmc.lml()
 
-    def lml(self, fast=False):
+    def lml(self):
         self._flmmc.delta = self._delta()
         return self._flmmc.lml()
 

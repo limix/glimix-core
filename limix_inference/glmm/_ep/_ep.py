@@ -6,6 +6,7 @@ import logging
 from math import fsum
 from time import time
 
+from scipy_sugar.stats import quantile_gaussianize
 from cachetools import LRUCache
 from operator import attrgetter
 from cachetools import cachedmethod
@@ -495,8 +496,8 @@ class EP(object):
 
         return (w1, w2, w3, w4, w5, w6, w7)
 
-    def lml(self, fast=False):
-        if fast:
+    def lml(self):
+        if self._options['fast']:
             return self._normal_lml()
         else:
             v = fsum(self._lml_components())
@@ -513,6 +514,8 @@ class EP(object):
 
         # NEW PHENOTYPE
         y = teta.copy()
+        if self._options['rank_norm']:
+            y = quantile_gaussianize(y)
 
         # NEW MEAN
         m = ttau * m
@@ -964,6 +967,8 @@ class EP(object):
 
         # NEW PHENOTYPE
         y = teta.copy()
+        if self._options['rank_norm']:
+            y = quantile_gaussianize(y)
 
         # NEW MEAN
         m = ttau * m

@@ -55,11 +55,15 @@ class ExpFamEP(EP):
         S0 (array_like): positive eigenvalues.
     """
 
-    def __init__(self, prodlik, covariates, Q0, Q1, S0, overdispersion=True):
+    def __init__(self, prodlik, covariates, Q0, Q1, S0, overdispersion=True, options=None):
         covariates = ascontiguousarray(covariates, float)
         Q0 = ascontiguousarray(Q0, float)
         Q1 = ascontiguousarray(Q1, float)
         S0 = ascontiguousarray(S0, float)
+
+        if options is None:
+            options = dict(fast=True, rank_norm=False)
+        self._options = options
 
         super(ExpFamEP, self).__init__(covariates, Q0, S0, overdispersion)
         self._logger = logging.getLogger(__name__)
