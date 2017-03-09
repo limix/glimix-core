@@ -10,7 +10,7 @@ from optimix import maximize_scalar
 from optimix import Function
 from optimix import Scalar
 
-from ._core import FastLMMCore
+from .core import FastLMMCore
 
 
 class FastLMM(Function):
