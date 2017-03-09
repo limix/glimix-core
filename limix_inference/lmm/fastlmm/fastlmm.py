@@ -35,7 +35,7 @@ class FastLMM(Function):
         else:
             raise ValueError
 
-        self._flmmc._valid_update = False
+        self._flmmc.valid_update = False
 
     def unfix(self, var_name):
         if var_name == 'delta':
@@ -45,7 +45,7 @@ class FastLMM(Function):
         else:
             raise ValueError
 
-        self._flmmc._valid_update = False
+        self._flmmc.valid_update = False
 
     def get_normal_likelihood_trick(self):
         return self._flmmc.get_normal_likelihood_trick()

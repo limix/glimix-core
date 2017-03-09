@@ -505,13 +505,10 @@ class EP(object):
         return (w1, w2, w3, w4, w5, w6, w7)
 
     def lml(self):
-        if self._options['fast']:
-            return self._normal_lml()
-        else:
-            v = fsum(self._lml_components())
-            if not isfinite(v):
-                raise ValueError("LML should not be %f." % v)
-            return fsum(self._lml_components())
+        v = fsum(self._lml_components())
+        if not isfinite(v):
+            raise ValueError("LML should not be %f." % v)
+        return fsum(self._lml_components())
 
     def _normal_lml(self):
         self._update()

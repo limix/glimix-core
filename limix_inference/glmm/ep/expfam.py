@@ -62,7 +62,7 @@ class ExpFamEP(EP):
         S0 = ascontiguousarray(S0, float)
 
         if options is None:
-            options = dict(fast=False, rank_norm=False)
+            options = dict(rank_norm=False)
         self._options = options
 
         super(ExpFamEP, self).__init__(covariates, Q0, S0, overdispersion)

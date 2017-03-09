@@ -66,7 +66,7 @@ class FastLMMCore(object):
         self._tMTQ0 = self._tM.T.dot(Q0)
         self._tMTQ1 = self._tM.T.dot(Q1)
 
-        self._valid_update = 0
+        self.valid_update = False
         self.__Q0tymD0 = None
         self.__Q1tymD1 = None
 
@@ -118,7 +118,7 @@ class FastLMMCore(object):
         o._tMTQ0 = self._tMTQ0
         o._tMTQ1 = self._tMTQ1
 
-        o._valid_update = self._valid_update
+        o._valid_update = self.valid_update
         from copy import copy
         o.__Q0tymD0 = copy(self.__Q0tymD0)
         o.__Q1tymD1 = copy(self.__Q1tymD1)
@@ -151,7 +151,7 @@ class FastLMMCore(object):
         self._tMTQ0 = self._tM.T.dot(self._Q0)
         self._tMTQ1 = self._tM.T.dot(self._Q1)
 
-        self._valid_update = 0
+        self.valid_update = 0
         self.__Q0tymD0 = None
         self.__Q1tymD1 = None
 
@@ -202,7 +202,7 @@ class FastLMMCore(object):
 
     @delta.setter
     def delta(self, delta):
-        self._valid_update = 0
+        self.valid_update = False
         self.__Q0tymD0 = None
         self.__Q1tymD1 = None
         self._delta = delta
@@ -239,7 +239,7 @@ class FastLMMCore(object):
         self._diag1 = self._delta
 
     def update(self):
-        if self._valid_update:
+        if self.valid_update:
             return
 
         self._update_diags()
@@ -247,10 +247,10 @@ class FastLMMCore(object):
         self._update_fixed_effects()
         self._update_scale()
 
-        self._valid_update = 1
+        self.valid_update = True
 
     def lml(self):
-        if self._valid_update:
+        if self.valid_update:
             return self._lml
 
         self.update()
