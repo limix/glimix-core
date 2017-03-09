@@ -135,6 +135,7 @@ class ExpFamEP(EP):
         return self.genetic_variance / total
 
     def copy(self):
+        # pylint: disable=W0212
         ep = ExpFamEP.__new__(ExpFamEP)
         self._copy_to(ep)
 

@@ -1,8 +1,7 @@
 """FastLMM implementation."""
 from __future__ import division
 
-from numpy import (asarray, ascontiguousarray, concatenate, dot, log, newaxis,
-                   sqrt, var, zeros)
+from numpy import (ascontiguousarray, dot, log, sqrt, var, zeros)
 from numpy.random import RandomState
 from scipy.stats import multivariate_normal
 
@@ -118,7 +117,7 @@ class FastLMMCore(object):
         o._tMTQ0 = self._tMTQ0
         o._tMTQ1 = self._tMTQ1
 
-        o._valid_update = self.valid_update
+        o.valid_update = self.valid_update
         from copy import copy
         o.__Q0tymD0 = copy(self.__Q0tymD0)
         o.__Q1tymD1 = copy(self.__Q1tymD1)

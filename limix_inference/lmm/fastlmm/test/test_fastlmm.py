@@ -1,7 +1,7 @@
 from __future__ import division
 
-import numpy as np
-from numpy import ones, concatenate
+from numpy.random import RandomState
+from numpy import ones, concatenate, sqrt
 from numpy import arange, newaxis
 from numpy.testing import assert_allclose
 
@@ -16,12 +16,12 @@ from limix_inference.mean import OffsetMean
 from limix_inference.random import GLMMSampler
 
 def test_fast_scan():
-    random = np.random.RandomState(9458)
+    random = RandomState(9458)
     N = 500
     X = random.randn(N, N + 1)
     X -= X.mean(0)
     X /= X.std(0)
-    X /= np.sqrt(X.shape[1])
+    X /= sqrt(X.shape[1])
     offset = 1.0
 
     mean = OffsetMean()
@@ -51,11 +51,11 @@ def test_fast_scan():
     markers = random.randn(N, 2)
 
     flmm_ = flmm.copy()
-    flmm_.M = concatenate([flmm.M, markers[:,0][:,newaxis]], axis=1)
+    flmm_.M = concatenate([flmm.M, markers[:, 0][:, newaxis]], axis=1)
     lml0 = flmm_.lml()
 
     flmm_ = flmm.copy()
-    flmm_.M = concatenate([flmm.M, markers[:,1][:,newaxis]], axis=1)
+    flmm_.M = concatenate([flmm.M, markers[:, 1][:, newaxis]], axis=1)
     lml1 = flmm_.lml()
 
     lik_trick = flmm.get_normal_likelihood_trick()
@@ -64,12 +64,12 @@ def test_fast_scan():
     assert_allclose(lmls, [lml0, lml1], rtol=1e-5)
 
 def test_learn():
-    random = np.random.RandomState(9458)
+    random = RandomState(9458)
     N = 500
     X = random.randn(N, N + 1)
     X -= X.mean(0)
     X /= X.std(0)
-    X /= np.sqrt(X.shape[1])
+    X /= sqrt(X.shape[1])
     offset = 1.0
 
     mean = OffsetMean()
@@ -102,12 +102,12 @@ def test_learn():
 
 
 def test_fastlmm_learn_fix():
-    random = np.random.RandomState(9458)
+    random = RandomState(9458)
     N = 500
     X = random.randn(N, N + 1)
     X -= X.mean(0)
     X /= X.std(0)
-    X /= np.sqrt(X.shape[1])
+    X /= sqrt(X.shape[1])
     offset = 1.0
 
     mean = OffsetMean()
