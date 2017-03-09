@@ -23,5 +23,7 @@ General implementation
   :members:
 """
 
-from ._fastlmm import FastLMM, NormalLikTrick
-from ._slowlmm import SlowLMM
+from .fastlmm import FastLMM, NormalLikTrick
+from .slowlmm import SlowLMM
+
+__all__ = ['SlowLMM', 'FastLMM', 'NormalLikTrick']

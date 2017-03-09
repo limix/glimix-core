@@ -36,4 +36,6 @@ Expectation propagation
               heritability, K, m, beta, v, delta, lml, learn, fixed_ep
 """
 
-from ._ep import ExpFamEP
+from .ep import ExpFamEP
+
+__all__ = ['ExpFamEP']

@@ -1,6 +1,7 @@
 from __future__ import division
 
-from numpy import append, asarray, concatenate, dot, empty, log, newaxis, sum
+from numpy import append, asarray, concatenate, dot, empty, log, newaxis
+from numpy import sum as npsum
 
 from numpy_sugar.linalg import solve, ddot
 
@@ -62,14 +63,14 @@ class NormalLikTrick(object):
 
         c0_00 = MTQ0diag0.dot(MTQ0.T)
         c0_01 = MTQ0diag0.dot(mTQ0.T)
-        c0_11 = sum((mTQ0 / self.diag0) * mTQ0, axis=1)
+        c0_11 = npsum((mTQ0 / self.diag0) * mTQ0, axis=1)
 
         b1 = yTQ1diag1.dot(MTQ1.T)
         b1m = yTQ1diag1.dot(mTQ1.T)
 
         c1_00 = MTQ1diag1.dot(MTQ1.T)
         c1_01 = MTQ1diag1.dot(mTQ1.T)
-        c1_11 = sum((mTQ1 / self.diag1) * mTQ1, axis=1)
+        c1_11 = npsum((mTQ1 / self.diag1) * mTQ1, axis=1)
 
         C0 = empty((nc + 1, nc + 1))
         C0[:-1, :-1] = c0_00
@@ -83,8 +84,8 @@ class NormalLikTrick(object):
 
         LOG2PI = 1.837877066409345339081937709124758839607238769531250
         lmls[:] = -n * LOG2PI - n
-        lmls[:] += -sum(log(self.diag0)) - (n - len(self.diag0)
-                                            ) * log(self.diag1)
+        lmls[:] += -npsum(log(self.diag0)) - (n - len(self.diag0)
+                                              ) * log(self.diag1)
 
         for i in range(markers.shape[1]):
 

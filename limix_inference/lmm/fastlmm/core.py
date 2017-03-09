@@ -1,3 +1,4 @@
+"""FastLMM implementation."""
 from __future__ import division
 
 from numpy import (asarray, ascontiguousarray, concatenate, dot, log, newaxis,
@@ -73,6 +74,7 @@ class FastLMMCore(object):
         self._svd_S12 = sqrt(SVD[1])
         self._svd_V = SVD[2]
         self._tM = ddot(self._svd_U, self._svd_S12, left=False)
+        self.__tbeta = zeros(self._tM.shape[1])
 
     def get_normal_likelihood_trick(self):
         return NormalLikTrick(self.M, self._Q0, self._Q1, self._yTQ0,
@@ -80,6 +82,7 @@ class FastLMMCore(object):
                               self._a1)
 
     def copy(self):
+        # pylint: disable=W0212
         o = FastLMMCore.__new__(FastLMMCore)
         o._n = self._n
         o._p = self._p
@@ -224,7 +227,7 @@ class FastLMMCore(object):
         self._diag0 += self._delta
         self._diag1 = self._delta
 
-    def _update(self):
+    def update(self):
         if self._valid_update:
             return
 
@@ -239,7 +242,7 @@ class FastLMMCore(object):
         if self._valid_update:
             return self._lml
 
-        self._update()
+        self.update()
 
         n = self._n
         p = self._p

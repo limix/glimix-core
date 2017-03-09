@@ -1,6 +1,6 @@
 from __future__ import division
 
-from numpy import sum
+from numpy import sum as npsum
 from numpy import dot
 from numpy import newaxis
 from numpy import nan_to_num
@@ -34,9 +34,9 @@ class FixedEP(object):
         dens1 = AMs1 - ddot(A, dot(Q, cho_solve(L, dot(Q.T, AMs1))), left=True)
         noms1 = dot(self._beta_nom, X)
 
-        row00 = sum(covariates * dens0, 0)
-        row01 = sum(covariates * dens1, 0)
-        row11 = sum(X * dens1, 0)
+        row00 = npsum(covariates * dens0, 0)
+        row01 = npsum(covariates * dens1, 0)
+        row11 = npsum(X * dens1, 0)
 
         betas0 = noms0 * row11
         betas0 -= noms1 * row01
@@ -62,8 +62,8 @@ class FixedEP(object):
         w4 = dot(C * teta, ms)
         w4 -= dot(QBiQtCteta, Am)
         QBiQtAm = dot(Q, cho_solve(L, dot(Q.T, Am)))
-        w5 = -sum(Am * ms, 0)
-        w5 += sum(Am * QBiQtAm, 0)
+        w5 = -npsum(Am * ms, 0)
+        w5 += npsum(Am * QBiQtAm, 0)
         w5 /= 2
         lmls = self._lml_const + w4 + w5
 

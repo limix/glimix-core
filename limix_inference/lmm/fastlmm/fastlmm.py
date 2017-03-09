@@ -1,3 +1,4 @@
+"""FastLMM interface."""
 from __future__ import division
 
 from numpy import exp
@@ -10,7 +11,7 @@ from optimix import maximize_scalar
 from optimix import Function
 from optimix import Scalar
 
-from ._core import FastLMMCore
+from .core import FastLMMCore
 
 
 class FastLMM(Function):
@@ -26,6 +27,14 @@ class FastLMM(Function):
         self._flmmc = FastLMMCore(y, covariates, Q0, Q1, S0)
         self.set_nodata()
 
+    def fix(self, var_name):
+        if var_name == 'delta':
+            super(FastLMM, self).fix('logistic')
+
+    def unfix(self, var_name):
+        if var_name == 'delta':
+            super(FastLMM, self).unfix('logistic')
+
     def get_normal_likelihood_trick(self):
         return self._flmmc.get_normal_likelihood_trick()
 
@@ -38,6 +47,7 @@ class FastLMM(Function):
         self._flmmc.M = v
 
     def copy(self):
+        # pylint: disable=W0212
         o = FastLMM.__new__(FastLMM)
         super(FastLMM, o).__init__(logistic=Scalar(self.get('logistic')))
         o._flmmc = self._flmmc.copy()
@@ -77,6 +87,7 @@ class FastLMM(Function):
 
     def learn(self, progress=True):
         maximize_scalar(self, progress=progress)
+        self._flmmc.update()
         self._flmmc.delta = self._delta()
 
     def value(self):
