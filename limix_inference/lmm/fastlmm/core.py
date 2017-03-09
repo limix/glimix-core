@@ -30,6 +30,8 @@ class FastLMMCore(object):
     def __init__(self, y, M, Q0, Q1, S0):
         y = _make_sure_has_variance(y)
 
+        self._fix_scale = False
+
         self._n = y.shape[0]
         self._p = self._n - S0.shape[0]
         self._S0 = S0
@@ -84,6 +86,7 @@ class FastLMMCore(object):
     def copy(self):
         # pylint: disable=W0212
         o = FastLMMCore.__new__(FastLMMCore)
+        o._fix_scale = self._fix_scale
         o._n = self._n
         o._p = self._p
         o._S0 = self._S0
@@ -121,6 +124,12 @@ class FastLMMCore(object):
         o.__Q1tymD1 = copy(self.__Q1tymD1)
 
         return o
+
+    def fix_scale(self):
+        self._fix_scale = True
+
+    def unfix_scale(self):
+        self._fix_scale = False
 
     @property
     def M(self):
@@ -216,6 +225,8 @@ class FastLMMCore(object):
         self._tbeta = solve(denominator, nominator)
 
     def _update_scale(self):
+        if self._fix_scale:
+            return
         b = self.__tbeta
         p0 = self._a1 - 2 * self._b1.dot(b) + b.dot(self._c1.dot(b))
         p1 = self._a0 - 2 * self._b0.dot(b) + b.dot(self._c0).dot(b)

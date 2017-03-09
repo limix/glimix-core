@@ -133,18 +133,29 @@ def test_fastlmm_learn_fix():
     flmm = FastLMM(y, Q0, Q1, S0, covariates=ones((N, 1)))
 
     flmm.fix('delta')
+    flmm.fix('scale')
     flmm.learn(progress=False)
 
-    assert_allclose(flmm.beta[0], 0.899765212963, rtol=1e-5)
-    assert_allclose(flmm.genetic_variance, 1.46145620299, rtol=1e-5)
-    assert_allclose(flmm.environmental_variance, 1.46145620299, rtol=1e-5)
+    assert_allclose(flmm.beta[0], 0.899765212963)
+    assert_allclose(flmm.genetic_variance, 0.5)
+    assert_allclose(flmm.environmental_variance, 0.5)
+    assert_allclose(flmm.lml(), -681.381571238)
+
+    flmm.unfix('scale')
+    flmm.learn(progress=False)
+
+    assert_allclose(flmm.beta[0], 0.899765212963)
+    assert_allclose(flmm.genetic_variance, 1.4614562029852856)
+    assert_allclose(flmm.environmental_variance, 1.4614562029852856)
+    assert_allclose(flmm.lml(), -949.526700867)
 
     flmm.unfix('delta')
     flmm.learn(progress=False)
 
-    assert_allclose(flmm.beta[0], 0.8997652129631661, rtol=1e-5)
-    assert_allclose(flmm.genetic_variance, 1.7303981309775553, rtol=1e-5)
-    assert_allclose(flmm.environmental_variance, 1.2950028351268132, rtol=1e-5)
+    assert_allclose(flmm.beta[0], 0.899765212963)
+    assert_allclose(flmm.genetic_variance, 1.73039821903)
+    assert_allclose(flmm.environmental_variance, 1.29500280131)
+    assert_allclose(flmm.lml(), -948.798268063)
 
 
 if __name__ == '__main__':

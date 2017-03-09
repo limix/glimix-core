@@ -30,10 +30,22 @@ class FastLMM(Function):
     def fix(self, var_name):
         if var_name == 'delta':
             super(FastLMM, self).fix('logistic')
+        elif var_name == 'scale':
+            self._flmmc.fix_scale()
+        else:
+            raise ValueError
+
+        self._flmmc._valid_update = False
 
     def unfix(self, var_name):
         if var_name == 'delta':
             super(FastLMM, self).unfix('logistic')
+        elif var_name == 'scale':
+            self._flmmc.unfix_scale()
+        else:
+            raise ValueError
+
+        self._flmmc._valid_update = False
 
     def get_normal_likelihood_trick(self):
         return self._flmmc.get_normal_likelihood_trick()
