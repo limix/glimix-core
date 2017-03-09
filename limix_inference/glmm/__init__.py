@@ -26,7 +26,7 @@ Example
     >>> glmm = ExpFamEP(lik, covariates, Q0, Q1, S0)
     >>> glmm.learn(progress=False)
     >>> '%.4f' % glmm.lml()
-    '-69.0595'
+    '-69.0610'
 
 Expectation propagation
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -36,4 +36,6 @@ Expectation propagation
               heritability, K, m, beta, v, delta, lml, learn, fixed_ep
 """
 
-from ._ep import ExpFamEP
+from .ep import ExpFamEP
+
+__all__ = ['ExpFamEP']
