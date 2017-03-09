@@ -2,7 +2,7 @@ from __future__ import division
 
 from numpy import append, asarray, concatenate, dot, empty, log, newaxis, sum
 
-from numpy_sugar.linalg import solve
+from numpy_sugar.linalg import solve, ddot
 
 
 class NormalLikTrick(object):
@@ -18,6 +18,7 @@ class NormalLikTrick(object):
         self.diag1 = diag1
         self.a0 = a0
         self.a1 = a1
+        self.transform = None
 
     def fast_scan(self, markers):
         r"""LMLs of markers by fitting scale and fixed-effect sizes parameters.
@@ -32,6 +33,12 @@ class NormalLikTrick(object):
         where :math:`s` is the scale parameter and :math:`\boldsymbol\beta` is the
         fixed-effect sizes; :math:`\tilde{\mathrm M}` is a marker to be scanned.
         """
+
+        if self.transform is not None:
+            if self.transform.ndim == 1:
+                markers = ddot(self.transform, markers, left=True)
+            else:
+                markers = dot(self.transform, markers)
 
         assert markers.ndim == 2
 

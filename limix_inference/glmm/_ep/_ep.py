@@ -960,6 +960,7 @@ class EP(object):
         # \tilde\y = \tilde\Sigma^{-1} \tilde\mu
         # \tilde\m = \tilde\Sigma^{-1} \tilde\m
         # \tilde\nK = \tilde\Sigma^{-1} \nK \tilde\Sigma^{-1}
+        self._update()
 
         m = self.m()
         ttau = self._sitelik_tau
@@ -985,7 +986,9 @@ class EP(object):
 
         fastlmm = FastLMM(y, Q0, Q1, S0, covariates=m[:, newaxis])
         fastlmm.learn(progress=False)
-        return fastlmm.get_normal_likelihood_trick()
+        nlt = fastlmm.get_normal_likelihood_trick()
+        nlt.transform = ttau
+        return nlt
 
     def _paolo(self):
         tK = self.covariance()
