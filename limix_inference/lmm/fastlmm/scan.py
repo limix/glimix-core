@@ -5,8 +5,9 @@ from numpy import sum as npsum
 
 from numpy_sugar.linalg import solve
 
+LOG2PI = 1.837877066409345339081937709124758839607238769531250
 
-class FastLMMScanner(object):
+class FastLMMScanner(object): # pylint: disable=R0903
     r"""Fast inference over multiple covariates.
 
     Let :math:`\tilde{\mathrm M}_i` be a column-matrix of fixed-effect
@@ -23,42 +24,32 @@ class FastLMMScanner(object):
     def __init__(self, y, M, QS, delta):
 
         self._QS = QS
+        self._diags = [(1 - delta) * QS[1] + delta, delta]
 
-        self._diag0 = (1 - delta) * QS[1] + delta
-        self._delta = delta
+        yTQ = [dot(y.T, Q) for Q in QS[0]]
+        MTQ = [dot(M.T, Q) for Q in QS[0]]
 
-        yTQ0 = dot(y.T, QS[0][0])
+        self._yTQdiag = [l / r for (l, r) in zip(yTQ, self._diags)]
 
-        yTQ1 = dot(y.T, QS[0][1])
+        self._a = [(i**2 / j).sum() for (i, j) in zip(yTQ, self._diags)]
+        self._b = [dot(i, j.T) for(i, j) in zip(self._yTQdiag, MTQ)]
 
-        MTQ0 = dot(M.T, QS[0][0])
-        MTQ1 = dot(M.T, QS[0][1])
-
-        self._yTQ0diag0 = yTQ0 / self._diag0
-        self._yTQ1diag1 = yTQ1 / delta
-
-        self._a0 = (yTQ0**2 / self._diag0).sum()
-        self._b0 = dot(self._yTQ0diag0, MTQ0.T)
-
-        self._a1 = (yTQ1**2).sum() / delta
-        self._b1 = dot(self._yTQ1diag1, MTQ1.T)
-
-        self._MTQ0diag0 = MTQ0 / self._diag0
-        self._MTQ1diag1 = MTQ1 / delta
-
-        LOG2PI = 1.837877066409345339081937709124758839607238769531250
-        n = len(y)
-        self._static_lml = -n * LOG2PI - n
-        self._static_lml -= npsum(log(self._diag0))
-        self._static_lml -= (n - len(self._diag0)) * log(delta)
+        self._MTQdiag = [i / j for (i, j) in zip(MTQ, self._diags)]
 
         nc = M.shape[1]
 
-        self._C0 = empty((nc + 1, nc + 1))
-        self._C0[:-1, :-1] = dot(self._MTQ0diag0, MTQ0.T)
+        self._C = [empty((nc + 1, nc + 1)), empty((nc + 1, nc + 1))]
 
-        self._C1 = empty((nc + 1, nc + 1))
-        self._C1[:-1, :-1] = dot(self._MTQ1diag1, MTQ1.T)
+        for i in range(2):
+            self._C[i][:-1, :-1] = dot(self._MTQdiag[i], MTQ[i].T)
+
+    def _static_lml(self):
+        n = self._QS[0].shape[0]
+        p = len(self._diags[0])
+        static_lml = -n * LOG2PI - n
+        static_lml -= npsum(log(self._diags[0]))
+        static_lml -= (n - p) * log(self._diags[1])
+        return static_lml
 
     def fast_scan(self, markers):
         r"""LMLs of markers by fitting scale and fixed-effect sizes parameters.
@@ -72,49 +63,39 @@ class FastLMMScanner(object):
         """
         assert markers.ndim == 2
 
-        mTQ0 = dot(markers.T, self._QS[0][0])
-        mTQ1 = dot(markers.T, self._QS[0][1])
+        mTQ = [dot(markers.T, Q) for Q in self._QS[0]]
 
-        b0m = dot(self._yTQ0diag0, mTQ0.T)
-        b1m = dot(self._yTQ1diag1, mTQ1.T)
+        bm = [dot(i, j.T) for (i, j) in zip(self._yTQdiag, mTQ)]
 
-        c0_01 = dot(self._MTQ0diag0, mTQ0.T)
-        c0_11 = npsum((mTQ0 / self._diag0) * mTQ0, axis=1)
+        c_01 = [dot(i, j.T) for (i, j) in zip(self._MTQdiag, mTQ)]
+        c_11 = [npsum((i / j) * i, axis=1) for (i, j) in zip(mTQ, self._diags)]
 
-        c1_01 = dot(self._MTQ1diag1, mTQ1.T)
-        c1_11 = npsum((mTQ1 / self._delta) * mTQ1, axis=1)
-
-        n = markers.shape[0]
         lmls = full(markers.shape[1], self._static_lml)
         effect_sizes = empty(markers.shape[1])
 
         for i in range(markers.shape[1]):
 
-            b00m = append(self._b0, b0m[i])
-            b11m = append(self._b1, b1m[i])
+            b00m = append(self._b[0], bm[0][i])
+            b11m = append(self._b[1], bm[1][i])
 
-            nominator = b11m - b00m
+            self._C[0][:-1, -1] = c_01[0][:, i]
+            self._C[1][:-1, -1] = c_01[1][:, i]
 
-            self._C0[:-1, -1] = c0_01[:, i]
-            self._C1[:-1, -1] = c1_01[:, i]
+            self._C[0][-1, :-1] = self._C[0][:-1, -1]
+            self._C[1][-1, :-1] = self._C[1][:-1, -1]
 
-            self._C0[-1, :-1] = self._C0[:-1, -1]
-            self._C1[-1, :-1] = self._C1[:-1, -1]
+            self._C[0][-1, -1] = c_11[0][i]
+            self._C[1][-1, -1] = c_11[1][i]
 
-            self._C0[-1, -1] = c0_11[i]
-            self._C1[-1, -1] = c1_11[i]
-
-            denominator = self._C1 - self._C0
-
-            beta = solve(denominator, nominator)
+            beta = solve(self._C[1] - self._C[0], b11m - b00m)
             effect_sizes[i] = beta[-1]
 
-            p0 = self._a1 - 2 * b11m.dot(beta) + beta.dot(self._C1.dot(beta))
-            p1 = self._a0 - 2 * b00m.dot(beta) + beta.dot(self._C0).dot(beta)
+            p0 = self._a[1] - 2 * b11m.dot(beta) + beta.dot(self._C[1].dot(beta))
+            p1 = self._a[0] - 2 * b00m.dot(beta) + beta.dot(self._C[0]).dot(beta)
 
-            scale = (p0 + p1) / n
+            scale = (p0 + p1) / markers.shape[0]
 
-            lmls[i] -= n * log(scale)
+            lmls[i] -= markers.shape[0] * log(scale)
 
         lmls /= 2
         return lmls, effect_sizes
