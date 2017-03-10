@@ -38,7 +38,8 @@ class FastLMM(Function):
         QS (tuple): economic eigen decompositon ((Q0, Q1), S0).
         options (dict): nao sei
 
-    Examples:
+    Examples
+    --------
 
     .. doctest::
 
