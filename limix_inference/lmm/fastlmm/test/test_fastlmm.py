@@ -44,7 +44,7 @@ def test_fast_scan():
 
     QS = economic_qs_linear(X)
 
-    flmm = FastLMM(y, QS, covariates=ones((N, 1)))
+    flmm = FastLMM(y, ones((N, 1)), QS)
 
     flmm.learn(progress=False)
 
@@ -92,7 +92,7 @@ def test_learn():
 
     QS = economic_qs_linear(X)
 
-    flmm = FastLMM(y, QS, covariates=ones((N, 1)))
+    flmm = FastLMM(y, ones((N, 1)), QS)
 
     flmm.learn(progress=False)
 
@@ -130,7 +130,7 @@ def test_fastlmm_learn_fix():
 
     QS = economic_qs_linear(X)
 
-    flmm = FastLMM(y, QS, covariates=ones((N, 1)))
+    flmm = FastLMM(y, ones((N, 1)), QS)
 
     flmm.fix('delta')
     flmm.fix('scale')

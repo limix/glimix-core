@@ -17,6 +17,27 @@ from .core import FastLMMCore
 class FastLMM(Function):
     r"""Fast Linear Mixed Models inference based on eigen decomposition.
 
+    It models
+
+    .. math::
+
+        \mathbf y \sim \mathcal N\Big(~ \mathrm M\boldsymbol\beta;~
+          s \big(
+            (1-\delta)
+              \mathrm Q \mathrm S \mathrm Q^{\intercal} +
+            \delta \mathrm I
+          \big)
+        ~\Big)
+
+    for which :math:`\mathrm Q \mathrm S \mathrm Q^{\intercal} = \mathrm K`
+    is the eigen decomposition of the covariance matrix.
+
+    Args:
+        y (array_like): real-valued outcome.
+        M (array_like): covariates as a two-dimensional array.
+        QS (tuple): economic eigen decompositon ((Q0, Q1), S0).
+        options (dict): nao sei
+
     Examples:
 
     .. doctest::
@@ -29,7 +50,7 @@ class FastLMM(Function):
         >>> QS = economic_qs_linear(X)
         >>> covariates = array([[1], [1]])
         >>> y = array([-1, 2], float)
-        >>> flmm = FastLMM(y, QS, covariates=covariates)
+        >>> flmm = FastLMM(y, covariates, QS)
         >>> flmm.learn(progress=False)
         >>> print('%.3f' % flmm.lml())
         -3.649
@@ -46,7 +67,7 @@ class FastLMM(Function):
         >>> QS = economic_qs_linear(X)
         >>> covariates = array([[1], [1]])
         >>> y = array([-1, 2], float)
-        >>> flmm = FastLMM(y, QS, covariates=covariates)
+        >>> flmm = FastLMM(y, covariates, QS)
         >>> flmm.fix('delta')
         >>> flmm.fix('scale')
         >>> flmm.learn(progress=False)
@@ -63,14 +84,14 @@ class FastLMM(Function):
 
     """
 
-    def __init__(self, y, QS, covariates=None, options=None):
+    def __init__(self, y, M, QS, options=None):
         super(FastLMM, self).__init__(logistic=Scalar(0.0))
         self._options = options
 
         if not is_all_finite(y):
             raise ValueError("There are non-finite values in the phenotype.")
 
-        self._flmmc = FastLMMCore(y, covariates, QS)
+        self._flmmc = FastLMMCore(y, M, QS)
         self.set_nodata()
 
     def fix(self, var_name):

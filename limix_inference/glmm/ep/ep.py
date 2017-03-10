@@ -534,7 +534,7 @@ class EP(object):
         from ...lmm import FastLMM
         from numpy import newaxis
 
-        fastlmm = FastLMM(y, QS, covariates=m[:, newaxis])
+        fastlmm = FastLMM(y, m[:, newaxis], QS)
         fastlmm.learn(progress=False)
         return fastlmm.lml()
 
@@ -986,7 +986,7 @@ class EP(object):
         from ...lmm import FastLMM
         from numpy import newaxis
 
-        fastlmm = FastLMM(y, QS, covariates=m[:, newaxis])
+        fastlmm = FastLMM(y, m[:, newaxis], QS)
         fastlmm.learn(progress=False)
         nlt = fastlmm.get_normal_likelihood_trick()
         nlt.transform = ttau

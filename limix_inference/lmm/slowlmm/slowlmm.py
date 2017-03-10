@@ -12,7 +12,7 @@ from optimix import Composite
 class SlowLMM(Composite):
     r"""General Linear Mixed Models.
 
-    Models
+    It models
 
     .. math::
 
