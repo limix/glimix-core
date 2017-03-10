@@ -35,7 +35,6 @@ class FastLMM(Function):
         y (array_like): real-valued outcome.
         M (array_like): covariates as a two-dimensional array.
         QS (tuple): economic eigen decompositon ((Q0, Q1), S0).
-        options (dict): nao sei
 
     Examples
     --------
@@ -84,9 +83,8 @@ class FastLMM(Function):
 
     """
 
-    def __init__(self, y, M, QS, options=None):
+    def __init__(self, y, M, QS):
         super(FastLMM, self).__init__(logistic=Scalar(0.0))
-        self._options = options
 
         if not is_all_finite(y):
             raise ValueError("There are non-finite values in the phenotype.")
