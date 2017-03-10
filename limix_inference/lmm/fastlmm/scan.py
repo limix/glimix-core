@@ -1,12 +1,12 @@
 from __future__ import division
 
-from numpy import append, asarray, concatenate, dot, empty, log, newaxis
+from numpy import append, dot, empty, log
 from numpy import sum as npsum
 
 from numpy_sugar.linalg import solve, ddot
 
 
-class NormalLikTrick(object):
+class FastLMMScanner(object):
     r"""Necessary data for fast lml computation over many fixed-effects."""
 
     def __init__(self, M, Q0, Q1, yTQ0, yTQ1, diag0, diag1, a0, a1):

@@ -1,4 +1,4 @@
 from .fastlmm import FastLMM
-from .scan import NormalLikTrick
+from .scan import FastLMMScanner
 
-__all__ = ['FastLMM', 'NormalLikTrick']
+__all__ = ['FastLMM', 'FastLMMScanner']

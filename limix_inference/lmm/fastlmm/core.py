@@ -7,7 +7,7 @@ from scipy.stats import multivariate_normal
 from numpy_sugar import epsilon
 from numpy_sugar.linalg import ddot, economic_svd, solve, sum2diag
 
-from .scan import NormalLikTrick
+from .scan import FastLMMScanner
 
 
 def _make_sure_has_variance(y):
@@ -78,7 +78,7 @@ class FastLMMCore(object):
         self.__tbeta = zeros(self._tM.shape[1])
 
     def get_normal_likelihood_trick(self):
-        return NormalLikTrick(self.M, self._Q0, self._Q1, self._yTQ0,
+        return FastLMMScanner(self.M, self._Q0, self._Q1, self._yTQ0,
                               self._yTQ1, self._diag0, self._diag1, self._a0,
                               self._a1)
 

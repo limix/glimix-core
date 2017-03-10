@@ -19,11 +19,15 @@ likelihood: :class:`.SlowLMM` and :class:`.FastLMM`.
 The former is more general but slower then the later;
 the later one assumes a scaled covariance matrix and linear fixed-effects.
 
+:class:`.FastLMMScanner` can be used to perform fast inference over multiple
+covariates;
+it is meant to perform such inference over millions of covariates in seconds.
+
 Public interface
 ^^^^^^^^^^^^^^^^
 """
 
-from .fastlmm import FastLMM, NormalLikTrick
+from .fastlmm import FastLMM, FastLMMScanner
 from .slowlmm import SlowLMM
 
-__all__ = ['SlowLMM', 'FastLMM', 'NormalLikTrick']
+__all__ = ['SlowLMM', 'FastLMM', 'FastLMMScanner']
