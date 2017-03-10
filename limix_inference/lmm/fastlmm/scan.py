@@ -9,9 +9,15 @@ from numpy_sugar.linalg import solve
 class FastLMMScanner(object):
     r"""Fast inference over multiple covariates.
 
+    Let :math:`\tilde{\mathrm M}_i` be a column-matrix of fixed-effect
+    :math:`i`.
+    It fits :math:`\alpha_i` and refits :math:`\boldsymbol\beta` and :math:`s`
+    for each fixed-effect :math:`i` in order to compute the LMLs:
+
     .. math::
 
-        aw
+        \mathbf y \sim \mathcal N\big(~ \mathrm M\boldsymbol\beta
+        + \tilde{\mathrm M}_i \alpha_i;~ s \mathrm K ~\big)
     """
 
     def __init__(self, y, M, QS, delta):
@@ -57,15 +63,12 @@ class FastLMMScanner(object):
     def fast_scan(self, markers):
         r"""LMLs of markers by fitting scale and fixed-effect sizes parameters.
 
-        The likelihood is given by
+        Args:
 
-        .. math::
+            markers (array_like): matrix of fixed-effects across columns.
 
-            \mathcal N\big(~\mathbf y ~|~ \boldsymbol\beta^{\intercal}
-            [\mathrm M ~~ \tilde{\mathrm M}],  s \mathrm K~\big),
-
-        where :math:`s` is the scale parameter and :math:`\boldsymbol\beta` is the
-        fixed-effect sizes; :math:`\tilde{\mathrm M}` is a marker to be scanned.
+        Returns:
+            tuple: LMLs and effect-sizes, respectively.
         """
         assert markers.ndim == 2
 

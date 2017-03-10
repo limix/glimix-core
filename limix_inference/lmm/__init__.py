@@ -16,8 +16,8 @@ where :math:`\mathbf u \sim \mathcal N(\mathbf 0, \mathrm K)` and
 :math:`\epsilon_i` are iid Normal random variables.
 This module provides two methods for fitting LMMs via maximum
 likelihood: :class:`.SlowLMM` and :class:`.FastLMM`.
-The former is more general but slower then the later;
-the later one assumes a scaled covariance matrix and linear fixed-effects.
+The former is more general but slower than the latter;
+the latter assumes a scaled covariance matrix and linear fixed-effects.
 
 :class:`.FastLMMScanner` can be used to perform fast inference over multiple
 covariates;

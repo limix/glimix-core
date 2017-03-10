@@ -10,7 +10,7 @@ from optimix import Composite
 
 
 class SlowLMM(Composite):
-    r"""General Linear Mixed Models.
+    r"""Linear Mixed Models inference via maximum likelihood.
 
     It models
 
