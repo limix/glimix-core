@@ -74,8 +74,8 @@ class SlowLMM(Composite):
         Kiym = solve(cov, self._y - mean)
 
         g = []
-        for i in range(len(gmean)):
-            g.append(gmean[i].T.dot(Kiym))
+        for gmeani in gmean:
+            g += [gmeani.T.dot(Kiym)]
         return g
 
     def _lml_gradient_cov(self, mean, cov, gcov):
@@ -83,9 +83,9 @@ class SlowLMM(Composite):
         Kiym = solve(cov, self._y - mean)
 
         g = []
-        for i in range(len(gcov)):
-            g.append(-solve(cov, gcov[i]).diagonal().sum() + Kiym.dot(gcov[
-                i].dot(Kiym)))
+        for c in gcov:
+            g += [-solve(cov, c).diagonal().sum() + Kiym.dot(c.dot(Kiym))]
+
         return [gi / 2 for gi in g]
 
     def value(self, mean, cov):
@@ -98,6 +98,7 @@ class SlowLMM(Composite):
         n = len(self._y)
         return -(logdet + ym.dot(Kiym) + n * log(2 * pi)) / 2
 
+    # pylint: disable=W0221
     def gradient(self, mean, cov, gmean, gcov):
         grad_cov = self._lml_gradient_cov(mean, cov, gcov)
         grad_mean = self._lml_gradient_mean(mean, cov, gmean)
