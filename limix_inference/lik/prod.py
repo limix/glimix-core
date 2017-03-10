@@ -87,7 +87,7 @@ class DeltaProdLik(ProdLik):
 
     .. math::
 
-        \prod_i \delta[y_i == x_i]
+        \prod_i \delta[y_i = x_i]
 
     """
 
@@ -149,7 +149,7 @@ class BernoulliProdLik(ProdLik):
 
         \prod_i g(x_i)^{y_i} (1-g(x_i))^{1-y_i}
 
-    where :math:`g(x)` is the inverse of the link function.
+    where :math:`g(\cdot)` is the inverse of the link function.
 
     """
 
@@ -286,6 +286,7 @@ class BinomialProdLik(ProdLik):
 
 
 class PoissonProdLik(ProdLik):
+    r"""TODO."""
     def __init__(self, link):
         super(PoissonProdLik, self).__init__(None)
         self._link = link

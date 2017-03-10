@@ -45,6 +45,6 @@ from .prod import (DeltaProdLik, BernoulliProdLik, BinomialProdLik,
                    PoissonProdLik)
 
 __all__ = [
-    'DeltaLik', 'BernoulliLik', 'BinomialLik', 'PoissonLik', 'DeltaProdLik',
-    'BernoulliProdLik', 'BinomialProdLik', 'PoissonProdLik'
+    'DeltaLik', 'BernoulliLik', 'BinomialLik', 'PoissonLik',
+    'DeltaProdLik', 'BernoulliProdLik', 'BinomialProdLik', 'PoissonProdLik'
 ]

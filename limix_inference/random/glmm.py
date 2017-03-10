@@ -17,7 +17,7 @@ class GLMMSampler(object):
         \mathcal N(\mathbf z ~|~ \mathbf m; \mathrm K) d\mathbf z.
 
     Args:
-        lik (sequence): likelihood product. (Refer to :doc:`ProdLik`)
+        lik (sequence): likelihood product. (Refer to :doc:`lik`)
         mean (mean_function): mean function defined. (Refer to :doc:`mean`.)
         cov (covariance_function): covariance function defined. (Refer to :doc:`cov`.)
 

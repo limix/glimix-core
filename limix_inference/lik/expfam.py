@@ -11,9 +11,6 @@ from numpy_sugar.special import logbinom
 
 
 class ExpFamLik(object):
-    def __init__(self):
-        super(ExpFamLik, self).__init__()
-
     def pdf(self, x):
         return exp(self.logpdf(x))
 
@@ -52,13 +49,22 @@ class ExpFamLik(object):
     def c(self):
         raise NotImplementedError
 
-    def sample(self, x):
+    def sample(self, x, random_state=None):
         raise NotImplementedError
 
 
 class DeltaLik(ExpFamLik):
+    r"""Represents the Kronecker delta likelihood.
+
+    It can be written as
+
+    .. math::
+
+        \delta[y = g(x)]
+
+    where :math:`g(\cdot)` is the inverse of the link function.
+    """
     def __init__(self, link=None):
-        super(DeltaLik, self).__init__()
         self._link = link
         self._outcome = None
         self.name = 'Delta'
@@ -77,7 +83,7 @@ class DeltaLik(ExpFamLik):
 
     @property
     def ytuple(self):
-        raise (self._outcome,)
+        return (self._outcome,)
 
     def mean(self, x):
         return x
@@ -101,8 +107,21 @@ class DeltaLik(ExpFamLik):
     def sample(self, x, random_state=None):
         return self.mean(x)
 
+    def latent_variance(self):
+        raise NotImplementedError
+
 
 class BernoulliLik(ExpFamLik):
+    r"""Represents the Bernoulli likelihood.
+
+    It can be written as
+
+    .. math::
+
+        g(x)^{y} (1-g(x))^{1-y}
+
+    where :math:`g(\cdot)` is the inverse of the link function.
+    """
     def __init__(self, link):
         super(BernoulliLik, self).__init__()
         self._link = link
@@ -123,14 +142,14 @@ class BernoulliLik(ExpFamLik):
 
     @property
     def ytuple(self):
-        raise (self._outcome,)
+        return (self._outcome,)
 
     def mean(self, x):
         return self._link.inv(x)
 
     @property
     def latent_variance(self):
-        return self._lik.latent_variance
+        return self._link.latent_variance
 
     def theta(self, x):
         m = self.mean(x)
@@ -155,6 +174,17 @@ class BernoulliLik(ExpFamLik):
 
 
 class BinomialLik(ExpFamLik):
+    r"""Represents the Binomial likelihood.
+
+    It can be written as
+
+    .. math::
+
+        \binom{n}{n y} g(x)^{n y} (1-g(x))^{n - n y}
+
+    where :math:`g(\cdot)` is the inverse of the link function.
+
+    """
     def __init__(self, ntrials, link):
         super(BinomialLik, self).__init__()
         self._link = link
@@ -176,10 +206,14 @@ class BinomialLik(ExpFamLik):
 
     @property
     def ytuple(self):
-        raise (self._nsuccesses, self._ntrials)
+        return (self._nsuccesses, self._ntrials)
 
     def mean(self, x):
         return self._link.inv(x)
+
+    @property
+    def latent_variance(self):
+        raise NotImplementedError
 
     def theta(self, x):
         m = self.mean(x)
@@ -204,6 +238,7 @@ class BinomialLik(ExpFamLik):
 
 
 class PoissonLik(ExpFamLik):
+    r"""TODO."""
     def __init__(self, link):
         super(PoissonLik, self).__init__()
         self._link = link
@@ -224,10 +259,14 @@ class PoissonLik(ExpFamLik):
 
     @property
     def ytuple(self):
-        raise (self._noccurrences,)
+        return (self._noccurrences,)
 
     def mean(self, x):
         return self._link.inv(x)
+
+    @property
+    def latent_variance(self):
+        raise NotImplementedError
 
     def theta(self, x):
         m = self.mean(x)
