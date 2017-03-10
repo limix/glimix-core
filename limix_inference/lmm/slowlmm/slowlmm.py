@@ -24,6 +24,41 @@ class SlowLMM(Composite):
         y (array_like): real-valued outcome.
         mean (mean_function): mean function defined. (Refer to :doc:`mean`.)
         cov (covariance_function): covariance function defined. (Refer to :doc:`cov`.)
+
+    Examples:
+
+    .. doctest::
+
+
+        >>> from numpy.random import RandomState
+        >>> from limix_inference.mean import OffsetMean
+        >>> from limix_inference.lmm import SlowLMM
+        >>> from limix_inference.cov import LinearCov
+        >>>
+        >>> random = RandomState(94584)
+        >>> N = 50
+        >>> X = random.randn(N, 100)
+        >>> offset = 0.5
+        >>>
+        >>> mean = OffsetMean()
+        >>> mean.offset = offset
+        >>> mean.fix('offset')
+        >>> mean.set_data(N)
+        >>>
+        >>> cov = LinearCov()
+        >>> cov.scale = 1.0
+        >>> cov.set_data((X, X))
+        >>>
+        >>> y = random.randn(N)
+        >>>
+        >>> lmm = SlowLMM(y, mean, cov)
+        >>> m = mean.feed().value()
+        >>> K = cov.feed().value()
+        >>> print('Before: %.4f' % lmm.value(m, K))
+        Before: -153.6238
+        >>> lmm.feed().maximize()
+        >>> print('After: %.4f' % lmm.feed().value())
+        After: -79.8992
     """
     def __init__(self, y, mean, cov):
         if var(y) < 1e-8:

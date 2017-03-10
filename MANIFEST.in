@@ -1,5 +1,5 @@
 include LICENSE
 include README.md
 include setup.cfg
-include limix_inference/glmm/_ep/test/data/extreme.npz
+include limix_inference/glmm/ep/test/data/extreme.npz
 recursive-include limix_inference *.py
