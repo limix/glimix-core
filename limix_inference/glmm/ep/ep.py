@@ -947,58 +947,50 @@ class EP(object):
     def covariance(self):
         K = self.K()
         return sum2diag(K, 1 / self._sitelik_tau)
-
-    def get_normal_likelihood_trick(self):
-        # Covariance: nK = K + \tilde\Sigma = K + 1/self._sitelik_tau
-        # via (K + 1/self._sitelik_tau)^{-1} = A1 - A1QB1^-1QTA1
-        # Mean: \mathbf m
-        # New phenotype: \tilde\mu
-        #
-        # I.e.: \tilde\mu \sim N(\mathbf m, K + \tilde\Sigma)
-        #
-        #
-        # We transform the above Normal in an equivalent but more robust
-        # one: \tilde\y \sim N(\tilde\m, \tilde\nK + \Sigma^{-1})
-        #
-        # \tilde\y = \tilde\Sigma^{-1} \tilde\mu
-        # \tilde\m = \tilde\Sigma^{-1} \tilde\m
-        # \tilde\nK = \tilde\Sigma^{-1} \nK \tilde\Sigma^{-1}
-        self._update()
-
-        m = self.m()
-        ttau = self._sitelik_tau
-        teta = self._sitelik_eta
-
-        # NEW PHENOTYPE
-        y = teta.copy()
-        if self._options['rank_norm']:
-            y = quantile_gaussianize(y)
-
-        # NEW MEAN
-        m = ttau * m
-
-        # NEW COVARIANCE
-        K = self.K()
-        K = ddot(ttau, ddot(K, ttau, left=False), left=True)
-        sum2diag(K, ttau, out=K)
-        QS = economic_qs(K)
-
-        from ...lmm import FastLMM
-        from numpy import newaxis
-
-        fastlmm = FastLMM(y, m[:, newaxis], QS)
-        fastlmm.learn(progress=False)
-        nlt = fastlmm.get_normal_likelihood_trick()
-        nlt.transform = ttau
-        return nlt
-
-    def _paolo(self):
-        tK = self.covariance()
-        tmu = self._sitelik_eta / self._sitelik_tau
-        tS = 1 / self._sitelik_tau
-        sigg2 = self.sigma2_b
-        sige2 = self.sigma2_epsilon
-        return dict(tK=tK, tmu=tmu, tS=tS, sigg2=sigg2, sige2=sige2)
+    # 
+    # def get_normal_likelihood_trick(self):
+    #     # Covariance: nK = K + \tilde\Sigma = K + 1/self._sitelik_tau
+    #     # via (K + 1/self._sitelik_tau)^{-1} = A1 - A1QB1^-1QTA1
+    #     # Mean: \mathbf m
+    #     # New phenotype: \tilde\mu
+    #     #
+    #     # I.e.: \tilde\mu \sim N(\mathbf m, K + \tilde\Sigma)
+    #     #
+    #     #
+    #     # We transform the above Normal in an equivalent but more robust
+    #     # one: \tilde\y \sim N(\tilde\m, \tilde\nK + \Sigma^{-1})
+    #     #
+    #     # \tilde\y = \tilde\Sigma^{-1} \tilde\mu
+    #     # \tilde\m = \tilde\Sigma^{-1} \tilde\m
+    #     # \tilde\nK = \tilde\Sigma^{-1} \nK \tilde\Sigma^{-1}
+    #     self._update()
+    #
+    #     m = self.m()
+    #     ttau = self._sitelik_tau
+    #     teta = self._sitelik_eta
+    #
+    #     # NEW PHENOTYPE
+    #     y = teta.copy()
+    #     if self._options['rank_norm']:
+    #         y = quantile_gaussianize(y)
+    #
+    #     # NEW MEAN
+    #     m = ttau * m
+    #
+    #     # NEW COVARIANCE
+    #     K = self.K()
+    #     K = ddot(ttau, ddot(K, ttau, left=False), left=True)
+    #     sum2diag(K, ttau, out=K)
+    #     QS = economic_qs(K)
+    #
+    #     from ...lmm import FastLMM
+    #     from numpy import newaxis
+    #
+    #     fastlmm = FastLMM(y, m[:, newaxis], QS)
+    #     fastlmm.learn(progress=False)
+    #     nlt = fastlmm.get_normal_likelihood_trick()
+    #     nlt.transform = ttau
+    #     return nlt
 
 
 class FunCostOverdispersion(object):

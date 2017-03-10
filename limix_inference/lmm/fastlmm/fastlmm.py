@@ -112,8 +112,8 @@ class FastLMM(Function):
 
         self._flmmc.valid_update = False
 
-    def get_normal_likelihood_trick(self):
-        return self._flmmc.get_normal_likelihood_trick()
+    def get_fast_scanner(self):
+        return self._flmmc.get_fast_scanner()
 
     @property
     def M(self):

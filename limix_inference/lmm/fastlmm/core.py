@@ -74,7 +74,7 @@ class FastLMMCore(object):
         self._tM = ddot(self._svd_U, self._svd_S12, left=False)
         self.__tbeta = zeros(self._tM.shape[1])
 
-    def get_normal_likelihood_trick(self):
+    def get_fast_scanner(self):
         return FastLMMScanner(self._y, self.M, self._QS, self.delta)
 
     def copy(self):

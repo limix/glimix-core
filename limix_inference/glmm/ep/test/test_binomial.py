@@ -10,37 +10,37 @@ from limix_inference.link import LogitLink
 from numpy_sugar.linalg import economic_qs_linear
 
 
-def test_binomial_get_normal_likelihood_trick():
-    random = RandomState(139)
-    nsamples = 30
-    nfeatures = 31
-
-    G = random.randn(nsamples, nfeatures) / sqrt(nfeatures)
-
-    u = random.randn(nfeatures)
-
-    z = 0.1 + 2 * dot(G, u) + random.randn(nsamples)
-
-    ntrials = random.randint(10, 500, size=nsamples)
-
-    y = zeros(nsamples)
-    for i, n in enumerate(ntrials):
-        y[i] = sum(z[i] + random.logistic(scale=pi / sqrt(3), size=n) > 0)
-
-    QS = economic_qs_linear(G)
-
-    M = ones((nsamples, 1))
-    lik = BinomialProdLik(ntrials, LogitLink())
-    lik.nsuccesses = y
-    ep = ExpFamEP(lik, M, QS)
-    ep.learn(progress=False)
-
-    nlt = ep.get_normal_likelihood_trick()
-
-    assert_allclose(
-        nlt.fast_scan(G)[0][:4],
-        [-143.48979397, -144.320398776, -144.039146599, -144.318071262],
-        rtol=1e-5)
+# def test_binomial_get_normal_likelihood_trick():
+#     random = RandomState(139)
+#     nsamples = 30
+#     nfeatures = 31
+#
+#     G = random.randn(nsamples, nfeatures) / sqrt(nfeatures)
+#
+#     u = random.randn(nfeatures)
+#
+#     z = 0.1 + 2 * dot(G, u) + random.randn(nsamples)
+#
+#     ntrials = random.randint(10, 500, size=nsamples)
+#
+#     y = zeros(nsamples)
+#     for i, n in enumerate(ntrials):
+#         y[i] = sum(z[i] + random.logistic(scale=pi / sqrt(3), size=n) > 0)
+#
+#     QS = economic_qs_linear(G)
+#
+#     M = ones((nsamples, 1))
+#     lik = BinomialProdLik(ntrials, LogitLink())
+#     lik.nsuccesses = y
+#     ep = ExpFamEP(lik, M, QS)
+#     ep.learn(progress=False)
+#
+#     nlt = ep.get_normal_likelihood_trick()
+#
+#     assert_allclose(
+#         nlt.fast_scan(G)[0][:4],
+#         [-143.48979397, -144.320398776, -144.039146599, -144.318071262],
+#         rtol=1e-5)
 
 
 def test_binomial_lml():
