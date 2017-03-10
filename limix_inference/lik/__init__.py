@@ -3,29 +3,37 @@
 Likelihoods
 ***********
 
-- :class:`.LinearMean`
-- :class:`.OffsetMean`
-- :class:`.SumMean`
+- :class:`.DeltaLik`
+- :class:`.BernoulliLik`
+- :class:`.BinomialLik`
+- :class:`.PoissonLik`
+- :class:`.DeltaProdLik`
+- :class:`.BernoulliProdLik`
+- :class:`.BinomialProdLik`
+- :class:`.PoissonProdLik`
 
-Linear mean
-^^^^^^^^^^^
+Likelihood products
+^^^^^^^^^^^^^^^^^^^
 
-.. autoclass:: LinearMean
+.. autoclass:: DeltaProdLik
   :members:
 
-Offset mean
-^^^^^^^^^^^
-
-.. autoclass:: OffsetMean
+.. autoclass:: BernoulliProdLik
   :members:
 
-Sum mean
-^^^^^^^^
-
-.. autoclass:: SumMean
+.. autoclass:: BinomialProdLik
   :members:
+
+.. autoclass:: PoissonProdLik
+  :members:
+
 """
 
 from ._expfam import (DeltaLik, BernoulliLik, BinomialLik, PoissonLik)
 from ._prod import (DeltaProdLik, BernoulliProdLik, BinomialProdLik,
                     PoissonProdLik)
+
+__all__ = [
+    'DeltaLik', 'BernoulliLik', 'BinomialLik', 'PoissonLik', 'DeltaProdLik',
+    'BernoulliProdLik', 'BinomialProdLik', 'PoissonProdLik'
+]
