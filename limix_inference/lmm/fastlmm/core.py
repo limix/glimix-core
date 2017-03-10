@@ -26,18 +26,15 @@ def _make_sure_has_variance(y):
 
 class FastLMMCore(object):
     def __init__(self, y, M, QS):
-        (Q0, Q1), S0 = QS
-        y = _make_sure_has_variance(y)
+        self._QS = QS
+        self._y = _make_sure_has_variance(y)
 
         self._fix_scale = False
 
-        self._n = y.shape[0]
-        self._p = self._n - S0.shape[0]
-        self._S0 = S0
-        self._diag0 = S0 * 0.5 + 0.5
+        self._n = self._y.shape[0]
+        self._p = self._n - QS[1].shape[0]
+        self._diag0 = QS[1] * 0.5 + 0.5
         self._diag1 = 0.5
-        self._Q0 = Q0
-        self._Q1 = Q1
         self._tM = None
         self.__tbeta = None
         self._covariate_setup(M)
@@ -56,14 +53,14 @@ class FastLMMCore(object):
         self._b0 = zeros(d)
         self._c0 = zeros((d, d))
 
-        self._yTQ0 = dot(y.T, Q0)
+        self._yTQ0 = dot(self._y.T, QS[0][0])
         self._yTQ0_2x = self._yTQ0**2
 
-        self._yTQ1 = dot(y.T, Q1)
+        self._yTQ1 = dot(self._y.T, QS[0][1])
         self._yTQ1_2x = self._yTQ1**2
 
-        self._tMTQ0 = self._tM.T.dot(Q0)
-        self._tMTQ1 = self._tM.T.dot(Q1)
+        self._tMTQ0 = self._tM.T.dot(QS[0][0])
+        self._tMTQ1 = self._tM.T.dot(QS[0][1])
 
         self.valid_update = False
         self.__Q0tymD0 = None
@@ -78,9 +75,7 @@ class FastLMMCore(object):
         self.__tbeta = zeros(self._tM.shape[1])
 
     def get_normal_likelihood_trick(self):
-        return FastLMMScanner(self.M, self._Q0, self._Q1, self._yTQ0,
-                              self._yTQ1, self._diag0, self._diag1, self._a0,
-                              self._a1)
+        return FastLMMScanner(self._y, self.M, self._QS, self.delta)
 
     def copy(self):
         # pylint: disable=W0212
@@ -88,12 +83,11 @@ class FastLMMCore(object):
         o._fix_scale = self._fix_scale
         o._n = self._n
         o._p = self._p
-        o._S0 = self._S0
         o._diag0 = self._diag0.copy()
         o._diag1 = self._diag1
-        o._Q0 = self._Q0
-        o._Q1 = self._Q1
+        o._QS = self._QS
         o._M = self._M
+        o._y = self._y
 
         o.__tbeta = self.__tbeta.copy()
         o._scale = self._scale
@@ -147,8 +141,8 @@ class FastLMMCore(object):
         self._b0 = zeros(d)
         self._c0 = zeros((d, d))
 
-        self._tMTQ0 = self._tM.T.dot(self._Q0)
-        self._tMTQ1 = self._tM.T.dot(self._Q1)
+        self._tMTQ0 = self._tM.T.dot(self._QS[0][0])
+        self._tMTQ1 = self._tM.T.dot(self._QS[0][1])
 
         self.valid_update = 0
         self.__Q0tymD0 = None
@@ -232,7 +226,7 @@ class FastLMMCore(object):
         self._scale = (p0 + p1) / self._n
 
     def _update_diags(self):
-        self._diag0[:] = self._S0
+        self._diag0[:] = self._QS[1]
         self._diag0 *= (1 - self._delta)
         self._diag0 += self._delta
         self._diag1 = self._delta
@@ -268,8 +262,8 @@ class FastLMMCore(object):
         diag0 = self._diag0
         diag1 = self._diag1
 
-        CpQ0 = Cp.dot(self._Q0)
-        CpQ1 = Cp.dot(self._Q1)
+        CpQ0 = Cp.dot(self._QS[0][0])
+        CpQ1 = Cp.dot(self._QS[0][1])
 
         m = covariates.dot(self.beta)
         mean = m + (1 - delta) * CpQ0.dot(self._Q0tymD0())

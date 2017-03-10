@@ -15,7 +15,7 @@ from limix_inference.cov import SumCov
 from limix_inference.mean import OffsetMean
 from limix_inference.random import GLMMSampler
 
-def test_fast_scan():
+def test_fastlmm_fast_scan():
     random = RandomState(9458)
     N = 500
     X = random.randn(N, N + 1)
@@ -52,16 +52,20 @@ def test_fast_scan():
 
     flmm_ = flmm.copy()
     flmm_.M = concatenate([flmm.M, markers[:, 0][:, newaxis]], axis=1)
+    flmm_.fix('delta')
+    flmm_.learn(progress=False)
     lml0 = flmm_.lml()
 
     flmm_ = flmm.copy()
     flmm_.M = concatenate([flmm.M, markers[:, 1][:, newaxis]], axis=1)
+    flmm_.fix('delta')
+    flmm_.learn(progress=False)
     lml1 = flmm_.lml()
 
     lik_trick = flmm.get_normal_likelihood_trick()
 
     lmls = lik_trick.fast_scan(markers)[0]
-    assert_allclose(lmls, [lml0, lml1], rtol=1e-5)
+    assert_allclose(lmls, [lml0, lml1])
 
 def test_learn():
     random = RandomState(9458)
