@@ -1,7 +1,7 @@
+"""FastLMM implementation."""
 from __future__ import division
 
-from numpy import (asarray, ascontiguousarray, concatenate, dot, log, newaxis,
-                   sqrt, var, zeros)
+from numpy import (ascontiguousarray, dot, log, sqrt, var, zeros)
 from numpy.random import RandomState
 from scipy.stats import multivariate_normal
 
@@ -28,6 +28,8 @@ def _make_sure_has_variance(y):
 class FastLMMCore(object):
     def __init__(self, y, M, Q0, Q1, S0):
         y = _make_sure_has_variance(y)
+
+        self._fix_scale = False
 
         self._n = y.shape[0]
         self._p = self._n - S0.shape[0]
@@ -63,7 +65,7 @@ class FastLMMCore(object):
         self._tMTQ0 = self._tM.T.dot(Q0)
         self._tMTQ1 = self._tM.T.dot(Q1)
 
-        self._valid_update = 0
+        self.valid_update = False
         self.__Q0tymD0 = None
         self.__Q1tymD1 = None
 
@@ -73,6 +75,7 @@ class FastLMMCore(object):
         self._svd_S12 = sqrt(SVD[1])
         self._svd_V = SVD[2]
         self._tM = ddot(self._svd_U, self._svd_S12, left=False)
+        self.__tbeta = zeros(self._tM.shape[1])
 
     def get_normal_likelihood_trick(self):
         return NormalLikTrick(self.M, self._Q0, self._Q1, self._yTQ0,
@@ -80,7 +83,9 @@ class FastLMMCore(object):
                               self._a1)
 
     def copy(self):
+        # pylint: disable=W0212
         o = FastLMMCore.__new__(FastLMMCore)
+        o._fix_scale = self._fix_scale
         o._n = self._n
         o._p = self._p
         o._S0 = self._S0
@@ -112,12 +117,18 @@ class FastLMMCore(object):
         o._tMTQ0 = self._tMTQ0
         o._tMTQ1 = self._tMTQ1
 
-        o._valid_update = self._valid_update
+        o.valid_update = self.valid_update
         from copy import copy
         o.__Q0tymD0 = copy(self.__Q0tymD0)
         o.__Q1tymD1 = copy(self.__Q1tymD1)
 
         return o
+
+    def fix_scale(self):
+        self._fix_scale = True
+
+    def unfix_scale(self):
+        self._fix_scale = False
 
     @property
     def M(self):
@@ -139,7 +150,7 @@ class FastLMMCore(object):
         self._tMTQ0 = self._tM.T.dot(self._Q0)
         self._tMTQ1 = self._tM.T.dot(self._Q1)
 
-        self._valid_update = 0
+        self.valid_update = 0
         self.__Q0tymD0 = None
         self.__Q1tymD1 = None
 
@@ -190,7 +201,7 @@ class FastLMMCore(object):
 
     @delta.setter
     def delta(self, delta):
-        self._valid_update = 0
+        self.valid_update = False
         self.__Q0tymD0 = None
         self.__Q1tymD1 = None
         self._delta = delta
@@ -213,6 +224,8 @@ class FastLMMCore(object):
         self._tbeta = solve(denominator, nominator)
 
     def _update_scale(self):
+        if self._fix_scale:
+            return
         b = self.__tbeta
         p0 = self._a1 - 2 * self._b1.dot(b) + b.dot(self._c1.dot(b))
         p1 = self._a0 - 2 * self._b0.dot(b) + b.dot(self._c0).dot(b)
@@ -224,8 +237,8 @@ class FastLMMCore(object):
         self._diag0 += self._delta
         self._diag1 = self._delta
 
-    def _update(self):
-        if self._valid_update:
+    def update(self):
+        if self.valid_update:
             return
 
         self._update_diags()
@@ -233,13 +246,13 @@ class FastLMMCore(object):
         self._update_fixed_effects()
         self._update_scale()
 
-        self._valid_update = 1
+        self.valid_update = True
 
     def lml(self):
-        if self._valid_update:
+        if self.valid_update:
             return self._lml
 
-        self._update()
+        self.update()
 
         n = self._n
         p = self._p

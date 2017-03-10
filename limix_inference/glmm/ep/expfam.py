@@ -8,7 +8,7 @@ from numpy.linalg import lstsq
 
 from ...liknorm import LikNormMachine
 from ...lmm import FastLMM
-from ._ep import EP
+from .ep import EP
 
 
 class ExpFamEP(EP):
@@ -55,11 +55,15 @@ class ExpFamEP(EP):
         S0 (array_like): positive eigenvalues.
     """
 
-    def __init__(self, prodlik, covariates, Q0, Q1, S0, overdispersion=True):
+    def __init__(self, prodlik, covariates, Q0, Q1, S0, overdispersion=True, options=None):
         covariates = ascontiguousarray(covariates, float)
         Q0 = ascontiguousarray(Q0, float)
         Q1 = ascontiguousarray(Q1, float)
         S0 = ascontiguousarray(S0, float)
+
+        if options is None:
+            options = dict(rank_norm=False)
+        self._options = options
 
         super(ExpFamEP, self).__init__(covariates, Q0, S0, overdispersion)
         self._logger = logging.getLogger(__name__)
@@ -81,6 +85,10 @@ class ExpFamEP(EP):
         else:
             self.delta = 0
             self.v = (h2 * prodlik.latent_variance) / (1 - h2)
+
+    @property
+    def options(self):
+        return self._options
 
     def _tilted_params(self):
         ctau = self._cav_tau
@@ -127,6 +135,7 @@ class ExpFamEP(EP):
         return self.genetic_variance / total
 
     def copy(self):
+        # pylint: disable=W0212
         ep = ExpFamEP.__new__(ExpFamEP)
         self._copy_to(ep)
 

@@ -6,6 +6,7 @@ import logging
 from math import fsum
 from time import time
 
+from scipy_sugar.stats import quantile_gaussianize
 from cachetools import LRUCache
 from operator import attrgetter
 from cachetools import cachedmethod
@@ -19,13 +20,13 @@ from scipy.optimize import fmin_tnc
 from numpy.linalg import LinAlgError
 
 from numpy_sugar import is_all_finite
-from numpy_sugar.linalg import (cho_solve, ddot, dotd, economic_svd, solve, sum2diag,
-                        trace2, economic_qs)
+from numpy_sugar.linalg import (cho_solve, ddot, dotd, economic_svd, solve,
+                                sum2diag, trace2, economic_qs)
 
-from ._conditioning import make_sure_reasonable_conditioning
+from .conditioning import make_sure_reasonable_conditioning
 from numpy_sugar import epsilon
 
-from ._fixed import FixedEP
+from .fixed import FixedEP
 
 MAX_EP_ITER = 30
 EP_EPS = 1e-5
@@ -199,6 +200,7 @@ class EP(object):
         self._ep_params_initialized = False
 
     def _copy_to(self, ep):
+        # pylint: disable=W0212
         ep._cache_SQt = LRUCache(maxsize=1)
         ep._cache_m = LRUCache(maxsize=1)
         ep._cache_K = LRUCache(maxsize=1)
@@ -244,6 +246,12 @@ class EP(object):
         ep._hmu = self._hmu.copy()
         ep._hvar = self._hvar.copy()
         ep._ep_params_initialized = self._ep_params_initialized
+
+        ep._options = self.options.copy()
+
+    @property
+    def options(self):
+        raise NotImplementedError
 
     def _covariate_setup(self, M):
         self._M = M
@@ -305,7 +313,8 @@ class EP(object):
         r"""Covariance matrix of the prior.
 
         Returns:
-            :math:`\sigma_b^2 \mathrm Q_0 \mathrm S_0 \mathrm Q_0^{\intercal} + \sigma_{\epsilon}^2 \mathrm I`.
+            :math:`\sigma_b^2 \mathrm Q_0 \mathrm S_0 \mathrm Q_0^{\intercal}
+            + \sigma_{\epsilon}^2 \mathrm I`.
         """
         return sum2diag(self.sigma2_b * self._QSQt(), self.sigma2_epsilon)
 
@@ -495,14 +504,11 @@ class EP(object):
 
         return (w1, w2, w3, w4, w5, w6, w7)
 
-    def lml(self, fast=False):
-        if fast:
-            return self._normal_lml()
-        else:
-            v = fsum(self._lml_components())
-            if not isfinite(v):
-                raise ValueError("LML should not be %f." % v)
-            return fsum(self._lml_components())
+    def lml(self):
+        v = fsum(self._lml_components())
+        if not isfinite(v):
+            raise ValueError("LML should not be %f." % v)
+        return fsum(self._lml_components())
 
     def _normal_lml(self):
         self._update()
@@ -513,6 +519,8 @@ class EP(object):
 
         # NEW PHENOTYPE
         y = teta.copy()
+        if self._options['rank_norm']:
+            y = quantile_gaussianize(y)
 
         # NEW MEAN
         m = ttau * m
@@ -823,8 +831,7 @@ class EP(object):
 
     @property
     def bounds(self):
-        bounds = dict(v=(1e-3, inf),
-                      delta=(0, 1 - epsilon.small))
+        bounds = dict(v=(1e-3, inf), delta=(0, 1 - epsilon.small))
         return bounds
 
     def _start_optimizer(self):
@@ -940,7 +947,7 @@ class EP(object):
 
     def covariance(self):
         K = self.K()
-        return sum2diag(K, 1/self._sitelik_tau)
+        return sum2diag(K, 1 / self._sitelik_tau)
 
     def get_normal_likelihood_trick(self):
         # Covariance: nK = K + \tilde\Sigma = K + 1/self._sitelik_tau
@@ -957,6 +964,7 @@ class EP(object):
         # \tilde\y = \tilde\Sigma^{-1} \tilde\mu
         # \tilde\m = \tilde\Sigma^{-1} \tilde\m
         # \tilde\nK = \tilde\Sigma^{-1} \nK \tilde\Sigma^{-1}
+        self._update()
 
         m = self.m()
         ttau = self._sitelik_tau
@@ -964,6 +972,8 @@ class EP(object):
 
         # NEW PHENOTYPE
         y = teta.copy()
+        if self._options['rank_norm']:
+            y = quantile_gaussianize(y)
 
         # NEW MEAN
         m = ttau * m
@@ -980,7 +990,9 @@ class EP(object):
 
         fastlmm = FastLMM(y, Q0, Q1, S0, covariates=m[:, newaxis])
         fastlmm.learn(progress=False)
-        return fastlmm.get_normal_likelihood_trick()
+        nlt = fastlmm.get_normal_likelihood_trick()
+        nlt.transform = ttau
+        return nlt
 
     def _paolo(self):
         tK = self.covariance()
@@ -989,6 +1001,7 @@ class EP(object):
         sigg2 = self.sigma2_b
         sige2 = self.sigma2_epsilon
         return dict(tK=tK, tmu=tmu, tS=tS, sigg2=sigg2, sige2=sige2)
+
 
 class FunCostOverdispersion(object):
     def __init__(self, ep, pbar):

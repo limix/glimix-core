@@ -1,3 +1,4 @@
+"""FastLMM interface."""
 from __future__ import division
 
 from numpy import exp
@@ -10,20 +11,41 @@ from optimix import maximize_scalar
 from optimix import Function
 from optimix import Scalar
 
-from ._core import FastLMMCore
+from .core import FastLMMCore
 
 
 class FastLMM(Function):
     r"""Fast Linear Mixed Models inference based on the covariance rank."""
 
-    def __init__(self, y, Q0, Q1, S0, covariates=None):
+    def __init__(self, y, Q0, Q1, S0, covariates=None, options=None):
         super(FastLMM, self).__init__(logistic=Scalar(0.0))
+        self._options = options
 
         if not is_all_finite(y):
             raise ValueError("There are non-finite values in the phenotype.")
 
         self._flmmc = FastLMMCore(y, covariates, Q0, Q1, S0)
         self.set_nodata()
+
+    def fix(self, var_name):
+        if var_name == 'delta':
+            super(FastLMM, self).fix('logistic')
+        elif var_name == 'scale':
+            self._flmmc.fix_scale()
+        else:
+            raise ValueError
+
+        self._flmmc.valid_update = False
+
+    def unfix(self, var_name):
+        if var_name == 'delta':
+            super(FastLMM, self).unfix('logistic')
+        elif var_name == 'scale':
+            self._flmmc.unfix_scale()
+        else:
+            raise ValueError
+
+        self._flmmc.valid_update = False
 
     def get_normal_likelihood_trick(self):
         return self._flmmc.get_normal_likelihood_trick()
@@ -37,6 +59,7 @@ class FastLMM(Function):
         self._flmmc.M = v
 
     def copy(self):
+        # pylint: disable=W0212
         o = FastLMM.__new__(FastLMM)
         super(FastLMM, o).__init__(logistic=Scalar(self.get('logistic')))
         o._flmmc = self._flmmc.copy()
@@ -76,13 +99,14 @@ class FastLMM(Function):
 
     def learn(self, progress=True):
         maximize_scalar(self, progress=progress)
+        self._flmmc.update()
         self._flmmc.delta = self._delta()
 
     def value(self):
         self._flmmc.delta = self._delta()
         return self._flmmc.lml()
 
-    def lml(self, fast=False):
+    def lml(self):
         self._flmmc.delta = self._delta()
         return self._flmmc.lml()
 
