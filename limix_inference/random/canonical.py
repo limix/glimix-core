@@ -17,7 +17,7 @@ from ..cov import LinearCov
 from ..cov import SumCov
 from ..cov import EyeCov
 
-from ._glmm import GLMMSampler
+from .glmm import GLMMSampler
 
 
 def bernoulli_sample(offset,

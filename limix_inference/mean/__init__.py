@@ -26,7 +26,7 @@ Sum mean
   :members:
 """
 
-from ._offset import OffsetMean
-from ._linear import LinearMean
-from ._sum import SumMean
-from ._kron import KronSumMean
+from .offset import OffsetMean
+from .linear import LinearMean
+from .sum import SumMean
+from .kron import KronSumMean
