@@ -1,4 +1,3 @@
-"""FastLMM implementation."""
 from __future__ import division
 
 from numpy import (ascontiguousarray, dot, log, sqrt, var, zeros)

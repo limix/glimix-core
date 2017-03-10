@@ -1,4 +1,3 @@
-"""FastLMM interface."""
 from __future__ import division
 
 from numpy import exp

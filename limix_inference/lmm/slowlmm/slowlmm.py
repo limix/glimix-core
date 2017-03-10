@@ -69,13 +69,8 @@ class SlowLMM(Composite):
         self._mean = mean
 
     def _lml_gradient_mean(self, mean, cov, gmean):
-
         Kiym = solve(cov, self._y - mean)
-
-        g = []
-        for gmeani in gmean:
-            g += [gmeani.T.dot(Kiym)]
-        return g
+        return [g.T.dot(Kiym) for g in gmean]
 
     def _lml_gradient_cov(self, mean, cov, gcov):
 
