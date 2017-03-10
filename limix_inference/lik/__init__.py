@@ -40,9 +40,9 @@ Likelihood products
 
 """
 
-from ._expfam import (DeltaLik, BernoulliLik, BinomialLik, PoissonLik)
-from ._prod import (DeltaProdLik, BernoulliProdLik, BinomialProdLik,
-                    PoissonProdLik)
+from .expfam import (DeltaLik, BernoulliLik, BinomialLik, PoissonLik)
+from .prod import (DeltaProdLik, BernoulliProdLik, BinomialProdLik,
+                   PoissonProdLik)
 
 __all__ = [
     'DeltaLik', 'BernoulliLik', 'BinomialLik', 'PoissonLik', 'DeltaProdLik',
