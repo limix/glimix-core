@@ -3,14 +3,25 @@
 Likelihoods
 ***********
 
-- :class:`.DeltaLik`
-- :class:`.BernoulliLik`
-- :class:`.BinomialLik`
-- :class:`.PoissonLik`
-- :class:`.DeltaProdLik`
-- :class:`.BernoulliProdLik`
-- :class:`.BinomialProdLik`
-- :class:`.PoissonProdLik`
+- Single likelihoods: :class:`.DeltaLik`, :class:`.BernoulliLik`,
+  :class:`.BinomialLik`, and :class:`.PoissonLik`.
+- Likelihood products: :class:`.DeltaProdLik`, :class:`.BernoulliProdLik`,
+  :class:`.BinomialProdLik`, and :class:`.PoissonProdLik`.
+
+Single likelihoods
+^^^^^^^^^^^^^^^^^^
+
+.. autoclass:: DeltaLik
+  :members:
+
+.. autoclass:: BernoulliLik
+  :members:
+
+.. autoclass:: BinomialLik
+  :members:
+
+.. autoclass:: PoissonLik
+  :members:
 
 Likelihood products
 ^^^^^^^^^^^^^^^^^^^
