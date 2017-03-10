@@ -28,7 +28,7 @@ def setup_package():
         'numpy',
         'numpy-sugar',
         'scipy-sugar>=1.0.1',
-        'optimix>=1.1.6',
+        'optimix>=1.1.9',
         'cachetools>=2.0',
         'tqdm>=4',
     ]

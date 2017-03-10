@@ -6,6 +6,7 @@ from numpy.random import RandomState
 
 from limix_inference.mean import KronSumMean
 
+
 def _gower_normalization(K, out=None):
     """Perform Gower normalizion on covariance matrix K.
 
@@ -18,13 +19,14 @@ def _gower_normalization(K, out=None):
     copyto(out, K)
     out *= c
 
+
 def test_kron_two():
     random = RandomState(1)
 
     # define phenotype
     N = 10
     P = 3
-    Y = random.randn(N,P)
+    Y = random.randn(N, P)
 
     # pheno with missing data
     Ym = Y.copy()
@@ -32,7 +34,7 @@ def test_kron_two():
     Ym[Im] = nan
 
     # # define fixed effects
-    F = 1.*(random.rand(N,2) < 0.5)
+    F = 1. * (random.rand(N, 2) < 0.5)
     A = eye(P)
 
     # mean = MeanKronSum(Y, F=F, A=A)
@@ -42,9 +44,9 @@ def test_kron_two():
 
     # define row covariance
     f = 10
-    X = 1.*(random.rand(N, f)<0.2)
-    R = _gower_normalization(dot(X,X.T))
-    R+= 1e-4 * eye(N)
+    X = 1. * (random.rand(N, f) < 0.2)
+    R = _gower_normalization(dot(X, X.T))
+    R += 1e-4 * eye(N)
 
     # define col covariances
     # Cg = FreeFormCov(P)

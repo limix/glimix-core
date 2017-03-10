@@ -42,7 +42,7 @@ Example:
     >>>
     >>> y = GLMMSampler(lik, mean, cov).sample(random)
     >>> print(y[:5])
-
+    [ 2.17393302  0.27067607 -1.08349329  1.32031279  2.15242283]
 """
 
 from __future__ import absolute_import as _absolute_import

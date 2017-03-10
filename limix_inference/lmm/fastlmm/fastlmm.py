@@ -28,8 +28,10 @@ class FastLMM(Function):
             >>> X = array([[1, 2], [3, -1]], float)
             >>> (Q0, Q1), S0 = economic_qs_linear(X)
             >>> covariates = array([[1], [1]])
+            >>> y = array([-1, 2], float)
             >>> flmm = FastLMM(y, Q0, Q1, S0, covariates=ones((N, 1)))
-
+            >>> flmm.learn(progress=False)
+            >>> print('%.3f' % flmm.lml())
 
 
     """
