@@ -1,6 +1,8 @@
 from __future__ import division
 
-from numpy import array, c_, dot, ones, pi, sqrt, zeros
+from os.path import join, dirname, realpath
+
+from numpy import array, c_, dot, ones, pi, sqrt, zeros, load
 from numpy.random import RandomState
 from numpy.testing import assert_allclose
 
@@ -24,15 +26,15 @@ def test_binomial_get_normal_likelihood_trick():
     ntrials = random.randint(10, 500, size=nsamples)
 
     y = zeros(nsamples)
-    for i in range(len(ntrials)):
-        y[i] = sum(
-            z[i] + random.logistic(scale=pi / sqrt(3), size=ntrials[i]) > 0)
-    (Q, S0) = economic_qs_linear(G)
+    for i, n in enumerate(ntrials):
+        y[i] = sum(z[i] + random.logistic(scale=pi / sqrt(3), size=n) > 0)
+
+    QS = economic_qs_linear(G)
 
     M = ones((nsamples, 1))
     lik = BinomialProdLik(ntrials, LogitLink())
     lik.nsuccesses = y
-    ep = ExpFamEP(lik, M, Q[0], Q[1], S0)
+    ep = ExpFamEP(lik, M, QS)
     ep.learn(progress=False)
 
     nlt = ep.get_normal_likelihood_trick()
@@ -46,12 +48,14 @@ def test_binomial_lml():
     n = 3
     M = ones((n, 1)) * 1.
     G = array([[1.2, 3.4], [-.1, 1.2], [0.0, .2]])
-    (Q, S0) = economic_qs_linear(G)
+    QS = economic_qs_linear(G)
+    S0 = QS[1]
+    S0 += 1.0
     nsuccesses = array([1., 0., 1.])
     ntrials = array([1., 1., 1.])
     lik = BinomialProdLik(ntrials, LogitLink())
     lik.nsuccesses = nsuccesses
-    ep = ExpFamEP(lik, M, Q[0], Q[1], S0 + 1)
+    ep = ExpFamEP(lik, M, QS)
     ep.beta = array([1.])
     assert_allclose(ep.beta, array([1.]))
     ep.v = 1.
@@ -63,12 +67,14 @@ def test_binomial_gradient_over_v():
     n = 3
     M = ones((n, 1)) * 1.
     G = array([[1.2, 3.4], [-.1, 1.2], [0.0, .2]])
-    (Q, S0) = economic_qs_linear(G)
+    QS = economic_qs_linear(G)
+    S0 = QS[1]
+    S0 += 1.0
     nsuccesses = array([1., 0., 1.])
     ntrials = array([1., 1., 1.])
     lik = BinomialProdLik(ntrials, LogitLink())
     lik.nsuccesses = nsuccesses
-    ep = ExpFamEP(lik, M, Q[0], Q[1], S0 + 1)
+    ep = ExpFamEP(lik, M, QS)
     ep.beta = array([1.])
     assert_allclose(ep.beta, array([1.]))
     ep.v = 1.
@@ -104,12 +110,14 @@ def test_binomial_gradient_over_delta():
     n = 3
     M = ones((n, 1)) * 1.
     G = array([[1.2, 3.4], [-.1, 1.2], [0.0, .2]])
-    (Q, S0) = economic_qs_linear(G)
+    QS = economic_qs_linear(G)
+    S0 = QS[1]
+    S0 += 1.0
     nsuccesses = array([1., 0., 1.])
     ntrials = array([1., 1., 1.])
     lik = BinomialProdLik(ntrials, LogitLink())
     lik.nsuccesses = nsuccesses
-    ep = ExpFamEP(lik, M, Q[0], Q[1], S0 + 1.0)
+    ep = ExpFamEP(lik, M, QS)
     ep.beta = array([1.])
     assert_allclose(ep.beta, array([1.]))
     ep.v = 1.
@@ -131,12 +139,14 @@ def test_binomial_gradient_over_both():
     n = 3
     M = ones((n, 1)) * 1.
     G = array([[1.2, 3.4], [-.1, 1.2], [0.0, .2]])
-    (Q, S0) = economic_qs_linear(G)
+    QS = economic_qs_linear(G)
+    S0 = QS[1]
+    S0 += 1.0
     nsuccesses = array([1., 0., 1.])
     ntrials = array([1., 1., 1.])
     lik = BinomialProdLik(ntrials, LogitLink())
     lik.nsuccesses = nsuccesses
-    ep = ExpFamEP(lik, M, Q[0], Q[1], S0 + 1.0)
+    ep = ExpFamEP(lik, M, QS)
     ep.beta = array([1.])
     assert_allclose(ep.beta, array([1.]))
     ep.v = 1.5
@@ -182,15 +192,14 @@ def test_binomial_optimize():
     ntrials = random.randint(10, 500, size=nsamples)
 
     y = zeros(nsamples)
-    for i in range(len(ntrials)):
-        y[i] = sum(
-            z[i] + random.logistic(scale=pi / sqrt(3), size=ntrials[i]) > 0)
-    (Q, S0) = economic_qs_linear(G)
+    for i, n in enumerate(ntrials):
+        y[i] = sum(z[i] + random.logistic(scale=pi / sqrt(3), size=n) > 0)
+    QS = economic_qs_linear(G)
 
     M = ones((nsamples, 1))
     lik = BinomialProdLik(ntrials, LogitLink())
     lik.nsuccesses = y
-    ep = ExpFamEP(lik, M, Q[0], Q[1], S0)
+    ep = ExpFamEP(lik, M, QS)
     ep.learn(progress=False)
 
     assert_allclose(ep.lml(), -144.2381842202486, rtol=1e-3)
@@ -210,15 +219,15 @@ def test_binomial_optimize_refit():
     ntrials = random.randint(10, 500, size=nsamples)
 
     y = zeros(nsamples)
-    for i in range(len(ntrials)):
-        y[i] = sum(
-            z[i] + random.logistic(scale=pi / sqrt(3), size=ntrials[i]) > 0)
-    (Q, S0) = economic_qs_linear(G)
+    for i, n in enumerate(ntrials):
+        y[i] = sum(z[i] + random.logistic(scale=pi / sqrt(3), size=n) > 0)
+
+    QS = economic_qs_linear(G)
 
     M = ones((nsamples, 1))
     lik = BinomialProdLik(ntrials, LogitLink())
     lik.nsuccesses = y
-    ep = ExpFamEP(lik, M, Q[0], Q[1], S0)
+    ep = ExpFamEP(lik, M, QS)
     ep.learn(progress=False)
 
     assert_allclose(ep.lml(), -144.2381842202486, rtol=1e-3)
@@ -233,23 +242,6 @@ def test_binomial_optimize_refit():
     assert_allclose(nep.lml(), -145.7076758124364, rtol=1e-3)
     nep.learn(progress=False)
     assert_allclose(nep.lml(), -143.98475638974728, rtol=1e-3)
-
-
-def test_binomial_extreme():
-    import numpy as np
-    import os
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    data = np.load(os.path.join(dir_path, 'data', 'extreme.npz'))
-    from limix_inference.glmm import ExpFamEP
-    from limix_inference.lik import BinomialProdLik
-    from limix_inference.link import LogitLink
-    link = LogitLink()
-    lik = BinomialProdLik(data['ntrials'], link)
-    lik.nsuccesses = data['nsuccesses']
-    ep = ExpFamEP(
-        lik, data['covariates'], Q0=data['Q0'], Q1=data['Q1'], S0=data['S0'])
-    ep.learn(progress=False)
-    assert_allclose(ep.lml(), -189.4155176306314, rtol=1e-3)
 
 
 if __name__ == '__main__':

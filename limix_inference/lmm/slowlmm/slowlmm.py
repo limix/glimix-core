@@ -29,7 +29,6 @@ class SlowLMM(Composite):
 
     .. doctest::
 
-
         >>> from numpy.random import RandomState
         >>> from limix_inference.mean import OffsetMean
         >>> from limix_inference.lmm import SlowLMM

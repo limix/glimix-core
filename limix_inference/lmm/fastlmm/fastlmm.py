@@ -19,31 +19,58 @@ class FastLMM(Function):
 
     Examples:
 
-        .. doctest::
+    .. doctest::
 
-            >>> from numpy import array
-            >>> from numpy_sugar.linalg import economic_qs_linear
-            >>> from limix_inference.lmm import FastLMM
-            >>>
-            >>> X = array([[1, 2], [3, -1]], float)
-            >>> (Q0, Q1), S0 = economic_qs_linear(X)
-            >>> covariates = array([[1], [1]])
-            >>> y = array([-1, 2], float)
-            >>> flmm = FastLMM(y, Q0, Q1, S0, covariates=covariates)
-            >>> flmm.learn(progress=False)
-            >>> print('%.3f' % flmm.lml())
-            -3.649
+        >>> from numpy import array
+        >>> from numpy_sugar.linalg import economic_qs_linear
+        >>> from limix_inference.lmm import FastLMM
+        >>>
+        >>> X = array([[1, 2], [3, -1]], float)
+        >>> QS = economic_qs_linear(X)
+        >>> covariates = array([[1], [1]])
+        >>> y = array([-1, 2], float)
+        >>> flmm = FastLMM(y, QS, covariates=covariates)
+        >>> flmm.learn(progress=False)
+        >>> print('%.3f' % flmm.lml())
+        -3.649
+
+    One can also specify which parameters will be fitted as follows.
+
+    .. doctest::
+
+        >>> from numpy import array
+        >>> from numpy_sugar.linalg import economic_qs_linear
+        >>> from limix_inference.lmm import FastLMM
+        >>>
+        >>> X = array([[1, 2], [3, -1]], float)
+        >>> QS = economic_qs_linear(X)
+        >>> covariates = array([[1], [1]])
+        >>> y = array([-1, 2], float)
+        >>> flmm = FastLMM(y, QS, covariates=covariates)
+        >>> flmm.fix('delta')
+        >>> flmm.fix('scale')
+        >>> flmm.learn(progress=False)
+        >>> print('%.3f' % flmm.lml())
+        -4.232
+        >>> print('%.1f' % flmm.heritability)
+        0.5
+        >>> flmm.unfix('delta')
+        >>> flmm.learn(progress=False)
+        >>> print('%.3f' % flmm.lml())
+        -2.838
+        >>> print('%.1f' % flmm.heritability)
+        0.0
 
     """
 
-    def __init__(self, y, Q0, Q1, S0, covariates=None, options=None):
+    def __init__(self, y, QS, covariates=None, options=None):
         super(FastLMM, self).__init__(logistic=Scalar(0.0))
         self._options = options
 
         if not is_all_finite(y):
             raise ValueError("There are non-finite values in the phenotype.")
 
-        self._flmmc = FastLMMCore(y, covariates, Q0, Q1, S0)
+        self._flmmc = FastLMMCore(y, covariates, QS)
         self.set_nodata()
 
     def fix(self, var_name):

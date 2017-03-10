@@ -529,13 +529,12 @@ class EP(object):
         K = self.K()
         K = ddot(ttau, ddot(K, ttau, left=False), left=True)
         sum2diag(K, ttau, out=K)
-        (Q, S0) = economic_qs(K)
-        Q0, Q1 = Q
+        QS = economic_qs(K)
 
         from ...lmm import FastLMM
         from numpy import newaxis
 
-        fastlmm = FastLMM(y, Q0, Q1, S0, covariates=m[:, newaxis])
+        fastlmm = FastLMM(y, QS, covariates=m[:, newaxis])
         fastlmm.learn(progress=False)
         return fastlmm.lml()
 
@@ -982,13 +981,12 @@ class EP(object):
         K = self.K()
         K = ddot(ttau, ddot(K, ttau, left=False), left=True)
         sum2diag(K, ttau, out=K)
-        (Q, S0) = economic_qs(K)
-        Q0, Q1 = Q
+        QS = economic_qs(K)
 
         from ...lmm import FastLMM
         from numpy import newaxis
 
-        fastlmm = FastLMM(y, Q0, Q1, S0, covariates=m[:, newaxis])
+        fastlmm = FastLMM(y, QS, covariates=m[:, newaxis])
         fastlmm.learn(progress=False)
         nlt = fastlmm.get_normal_likelihood_trick()
         nlt.transform = ttau

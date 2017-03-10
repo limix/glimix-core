@@ -42,9 +42,9 @@ def test_fast_scan():
 
     y = GLMMSampler(lik, mean, cov).sample(random)
 
-    (Q0, Q1), S0 = economic_qs_linear(X)
+    QS = economic_qs_linear(X)
 
-    flmm = FastLMM(y, Q0, Q1, S0, covariates=ones((N, 1)))
+    flmm = FastLMM(y, QS, covariates=ones((N, 1)))
 
     flmm.learn(progress=False)
 
@@ -90,9 +90,9 @@ def test_learn():
 
     y = GLMMSampler(lik, mean, cov).sample(random)
 
-    (Q0, Q1), S0 = economic_qs_linear(X)
+    QS = economic_qs_linear(X)
 
-    flmm = FastLMM(y, Q0, Q1, S0, covariates=ones((N, 1)))
+    flmm = FastLMM(y, QS, covariates=ones((N, 1)))
 
     flmm.learn(progress=False)
 
@@ -128,9 +128,9 @@ def test_fastlmm_learn_fix():
 
     y = GLMMSampler(lik, mean, cov).sample(random)
 
-    (Q0, Q1), S0 = economic_qs_linear(X)
+    QS = economic_qs_linear(X)
 
-    flmm = FastLMM(y, Q0, Q1, S0, covariates=ones((N, 1)))
+    flmm = FastLMM(y, QS, covariates=ones((N, 1)))
 
     flmm.fix('delta')
     flmm.fix('scale')

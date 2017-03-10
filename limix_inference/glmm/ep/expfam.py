@@ -55,24 +55,27 @@ class ExpFamEP(EP):
         S0 (array_like): positive eigenvalues.
     """
 
-    def __init__(self, prodlik, covariates, Q0, Q1, S0, overdispersion=True, options=None):
+    def __init__(self,
+                 prodlik,
+                 covariates,
+                 QS,
+                 overdispersion=True,
+                 options=None):
         covariates = ascontiguousarray(covariates, float)
-        Q0 = ascontiguousarray(Q0, float)
-        Q1 = ascontiguousarray(Q1, float)
-        S0 = ascontiguousarray(S0, float)
 
         if options is None:
             options = dict(rank_norm=False)
         self._options = options
 
-        super(ExpFamEP, self).__init__(covariates, Q0, S0, overdispersion)
+        super(ExpFamEP, self).__init__(covariates, QS[0][0], QS[1],
+                                       overdispersion)
         self._logger = logging.getLogger(__name__)
 
-        self._Q1 = Q1
+        self._Q1 = QS[0][1]
         self._machine = LikNormMachine(500)
         self._prodlik = prodlik
 
-        h2, m = _initialize(prodlik, covariates, Q0, Q1, S0)
+        h2, m = _initialize(prodlik, covariates, QS)
 
         n = prodlik.sample_size
 
@@ -150,9 +153,9 @@ class ExpFamEP(EP):
         return ep
 
 
-def _initialize(prodlik, covariates, Q0, Q1, S0):
+def _initialize(prodlik, covariates, QS):
     y = prodlik.to_normal()
-    flmm = FastLMM(y, Q0, Q1, S0, covariates=covariates)
+    flmm = FastLMM(y, QS, covariates=covariates)
     flmm.learn(progress=False)
     gv = flmm.genetic_variance
     nv = flmm.environmental_variance

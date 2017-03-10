@@ -18,12 +18,12 @@ Example
     >>> offset = 0.2
     >>> random = RandomState(0)
     >>> G = random.randn(100, 200)
-    >>> (Q0, Q1), S0 = economic_qs_linear(G)
+    >>> QS = economic_qs_linear(G)
     >>> y = bernoulli_sample(offset, G, random_state=random)
     >>> covariates = random.randn(100, 1)
     >>> lik = BernoulliProdLik(LogLink)
     >>> lik.outcome = y
-    >>> glmm = ExpFamEP(lik, covariates, Q0, Q1, S0)
+    >>> glmm = ExpFamEP(lik, covariates, QS)
     >>> glmm.learn(progress=False)
     >>> '%.4f' % glmm.lml()
     '-69.0595'

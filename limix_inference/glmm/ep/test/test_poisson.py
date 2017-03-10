@@ -14,11 +14,13 @@ def test_poisson_lml():
     n = 3
     M = ones((n, 1)) * 1.
     G = array([[1.2, 3.4], [-.1, 1.2], [0.0, .2]])
-    (Q, S0) = economic_qs_linear(G)
+    QS = economic_qs_linear(G)
+    S0 = QS[1]
+    S0 += 1
     noccurrences = array([1., 0., 5.])
     lik = PoissonProdLik(LogLink())
     lik.noccurrences = noccurrences
-    ep = ExpFamEP(lik, M, Q[0], Q[1], S0 + 1)
+    ep = ExpFamEP(lik, M, QS)
     ep.beta = array([1.])
     assert_almost_equal(ep.beta, array([1.]))
     ep.v = 1.
@@ -40,12 +42,13 @@ def test_poisson_optimize():
     y = zeros(nsamples)
     for i in range(nsamples):
         y[i] = random.poisson(lam=exp(z[i]))
-    (Q0, Q1), S0 = economic_qs_linear(G)
+
+    QS = economic_qs_linear(G)
 
     M = ones((nsamples, 1))
     lik = PoissonProdLik(LogLink())
     lik.noccurrences = y
-    ep = ExpFamEP(lik, M, Q0, Q1, S0)
+    ep = ExpFamEP(lik, M, QS)
     ep.learn()
     assert_almost_equal(ep.lml(), -77.90919831238075, decimal=2)
     assert_almost_equal(ep.beta[0], 0.314709077094, decimal=1)

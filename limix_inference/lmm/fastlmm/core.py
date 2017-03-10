@@ -26,7 +26,8 @@ def _make_sure_has_variance(y):
 
 
 class FastLMMCore(object):
-    def __init__(self, y, M, Q0, Q1, S0):
+    def __init__(self, y, M, QS):
+        (Q0, Q1), S0 = QS
         y = _make_sure_has_variance(y)
 
         self._fix_scale = False
