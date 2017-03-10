@@ -13,6 +13,15 @@ from numpy import log
 
 
 class ProdLik(object):
+    r"""Represents a product of likelihoods.
+
+    The product can be written as
+
+    .. math::
+
+        \prod_i Lik_i(y_i, x_i)
+
+    """
     def __init__(self, likelihoods):
         super(ProdLik, self).__init__()
         self._likelihoods = likelihoods
@@ -67,11 +76,21 @@ class ProdLik(object):
         n = len(liks)
         return _aca([liks[i].c() for i in range(n)])
 
-    def sample(self, x):
+    def sample(self, x, random_state=None):
         raise NotImplementedError
 
 
 class DeltaProdLik(ProdLik):
+    r"""Represents a product of Kronecker delta likelihoods.
+
+    The product can be written as
+
+    .. math::
+
+        \prod_i \delta[y_i == x_i]
+
+    """
+
     def __init__(self, link=None):
         super(DeltaProdLik, self).__init__(None)
         self._link = link
@@ -122,6 +141,18 @@ class DeltaProdLik(ProdLik):
 
 
 class BernoulliProdLik(ProdLik):
+    r"""Represents a product of Bernoulli likelihoods.
+
+    The product can be written as
+
+    .. math::
+
+        \prod_i g(x_i)^{y_i} (1-g(x_i))^{1-y_i}
+
+    where :math:`g(x)` is the inverse of the link function.
+
+    """
+
     def __init__(self, link):
         super(BernoulliProdLik, self).__init__(None)
         self._link = link
@@ -181,6 +212,19 @@ class BernoulliProdLik(ProdLik):
 
 
 class BinomialProdLik(ProdLik):
+    r"""Represents a product of Binomial likelihoods.
+
+    The product can be written as
+
+    .. math::
+
+        \prod_i \binom{n_i}{n_i y_i} g(x_i)^{n_i y_i}
+        (1-g(x_i))^{n_i - n_i y_i}
+
+    where :math:`g(x)` is the inverse of the link function.
+
+    """
+
     def __init__(self, ntrials, link):
         super(BinomialProdLik, self).__init__(None)
         self._link = link

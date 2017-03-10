@@ -12,6 +12,7 @@ Fast inference for Generalized Linear Mixed Models.
     install
     mean
     cov
+    lik
     lmm
     glmm
     random

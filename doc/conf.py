@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 try:
     import limix_inference
     version = limix_inference.__version__
@@ -19,6 +21,7 @@ templates_path = ['_templates']
 source_suffix = '.rst'
 master_doc = 'index'
 project = 'limix-inference'
+# pylint: disable=W0622
 copyright = '2016, Danilo Horta'
 author = 'Danilo Horta'
 release = version
@@ -26,8 +29,7 @@ language = None
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 pygments_style = 'sphinx'
 todo_include_todos = False
-html_theme = 'sphinx_rtd_theme'
-html_theme_path = ["_themes", ]
+html_theme = 'default'
 htmlhelp_basename = 'limix-inferencedoc'
 latex_elements = {}
 latex_documents = [
