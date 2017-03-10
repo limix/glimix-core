@@ -14,7 +14,7 @@ from .core import FastLMMCore
 
 
 class FastLMM(Function):
-    r"""Fast Linear Mixed Models inference based on eigen decomposition.
+    r"""Fast Linear Mixed Models inference via maximum likelihood.
 
     It models
 
@@ -29,7 +29,7 @@ class FastLMM(Function):
         ~\Big)
 
     for which :math:`\mathrm Q \mathrm S \mathrm Q^{\intercal} = \mathrm K`
-    is the eigen decomposition of the covariance matrix.
+    is the eigen decomposition of :math:`\mathrm K`.
 
     Args:
         y (array_like): real-valued outcome.
@@ -54,7 +54,7 @@ class FastLMM(Function):
         >>> print('%.3f' % flmm.lml())
         -3.649
 
-    One can also specify which parameters will be fitted as follows.
+    One can also specify which parameters should be fitted:
 
     .. doctest::
 

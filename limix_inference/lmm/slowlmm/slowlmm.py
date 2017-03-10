@@ -25,7 +25,8 @@ class SlowLMM(Composite):
         mean (mean_function): mean function defined. (Refer to :doc:`mean`.)
         cov (covariance_function): covariance function defined. (Refer to :doc:`cov`.)
 
-    Examples:
+    Example
+    -------
 
     .. doctest::
 
