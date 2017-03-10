@@ -1,8 +1,6 @@
 from __future__ import division
 
-from os.path import join, dirname, realpath
-
-from numpy import array, c_, dot, ones, pi, sqrt, zeros, load
+from numpy import array, c_, dot, ones, pi, sqrt, zeros
 from numpy.random import RandomState
 from numpy.testing import assert_allclose
 
