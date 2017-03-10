@@ -1,4 +1,13 @@
+r"""Fast inference for Generalized Linear Mixed Models.
+
+.. moduleauthor:: Danilo Horta <horta@ebi.ac.uk>
+
+"""
+
 from __future__ import absolute_import as _absolute_import
+
+from pkg_resources import get_distribution as _get_distribution
+from pkg_resources import DistributionNotFound as _DistributionNotFound
 
 from . import lmm
 from . import glmm
@@ -7,9 +16,6 @@ from . import lik
 from . import mean
 from . import link
 from . import random
-
-from pkg_resources import get_distribution as _get_distribution
-from pkg_resources import DistributionNotFound as _DistributionNotFound
 
 try:
     __version__ = _get_distribution('limix_inference').version
@@ -33,3 +39,5 @@ def test():
         print("Congratulations. All tests have passed!")
 
     return return_code
+
+__all__ = ['test', 'lmm', 'glmm', 'cov', 'lik', 'mean', 'link', 'random']

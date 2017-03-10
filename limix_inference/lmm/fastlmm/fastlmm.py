@@ -15,7 +15,24 @@ from .core import FastLMMCore
 
 
 class FastLMM(Function):
-    r"""Fast Linear Mixed Models inference based on the covariance rank."""
+    r"""Fast Linear Mixed Models inference based on eigen decomposition.
+
+    Examples:
+
+        .. doctest::
+
+            >>> from numpy import array
+            >>> from numpy_sugar.linalg import economic_qs_linear
+            >>> from limix_inference.lmm import FastLMM
+            >>>
+            >>> X = array([[1, 2], [3, -1]], float)
+            >>> (Q0, Q1), S0 = economic_qs_linear(X)
+            >>> covariates = array([[1], [1]])
+            >>> flmm = FastLMM(y, Q0, Q1, S0, covariates=ones((N, 1)))
+
+
+
+    """
 
     def __init__(self, y, Q0, Q1, S0, covariates=None, options=None):
         super(FastLMM, self).__init__(logistic=Scalar(0.0))
