@@ -28,8 +28,8 @@ class FastLMM(Function):
           \big)
         ~\Big)
 
-    for which :math:`\mathrm Q \mathrm S \mathrm Q^{\intercal} = \mathrm K`
-    is the eigen decomposition of :math:`\mathrm K`.
+    for which :math:`\mathrm Q\mathrm S\mathrm Q^{\intercal}=\tilde{\mathrm K}`
+    is the eigen decomposition of :math:`\tilde{\mathrm K}`.
 
     Args:
         y (array_like): real-valued outcome.

@@ -13,12 +13,18 @@ class FastLMMScanner(object): # pylint: disable=R0903
     Let :math:`\tilde{\mathrm M}_i` be a column-matrix of fixed-effect
     :math:`i`.
     It fits :math:`\alpha_i` and refits :math:`\boldsymbol\beta` and :math:`s`
-    for each fixed-effect :math:`i` in order to compute the LMLs:
+    for each fixed-effect :math:`i` in order to compute LMLs:
 
     .. math::
 
         \mathbf y \sim \mathcal N\big(~ \mathrm M\boldsymbol\beta
         + \tilde{\mathrm M}_i \alpha_i;~ s \mathrm K ~\big)
+
+    Args:
+
+        y (array_like): real-valued outcome.
+        M (array_like): matrix of covariates.
+        QS (tuple): economic eigen decomposition ``((Q0, Q1), S0)``.
     """
 
     def __init__(self, y, M, QS, delta):
