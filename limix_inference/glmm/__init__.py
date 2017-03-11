@@ -1,39 +1,34 @@
-"""
+r"""
 *******************************
 Generalized Linear Mixed Models
 *******************************
 
-Example
-^^^^^^^
+Introduction
+^^^^^^^^^^^^
 
-.. doctest::
+A GLMM can be described in two parts.
+The first part consists in latent effects:
 
-    >>> from limix_inference.random import bernoulli_sample
-    >>> from limix_inference.glmm import ExpFamEP
-    >>> from limix_inference.lik import BernoulliProdLik
-    >>> from limix_inference.link import LogLink
-    >>> from numpy_sugar.linalg import economic_qs_linear
-    >>> from numpy.random import RandomState
-    >>>
-    >>> offset = 0.2
-    >>> random = RandomState(0)
-    >>> G = random.randn(100, 200)
-    >>> QS = economic_qs_linear(G)
-    >>> y = bernoulli_sample(offset, G, random_state=random)
-    >>> covariates = random.randn(100, 1)
-    >>> lik = BernoulliProdLik(LogLink)
-    >>> lik.outcome = y
-    >>> glmm = ExpFamEP(lik, covariates, QS)
-    >>> glmm.learn(progress=False)
-    >>> '%.2f' % glmm.lml()
-    '-69.06'
+.. math::
 
-Expectation propagation
-^^^^^^^^^^^^^^^^^^^^^^^
+    \mathbf z = \mathbf m + \mathbf u + \boldsymbol\epsilon
 
-.. autoclass:: ExpFamEP
-    :members: covariates_variance, genetic_variance, environmental_variance,
-              heritability, K, m, beta, v, delta, lml, learn, fixed_ep
+where :math:`\mathbf u \sim \mathcal N(\mathbf 0, \mathrm K)` and
+:math:`\epsilon_i` are iid Normal random variables.
+The second part connects the latent variable to the observed one:
+
+.. math::
+
+    y_i ~|~ z_i \sim \text{ExpFam}(y_i ~|~ \mu_i = g(z_i))
+
+where :math:`g(\cdot)` is a link function and :math:`\text{ExpFam}(\cdot)` is
+an exponential-family distribution.
+
+This module implements the Expectation Propagation algorithm:
+:class:`.ExpFamEP`.
+
+Public interface
+^^^^^^^^^^^^^^^^
 """
 
 from .ep import ExpFamEP
