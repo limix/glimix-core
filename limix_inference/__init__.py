@@ -19,6 +19,7 @@ from . import lik
 from . import mean
 from . import link
 from . import random
+from . import gp
 
 try:
     __version__ = _get_distribution('limix_inference').version
@@ -43,4 +44,5 @@ def test():
 
     return return_code
 
-__all__ = ['test', 'lmm', 'glmm', 'cov', 'lik', 'mean', 'link', 'random']
+
+__all__ = ['test', 'gp', 'lmm', 'glmm', 'cov', 'lik', 'mean', 'link', 'random']
