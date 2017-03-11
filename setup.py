@@ -23,14 +23,8 @@ def setup_package():
 
     setup_requires = ['ncephes'] + pytest_runner
     install_requires = [
-        'scipy',
-        'ncephes',
-        'numpy',
-        'numpy-sugar',
-        'scipy-sugar>=1.0.1',
-        'optimix>=1.1.9',
-        'cachetools>=2.0',
-        'tqdm>=4',
+        'scipy', 'ncephes', 'numpy', 'numpy-sugar', 'scipy-sugar>=1.0.1',
+        'optimix>=1.1.9', 'cachetools>=2.0', 'tqdm>=4', 'liknorm-py'
     ]
     tests_require = ['pytest']
 
@@ -53,8 +47,7 @@ def setup_package():
             "Development Status :: 5 - Production/Stable",
             "License :: OSI Approved :: MIT License",
             "Operating System :: OS Independent",
-        ],
-        cffi_modules=["limix_inference/liknorm/_build.py:ffibuilder"], )
+        ])
 
     try:
         setup(**metadata)

@@ -2,11 +2,10 @@ from __future__ import absolute_import, division, unicode_literals
 
 import logging
 
-from numpy_sugar import is_all_finite
 from numpy import ascontiguousarray, clip, full
 from numpy.linalg import lstsq
 
-from ...liknorm import LikNormMachine
+from liknorm import LikNormMachine
 from ...lmm import FastLMM
 from .ep import EP
 
@@ -97,7 +96,7 @@ class ExpFamEP(EP):
         self._logger = logging.getLogger(__name__)
 
         self._Q1 = QS[0][1]
-        self._machine = LikNormMachine(500)
+        self._machine = LikNormMachine(prodlik.name, 500)
         self._prodlik = prodlik
 
         h2, m = _initialize(prodlik, covariates, QS)
@@ -119,17 +118,12 @@ class ExpFamEP(EP):
         return self._options
 
     def _tilted_params(self):
+        y = self._phenotype.ytuple
         ctau = self._cav_tau
         ceta = self._cav_eta
-        lmom0 = self._loghz
-        self._machine.moments(self._prodlik.name, self._phenotype.ytuple, ceta,
-                              ctau, lmom0, self._hmu, self._hvar)
-        if not is_all_finite(lmom0):
-            raise ValueError("lmom0 should not be %s." % str(lmom0))
-        if not is_all_finite(self._hmu):
-            raise ValueError("hmu should not be %s." % str(self._hmu))
-        if not is_all_finite(self._hvar):
-            raise ValueError("hvar should not be %s." % str(self._hvar))
+        moments = {'log_zeroth': self._loghz, 'mean': self._hmu,
+                   'variance': self._hvar}
+        self._machine.moments(y, ceta, ctau, moments)
 
     @property
     def genetic_variance(self):
@@ -167,7 +161,7 @@ class ExpFamEP(EP):
         ep = ExpFamEP.__new__(ExpFamEP)
         self._copy_to(ep)
 
-        ep._machine = LikNormMachine(500)
+        ep._machine = LikNormMachine(self._prodlik.name, 500)
         ep._prodlik = self._prodlik
 
         ep._phenotype = self._phenotype
