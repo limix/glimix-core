@@ -76,8 +76,8 @@ class ExpFamEP(EP):
         >>> lik.outcome = y
         >>> glmm = ExpFamEP(lik, covariates, QS)
         >>> glmm.learn(progress=False)
-        >>> '%.2f' % glmm.lml()
-        '-69.06'
+        >>> print('%.2f' % glmm.lml())
+        -69.06
     """
 
     def __init__(self,
