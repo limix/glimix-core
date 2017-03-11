@@ -50,7 +50,7 @@ class FastLMMScanner(object): # pylint: disable=R0903
             self._C[i][:-1, :-1] = dot(self._MTQdiag[i], MTQ[i].T)
 
     def _static_lml(self):
-        n = self._QS[0].shape[0]
+        n = self._QS[0][0].shape[0]
         p = len(self._diags[0])
         static_lml = -n * LOG2PI - n
         static_lml -= npsum(log(self._diags[0]))
@@ -76,7 +76,7 @@ class FastLMMScanner(object): # pylint: disable=R0903
         c_01 = [dot(i, j.T) for (i, j) in zip(self._MTQdiag, mTQ)]
         c_11 = [npsum((i / j) * i, axis=1) for (i, j) in zip(mTQ, self._diags)]
 
-        lmls = full(markers.shape[1], self._static_lml)
+        lmls = full(markers.shape[1], self._static_lml())
         effect_sizes = empty(markers.shape[1])
 
         for i in range(markers.shape[1]):
