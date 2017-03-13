@@ -947,7 +947,7 @@ class EP(object):
     def covariance(self):
         K = self.K()
         return sum2diag(K, 1 / self._sitelik_tau)
-    # 
+    #
     # def get_normal_likelihood_trick(self):
     #     # Covariance: nK = K + \tilde\Sigma = K + 1/self._sitelik_tau
     #     # via (K + 1/self._sitelik_tau)^{-1} = A1 - A1QB1^-1QTA1

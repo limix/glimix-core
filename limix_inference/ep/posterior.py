@@ -1,0 +1,76 @@
+from __future__ import division
+
+from numpy import dot, empty
+from numpy_sugar.linalg import cho_solve, ddot, dotd, economic_qs, sum2diag
+from scipy.linalg import cho_factor
+
+
+class Posterior(object):
+    def __init__(self, site):
+        n = len(site.tau)
+        self.tau = empty(n)
+        self.eta = empty(n)
+        self._site = site
+        self._mean = None
+        self._cov = None
+
+    def set_prior_mean(self, mean):
+        self._mean = mean
+
+    def set_prior_cov(self, cov):
+        self._cov = cov
+
+    def initialize(self):
+        r"""Initialize the mean and covariance of the posterior.
+
+        Given that :math:`\tilde{\mathrm T}` is a matrix of zeros before the
+        first EP iteration, we have
+
+        .. math::
+            :nowrap:
+
+            \begin{eqnarray}
+                \Sigma         & = & \mathrm K \\
+                \boldsymbol\mu & = & \mathrm K^{-1} \mathbf m
+            \end{eqnarray}
+        """
+        self.tau[:] = 1 / self._cov.diagonal()
+        self.eta[:] = self._mean
+        self.eta[:] *= self.tau
+
+    def _L(self):
+        r"""Returns the Cholesky factorization of :math:`\mathcal B`.
+
+        .. math::
+
+            \mathcal B = \mathrm Q^{\intercal}\mathcal A\mathrm Q
+                (\sigma_b^2 \mathrm S)^{-1}
+        """
+        QS = self._QS()
+        B = dot(QS[0].T, ddot(self._site.tau, QS[0], left=True))
+        sum2diag(B, 1. / QS[1], out=B)
+        return cho_factor(B, lower=True)[0]
+
+    def _QS(self):
+        QS = economic_qs(self._cov)
+        return QS[0][0], QS[1]
+
+    def _BiQt(self):
+        return cho_solve(self._L(), self._QS()[0].T)
+
+    def update(self):
+        QS = self._QS()
+
+        BiQt = self._BiQt()
+        TK = ddot(self._site.tau, self._cov, left=True)
+        BiQtTK = dot(BiQt, TK)
+
+        self.tau[:] = self._cov.diagonal()
+        self.tau -= dotd(QS[0], BiQtTK)
+
+        assert all(self.tau >= 0.)
+
+        self.eta[:] = dot(self._cov, self._site.eta)
+        self.eta[:] += self._mean
+        self.eta[:] -= dot(QS[0], dot(BiQtTK, self._site.eta))
+        self.eta[:] -= dot(QS[0], dot(BiQt, self._site.tau * self._mean))
