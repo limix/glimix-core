@@ -1,13 +1,12 @@
 from __future__ import absolute_import, division, unicode_literals
 
 import logging
-from math import fsum
 
+from numpy import sum as npsum
+from numpy import dot, empty, inf, isfinite, log, maximum
 from numpy.linalg import norm
-
-from numpy import (inf, isfinite, empty, maximum)
-
 from numpy_sugar import epsilon
+from numpy_sugar.linalg import cho_solve
 
 from .cavity import Cavity
 from .posterior import Posterior
@@ -126,6 +125,7 @@ class EP(object):
         _hvar (array_like): This is :math:`\hat \sigma^2` for each site.
 
     """
+
     def __init__(self):
         self._logger = logging.getLogger(__name__)
 
@@ -135,9 +135,7 @@ class EP(object):
         self._cav = None
         self._posterior = None
 
-        self._moments = {'log_zeroth': None,
-                         'mean': None,
-                         'variance': None}
+        self._moments = {'log_zeroth': None, 'mean': None, 'variance': None}
 
         self._initialized = False
 
@@ -163,30 +161,52 @@ class EP(object):
         self._posterior.set_prior_mean(mean)
         self._posterior.set_prior_cov(cov)
 
-        self._moments = {'log_zeroth': empty(nsamples),
-                         'mean': empty(nsamples),
-                         'variance': empty(nsamples)}
+        self._moments = {
+            'log_zeroth': empty(nsamples),
+            'mean': empty(nsamples),
+            'variance': empty(nsamples)
+        }
 
         # if self._initialized:
         #     self._posterior.update(mean, cov)
         # else:
         self._posterior.initialize()
 
-    def _lml_components(self):
-        return [0, 1]
-
     def _lml(self):
-        v = fsum(self._lml_components())
-        if not isfinite(v):
-            raise ValueError("LML should not be %f." % v)
-        return v
+        L = self._posterior.L()
+        Q, S = self._posterior.QS()
+        ttau = self._site.tau
+        teta = self._site.eta
+        ctau = self._cav.tau
+        ceta = self._cav.eta
+        m = self._posterior.prior_mean()
+
+        TS = ttau + ctau
+
+        lml = - log(L.diagonal()).sum()
+        lml -= 0.5 * npsum(log(S))
+        lml += 0.5 * npsum(log(ttau))
+        lml += 0.5 * dot(teta, dot(Q, cho_solve(L, dot(Q.T, teta))))
+        lml -= 0.5 * dot(teta, teta / TS)
+        lml += dot(m, teta) - 0.5 * dot(m, ttau * m)
+        lml += -0.5 * dot(m * ttau,
+                          dot(Q, cho_solve(L, dot(Q.T, 2 * teta - ttau * m))))
+        lml += npsum(self._moments['log_zeroth'])
+        lml += 0.5 * npsum(log(TS)) - 0.5 * npsum(log(ttau))
+        lml -= 0.5 * npsum(log(ctau))
+        lml += 0.5 * dot(ceta / TS, ttau * ceta / ctau - 2 * teta)
+
+        if not isfinite(lml):
+            raise ValueError("LML should not be %f." % lml)
+
+        return lml
 
     def _params_update(self):
         self._logger.debug('EP parameters update loop has started.')
 
         i = 0
-        tol = inf
-        while i < MAX_ITERS and norm(self._site.tau - self._psite.tau) < tol:
+        tol = -inf
+        while i < MAX_ITERS and norm(self._site.tau - self._psite.tau) > tol:
             self._psite.tau[:] = self._site.tau
             self._psite.eta[:] = self._site.eta
 
@@ -194,10 +214,8 @@ class EP(object):
             self._cav.eta[:] = self._posterior.eta - self._site.eta
             self._compute_moments()
 
-            self._site.update(self._moments['mean'],
-                              self._moments['variance'],
-                              self._cav.eta,
-                              self._cav.tau)
+            self._site.update(self._moments['mean'], self._moments['variance'],
+                              self._cav.eta, self._cav.tau)
 
             self._posterior.update()
 

@@ -20,6 +20,9 @@ class Posterior(object):
     def set_prior_cov(self, cov):
         self._cov = cov
 
+    def prior_mean(self):
+        return self._mean
+
     def initialize(self):
         r"""Initialize the mean and covariance of the posterior.
 
@@ -38,7 +41,7 @@ class Posterior(object):
         self.eta[:] = self._mean
         self.eta[:] *= self.tau
 
-    def _L(self):
+    def L(self):
         r"""Returns the Cholesky factorization of :math:`\mathcal B`.
 
         .. math::
@@ -46,20 +49,20 @@ class Posterior(object):
             \mathcal B = \mathrm Q^{\intercal}\mathcal A\mathrm Q
                 (\sigma_b^2 \mathrm S)^{-1}
         """
-        QS = self._QS()
+        QS = self.QS()
         B = dot(QS[0].T, ddot(self._site.tau, QS[0], left=True))
         sum2diag(B, 1. / QS[1], out=B)
         return cho_factor(B, lower=True)[0]
 
-    def _QS(self):
+    def QS(self):
         QS = economic_qs(self._cov)
         return QS[0][0], QS[1]
 
     def _BiQt(self):
-        return cho_solve(self._L(), self._QS()[0].T)
+        return cho_solve(self.L(), self.QS()[0].T)
 
     def update(self):
-        QS = self._QS()
+        QS = self.QS()
 
         BiQt = self._BiQt()
         TK = ddot(self._site.tau, self._cov, left=True)
@@ -67,6 +70,7 @@ class Posterior(object):
 
         self.tau[:] = self._cov.diagonal()
         self.tau -= dotd(QS[0], BiQtTK)
+        self.tau[:] = 1/self.tau
 
         assert all(self.tau >= 0.)
 
@@ -74,3 +78,5 @@ class Posterior(object):
         self.eta[:] += self._mean
         self.eta[:] -= dot(QS[0], dot(BiQtTK, self._site.eta))
         self.eta[:] -= dot(QS[0], dot(BiQt, self._site.tau * self._mean))
+
+        self.eta *= self.tau

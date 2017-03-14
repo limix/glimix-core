@@ -104,7 +104,7 @@ class SingleExpFamEP(EP, Composite):
     def value(self, mean, cov):
         self._initialize(mean, cov)
         self._params_update()
-        self._lml()
+        return self._lml()
 
     def _prior_mean(self):
         return self._mean_value

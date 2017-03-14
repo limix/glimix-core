@@ -1,17 +1,14 @@
 from __future__ import division
 
-from numpy import sqrt, arange
+from numpy import arange, sqrt
 from numpy.random import RandomState
 from numpy.testing import assert_allclose
 
+from limix_inference.cov import EyeCov, LinearCov, SumCov
+from limix_inference.ep import SingleExpFamEP
 from limix_inference.lik import DeltaProdLik
-from limix_inference.cov import LinearCov
-from limix_inference.cov import EyeCov
-from limix_inference.cov import SumCov
 from limix_inference.mean import OffsetMean
 from limix_inference.random import GLMMSampler
-
-from limix_inference.ep import SingleExpFamEP
 
 
 def test_single_expfam_ep():
@@ -45,10 +42,8 @@ def test_single_expfam_ep():
     y = GLMMSampler(lik, mean, cov).sample(random)
 
     ep = SingleExpFamEP((y, ), 'bernoulli', mean, cov)
-    ep.feed().value()
-    # assert_allclose(ep.lml(), -67.68131174198994, rtol=1e-5)
-    # assert_allclose(ep.heritability, 0.9526383041916363, rtol=1e-5)
-    # assert_allclose(ep.beta[0], -0.158567025222405, rtol=1e-5)
+    assert_allclose(ep.feed().value(), 337.6554144526075)
+
 
 if __name__ == '__main__':
     __import__('pytest').main([__file__, '-s'])
