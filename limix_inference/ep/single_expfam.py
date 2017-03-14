@@ -106,15 +106,6 @@ class SingleExpFamEP(EP, Composite):
         self._params_update()
         return self._lml()
 
-    def _prior_mean(self):
-        return self._mean_value
-
-    def _prior_covariance(self):
-        return self._cov_value
-
-    def _prior_covariance_diagonal(self):
-        return self._cov_value.diagonal()
-
     # def copy(self):
     #     # pylint: disable=W0212
     #     ep = ExpFamEP.__new__(ExpFamEP)
