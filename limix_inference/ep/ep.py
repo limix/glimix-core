@@ -2,6 +2,8 @@ from __future__ import absolute_import, division, unicode_literals
 
 import logging
 
+from math import fsum
+
 from numpy import sum as npsum
 from numpy import dot, empty, inf, isfinite, log, maximum
 from numpy.linalg import norm
@@ -17,7 +19,7 @@ RTOL = epsilon.small
 ATOL = epsilon.small
 
 
-class EP(object): # pylint: disable=R0903
+class EP(object):  # pylint: disable=R0903
     r"""Expectation Propagation algorithm.
 
     Let
@@ -90,18 +92,22 @@ class EP(object): # pylint: disable=R0903
 
         TS = ttau + ctau
 
-        lml = -log(L.diagonal()).sum()
-        lml -= 0.5 * npsum(log(S))
-        lml += 0.5 * npsum(log(ttau))
-        lml += 0.5 * dot(teta, dot(Q, cho_solve(L, dot(Q.T, teta))))
-        lml -= 0.5 * dot(teta, teta / TS)
-        lml += dot(m, teta) - 0.5 * dot(m, ttau * m)
-        lml += -0.5 * dot(m * ttau,
-                          dot(Q, cho_solve(L, dot(Q.T, 2 * teta - ttau * m))))
-        lml += npsum(self._moments['log_zeroth'])
-        lml += 0.5 * npsum(log(TS)) - 0.5 * npsum(log(ttau))
-        lml -= 0.5 * npsum(log(ctau))
-        lml += 0.5 * dot(ceta / TS, ttau * ceta / ctau - 2 * teta)
+        lml = [
+            -log(L.diagonal()).sum(),
+            -0.5 * npsum(log(S)),
+            # lml += 0.5 * npsum(log(ttau)),
+            +0.5 * dot(teta, dot(Q, cho_solve(L, dot(Q.T, teta)))),
+            -0.5 * dot(teta, teta / TS),
+            +dot(m, teta) - 0.5 * dot(m, ttau * m),
+            -0.5 *
+            dot(m * ttau, dot(Q, cho_solve(L, dot(Q.T, 2 * teta - ttau * m)))),
+            +npsum(self._moments['log_zeroth']),
+            +0.5 * npsum(log(TS)),
+            # lml -= 0.5 * npsum(log(ttau)),
+            -0.5 * npsum(log(ctau)),
+            +0.5 * dot(ceta / TS, ttau * ceta / ctau - 2 * teta)
+        ]
+        lml = fsum(lml)
 
         if not isfinite(lml):
             raise ValueError("LML should not be %f." % lml)

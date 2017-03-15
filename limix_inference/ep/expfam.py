@@ -2,7 +2,11 @@ from __future__ import absolute_import, division, unicode_literals
 
 import logging
 
+from numpy.linalg import LinAlgError
+from numpy import inf, sign
+
 from optimix import Composite
+from numpy_sugar import epsilon
 
 from liknorm import LikNormMachine
 from .ep import EP
@@ -102,18 +106,30 @@ class ExpFamEP(EP, Composite):
         self._machine.moments(self._y, eta, tau, self._moments)
 
     def value(self, mean, cov):
-        self._initialize(mean, cov)
-        self._params_update()
-        return self._lml()
+        try:
+            self._initialize(mean, cov)
+            self._params_update()
+            lml = self._lml()
+        except (ValueError, LinAlgError) as e:
+            print(e)
+            print("value: returning large value.\n")
+            lml = -1/epsilon.small
+        return lml
 
     def gradient(self, mean, cov, gmean, gcov): # pylint: disable=W0221
-        self._initialize(mean, cov)
-        self._params_update()
+        try:
+            self._initialize(mean, cov)
+            self._params_update()
 
-        grad = [self._lml_derivative_over_cov(gc) for gc in gcov]
-        grad += [self._lml_derivative_over_mean(gm) for gm in gmean]
+            grad = [self._lml_derivative_over_cov(gc) for gc in gcov]
+            grad += [self._lml_derivative_over_mean(gm) for gm in gmean]
 
-        return grad
+            return grad
+        except (ValueError, LinAlgError) as e:
+            print(e)
+            print("gradient: returning large value.\n")
+            v = self.variables().select(fixed=False)
+            return [-sign(v.get(i).value)/epsilon.small for i in v]
 
     # def copy(self):
     #     # pylint: disable=W0212

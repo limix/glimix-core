@@ -133,7 +133,7 @@ class DeltaProdLik(ProdLik):
         return 0
 
     def sample(self, x, random_state=None):
-        return self.mean(x)
+        return x
 
     @property
     def sample_size(self):
