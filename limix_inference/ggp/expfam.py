@@ -69,7 +69,7 @@ class ExpFamGP(EP, Composite):
         >>> from limix_inference.link import LogitLink
         >>> from limix_inference.random import GLMMSampler
         >>>
-        >>> random = RandomState(0)
+        >>> random = RandomState(1)
         >>>
         >>> lik = BernoulliProdLik(LogitLink())
         >>> mean = offset_mean()
@@ -78,9 +78,9 @@ class ExpFamGP(EP, Composite):
         >>> y = GLMMSampler(lik, mean, cov).sample(random)
         >>>
         >>> ggp = ExpFamGP(y, 'bernoulli', mean, cov)
-        >>> ggp.feed().maximize()
+        >>> ggp.feed().maximize(progress=False)
         >>> print('%.2f' % ggp.feed().value())
-        -69.06
+        -65.39
     """
 
     def __init__(self, y, lik_name, mean, cov):

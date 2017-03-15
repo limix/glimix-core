@@ -56,7 +56,7 @@ class SlowLMM(Composite):
         >>> K = cov.feed().value()
         >>> print('Before: %.4f' % lmm.value(m, K))
         Before: -153.6238
-        >>> lmm.feed().maximize()
+        >>> lmm.feed().maximize(progress=False)
         >>> print('After: %.4f' % lmm.feed().value())
         After: -79.8992
     """

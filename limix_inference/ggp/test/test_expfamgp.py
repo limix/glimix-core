@@ -54,7 +54,7 @@ def _get_data():
 def test_expfam_ep():
     data = _get_data()
     ep = ExpFamGP((data['y'], ), 'bernoulli', data['mean'], data['cov'])
-    assert_allclose(ep.feed().value(), -124.76038018697297)
+    assert_allclose(ep.feed().value(), -60.84029280372346)
 
 
 def test_expfam_ep_function():
@@ -82,9 +82,9 @@ def test_expfam_ep_optimize():
     data = _get_data()
     ep = ExpFamGP((data['y'], ), 'bernoulli', data['mean'], data['cov'])
     data['cov_left'].fix('logscale')
-    ep.feed().maximize()
-    assert_allclose(data['cov_right'].scale, 0.03834097826760676)
-    assert_allclose(data['mean'].offset, -17.11355862521255)
+    ep.feed().maximize(progress=False)
+    assert_allclose(data['cov_right'].scale, 4.165865119892221e-06)
+    assert_allclose(data['mean'].offset, 1.0326586373049373)
 
 
 if __name__ == '__main__':

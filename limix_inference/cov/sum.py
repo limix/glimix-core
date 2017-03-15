@@ -18,11 +18,11 @@ class SumCov(FunctionReduce):
         self._covariances = [c for c in covariances]
         FunctionReduce.__init__(self, self._covariances, 'sum')
 
-    def value_reduce(self, values):
+    def value_reduce(self, values): # pylint: disable=R0201
         r"""Sum covariance function evaluated at `(f_0, f_1, ...)`."""
         return add.reduce(values)
 
-    def derivative_reduce(self, derivatives):
+    def derivative_reduce(self, derivatives): # pylint: disable=R0201
         r"""Sum of covariance function derivatives.
 
         Returns:

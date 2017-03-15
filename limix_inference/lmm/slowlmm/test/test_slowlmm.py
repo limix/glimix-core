@@ -109,7 +109,7 @@ def test_maximize_1():
     K = cov.feed().value()
     assert_almost_equal(lmm.value(m, K), -153.62379155139911)
 
-    lmm.feed().maximize()
+    lmm.feed().maximize(progress=False)
     assert_almost_equal(lmm.feed().value(), -79.899212241487518)
 
 
@@ -130,7 +130,7 @@ def test_maximize_2():
     y = random.randn(N)
 
     lmm = SlowLMM(y, mean, cov)
-    lmm.feed().maximize()
+    lmm.feed().maximize(progress=False)
     assert_almost_equal(lmm.feed().value(), -79.365136339619610)
 
 
