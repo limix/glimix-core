@@ -1,10 +1,8 @@
 from __future__ import absolute_import, division, unicode_literals
 
 import logging
-
 from math import fsum
 
-from numpy import sum as npsum
 from numpy import dot, empty, inf, isfinite, log, maximum
 from numpy.linalg import norm
 from numpy_sugar import epsilon
@@ -94,17 +92,17 @@ class EP(object):  # pylint: disable=R0903
 
         lml = [
             -log(L.diagonal()).sum(),
-            -0.5 * npsum(log(S)),
-            # lml += 0.5 * npsum(log(ttau)),
+            -0.5 * sum(log(S)),
+            # lml += 0.5 * sum(log(ttau)),
             +0.5 * dot(teta, dot(Q, cho_solve(L, dot(Q.T, teta)))),
             -0.5 * dot(teta, teta / TS),
             +dot(m, teta) - 0.5 * dot(m, ttau * m),
             -0.5 *
             dot(m * ttau, dot(Q, cho_solve(L, dot(Q.T, 2 * teta - ttau * m)))),
-            +npsum(self._moments['log_zeroth']),
-            +0.5 * npsum(log(TS)),
-            # lml -= 0.5 * npsum(log(ttau)),
-            -0.5 * npsum(log(ctau)),
+            +sum(self._moments['log_zeroth']),
+            +0.5 * sum(log(TS)),
+            # lml -= 0.5 * sum(log(ttau)),
+            -0.5 * sum(log(ctau)),
             +0.5 * dot(ceta / TS, ttau * ceta / ctau - 2 * teta)
         ]
         lml = fsum(lml)
@@ -169,7 +167,7 @@ class EP(object):  # pylint: disable=R0903
             i += 1
 
         if i == MAX_ITERS:
-            self._logger.warning('Maximum number of EP iterations has' +
-                                 ' been attained.')
+            raise ValueError('Maximum number of EP iterations has' +
+                             ' been attained.')
 
         self._logger.debug('EP loop has performed %d iterations.', i)

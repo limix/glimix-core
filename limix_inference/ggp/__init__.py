@@ -21,7 +21,7 @@ by maximum likelihood.
 Public interface
 ^^^^^^^^^^^^^^^^
 """
-# from .ggp import GGP
+from .expfam import ExpFamGP
 #
 # __all__ = ['GGP']
 

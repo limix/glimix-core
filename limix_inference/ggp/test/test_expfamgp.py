@@ -5,8 +5,8 @@ from numpy.random import RandomState
 from numpy.testing import assert_allclose
 
 from limix_inference.cov import EyeCov, LinearCov, SumCov
-from limix_inference.ep import ExpFamEP
-from limix_inference.lik import BernoulliProdLik, DeltaProdLik
+from limix_inference.ggp import ExpFamGP
+from limix_inference.lik import BernoulliProdLik
 from limix_inference.link import LogitLink
 from limix_inference.mean import OffsetMean
 from limix_inference.random import GLMMSampler
@@ -53,13 +53,13 @@ def _get_data():
 
 def test_expfam_ep():
     data = _get_data()
-    ep = ExpFamEP((data['y'], ), 'bernoulli', data['mean'], data['cov'])
+    ep = ExpFamGP((data['y'], ), 'bernoulli', data['mean'], data['cov'])
     assert_allclose(ep.feed().value(), -124.76038018697297)
 
 
 def test_expfam_ep_function():
     data = _get_data()
-    ep = ExpFamEP((data['y'], ), 'bernoulli', data['mean'], data['cov'])
+    ep = ExpFamGP((data['y'], ), 'bernoulli', data['mean'], data['cov'])
 
     grad = ep.feed().gradient()
 
@@ -80,7 +80,7 @@ def test_expfam_ep_function():
 
 def test_expfam_ep_optimize():
     data = _get_data()
-    ep = ExpFamEP((data['y'], ), 'bernoulli', data['mean'], data['cov'])
+    ep = ExpFamGP((data['y'], ), 'bernoulli', data['mean'], data['cov'])
     data['cov_left'].fix('logscale')
     ep.feed().maximize()
     assert_allclose(data['cov_right'].scale, 0.03834097826760676)

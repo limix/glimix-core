@@ -1,1 +1,1 @@
-from .expfam import ExpFamEP
+from .ep import EP

@@ -2,17 +2,17 @@ from __future__ import absolute_import, division, unicode_literals
 
 import logging
 
+from numpy import sign
 from numpy.linalg import LinAlgError
-from numpy import inf, sign
-
-from optimix import Composite
 from numpy_sugar import epsilon
+from optimix import Composite
 
 from liknorm import LikNormMachine
-from .ep import EP
+
+from ..ep import EP
 
 
-class ExpFamEP(EP, Composite):
+class ExpFamGP(EP, Composite):
     r"""Expectation Propagation for exponential family distributions.
 
     Models
@@ -60,29 +60,31 @@ class ExpFamEP(EP, Composite):
 
     .. doctest::
 
-        >>> from limix_inference.random import bernoulli_sample
-        >>> from limix_inference.glmm import ExpFamEP
-        >>> from limix_inference.lik import BernoulliProdLik
-        >>> from limix_inference.link import LogLink
-        >>> from numpy_sugar.linalg import economic_qs_linear
         >>> from numpy.random import RandomState
         >>>
-        >>> offset = 0.2
+        >>> from limix_inference.example import offset_mean
+        >>> from limix_inference.example import linear_eye_cov
+        >>> from limix_inference.ggp import ExpFamGP
+        >>> from limix_inference.lik import BernoulliProdLik
+        >>> from limix_inference.link import LogitLink
+        >>> from limix_inference.random import GLMMSampler
+        >>>
         >>> random = RandomState(0)
-        >>> G = random.randn(100, 200)
-        >>> QS = economic_qs_linear(G)
-        >>> y = bernoulli_sample(offset, G, random_state=random)
-        >>> covariates = random.randn(100, 1)
-        >>> lik = BernoulliProdLik(LogLink)
-        >>> lik.outcome = y
-        >>> glmm = ExpFamEP(lik, covariates, QS)
-        >>> glmm.learn(progress=False)
-        >>> print('%.2f' % glmm.lml())
+        >>>
+        >>> lik = BernoulliProdLik(LogitLink())
+        >>> mean = offset_mean()
+        >>> cov = linear_eye_cov()
+        >>>
+        >>> y = GLMMSampler(lik, mean, cov).sample(random)
+        >>>
+        >>> ggp = ExpFamGP(y, 'bernoulli', mean, cov)
+        >>> ggp.feed().maximize()
+        >>> print('%.2f' % ggp.feed().value())
         -69.06
     """
 
     def __init__(self, y, lik_name, mean, cov):
-        super(ExpFamEP, self).__init__()
+        super(ExpFamGP, self).__init__()
         Composite.__init__(self, mean=mean, cov=cov)
 
         self._logger = logging.getLogger(__name__)
@@ -113,10 +115,10 @@ class ExpFamEP(EP, Composite):
         except (ValueError, LinAlgError) as e:
             print(e)
             print("value: returning large value.\n")
-            lml = -1/epsilon.small
+            lml = -1 / epsilon.small
         return lml
 
-    def gradient(self, mean, cov, gmean, gcov): # pylint: disable=W0221
+    def gradient(self, mean, cov, gmean, gcov):  # pylint: disable=W0221
         try:
             self._initialize(mean, cov)
             self._params_update()
@@ -129,11 +131,11 @@ class ExpFamEP(EP, Composite):
             print(e)
             print("gradient: returning large value.\n")
             v = self.variables().select(fixed=False)
-            return [-sign(v.get(i).value)/epsilon.small for i in v]
+            return [-sign(v.get(i).value) / epsilon.small for i in v]
 
     # def copy(self):
     #     # pylint: disable=W0212
-    #     ep = ExpFamEP.__new__(ExpFamEP)
+    #     ep = ExpFamGP.__new__(ExpFamGP)
     #     self._copy_to(ep)
     #
     #     ep._machine = LikNormMachine(self._lik_prod.name, 500)
