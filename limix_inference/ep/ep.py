@@ -6,7 +6,7 @@ from numpy import sum as npsum
 from numpy import dot, empty, inf, isfinite, log, maximum
 from numpy.linalg import norm
 from numpy_sugar import epsilon
-from numpy_sugar.linalg import cho_solve
+from numpy_sugar.linalg import cho_solve, ddot, dotd
 
 from .cavity import Cavity
 from .posterior import Posterior
@@ -107,6 +107,39 @@ class EP(object): # pylint: disable=R0903
             raise ValueError("LML should not be %f." % lml)
 
         return lml
+
+    def _lml_derivative_over_mean(self, dm):
+        L = self._posterior.L()
+        Q, _ = self._posterior.QS()
+        ttau = self._site.tau
+        teta = self._site.eta
+
+        diff = teta - ttau * self._posterior.prior_mean()
+
+        dlml = dot(diff, dm)
+        dlml -= dot(diff, dot(Q, cho_solve(L, dot(Q.T, ttau * dm))))
+
+        return dlml
+
+    def _lml_derivative_over_cov(self, dcov):
+        L = self._posterior.L()
+        Q, _ = self._posterior.QS()
+        ttau = self._site.tau
+        teta = self._site.eta
+
+        diff = teta - ttau * self._posterior.prior_mean()
+
+        v0 = dot(dcov, diff)
+        v1 = ttau * dot(Q, cho_solve(L, dot(Q.T, diff)))
+
+        dlml = 0.5 * dot(diff, v0)
+        dlml -= dot(v0, v1)
+        dlml += 0.5 * dot(v1, dot(dcov, v1))
+        dlml -= 0.5 * sum(ttau * dcov.diagonal())
+        TK = ddot(ttau, dcov, left=True)
+        dlml += 0.5 * sum(ttau * dotd(Q, cho_solve(L, dot(Q.T, TK))))
+
+        return dlml
 
     def _params_update(self):
         self._logger.debug('EP parameters update loop has started.')

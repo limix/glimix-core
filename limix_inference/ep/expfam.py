@@ -8,7 +8,7 @@ from liknorm import LikNormMachine
 from .ep import EP
 
 
-class SingleExpFamEP(EP, Composite):
+class ExpFamEP(EP, Composite):
     r"""Expectation Propagation for exponential family distributions.
 
     Models
@@ -78,7 +78,7 @@ class SingleExpFamEP(EP, Composite):
     """
 
     def __init__(self, y, lik_name, mean, cov):
-        super(SingleExpFamEP, self).__init__()
+        super(ExpFamEP, self).__init__()
         Composite.__init__(self, mean=mean, cov=cov)
 
         self._logger = logging.getLogger(__name__)
@@ -105,6 +105,15 @@ class SingleExpFamEP(EP, Composite):
         self._initialize(mean, cov)
         self._params_update()
         return self._lml()
+
+    def gradient(self, mean, cov, gmean, gcov): # pylint: disable=W0221
+        self._initialize(mean, cov)
+        self._params_update()
+
+        grad = [self._lml_derivative_over_cov(gc) for gc in gcov]
+        grad += [self._lml_derivative_over_mean(gm) for gm in gmean]
+
+        return grad
 
     # def copy(self):
     #     # pylint: disable=W0212

@@ -5,13 +5,13 @@ from numpy.random import RandomState
 from numpy.testing import assert_allclose
 
 from limix_inference.cov import EyeCov, LinearCov, SumCov
-from limix_inference.ep import SingleExpFamEP
+from limix_inference.ep import ExpFamEP
 from limix_inference.lik import DeltaProdLik
 from limix_inference.mean import OffsetMean
 from limix_inference.random import GLMMSampler
 
 
-def test_single_expfam_ep():
+def _get_data():
     random = RandomState(458)
     N = 100
     X = random.randn(N, N + 1)
@@ -41,9 +41,41 @@ def test_single_expfam_ep():
 
     y = GLMMSampler(lik, mean, cov).sample(random)
 
-    ep = SingleExpFamEP((y, ), 'bernoulli', mean, cov)
+    return dict(mean=mean, cov=cov, lik=lik, y=y)
+
+
+def test_expfam_ep():
+    data = _get_data()
+    ep = ExpFamEP((data['y'], ), 'bernoulli', data['mean'], data['cov'])
     assert_allclose(ep.feed().value(), 337.6554144526075)
 
+
+def test_expfam_ep_function():
+    data = _get_data()
+    ep = ExpFamEP((data['y'], ), 'bernoulli', data['mean'], data['cov'])
+
+    grad = ep.feed().gradient()
+
+    x0 = ep.variables().flatten()
+    f0 = ep.feed().value()
+    step = 1e-4
+
+    emp_grad = []
+    for i, v in enumerate(x0):
+        x1 = x0.copy()
+        x1[i] = v + step
+        ep.variables().from_flat(x1)
+        f1 = ep.feed().value()
+        emp_grad.append((f1 - f0) / step)
+
+    assert_allclose(grad, emp_grad, rtol=1e-3)
+
+
+# def test_expfam_ep_optimize():
+#     data = _get_data()
+#     ep = ExpFamEP((data['y'], ), 'bernoulli', data['mean'], data['cov'])
+#     ep.feed().gradient()
+#     # assert_allclose(ep.feed().value(), 337.6554144526075)
 
 if __name__ == '__main__':
     __import__('pytest').main([__file__, '-s'])
