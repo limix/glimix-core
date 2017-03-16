@@ -12,7 +12,9 @@ dependencies:
 - pycparser=2.17=py35_0
 - scipy-sugar=1.0.1=py35_0
 - tqdm=4.11.2=py35_0
+- llvmlite=0.16.0=py35_0
 - mkl=2017.0.1=0
+- numba=0.31.0=np112py35_0
 - numpy=1.12.0=py35_0
 - openssl=1.0.2k=1
 - pip=9.0.1=py35_1
@@ -25,5 +27,3 @@ dependencies:
 - wheel=0.29.0=py35_0
 - xz=5.2.2=1
 - zlib=1.2.8=3
-prefix: /Users/horta/anaconda/envs/py35
-
