@@ -33,8 +33,6 @@ class LMMCore(object):
         self._svd = None
         self.M = M
 
-        self._delta = 0.5
-
     def get_fast_scanner(self):
         return FastScanner(self._y, self.M, self._QS, self.delta)
 
@@ -45,7 +43,6 @@ class LMMCore(object):
         o._y = self._y
 
         o.__tbeta = self.__tbeta.copy()
-        o._delta = self._delta
 
         return o
 
@@ -93,19 +90,11 @@ class LMMCore(object):
         p = [a[i] - 2 * b[i].dot(be) + be.dot(c[i]).dot(be) for i in [0, 1]]
         return sum(p) / len(self._y)
 
-    @property
-    def delta(self):
-        return self._delta
-
-    @delta.setter
-    def delta(self, delta):
-        self._delta = delta
-
     def _diag(self, i):
         if i == 0:
-            return self._QS[1] * (1 - self._delta) + self._delta
+            return self._QS[1] * (1 - self.delta) + self.delta
         assert i == 1
-        return self._delta
+        return self.delta
 
     def _a(self, i):
         return sum(self._yTQ_2x(i) / self._diag(i))

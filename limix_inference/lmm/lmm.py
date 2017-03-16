@@ -2,7 +2,6 @@ from __future__ import division
 
 from numpy import exp
 from numpy import clip
-from numpy import atleast_2d
 
 from numpy_sugar import is_all_finite
 
@@ -90,6 +89,7 @@ class LMM(LMMCore, Function):
             raise ValueError("There are non-finite values in the phenotype.")
 
         self._fix = dict(beta=False, scale=False)
+        self._delta = 0.5
         self._scale = LMMCore.scale.fget(self)
         self.set_nodata()
 
@@ -114,6 +114,14 @@ class LMM(LMMCore, Function):
     @scale.setter
     def scale(self, v):
         self._scale = v
+
+    @property
+    def delta(self):
+        return self._delta
+
+    @delta.setter
+    def delta(self, delta):
+        self._delta = delta
 
     # def copy(self):
     #     # pylint: disable=W0212
