@@ -6,20 +6,21 @@ from numpy_sugar import epsilon
 from numpy_sugar.random import multivariate_normal
 
 
-class GLMMSampler(object):
-    r"""Sample from a Generalized Linear Mixed model.
+class GPSampler(object): # pylint: disable=R0903
+    r"""Sample from a Gaussian Process.
 
     Sample from
 
     .. math::
 
-        \mathbf y \sim \int \prod_i \mathrm{ExpFam}(y_i ~|~ g_i(z_i))
-        \mathcal N(\mathbf z ~|~ \mathbf m; \mathrm K) d\mathbf z.
+        \mathbf y \sim \mathcal N(\mathbf z ~|~ \mathbf m, \mathrm K)
+        \mathrm d\mathbf z.
 
     Args:
-        lik (sequence): likelihood product. (Refer to :doc:`lik`)
-        mean (mean_function): mean function defined. (Refer to :doc:`mean`.)
-        cov (covariance_function): covariance function defined. (Refer to :doc:`cov`.)
+        mean (:class:`optimix.Function`): mean function.
+                                          (Refer to :doc:`mean`.)
+        cov (:class:`optimix.Function`): covariance function.
+                                         (Refer to :doc:`cov`.)
 
     Example
     -------
@@ -28,10 +29,10 @@ class GLMMSampler(object):
 
         >>> from numpy import arange, sqrt
         >>> from numpy.random import RandomState
-        >>> from limix_inference.random import GLMMSampler
+        >>>
+        >>> from limix_inference.random import GPSampler
         >>> from limix_inference.mean import OffsetMean
         >>> from limix_inference.cov import LinearCov, EyeCov, SumCov
-        >>> from limix_inference.lik import DeltaProdLik
         >>>
         >>> random = RandomState(9458)
         >>> N = 500
@@ -57,12 +58,11 @@ class GLMMSampler(object):
         >>>
         >>> lik = DeltaProdLik()
         >>>
-        >>> y = GLMMSampler(lik, mean, cov).sample(random)
+        >>> y = GPSampler(mean, cov).sample(random)
         >>> print(y[:5])
         [ 2.17393302  0.27067607 -1.08349329  1.32031279  2.15242283]
     """
-    def __init__(self, lik, mean, cov):
-        self._lik = lik
+    def __init__(self, mean, cov):
         self._mean = mean
         self._cov = cov
 
@@ -71,10 +71,8 @@ class GLMMSampler(object):
             random_state = RandomState()
 
         m = self._mean.feed('sample').value()
-        K = self._cov.feed('sample').value()
+        K = self._cov.feed('sample').value().copy()
 
         sum2diag(K, +epsilon.small, out=K)
-        u = multivariate_normal(m, K, random_state)
-        sum2diag(K, -epsilon.small, out=K)
 
-        return self._lik.sample(u, random_state)
+        return multivariate_normal(m, K, random_state)

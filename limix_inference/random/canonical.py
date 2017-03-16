@@ -17,7 +17,7 @@ from ..cov import LinearCov
 from ..cov import SumCov
 from ..cov import EyeCov
 
-from .glmm import GLMMSampler
+from .glmm import GGPSampler
 
 
 def bernoulli_sample(offset,
@@ -68,7 +68,7 @@ def bernoulli_sample(offset,
     mean, cov = _mean_cov(offset, G, heritability, causal_variants,
                           causal_variance, random_state)
     lik = BernoulliProdLik(link)
-    sampler = GLMMSampler(lik, mean, cov)
+    sampler = GGPSampler(lik, mean, cov)
 
     return sampler.sample(random_state)
 
@@ -99,7 +99,7 @@ def binomial_sample(ntrials,
     mean, cov = _mean_cov(offset, G, heritability, causal_variants,
                           causal_variance, random_state)
     lik = BinomialProdLik(ntrials, link)
-    sampler = GLMMSampler(lik, mean, cov)
+    sampler = GGPSampler(lik, mean, cov)
 
     return sampler.sample(random_state)
 
@@ -128,7 +128,7 @@ def poisson_sample(offset,
                           causal_variance, random_state)
     link = LogLink()
     lik = PoissonProdLik(link)
-    sampler = GLMMSampler(lik, mean, cov)
+    sampler = GGPSampler(lik, mean, cov)
 
     return sampler.sample(random_state)
 

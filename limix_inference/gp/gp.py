@@ -10,20 +10,14 @@ from optimix import Composite
 
 
 class GP(Composite):
-    r"""Gaussian process inference via maximum likelihood.
-
-    It models
-
-    .. math::
-
-        \mathrm y \sim \mathcal N(\mathbf m, \mathrm K)
-
-    for any mean :math:`\mathbf m` and covariance matrix :math:`\mathrm K`.
+    r"""Gaussian Process inference via maximum likelihood.
 
     Args:
-        y (array_like): real-valued outcome.
-        mean (mean_function): mean function. (Refer to :doc:`mean`.)
-        cov (covariance_function): covariance function. (Refer to :doc:`cov`.)
+        y (array_like): outcome variable.
+        mean (:class:`optimix.Function`): mean function.
+                                          (Refer to :doc:`mean`.)
+        cov (:class:`optimix.Function`): covariance function.
+                                         (Refer to :doc:`cov`.)
 
     Example
     -------
@@ -31,9 +25,13 @@ class GP(Composite):
     .. doctest::
 
         >>> from numpy.random import RandomState
-        >>> from limix_inference.mean import OffsetMean
-        >>> from limix_inference.gp import GP
-        >>> from limix_inference.cov import LinearCov
+        >>>
+        >>> from limix_inference.example import offset_mean
+        >>> from limix_inference.example import linear_eye_cov
+        >>> from limix_inference.ggp import ExpFamGP
+        >>> from limix_inference.lik import BernoulliProdLik
+        >>> from limix_inference.link import LogitLink
+        >>> from limix_inference.random import GGPSampler
         >>>
         >>> random = RandomState(94584)
         >>> N = 50

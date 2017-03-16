@@ -13,7 +13,7 @@ from limix_inference.cov import LinearCov
 from limix_inference.cov import EyeCov
 from limix_inference.cov import SumCov
 from limix_inference.mean import OffsetMean
-from limix_inference.random import GLMMSampler
+from limix_inference.random import GGPSampler
 
 def test_fastlmm_fast_scan():
     random = RandomState(9458)
@@ -40,7 +40,7 @@ def test_fastlmm_fast_scan():
 
     lik = DeltaProdLik()
 
-    y = GLMMSampler(lik, mean, cov).sample(random)
+    y = GGPSampler(lik, mean, cov).sample(random)
 
     QS = economic_qs_linear(X)
 
@@ -92,7 +92,7 @@ def test_learn():
 
     lik = DeltaProdLik()
 
-    y = GLMMSampler(lik, mean, cov).sample(random)
+    y = GGPSampler(lik, mean, cov).sample(random)
 
     QS = economic_qs_linear(X)
 
@@ -130,7 +130,7 @@ def test_fastlmm_learn_fix():
 
     lik = DeltaProdLik()
 
-    y = GLMMSampler(lik, mean, cov).sample(random)
+    y = GGPSampler(lik, mean, cov).sample(random)
 
     QS = economic_qs_linear(X)
 

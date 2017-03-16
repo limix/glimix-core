@@ -47,5 +47,6 @@ texinfo_documents = [
 ]
 intersphinx_mapping = {
     'python': ('http://docs.python.org/', None),
-    'numpy': ('http://docs.scipy.org/doc/numpy/', None)
+    'numpy': ('http://docs.scipy.org/doc/numpy/', None),
+    'optimix': ('http://optimix.readthedocs.io/en/latest/', None)
 }

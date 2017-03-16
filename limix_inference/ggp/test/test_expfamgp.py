@@ -9,7 +9,7 @@ from limix_inference.ggp import ExpFamGP
 from limix_inference.lik import BernoulliProdLik
 from limix_inference.link import LogitLink
 from limix_inference.mean import OffsetMean
-from limix_inference.random import GLMMSampler
+from limix_inference.random import GGPSampler
 
 
 def _get_data():
@@ -40,7 +40,7 @@ def _get_data():
 
     lik = BernoulliProdLik(LogitLink())
 
-    y = GLMMSampler(lik, mean, cov).sample(random)
+    y = GGPSampler(lik, mean, cov).sample(random)
 
     return dict(
         mean=mean,

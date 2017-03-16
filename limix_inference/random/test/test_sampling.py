@@ -8,7 +8,7 @@ from limix_inference.cov import EyeCov, LinearCov, SumCov
 from limix_inference.lik import BinomialLik, PoissonLik
 from limix_inference.link import LogitLink, LogLink
 from limix_inference.mean import OffsetMean
-from limix_inference.random import (GLMMSampler, bernoulli_sample,
+from limix_inference.random import (GGPSampler, bernoulli_sample,
                                     binomial_sample, poisson_sample)
 
 
@@ -31,7 +31,7 @@ def test_poisson_sampler():
     assert_equal(poisson.sample(+5, random), 158)
 
 
-def test_GLMMSampler_poisson():
+def test_GGPSampler_poisson():
     random = RandomState(4503)
     X = random.randn(10, 15)
     link = LogLink()
@@ -42,7 +42,7 @@ def test_GLMMSampler_poisson():
     mean.set_data(10, 'sample')
     cov = LinearCov()
     cov.set_data((X, X), 'sample')
-    sampler = GLMMSampler(lik, mean, cov)
+    sampler = GGPSampler(lik, mean, cov)
     assert_equal(
         sampler.sample(random), [0, 289, 0, 11, 0, 0, 176, 0, 228, 82])
 
@@ -62,16 +62,16 @@ def test_GLMMSampler_poisson():
 
     cov = SumCov([cov1, cov2])
 
-    sampler = GLMMSampler(lik, mean, cov)
+    sampler = GGPSampler(lik, mean, cov)
 
     assert_equal(sampler.sample(random), [2, 0, 1, 2, 1, 1, 1, 2, 0, 0])
 
     cov2.scale = 100.
-    sampler = GLMMSampler(lik, mean, cov)
+    sampler = GGPSampler(lik, mean, cov)
     assert_equal(sampler.sample(random), [0, 0, 0, 0, 1, 0, 0, 1196, 0, 0])
 
 
-def test_GLMMSampler_binomial():
+def test_GGPSampler_binomial():
     random = RandomState(4503)
     X = random.randn(10, 15)
     link = LogitLink()
@@ -82,7 +82,7 @@ def test_GLMMSampler_binomial():
     mean.set_data(10, 'sample')
     cov = LinearCov()
     cov.set_data((X, X), 'sample')
-    sampler = GLMMSampler(lik, mean, cov)
+    sampler = GGPSampler(lik, mean, cov)
     assert_equal(sampler.sample(random), [0, 5, 0, 5, 1, 1, 5, 0, 5, 5])
 
     mean.offset = 0.
@@ -105,12 +105,12 @@ def test_GLMMSampler_binomial():
     cov = SumCov([cov1, cov2])
 
     lik = BinomialLik(100, link)
-    sampler = GLMMSampler(lik, mean, cov)
+    sampler = GGPSampler(lik, mean, cov)
     assert_equal(
         sampler.sample(random), [56, 56, 55, 51, 59, 45, 47, 43, 51, 38])
 
     cov2.scale = 100.
-    sampler = GLMMSampler(lik, mean, cov)
+    sampler = GGPSampler(lik, mean, cov)
     assert_equal(
         sampler.sample(random), [99, 93, 99, 75, 77, 0, 0, 100, 99, 12])
 

@@ -13,50 +13,18 @@ from ..ep import EP
 
 
 class ExpFamGP(EP, Composite):
-    r"""Expectation Propagation for exponential family distributions.
-
-    Models
-
-    .. math::
-
-        y_i ~|~ z_i \sim \text{ExpFam}(y_i ~|~ \mu_i = g(z_i))
-
-    for
-
-    .. math::
-
-        \mathbf z \sim \mathcal N\big(~~ \mathrm M^\intercal \boldsymbol\beta;~
-            \sigma_b^2 \mathrm Q_0 \mathrm S_0 \mathrm Q_0^{\intercal} +
-                    \sigma_{\epsilon}^2 \mathrm I ~~\big)
-
-    where :math:`\mathrm Q_0 \mathrm S_0 \mathrm Q_0^\intercal`
-    is the economic eigen decomposition of a semi-definite positive matrix,
-    :math:`g(\cdot)` is a link function, and :math:`\text{ExpFam}(\cdot)` is
-    an exponential-family distribution.
-
-    For convenience, let us define the following variables:
-
-    .. math::
-        :nowrap:
-
-        \begin{eqnarray}
-            \sigma_b^2          & = & v (1-\delta) \\
-            \sigma_{\epsilon}^2 & = & v \delta\\
-            \mathbf m           & = & \mathrm M \boldsymbol\beta \\
-            \mathrm K           & = & \sigma_b^2 \mathrm Q_0 \mathrm S_0
-                                      \mathrm Q_0^{\intercal} +
-                                      \sigma_{\epsilon}^2 \mathrm I
-        \end{eqnarray}
+    r"""Expectation Propagation for Generalised Gaussian Processes.
 
     Args:
-        prodlik (object): likelihood product.
-        covariates (array_like): fixed-effect covariates :math:`\mathrm M`.
-        Q0 (array_like): eigenvectors of positive eigenvalues.
-        Q1 (array_like): eigenvectors of zero eigenvalues.
-        S0 (array_like): positive eigenvalues.
+        y (array_like): outcome variable.
+        lik_name (str): likelihood name.
+        mean (:class:`optimix.Function`): mean function.
+                                          (Refer to :doc:`mean`.)
+        cov (:class:`optimix.Function`): covariate function.
+                                         (Refer to :doc:`cov`.)
 
     Example
-    ^^^^^^^
+    -------
 
     .. doctest::
 
@@ -67,7 +35,7 @@ class ExpFamGP(EP, Composite):
         >>> from limix_inference.ggp import ExpFamGP
         >>> from limix_inference.lik import BernoulliProdLik
         >>> from limix_inference.link import LogitLink
-        >>> from limix_inference.random import GLMMSampler
+        >>> from limix_inference.random import GGPSampler
         >>>
         >>> random = RandomState(1)
         >>>
@@ -75,12 +43,14 @@ class ExpFamGP(EP, Composite):
         >>> mean = offset_mean()
         >>> cov = linear_eye_cov()
         >>>
-        >>> y = GLMMSampler(lik, mean, cov).sample(random)
+        >>> y = GGPSampler(lik, mean, cov).sample(random)
         >>>
         >>> ggp = ExpFamGP(y, 'bernoulli', mean, cov)
+        >>> print('Before: %.4f' % ggp.feed().value())
+        Before: -65.8090
         >>> ggp.feed().maximize(progress=False)
-        >>> print('%.2f' % ggp.feed().value())
-        -65.39
+        >>> print('After: %.4f' % ggp.feed().value())
+        After: -65.3897
     """
 
     def __init__(self, y, lik_name, mean, cov):
@@ -108,6 +78,15 @@ class ExpFamGP(EP, Composite):
         self._machine.moments(self._y, eta, tau, self._moments)
 
     def value(self, mean, cov):
+        r"""Log of the marginal likelihood.
+
+        Args:
+            mean (array_like): realised mean.
+            cov (array_like): realised cov.
+
+        Returns:
+            float: log of the marginal likelihood.
+        """
         try:
             self._initialize(mean, cov)
             self._params_update()
@@ -119,6 +98,17 @@ class ExpFamGP(EP, Composite):
         return lml
 
     def gradient(self, mean, cov, gmean, gcov):  # pylint: disable=W0221
+        r"""Gradient of the log of the marginal likelihood.
+
+        Args:
+            mean (array_like): realised mean.
+            cov (array_like): realised cov.
+            gmean (array_like): realised mean derivative.
+            gcov (array_like): realised cov derivative.
+
+        Returns:
+            list: derivatives.
+        """
         try:
             self._initialize(mean, cov)
             self._params_update()
@@ -132,18 +122,3 @@ class ExpFamGP(EP, Composite):
             print("gradient: returning large value.\n")
             v = self.variables().select(fixed=False)
             return [-sign(v.get(i).value) / epsilon.small for i in v]
-
-    # def copy(self):
-    #     # pylint: disable=W0212
-    #     ep = ExpFamGP.__new__(ExpFamGP)
-    #     self._copy_to(ep)
-    #
-    #     ep._machine = LikNormMachine(self._lik_prod.name, 500)
-    #     ep._lik_prod = self._lik_prod
-    #
-    #     ep._phenotype = self._phenotype
-    #     ep._tbeta = self._tbeta.copy()
-    #     ep.delta = self.delta
-    #     self.v = self.v
-    #
-    #     return ep
