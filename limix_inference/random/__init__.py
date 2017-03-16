@@ -9,8 +9,9 @@ Random sampler
 - :class:`.GGPSampler`
 """
 
-from .glmm import GGPSampler
+from .ggp import GGPSampler
+from .gp import GPSampler
 from .canonical import bernoulli_sample, binomial_sample, poisson_sample
 
-__all__ = ['GGPSampler', 'bernoulli_sample', 'binomial_sample',
+__all__ = ['GGPSampler', 'GPSampler', 'bernoulli_sample', 'binomial_sample',
            'poisson_sample']

@@ -28,35 +28,22 @@ class GP(Composite):
         >>>
         >>> from limix_inference.example import offset_mean
         >>> from limix_inference.example import linear_eye_cov
-        >>> from limix_inference.ggp import ExpFamGP
-        >>> from limix_inference.lik import BernoulliProdLik
-        >>> from limix_inference.link import LogitLink
-        >>> from limix_inference.random import GGPSampler
+        >>> from limix_inference.gp import GP
+        >>> from limix_inference.random import GPSampler
         >>>
         >>> random = RandomState(94584)
-        >>> N = 50
-        >>> X = random.randn(N, 100)
-        >>> offset = 0.5
         >>>
-        >>> mean = OffsetMean()
-        >>> mean.offset = offset
-        >>> mean.fix('offset')
-        >>> mean.set_data(N)
+        >>> mean = offset_mean()
+        >>> cov = linear_eye_cov()
         >>>
-        >>> cov = LinearCov()
-        >>> cov.scale = 1.0
-        >>> cov.set_data((X, X))
+        >>> y = GPSampler(mean, cov).sample(random)
         >>>
-        >>> y = random.randn(N)
-        >>>
-        >>> lmm = GP(y, mean, cov)
-        >>> m = mean.feed().value()
-        >>> K = cov.feed().value()
-        >>> print('Before: %.4f' % lmm.value(m, K))
-        Before: -153.6238
-        >>> lmm.feed().maximize(progress=False)
-        >>> print('After: %.4f' % lmm.feed().value())
-        After: -79.8992
+        >>> gp = GP(y, mean, cov)
+        >>> print('Before: %.4f' % gp.feed().value())
+        Before: -164.0064
+        >>> gp.feed().maximize(progress=False)
+        >>> print('After: %.4f' % gp.feed().value())
+        After: -163.4192
     """
     def __init__(self, y, mean, cov):
         if var(y) < 1e-8:

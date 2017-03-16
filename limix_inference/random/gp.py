@@ -27,40 +27,20 @@ class GPSampler(object): # pylint: disable=R0903
 
     .. doctest::
 
-        >>> from numpy import arange, sqrt
         >>> from numpy.random import RandomState
         >>>
+        >>> from limix_inference.example import offset_mean
+        >>> from limix_inference.example import linear_eye_cov
         >>> from limix_inference.random import GPSampler
-        >>> from limix_inference.mean import OffsetMean
-        >>> from limix_inference.cov import LinearCov, EyeCov, SumCov
         >>>
-        >>> random = RandomState(9458)
-        >>> N = 500
-        >>> X = random.randn(N, N + 1)
-        >>> X -= X.mean(0)
-        >>> X /= X.std(0)
-        >>> X /= sqrt(X.shape[1])
-        >>> offset = 1.0
+        >>> random = RandomState(1)
         >>>
-        >>> mean = OffsetMean()
-        >>> mean.offset = offset
-        >>> mean.set_data(N, purpose='sample')
-        >>>
-        >>> cov_left = LinearCov()
-        >>> cov_left.scale = 1.5
-        >>> cov_left.set_data((X, X), purpose='sample')
-        >>>
-        >>> cov_right = EyeCov()
-        >>> cov_right.scale = 1.5
-        >>> cov_right.set_data((arange(N), arange(N)), purpose='sample')
-        >>>
-        >>> cov = SumCov([cov_left, cov_right])
-        >>>
-        >>> lik = DeltaProdLik()
+        >>> mean = offset_mean()
+        >>> cov = linear_eye_cov()
         >>>
         >>> y = GPSampler(mean, cov).sample(random)
         >>> print(y[:5])
-        [ 2.17393302  0.27067607 -1.08349329  1.32031279  2.15242283]
+        [ 1.67474605  1.24736152 -0.77509523  1.88952893  1.62847894]
     """
     def __init__(self, mean, cov):
         self._mean = mean

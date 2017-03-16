@@ -30,7 +30,7 @@ class GGPSampler(object): # pylint: disable=R0903
 
         >>> from numpy import arange, sqrt
         >>> from numpy.random import RandomState
-        >>> 
+        >>>
         >>> from limix_inference.random import GGPSampler
         >>> from limix_inference.mean import OffsetMean
         >>> from limix_inference.cov import LinearCov, EyeCov, SumCov
