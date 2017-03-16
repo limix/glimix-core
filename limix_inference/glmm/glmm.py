@@ -2,10 +2,10 @@ from __future__ import absolute_import, division, unicode_literals
 
 import logging
 
-from numpy import sign
+from numpy import sign, zeros, dot, exp
 from numpy.linalg import LinAlgError
 from numpy_sugar import epsilon
-from optimix import Function, Scalar
+from optimix import Function, Scalar, Vector
 
 from liknorm import LikNormMachine
 
@@ -56,7 +56,8 @@ class GLMM(EP, Function):
 
     def __init__(self, y, lik_name, X, QS):
         super(GLMM, self).__init__()
-        Function.__init__(self, logitscale=Scalar(0.0), logitdelta=Scalar(0.0))
+        Function.__init__(self, beta=Vector(zeros(X.shape[1])),
+                          logscale=Scalar(0.0), logitdelta=Scalar(0.0))
 
         self._logger = logging.getLogger(__name__)
 
@@ -76,6 +77,34 @@ class GLMM(EP, Function):
         eta = self._cav.eta
         self._machine.moments(self._y, eta, tau, self._moments)
 
+    def mean(self):
+        return dot(self._X, self.beta)
+
+    @property
+    def scale(self):
+        return exp(self.get('logscale'))
+
+    @property
+    def delta(self):
+        return 1/(1 + exp(-self.get('logitdelta')))
+
+    @property
+    def beta(self):
+        return self.get('beta')
+
+    def _derivative_over_logscale(self):
+        x = self.get('logscale')
+        d = self.delta
+        E = self._QS[1]
+        return exp(x) * ((1 - d) * E + d)
+
+    def _derivative_over_logitdelta(self):
+        x = self.get('logitdelta')
+        s = self.scale
+        c = (s * exp(x) / (1 + exp(-x))^2)
+        S = self._QS[1]
+        return c * (1 - S)
+
     def value(self):
         r"""Log of the marginal likelihood.
 
@@ -87,7 +116,7 @@ class GLMM(EP, Function):
             float: log of the marginal likelihood.
         """
         try:
-            self._initialize(mean, cov)
+            self._initialize(self.mean(), self._QS)
             self._params_update()
             lml = self._lml()
         except (ValueError, LinAlgError) as e:
@@ -96,7 +125,7 @@ class GLMM(EP, Function):
             lml = -1 / epsilon.small
         return lml
 
-    def gradient(self, mean, cov, gmean, gcov):  # pylint: disable=W0221
+    def gradient(self):
         r"""Gradient of the log of the marginal likelihood.
 
         Args:
@@ -109,8 +138,11 @@ class GLMM(EP, Function):
             list: derivatives.
         """
         try:
-            self._initialize(mean, cov)
+            self._initialize(self.mean(), self._QS)
             self._params_update()
+
+            # dK = [self._QS, ]
+            dS1 = exp()
 
             grad = [self._lml_derivative_over_cov(gc) for gc in gcov]
             grad += [self._lml_derivative_over_mean(gm) for gm in gmean]
