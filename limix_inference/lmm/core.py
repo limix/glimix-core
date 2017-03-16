@@ -27,7 +27,7 @@ class LMMCore(object):
         self._QS = QS
         self._y = _make_sure_has_variance(y)
 
-        self._fix_scale = False
+        # self._fix_scale = False
 
         self._tM = None
         self.__tbeta = None
@@ -35,7 +35,7 @@ class LMMCore(object):
         self._svd = None
         self.M = M
 
-        self._scale = 1.0
+        # self._scale = 1.0
         self._delta = 0.5
 
     def get_fast_scanner(self):
@@ -44,21 +44,21 @@ class LMMCore(object):
     def copy(self):
         # pylint: disable=W0212
         o = LMMCore.__new__(LMMCore)
-        o._fix_scale = self._fix_scale
+        # o._fix_scale = self._fix_scale
         o._QS = self._QS
         o._y = self._y
 
         o.__tbeta = self.__tbeta.copy()
-        o._scale = self._scale
+        # o._scale = self._scale
         o._delta = self._delta
 
         return o
 
-    def fix_scale(self):
-        self._fix_scale = True
-
-    def unfix_scale(self):
-        self._fix_scale = False
+    # def fix_scale(self):
+    #     self._fix_scale = True
+    #
+    # def unfix_scale(self):
+    #     self._fix_scale = False
 
     @property
     def M(self):
@@ -97,7 +97,12 @@ class LMMCore(object):
 
     @property
     def scale(self):
-        return self._scale
+        a = [self._a(i) for i in [0, 1]]
+        b = [self._b(i) for i in [0, 1]]
+        c = [self._c(i) for i in [0, 1]]
+        be = self.__tbeta
+        p = [a[i] - 2 * b[i].dot(be) + be.dot(c[i]).dot(be) for i in [0, 1]]
+        return sum(p) / len(self._y)
 
     @property
     def delta(self):
@@ -136,19 +141,19 @@ class LMMCore(object):
         denominator = self._c(1) - self._c(0)
         self._tbeta = solve(denominator, nominator)
 
-    def _update_scale(self):
-        if self._fix_scale:
-            return
-        a = [self._a(i) for i in [0, 1]]
-        b = [self._b(i) for i in [0, 1]]
-        c = [self._c(i) for i in [0, 1]]
-        be = self.__tbeta
-        p = [a[i] - 2 * b[i].dot(be) + be.dot(c[i]).dot(be) for i in [0, 1]]
-        self._scale = sum(p) / len(self._y)
+    # def _update_scale(self):
+    #     if self._fix_scale:
+    #         return
+    #     a = [self._a(i) for i in [0, 1]]
+    #     b = [self._b(i) for i in [0, 1]]
+    #     c = [self._c(i) for i in [0, 1]]
+    #     be = self.__tbeta
+    #     p = [a[i] - 2 * b[i].dot(be) + be.dot(c[i]).dot(be) for i in [0, 1]]
+    #     self._scale = sum(p) / len(self._y)
 
     def update(self):
         self._update_fixed_effects()
-        self._update_scale()
+        # self._update_scale()
 
     def lml(self):
         self.update()
@@ -156,7 +161,7 @@ class LMMCore(object):
         n = len(self._y)
         p = n - self._QS[1].shape[0]
         LOG2PI = 1.837877066409345339081937709124758839607238769531250
-        lml = -n * LOG2PI - n - n * log(self._scale)
+        lml = -n * LOG2PI - n - n * log(self.scale)
         lml += -sum(log(self._diag(0))) - p * log(self._diag(1))
         lml /= 2
         return lml

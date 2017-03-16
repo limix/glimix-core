@@ -13,7 +13,7 @@ from optimix import Scalar
 from .core import LMMCore
 
 
-class LMM(Function):
+class LMM(LMMCore, Function):
     r"""Fast Linear Mixed Models inference via maximum likelihood.
 
     It models
@@ -70,68 +70,85 @@ class LMM(Function):
         >>> flmm.fix('delta')
         >>> flmm.fix('scale')
         >>> flmm.learn(progress=False)
-        >>> print('%.3f' % flmm.lml())
-        -4.232
-        >>> print('%.1f' % flmm.heritability)
-        0.5
-        >>> flmm.unfix('delta')
-        >>> flmm.learn(progress=False)
-        >>> print('%.3f' % flmm.lml())
-        -2.838
-        >>> print('%.1f' % flmm.heritability)
-        0.0
-
     """
+    # >>> print('%.3f' % flmm.lml())
+    # -4.232
+    # >>> print('%.1f' % flmm.heritability)
+    # 0.5
+    # >>> flmm.unfix('delta')
+    # >>> flmm.learn(progress=False)
+    # >>> print('%.3f' % flmm.lml())
+    # -2.838
+    # >>> print('%.1f' % flmm.heritability)
+    # 0.0
 
     def __init__(self, y, M, QS):
-        super(LMM, self).__init__(logistic=Scalar(0.0))
+        LMMCore.__init__(self, y, M, QS)
+        Function.__init__(self, logistic=Scalar(0.0))
 
         if not is_all_finite(y):
             raise ValueError("There are non-finite values in the phenotype.")
 
-        self._flmmc = LMMCore(y, M, QS)
+        # self._flmmc = LMMCore(y, M, QS)
+        self._fix = dict(beta=False, scale=False)
+        self._scale = LMMCore.scale.fget(self)
         self.set_nodata()
 
     def fix(self, var_name):
         if var_name == 'delta':
             super(LMM, self).fix('logistic')
-        elif var_name == 'scale':
-            self._flmmc.fix_scale()
         else:
-            raise ValueError
+            self._fix[var_name] = True
+        # elif var_name == 'scale':
+        #     self._flmmc.fix_scale()
+        #     self._fix[]
+        # else:
+        #     raise ValueError
 
-        self._flmmc.valid_update = False
+        # self._flmmc.valid_update = False
 
     def unfix(self, var_name):
         if var_name == 'delta':
             super(LMM, self).unfix('logistic')
-        elif var_name == 'scale':
-            self._flmmc.unfix_scale()
         else:
-            raise ValueError
+            self._fix[var_name] = False
+        # elif var_name == 'scale':
+        #     self._flmmc.unfix_scale()
+        # else:
+        #     raise ValueError
 
-        self._flmmc.valid_update = False
-
-    def get_fast_scanner(self):
-        return self._flmmc.get_fast_scanner()
+        # self._flmmc.valid_update = False
 
     @property
-    def M(self):
-        return self._flmmc.M
+    def scale(self):
+        if self._fix['scale']:
+            return self._scale
+        return LMMCore.scale.fget(self)
 
-    @M.setter
-    def M(self, v):
-        self._flmmc.M = v
+    @scale.setter
+    def scale(self, v):
+        self._scale = v
 
-    def copy(self):
-        # pylint: disable=W0212
-        o = LMM.__new__(LMM)
-        super(LMM, o).__init__(logistic=Scalar(self.get('logistic')))
-        o._flmmc = self._flmmc.copy()
-        o.set_nodata()
-        return o
+    # def get_fast_scanner(self):
+    #     return self.get_fast_scanner()
 
-    def _delta(self):
+    # @property
+    # def M(self):
+    #     return self._flmmc.M
+
+    # @M.setter
+    # def M(self, v):
+    #     self._flmmc.M = v
+
+    # def copy(self):
+    #     # pylint: disable=W0212
+    #     o = LMM.__new__(LMM)
+    #     super(LMM, o).__init__(logistic=Scalar(self.get('logistic')))
+    #     o._flmmc = self._flmmc.copy()
+    #     o.set_nodata()
+    #     return o
+
+    def _get_delta(self):
         v = clip(self.get('logistic'), -20, 20)
         x = 1 / (1 + exp(-v))
         return clip(x, 1e-5, 1 - 1e-5)
@@ -144,42 +161,43 @@ class LMM(Function):
 
     @property
     def fixed_effects_variance(self):
-        return self._flmmc.m.var()
+        return self.m.var()
 
     @property
     def genetic_variance(self):
-        return self._flmmc.scale * (1 - self._flmmc.delta)
+        # import pdb; pdb.set_trace()
+        return self.scale * (1 - self.delta)
 
     @property
     def environmental_variance(self):
-        return self._flmmc.scale * self._flmmc.delta
+        return self.scale * self.delta
 
-    @property
-    def beta(self):
-        return self._flmmc.beta
+    # @property
+    # def beta(self):
+    #     return self.beta
 
-    @property
-    def m(self):
-        return self._flmmc.m
+    # @property
+    # def m(self):
+    #     return self.m
 
     def learn(self, progress=True):
         maximize_scalar(self, progress=progress)
-        self._flmmc.update()
-        self._flmmc.delta = self._delta()
+        self.update()
+        self.delta = self._get_delta()
 
     def value(self):
-        self._flmmc.delta = self._delta()
-        return self._flmmc.lml()
+        self.delta = self._get_delta()
+        return self.lml()
 
     def lml(self):
-        self._flmmc.delta = self._delta()
-        return self._flmmc.lml()
+        self.delta = self._get_delta()
+        return LMMCore.lml(self)
 
-    def predict(self, X, covariates, Xp, trans=None):
-        covariates = atleast_2d(covariates)
-        Xp = atleast_2d(Xp)
-        if trans is not None:
-            Xp = trans.transform(Xp)
-        Cp = Xp.dot(X.T)
-        Cpp = Xp.dot(Xp.T)
-        return self._flmmc.predict(covariates, Cp, Cpp)
+    # def predict(self, X, covariates, Xp, trans=None):
+    #     covariates = atleast_2d(covariates)
+    #     Xp = atleast_2d(Xp)
+    #     if trans is not None:
+    #         Xp = trans.transform(Xp)
+    #     Cp = Xp.dot(X.T)
+    #     Cpp = Xp.dot(Xp.T)
+    #     return self._flmmc.predict(covariates, Cp, Cpp)

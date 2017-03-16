@@ -49,8 +49,8 @@ class ExpFamGP(EP, Composite):
         >>> print('Before: %.4f' % ggp.feed().value())
         Before: -65.8090
         >>> ggp.feed().maximize(progress=False)
-        >>> print('After: %.4f' % ggp.feed().value())
-        After: -65.3897
+        >>> print('After: %.2f' % ggp.feed().value())
+        After: -65.39
     """
 
     def __init__(self, y, lik_name, mean, cov):
