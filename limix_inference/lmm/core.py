@@ -41,9 +41,9 @@ class LMMCore(object):
         o = LMMCore.__new__(LMMCore)
         o._QS = self._QS
         o._y = self._y
-
+        o._tM = self._tM
         o.__tbeta = self.__tbeta.copy()
-
+        o._svd = self._svd
         return o
 
     @property
@@ -60,6 +60,14 @@ class LMMCore(object):
     def m(self):
         r"""Returns :math:`\mathbf m = \mathrm M \boldsymbol\beta`."""
         return dot(self._tM, self._tbeta)
+
+    @property
+    def delta(self):
+        raise NotImplementedError
+
+    @delta.setter
+    def delta(self, _):
+        raise NotImplementedError
 
     @property
     def _tbeta(self):

@@ -90,7 +90,7 @@ class LMM(LMMCore, Function):
 
         self._fix = dict(beta=False, scale=False)
         self._delta = 0.5
-        self._scale = LMMCore.scale.fget(self)
+        self._scale = LMMCore.scale.fget(self) # pylint: disable=E1101
         self.set_nodata()
 
     def fix(self, var_name):
@@ -109,7 +109,7 @@ class LMM(LMMCore, Function):
     def scale(self):
         if self._fix['scale']:
             return self._scale
-        return LMMCore.scale.fget(self)
+        return LMMCore.scale.fget(self) # pylint: disable=E1101
 
     @scale.setter
     def scale(self, v):
@@ -123,13 +123,19 @@ class LMM(LMMCore, Function):
     def delta(self, delta):
         self._delta = delta
 
-    # def copy(self):
-    #     # pylint: disable=W0212
-    #     o = LMM.__new__(LMM)
-    #     super(LMM, o).__init__(logistic=Scalar(self.get('logistic')))
-    #     o._flmmc = self._flmmc.copy()
-    #     o.set_nodata()
-    #     return o
+    def copy(self):
+        # pylint: disable=W0212
+        o = LMM.__new__(LMM)
+
+        LMMCore.__init__(o, self._y, self.M, self._QS)
+        Function.__init__(o, logistic=Scalar(self.get('logistic')))
+
+        o._fix = self._fix.copy()
+        o._delta = self._delta
+        o._scale = self._scale
+
+        o.set_nodata()
+        return o
 
     def _get_delta(self):
         v = clip(self.get('logistic'), -20, 20)
