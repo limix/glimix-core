@@ -89,7 +89,6 @@ class LMM(LMMCore, Function):
         if not is_all_finite(y):
             raise ValueError("There are non-finite values in the phenotype.")
 
-        # self._flmmc = LMMCore(y, M, QS)
         self._fix = dict(beta=False, scale=False)
         self._scale = LMMCore.scale.fget(self)
         self.set_nodata()
@@ -99,25 +98,12 @@ class LMM(LMMCore, Function):
             super(LMM, self).fix('logistic')
         else:
             self._fix[var_name] = True
-        # elif var_name == 'scale':
-        #     self._flmmc.fix_scale()
-        #     self._fix[]
-        # else:
-        #     raise ValueError
-
-        # self._flmmc.valid_update = False
 
     def unfix(self, var_name):
         if var_name == 'delta':
             super(LMM, self).unfix('logistic')
         else:
             self._fix[var_name] = False
-        # elif var_name == 'scale':
-        #     self._flmmc.unfix_scale()
-        # else:
-        #     raise ValueError
-
-        # self._flmmc.valid_update = False
 
     @property
     def scale(self):
@@ -128,17 +114,6 @@ class LMM(LMMCore, Function):
     @scale.setter
     def scale(self, v):
         self._scale = v
-
-    # def get_fast_scanner(self):
-    #     return self.get_fast_scanner()
-
-    # @property
-    # def M(self):
-    #     return self._flmmc.M
-
-    # @M.setter
-    # def M(self, v):
-    #     self._flmmc.M = v
 
     # def copy(self):
     #     # pylint: disable=W0212
