@@ -159,7 +159,7 @@ class EP(object):  # pylint: disable=R0903
             self._compute_moments()
 
             self._site.update(self._moments['mean'], self._moments['variance'],
-                              self._cav.eta, self._cav.tau)
+                              self._cav)
 
             self._posterior.update()
 

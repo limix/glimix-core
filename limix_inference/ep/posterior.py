@@ -6,6 +6,16 @@ from scipy.linalg import cho_factor
 
 
 class Posterior(object):
+    r"""EP posterior.
+
+    It is given by
+
+    .. math::
+
+        \Normal{\mathbf z}{\Sigma (\tilde{\Sigma}^{-1} \tilde{\bmu}
+            + \mathrm K^{-1}\mathbf m)}
+            {(\tilde{\Sigma}^{-1} + \mathrm K^{-1})^{-1}}.
+    """
     def __init__(self, site):
         n = len(site.tau)
         self.tau = empty(n)
@@ -23,11 +33,14 @@ class Posterior(object):
     def prior_mean(self):
         return self._mean
 
+    def prior_cov(self):
+        return self._cov
+
     def initialize(self):
         r"""Initialize the mean and covariance of the posterior.
 
-        Given that :math:`\tilde{\mathrm T}` is a matrix of zeros before the
-        first EP iteration, we have
+        Given that :math:`\tilde{\mathrm T}` is a matrix of zeros right before
+        the first EP iteration, we have
 
         .. math::
             :nowrap:
@@ -36,6 +49,9 @@ class Posterior(object):
                 \Sigma         & = & \mathrm K \\
                 \boldsymbol\mu & = & \mathrm K^{-1} \mathbf m
             \end{eqnarray}
+
+        However, we only really need the diagonal of :math:`\Sigma` for EP
+        inference.
         """
         self.tau[:] = 1 / self._cov.diagonal()
         self.eta[:] = self._mean
@@ -46,8 +62,8 @@ class Posterior(object):
 
         .. math::
 
-            \mathcal B = \mathrm Q^{\intercal}\mathcal A\mathrm Q
-                (\sigma_b^2 \mathrm S)^{-1}
+            \mathrm B = \mathrm Q^{\intercal}\tilde{\mathrm{T}}\mathrm Q
+                + \mathrm{S}^{-1}
         """
         QS = self.QS()
         B = dot(QS[0].T, ddot(self._site.tau, QS[0], left=True))
@@ -55,6 +71,7 @@ class Posterior(object):
         return cho_factor(B, lower=True)[0]
 
     def QS(self):
+        r"""Eigen decomposition of :math:`\mathrm K`"""
         QS = economic_qs(self._cov)
         return QS[0][0], QS[1]
 
