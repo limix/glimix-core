@@ -8,34 +8,19 @@ from numpy_sugar.linalg import ddot, economic_svd, solve
 from .scan import FastScanner
 
 
-def _make_sure_has_variance(y):
-
-    v = var(y)
-    if v < epsilon.small:
-        if v <= epsilon.tiny:
-            random = RandomState(0)
-            y = random.randn(len(y))
-            y *= epsilon.small
-        else:
-            y = y / v
-            y *= epsilon.small
-    return y
-
-
 class LMMCore(object):
-    def __init__(self, y, M, QS):
+    def __init__(self, y, X, QS):
         self._QS = QS
-        # self._y = _make_sure_has_variance(y)
         self._y = y
 
         self._tM = None
         self.__tbeta = None
 
         self._svd = None
-        self.M = M
+        self.X = X
 
     def get_fast_scanner(self):
-        return FastScanner(self._y, self.M, self._QS, self.delta)
+        return FastScanner(self._y, self.X, self._QS, self.delta)
 
     def copy(self):
         # pylint: disable=W0212
@@ -48,18 +33,18 @@ class LMMCore(object):
         return o
 
     @property
-    def M(self):
+    def X(self):
         return dot(self._svd[0], ddot(self._svd[1], self._svd[2], left=True))
 
-    @M.setter
-    def M(self, M):
-        self._svd = economic_svd(M)
+    @X.setter
+    def X(self, X):
+        self._svd = economic_svd(X)
         self._tM = ddot(self._svd[0], sqrt(self._svd[1]), left=False)
         self.__tbeta = zeros(self._tM.shape[1])
 
     @property
     def m(self):
-        r"""Returns :math:`\mathbf m = \mathrm M \boldsymbol\beta`."""
+        r"""Returns :math:`\mathbf m = \mathrm X \boldsymbol\beta`."""
         return dot(self._tM, self._tbeta)
 
     @property

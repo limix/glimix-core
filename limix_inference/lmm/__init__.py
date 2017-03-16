@@ -24,8 +24,8 @@ The outcome-vector is thus distributed according to
                               \sigma_r^2 \mathrm G \mathrm G^{\intercal}
                               + \sigma_e^2\mathrm I)
 
-This module provides a FastLMM implementation :class:`.LMM`
-to perform inference over the parameters.
+This module provides :class:`.LMM`, a FastLMM implementation to perform
+inference.
 :class:`.FastScanner` can be used to perform fast inference over multiple
 covariates.
 

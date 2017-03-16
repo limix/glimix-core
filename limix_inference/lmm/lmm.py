@@ -15,7 +15,7 @@ class LMM(LMMCore, Function):
 
     .. math::
 
-        \mathbf y \sim \mathcal N\Big(~ \mathrm M\boldsymbol\beta;~
+        \mathbf y \sim \mathcal N\Big(~ \mathrm X\boldsymbol\beta;~
           s \big(
             (1-\delta)
               \mathrm Q \mathrm S \mathrm Q^{\intercal} +
@@ -27,8 +27,8 @@ class LMM(LMMCore, Function):
     is the eigen decomposition of :math:`\tilde{\mathrm K}`.
 
     Args:
-        y (array_like): real-valued outcome.
-        M (array_like): covariates as a two-dimensional array.
+        y (array_like): outcome.
+        X (array_like): covariates as a two-dimensional array.
         QS (tuple): economic eigen decompositon ((Q0, Q1), S0).
 
     Examples
@@ -79,8 +79,8 @@ class LMM(LMMCore, Function):
         0.0
     """
 
-    def __init__(self, y, M, QS):
-        LMMCore.__init__(self, y, M, QS)
+    def __init__(self, y, X, QS):
+        LMMCore.__init__(self, y, X, QS)
         Function.__init__(self, logistic=Scalar(0.0))
 
         if not is_all_finite(y):
@@ -125,7 +125,7 @@ class LMM(LMMCore, Function):
         # pylint: disable=W0212
         o = LMM.__new__(LMM)
 
-        LMMCore.__init__(o, self._y, self.M, self._QS)
+        LMMCore.__init__(o, self._y, self.X, self._QS)
         Function.__init__(o, logistic=Scalar(self.get('logistic')))
 
         o._fix = self._fix.copy()
