@@ -9,7 +9,7 @@ from numpy_sugar.random import multivariate_normal
 class GGPSampler(object): # pylint: disable=R0903
     r"""Sample from a Generalised Gaussian Process.
 
-    Sample from
+    Outcome modelled via
 
     .. math::
 

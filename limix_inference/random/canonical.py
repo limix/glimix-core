@@ -18,7 +18,6 @@ from ..cov import SumCov
 from ..cov import EyeCov
 
 from .ggp import GGPSampler
-from .gp import GPSampler
 
 
 def bernoulli_sample(offset,

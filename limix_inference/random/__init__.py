@@ -3,10 +3,16 @@
 Random sampler
 **************
 
-- :func:`.bernoulli_sample`
-- :func:`.binomial_sample`
-- :func:`.poisson_sample`
+Introduction
+^^^^^^^^^^^^
+
+Helper classes and functions for sampling:
+
 - :class:`.GGPSampler`
+- :class:`.GPSampler`
+
+Public interface
+^^^^^^^^^^^^^^^^
 """
 
 from .ggp import GGPSampler
