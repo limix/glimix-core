@@ -12,9 +12,9 @@ class Posterior(object):
 
     .. math::
 
-        \Normal{\mathbf z}{\Sigma (\tilde{\Sigma}^{-1} \tilde{\bmu}
-            + \mathrm K^{-1}\mathbf m)}
-            {(\tilde{\Sigma}^{-1} + \mathrm K^{-1})^{-1}}.
+        \mathbf z \sim \mathcal N\left(\Sigma (\tilde{\mathrm T}^{-1}
+          \tilde{\boldsymbol\mu} + \mathrm K^{-1}\mathbf m),
+          (\tilde{\mathrm T}^{-1} + \mathrm K^{-1})^{-1}\right).
     """
     def __init__(self, site):
         n = len(site.tau)
@@ -43,22 +43,18 @@ class Posterior(object):
         the first EP iteration, we have
 
         .. math::
-            :nowrap:
 
-            \begin{eqnarray}
-                \Sigma         & = & \mathrm K \\
-                \boldsymbol\mu & = & \mathrm K^{-1} \mathbf m
-            \end{eqnarray}
+            \boldsymbol\mu = \mathrm K^{-1} \mathbf m ~\text{ and }~
+            \Sigma = \mathrm K
 
-        However, we only really need the diagonal of :math:`\Sigma` for EP
-        inference.
+        as the initial posterior mean and covariance.
         """
         self.tau[:] = 1 / self._cov.diagonal()
         self.eta[:] = self._mean
         self.eta[:] *= self.tau
 
     def L(self):
-        r"""Returns the Cholesky factorization of :math:`\mathcal B`.
+        r"""Cholesky decomposition of :math:`\mathrm B`.
 
         .. math::
 

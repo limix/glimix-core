@@ -24,24 +24,26 @@ class EP(object):  # pylint: disable=R0903
 
     .. math::
 
-        \mathcal N(\mathbf z ~|~ \mathbf m; \mathrm K)
+        \mathcal N(\mathbf z ~|~ \mathbf m, \mathrm K)
 
     be the prior distribution.
     This class estimates the log of the marginal likelihood
 
     .. math::
 
-        p(\mathbf y) = \int \prod_i p(y_i | g(\mathrm E[y_i | z_i])=z_i)
+        p(\mathbf y) = \int \prod_i p(y_i | \mu_i = g(z_i))
             \mathcal N(\mathbf z ~|~ \mathbf m, \mathrm K) \mathrm d\mathbf z
 
-    via Expectation Propagation.
+    via Expectation Propagation and provides its gradient.
 
     Attributes:
-        _site (:class:`.site.Site`): bla.
-        _psite (:class:`.site.Site`): bla.
-        _cav (:class:`.site.Cavity`): bla.
-        _posterior (:class:`.site.Posterior`): bla.
-        _moments (dict): bla.
+        _site (:class:`limix_inference.ep.site.Site`): site-likelihood.
+        _psite (:class:`limix_inference.ep.site.Site`): previous
+                                                        site-likelihood.
+        _cav (:class:`limix_inference.ep.cavity.Cavity`): cavity distribution.
+        _posterior (:class:`limix_inference.ep.posterior.Posterior`):
+                                                        posterior distribution.
+        _moments (dict): moments for KL moment matching.
     """
 
     def __init__(self):

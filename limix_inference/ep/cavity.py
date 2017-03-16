@@ -4,6 +4,7 @@ from numpy import zeros
 
 
 class Cavity(object): # pylint: disable=R0903
+    r"""Cavity distribution."""
     def __init__(self, n):
         self.tau = zeros(n)
         self.eta = zeros(n)
