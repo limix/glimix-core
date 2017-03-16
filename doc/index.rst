@@ -16,6 +16,7 @@ Fast inference for Generalized Linear Mixed Models.
     lmm
     glmm
     gp
+    ep
     random
 
 *****************

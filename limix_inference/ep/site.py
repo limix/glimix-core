@@ -3,6 +3,7 @@ from __future__ import division
 from numpy import zeros, maximum
 
 class Site(object): # pylint: disable=R0903
+    r"""EP parameters."""
     def __init__(self, n):
         self.tau = zeros(n)
         self.eta = zeros(n)
