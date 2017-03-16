@@ -51,13 +51,13 @@ def test_fastlmm_fast_scan(): # pylint: disable=R0914
     markers = random.randn(N, 2)
 
     lmm_ = lmm.copy()
-    lmm_.M = concatenate([lmm.M, markers[:, 0][:, newaxis]], axis=1)
+    lmm_.X = concatenate([lmm.X, markers[:, 0][:, newaxis]], axis=1)
     lmm_.fix('delta')
     lmm_.learn(progress=False)
     lml0 = lmm_.lml()
 
     lmm_ = lmm.copy()
-    lmm_.M = concatenate([lmm.M, markers[:, 1][:, newaxis]], axis=1)
+    lmm_.X = concatenate([lmm.X, markers[:, 1][:, newaxis]], axis=1)
     lmm_.fix('delta')
     lmm_.learn(progress=False)
     lml1 = lmm_.lml()

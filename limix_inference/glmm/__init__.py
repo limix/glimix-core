@@ -40,6 +40,6 @@ Public interface
 ^^^^^^^^^^^^^^^^
 """
 
-from .ep import ExpFamEP
-
-__all__ = ['ExpFamEP']
+# from .glmm import GLMM
+#
+# __all__ = ['GLMM']
