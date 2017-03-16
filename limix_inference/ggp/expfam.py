@@ -20,7 +20,7 @@ class ExpFamGP(EP, Composite):
         lik_name (str): likelihood name.
         mean (:class:`optimix.Function`): mean function.
                                           (Refer to :doc:`mean`.)
-        cov (:class:`optimix.Function`): covariate function.
+        cov (:class:`optimix.Function`): covariance function.
                                          (Refer to :doc:`cov`.)
 
     Example
@@ -82,7 +82,7 @@ class ExpFamGP(EP, Composite):
 
         Args:
             mean (array_like): realised mean.
-            cov (array_like): realised cov.
+            cov (array_like): realised covariance.
 
         Returns:
             float: log of the marginal likelihood.
@@ -104,7 +104,7 @@ class ExpFamGP(EP, Composite):
             mean (array_like): realised mean.
             cov (array_like): realised cov.
             gmean (array_like): realised mean derivative.
-            gcov (array_like): realised cov derivative.
+            gcov (array_like): realised covariance derivative.
 
         Returns:
             list: derivatives.

@@ -21,9 +21,9 @@ An instance of such process is given by
 .. math::
 
     \mathbf y \sim \int \prod_i \text{ExpFam}(y_i ~|~ \mu_i = g(z_i))
-      \mathcal N(\mathbf z ~|~ \mathbf m, \mathbf K) \mathrm d\mathbf z
+      \mathcal N(\mathbf z ~|~ \mathbf m, \mathrm K) \mathrm d\mathbf z
 
-Class :class:`.ExpFamGP` performs inference over the mean and covariance
+:class:`.ExpFamGP` performs inference over the mean and covariance
 parameters via maximum likelihood and Expectation Propagation `[3]`_
 approximation.
 

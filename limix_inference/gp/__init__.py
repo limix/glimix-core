@@ -18,7 +18,7 @@ An instance of such process is given by
 
 .. math::
 
-    \mathbf y \sim \mathcal N(\mathbf z ~|~ \mathbf m, \mathbf K)
+    \mathbf y \sim \mathcal N(\mathbf z ~|~ \mathbf m, \mathrm K)
 
 Class :class:`.GP` performs inference over the mean and covariance
 parameters via maximum likelihood and Expectation Propagation `[3]`_

@@ -12,9 +12,9 @@ class Posterior(object):
 
     .. math::
 
-        \mathbf z \sim \mathcal N\left(\Sigma (\tilde{\mathrm T}^{-1}
+        \mathbf z \sim \mathcal N\left(\Sigma (\tilde{\mathrm T}
           \tilde{\boldsymbol\mu} + \mathrm K^{-1}\mathbf m),
-          (\tilde{\mathrm T}^{-1} + \mathrm K^{-1})^{-1}\right).
+          (\tilde{\mathrm T} + \mathrm K^{-1})^{-1}\right).
     """
     def __init__(self, site):
         n = len(site.tau)
