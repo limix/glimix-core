@@ -1,13 +1,9 @@
 from __future__ import division
 
-from numpy import exp
-from numpy import clip
-
+from numpy import clip, exp
 from numpy_sugar import is_all_finite
 
-from optimix import maximize_scalar
-from optimix import Function
-from optimix import Scalar
+from optimix import Function, Scalar, maximize_scalar
 
 from .core import LMMCore
 
@@ -48,9 +44,9 @@ class LMM(LMMCore, Function):
         >>> QS = economic_qs_linear(X)
         >>> covariates = array([[1], [1]])
         >>> y = array([-1, 2], float)
-        >>> flmm = LMM(y, covariates, QS)
-        >>> flmm.learn(progress=False)
-        >>> print('%.3f' % flmm.lml())
+        >>> lmm = LMM(y, covariates, QS)
+        >>> lmm.learn(progress=False)
+        >>> print('%.3f' % lmm.lml())
         -3.649
 
     One can also specify which parameters should be fitted:
@@ -65,24 +61,23 @@ class LMM(LMMCore, Function):
         >>> QS = economic_qs_linear(X)
         >>> covariates = array([[1], [1]])
         >>> y = array([-1, 2], float)
-        >>> flmm = LMM(y, covariates, QS)
-        >>> flmm.fix('delta')
-        >>> flmm.fix('scale')
-        >>> flmm.delta = 0.5
-        >>> flmm.scale = 1
-        >>> flmm.learn(progress=False)
-        >>> print('%.3f' % flmm.lml())
+        >>> lmm = LMM(y, covariates, QS)
+        >>> lmm.fix('delta')
+        >>> lmm.fix('scale')
+        >>> lmm.delta = 0.5
+        >>> lmm.scale = 1
+        >>> lmm.learn(progress=False)
+        >>> print('%.3f' % lmm.lml())
         -4.232
-        >>> print('%.1f' % flmm.heritability)
+        >>> print('%.1f' % lmm.heritability)
         0.5
-        >>> flmm.unfix('delta')
-        >>> flmm.learn(progress=False)
-        >>> print('%.3f' % flmm.lml())
+        >>> lmm.unfix('delta')
+        >>> lmm.learn(progress=False)
+        >>> print('%.3f' % lmm.lml())
         -2.838
-        >>> print('%.1f' % flmm.heritability)
+        >>> print('%.1f' % lmm.heritability)
         0.0
     """
-
 
     def __init__(self, y, M, QS):
         LMMCore.__init__(self, y, M, QS)
@@ -93,7 +88,7 @@ class LMM(LMMCore, Function):
 
         self._fix = dict(beta=False, scale=False)
         self._delta = 0.5
-        self._scale = LMMCore.scale.fget(self) # pylint: disable=E1101
+        self._scale = LMMCore.scale.fget(self)  # pylint: disable=E1101
         self.set_nodata()
 
     def fix(self, var_name):
@@ -112,7 +107,7 @@ class LMM(LMMCore, Function):
     def scale(self):
         if self._fix['scale']:
             return self._scale
-        return LMMCore.scale.fget(self) # pylint: disable=E1101
+        return LMMCore.scale.fget(self)  # pylint: disable=E1101
 
     @scale.setter
     def scale(self, v):
@@ -157,20 +152,11 @@ class LMM(LMMCore, Function):
 
     @property
     def genetic_variance(self):
-        # import pdb; pdb.set_trace()
         return self.scale * (1 - self.delta)
 
     @property
     def environmental_variance(self):
         return self.scale * self.delta
-
-    # @property
-    # def beta(self):
-    #     return self.beta
-
-    # @property
-    # def m(self):
-    #     return self.m
 
     def learn(self, progress=True):
         maximize_scalar(self, progress=progress)
@@ -184,12 +170,3 @@ class LMM(LMMCore, Function):
     def lml(self):
         self.delta = self._get_delta()
         return LMMCore.lml(self)
-
-    # def predict(self, X, covariates, Xp, trans=None):
-    #     covariates = atleast_2d(covariates)
-    #     Xp = atleast_2d(Xp)
-    #     if trans is not None:
-    #         Xp = trans.transform(Xp)
-    #     Cp = Xp.dot(X.T)
-    #     Cpp = Xp.dot(Xp.T)
-    #     return self._flmmc.predict(covariates, Cp, Cpp)

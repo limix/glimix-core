@@ -2,7 +2,7 @@ from __future__ import division
 
 from numpy.random import RandomState
 from numpy import ones, concatenate, sqrt
-from numpy import arange, newaxis
+from numpy import arange, newaxis, zeros
 from numpy.testing import assert_allclose
 
 from numpy_sugar.linalg import economic_qs_linear
@@ -44,30 +44,30 @@ def test_fastlmm_fast_scan(): # pylint: disable=R0914
 
     QS = economic_qs_linear(X)
 
-    flmm = LMM(y, ones((N, 1)), QS)
+    lmm = LMM(y, ones((N, 1)), QS)
 
-    flmm.learn(progress=False)
+    lmm.learn(progress=False)
 
     markers = random.randn(N, 2)
 
-    flmm_ = flmm.copy()
-    flmm_.M = concatenate([flmm.M, markers[:, 0][:, newaxis]], axis=1)
-    flmm_.fix('delta')
-    flmm_.learn(progress=False)
-    lml0 = flmm_.lml()
+    lmm_ = lmm.copy()
+    lmm_.M = concatenate([lmm.M, markers[:, 0][:, newaxis]], axis=1)
+    lmm_.fix('delta')
+    lmm_.learn(progress=False)
+    lml0 = lmm_.lml()
 
-    flmm_ = flmm.copy()
-    flmm_.M = concatenate([flmm.M, markers[:, 1][:, newaxis]], axis=1)
-    flmm_.fix('delta')
-    flmm_.learn(progress=False)
-    lml1 = flmm_.lml()
+    lmm_ = lmm.copy()
+    lmm_.M = concatenate([lmm.M, markers[:, 1][:, newaxis]], axis=1)
+    lmm_.fix('delta')
+    lmm_.learn(progress=False)
+    lml1 = lmm_.lml()
 
-    fast_scanner = flmm.get_fast_scanner()
+    fast_scanner = lmm.get_fast_scanner()
 
     lmls = fast_scanner.fast_scan(markers)[0]
     assert_allclose(lmls, [lml0, lml1])
 
-def test_learn():
+def test_lmm_learn():
     random = RandomState(9458)
     N = 500
     X = random.randn(N, N + 1)
@@ -96,13 +96,13 @@ def test_learn():
 
     QS = economic_qs_linear(X)
 
-    flmm = LMM(y, ones((N, 1)), QS)
+    lmm = LMM(y, ones((N, 1)), QS)
 
-    flmm.learn(progress=False)
+    lmm.learn(progress=False)
 
-    assert_allclose(flmm.beta[0], 0.8997652129631661, rtol=1e-5)
-    assert_allclose(flmm.genetic_variance, 1.7303981309775553, rtol=1e-5)
-    assert_allclose(flmm.environmental_variance, 1.2950028351268132, rtol=1e-5)
+    assert_allclose(lmm.beta[0], 0.8997652129631661, rtol=1e-5)
+    assert_allclose(lmm.genetic_variance, 1.7303981309775553, rtol=1e-5)
+    assert_allclose(lmm.environmental_variance, 1.2950028351268132, rtol=1e-5)
 
 
 def test_fastlmm_learn_fix():
@@ -134,39 +134,56 @@ def test_fastlmm_learn_fix():
 
     QS = economic_qs_linear(X)
 
-    flmm = LMM(y, ones((N, 1)), QS)
+    lmm = LMM(y, ones((N, 1)), QS)
 
-    flmm.fix('delta')
-    flmm.fix('scale')
+    lmm.fix('delta')
+    lmm.fix('scale')
 
-    flmm.scale = 1.0
-    flmm.delta = 0.5
+    lmm.scale = 1.0
+    lmm.delta = 0.5
 
-    flmm.learn(progress=False)
+    lmm.learn(progress=False)
 
-    assert_allclose(flmm.beta[0], 0.899765212963)
-    assert_allclose(flmm.scale, 1.0)
-    assert_allclose(flmm.delta, 0.5)
-    assert_allclose(flmm.genetic_variance, 0.5)
-    assert_allclose(flmm.environmental_variance, 0.5)
-    assert_allclose(flmm.lml(), -681.381571238)
+    assert_allclose(lmm.beta[0], 0.899765212963)
+    assert_allclose(lmm.scale, 1.0)
+    assert_allclose(lmm.delta, 0.5)
+    assert_allclose(lmm.genetic_variance, 0.5)
+    assert_allclose(lmm.environmental_variance, 0.5)
+    assert_allclose(lmm.lml(), -681.381571238)
 
-    flmm.unfix('scale')
-    flmm.learn(progress=False)
+    lmm.unfix('scale')
+    lmm.learn(progress=False)
 
-    assert_allclose(flmm.beta[0], 0.899765212963)
-    assert_allclose(flmm.genetic_variance, 1.4614562029852856)
-    assert_allclose(flmm.environmental_variance, 1.4614562029852856)
-    assert_allclose(flmm.lml(), -949.526700867)
+    assert_allclose(lmm.beta[0], 0.899765212963)
+    assert_allclose(lmm.genetic_variance, 1.4614562029852856)
+    assert_allclose(lmm.environmental_variance, 1.4614562029852856)
+    assert_allclose(lmm.lml(), -949.526700867)
 
-    flmm.unfix('delta')
-    flmm.learn(progress=False)
+    lmm.unfix('delta')
+    lmm.learn(progress=False)
 
-    assert_allclose(flmm.beta[0], 0.899765212963)
-    assert_allclose(flmm.genetic_variance, 1.73039821903)
-    assert_allclose(flmm.environmental_variance, 1.29500280131)
-    assert_allclose(flmm.lml(), -948.798268063)
+    assert_allclose(lmm.beta[0], 0.899765212963)
+    assert_allclose(lmm.genetic_variance, 1.73039821903)
+    assert_allclose(lmm.environmental_variance, 1.29500280131)
+    assert_allclose(lmm.lml(), -948.798268063)
 
+def test_lmm_unique_outcome():
+    random = RandomState(9458)
+    N = 50
+    X = random.randn(N, N + 1)
+    X -= X.mean(0)
+    X /= X.std(0)
+    X /= sqrt(X.shape[1])
+
+    QS = economic_qs_linear(X)
+
+    lmm = LMM(zeros(N), ones((N, 1)), QS)
+
+    lmm.learn(progress=False)
+
+    assert_allclose(lmm.beta[0], 0, atol=1e-7)
+    assert_allclose(lmm.genetic_variance, 0, atol=1e-7)
+    assert_allclose(lmm.environmental_variance, 0, atol=1e-7)
 
 if __name__ == '__main__':
     __import__('pytest').main([__file__, '-s'])

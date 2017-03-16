@@ -1,6 +1,6 @@
 from __future__ import division
 
-from numpy import ascontiguousarray, dot, log, sqrt, var, zeros
+from numpy import ascontiguousarray, dot, log, maximum, sqrt, var, zeros
 from numpy.random import RandomState
 from numpy_sugar import epsilon
 from numpy_sugar.linalg import ddot, economic_svd, solve
@@ -25,7 +25,8 @@ def _make_sure_has_variance(y):
 class LMMCore(object):
     def __init__(self, y, M, QS):
         self._QS = QS
-        self._y = _make_sure_has_variance(y)
+        # self._y = _make_sure_has_variance(y)
+        self._y = y
 
         self._tM = None
         self.__tbeta = None
@@ -82,7 +83,6 @@ class LMMCore(object):
 
     @property
     def beta(self):
-        r"""Returns :math:`\boldsymbol\beta`."""
         return solve(self._svd[2].T, self._tbeta / sqrt(self._svd[1]))
 
     @beta.setter
@@ -96,7 +96,7 @@ class LMMCore(object):
         c = [self._c(i) for i in [0, 1]]
         be = self.__tbeta
         p = [a[i] - 2 * b[i].dot(be) + be.dot(c[i]).dot(be) for i in [0, 1]]
-        return sum(p) / len(self._y)
+        return maximum(sum(p) / len(self._y), epsilon.tiny)
 
     def _diag(self, i):
         if i == 0:
