@@ -6,10 +6,8 @@ Random sampler
 Introduction
 ^^^^^^^^^^^^
 
-Helper classes and functions for sampling:
-
-- :class:`.GGPSampler`
-- :class:`.GPSampler`
+Helper classes and functions for sampling: :class:`.GGPSampler`,
+:class:`.GPSampler`.
 
 Public interface
 ^^^^^^^^^^^^^^^^
