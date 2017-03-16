@@ -68,18 +68,21 @@ class LMM(LMMCore, Function):
         >>> flmm = LMM(y, covariates, QS)
         >>> flmm.fix('delta')
         >>> flmm.fix('scale')
+        >>> flmm.delta = 0.5
+        >>> flmm.scale = 1
         >>> flmm.learn(progress=False)
+        >>> print('%.3f' % flmm.lml())
+        -4.232
+        >>> print('%.1f' % flmm.heritability)
+        0.5
+        >>> flmm.unfix('delta')
+        >>> flmm.learn(progress=False)
+        >>> print('%.3f' % flmm.lml())
+        -2.838
+        >>> print('%.1f' % flmm.heritability)
+        0.0
     """
-    # >>> print('%.3f' % flmm.lml())
-    # -4.232
-    # >>> print('%.1f' % flmm.heritability)
-    # 0.5
-    # >>> flmm.unfix('delta')
-    # >>> flmm.learn(progress=False)
-    # >>> print('%.3f' % flmm.lml())
-    # -2.838
-    # >>> print('%.1f' % flmm.heritability)
-    # 0.0
+
 
     def __init__(self, y, M, QS):
         LMMCore.__init__(self, y, M, QS)
