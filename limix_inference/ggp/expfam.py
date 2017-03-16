@@ -5,6 +5,7 @@ import logging
 from numpy import sign
 from numpy.linalg import LinAlgError
 from numpy_sugar import epsilon
+from numpy_sugar.linalg import economic_qs
 from optimix import Composite
 
 from liknorm import LikNormMachine
@@ -87,8 +88,9 @@ class ExpFamGP(EP, Composite):
         Returns:
             float: log of the marginal likelihood.
         """
+        QS = economic_qs(cov)
         try:
-            self._initialize(mean, cov)
+            self._initialize(mean, (QS[0][0], QS[1]))
             self._params_update()
             lml = self._lml()
         except (ValueError, LinAlgError) as e:
@@ -109,10 +111,10 @@ class ExpFamGP(EP, Composite):
         Returns:
             list: derivatives.
         """
+        QS = economic_qs(cov)
         try:
-            self._initialize(mean, cov)
+            self._initialize(mean, (QS[0][0], QS[1]))
             self._params_update()
-
             grad = [self._lml_derivative_over_cov(gc) for gc in gcov]
             grad += [self._lml_derivative_over_mean(gm) for gm in gmean]
 

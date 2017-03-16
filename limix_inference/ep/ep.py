@@ -60,7 +60,7 @@ class EP(object):  # pylint: disable=R0903
     def _compute_moments(self):
         raise NotImplementedError
 
-    def _initialize(self, mean, cov):
+    def _initialize(self, mean, QS):
         self._logger.debug("EP parameters initialization.")
 
         nsamples = len(mean)
@@ -71,7 +71,7 @@ class EP(object):  # pylint: disable=R0903
         self._cav = Cavity(nsamples)
         self._posterior = Posterior(self._site)
         self._posterior.set_prior_mean(mean)
-        self._posterior.set_prior_cov(cov)
+        self._posterior.set_prior_cov(QS)
 
         self._moments = {
             'log_zeroth': empty(nsamples),
@@ -83,7 +83,7 @@ class EP(object):  # pylint: disable=R0903
 
     def _lml(self):
         L = self._posterior.L()
-        Q, S = self._posterior.QS()
+        Q, S = self._posterior.prior_cov()
         ttau = self._site.tau
         teta = self._site.eta
         ctau = self._cav.tau
@@ -116,7 +116,7 @@ class EP(object):  # pylint: disable=R0903
 
     def _lml_derivative_over_mean(self, dm):
         L = self._posterior.L()
-        Q, _ = self._posterior.QS()
+        Q, _ = self._posterior.prior_cov()
         ttau = self._site.tau
         teta = self._site.eta
 
@@ -129,7 +129,7 @@ class EP(object):  # pylint: disable=R0903
 
     def _lml_derivative_over_cov(self, dcov):
         L = self._posterior.L()
-        Q, _ = self._posterior.QS()
+        Q, _ = self._posterior.prior_cov()
         ttau = self._site.tau
         teta = self._site.eta
 
