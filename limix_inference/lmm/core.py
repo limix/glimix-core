@@ -1,7 +1,6 @@
 from __future__ import division
 
-from numpy import ascontiguousarray, dot, log, maximum, sqrt, var, zeros
-from numpy.random import RandomState
+from numpy import ascontiguousarray, dot, log, maximum, sqrt, zeros
 from numpy_sugar import epsilon
 from numpy_sugar.linalg import ddot, economic_svd, solve
 
