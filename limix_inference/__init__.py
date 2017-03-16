@@ -9,17 +9,10 @@ Fast inference for Generalized Linear Mixed Models.
 
 from __future__ import absolute_import as _absolute_import
 
-from pkg_resources import get_distribution as _get_distribution
 from pkg_resources import DistributionNotFound as _DistributionNotFound
+from pkg_resources import get_distribution as _get_distribution
 
-from . import lmm
-from . import glmm
-from . import cov
-from . import lik
-from . import mean
-from . import link
-from . import random
-from . import gp
+from . import cov, ggp, glmm, gp, lik, link, lmm, mean, random
 
 try:
     __version__ = _get_distribution('limix_inference').version
@@ -45,4 +38,6 @@ def test():
     return return_code
 
 
-__all__ = ['test', 'gp', 'lmm', 'glmm', 'cov', 'lik', 'mean', 'link', 'random']
+__all__ = [
+    'test', 'ggp', 'gp', 'lmm', 'glmm', 'cov', 'lik', 'mean', 'link', 'random'
+]
