@@ -7,7 +7,7 @@ from numpy.testing import assert_allclose
 
 from numpy_sugar.linalg import economic_qs_linear
 
-from limix_inference.lmm import FastLMM
+from limix_inference.lmm import LMM
 from limix_inference.lik import DeltaProdLik
 from limix_inference.cov import LinearCov
 from limix_inference.cov import EyeCov
@@ -15,7 +15,7 @@ from limix_inference.cov import SumCov
 from limix_inference.mean import OffsetMean
 from limix_inference.random import GGPSampler
 
-def test_fastlmm_fast_scan():
+def test_fastlmm_fast_scan(): # pylint: disable=R0914
     random = RandomState(9458)
     N = 500
     X = random.randn(N, N + 1)
@@ -44,7 +44,7 @@ def test_fastlmm_fast_scan():
 
     QS = economic_qs_linear(X)
 
-    flmm = FastLMM(y, ones((N, 1)), QS)
+    flmm = LMM(y, ones((N, 1)), QS)
 
     flmm.learn(progress=False)
 
@@ -96,7 +96,7 @@ def test_learn():
 
     QS = economic_qs_linear(X)
 
-    flmm = FastLMM(y, ones((N, 1)), QS)
+    flmm = LMM(y, ones((N, 1)), QS)
 
     flmm.learn(progress=False)
 
@@ -134,7 +134,7 @@ def test_fastlmm_learn_fix():
 
     QS = economic_qs_linear(X)
 
-    flmm = FastLMM(y, ones((N, 1)), QS)
+    flmm = LMM(y, ones((N, 1)), QS)
 
     flmm.fix('delta')
     flmm.fix('scale')

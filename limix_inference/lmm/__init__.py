@@ -25,11 +25,11 @@ The outcome-vector is thus distributed according to
                               + \sigma_{\epsilon}^2\mathrm I)
 
 This module provides two methods for fitting LMMs via maximum
-likelihood: :class:`.SlowLMM` and :class:`.FastLMM`.
+likelihood: :class:`.SlowLMM` and :class:`.LMM`.
 The former is more general but slower than the latter;
 the latter assumes a scaled covariance matrix and linear fixed-effects.
 
-:class:`.FastLMMScanner` can be used to perform fast inference over multiple
+:class:`.FastScanner` can be used to perform fast inference over multiple
 covariates;
 it is meant to perform such inference over millions of covariates in seconds.
 
@@ -37,7 +37,7 @@ Public interface
 ^^^^^^^^^^^^^^^^
 """
 
-from .fastlmm import FastLMM, FastLMMScanner
-from .slowlmm import SlowLMM
+from .lmm import LMM
+from .scan import FastScanner
 
-__all__ = ['SlowLMM', 'FastLMM', 'FastLMMScanner']
+__all__ = ['LMM', 'FastScanner']

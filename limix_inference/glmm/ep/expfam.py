@@ -6,7 +6,7 @@ from numpy import ascontiguousarray, clip, full
 from numpy.linalg import lstsq
 
 from liknorm import LikNormMachine
-from ...lmm import FastLMM
+from ...lmm import LMM
 from .ep import EP
 
 
@@ -174,7 +174,7 @@ class ExpFamEP(EP):
 
 def _initialize(prodlik, covariates, QS):
     y = prodlik.to_normal()
-    flmm = FastLMM(y, covariates, QS)
+    flmm = LMM(y, covariates, QS)
     flmm.learn(progress=False)
     gv = flmm.genetic_variance
     nv = flmm.environmental_variance

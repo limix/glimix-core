@@ -10,10 +10,10 @@ from optimix import maximize_scalar
 from optimix import Function
 from optimix import Scalar
 
-from .core import FastLMMCore
+from .core import LMMCore
 
 
-class FastLMM(Function):
+class LMM(Function):
     r"""Fast Linear Mixed Models inference via maximum likelihood.
 
     It models
@@ -43,13 +43,13 @@ class FastLMM(Function):
 
         >>> from numpy import array
         >>> from numpy_sugar.linalg import economic_qs_linear
-        >>> from limix_inference.lmm import FastLMM
+        >>> from limix_inference.lmm import LMM
         >>>
         >>> X = array([[1, 2], [3, -1]], float)
         >>> QS = economic_qs_linear(X)
         >>> covariates = array([[1], [1]])
         >>> y = array([-1, 2], float)
-        >>> flmm = FastLMM(y, covariates, QS)
+        >>> flmm = LMM(y, covariates, QS)
         >>> flmm.learn(progress=False)
         >>> print('%.3f' % flmm.lml())
         -3.649
@@ -60,13 +60,13 @@ class FastLMM(Function):
 
         >>> from numpy import array
         >>> from numpy_sugar.linalg import economic_qs_linear
-        >>> from limix_inference.lmm import FastLMM
+        >>> from limix_inference.lmm import LMM
         >>>
         >>> X = array([[1, 2], [3, -1]], float)
         >>> QS = economic_qs_linear(X)
         >>> covariates = array([[1], [1]])
         >>> y = array([-1, 2], float)
-        >>> flmm = FastLMM(y, covariates, QS)
+        >>> flmm = LMM(y, covariates, QS)
         >>> flmm.fix('delta')
         >>> flmm.fix('scale')
         >>> flmm.learn(progress=False)
@@ -84,17 +84,17 @@ class FastLMM(Function):
     """
 
     def __init__(self, y, M, QS):
-        super(FastLMM, self).__init__(logistic=Scalar(0.0))
+        super(LMM, self).__init__(logistic=Scalar(0.0))
 
         if not is_all_finite(y):
             raise ValueError("There are non-finite values in the phenotype.")
 
-        self._flmmc = FastLMMCore(y, M, QS)
+        self._flmmc = LMMCore(y, M, QS)
         self.set_nodata()
 
     def fix(self, var_name):
         if var_name == 'delta':
-            super(FastLMM, self).fix('logistic')
+            super(LMM, self).fix('logistic')
         elif var_name == 'scale':
             self._flmmc.fix_scale()
         else:
@@ -104,7 +104,7 @@ class FastLMM(Function):
 
     def unfix(self, var_name):
         if var_name == 'delta':
-            super(FastLMM, self).unfix('logistic')
+            super(LMM, self).unfix('logistic')
         elif var_name == 'scale':
             self._flmmc.unfix_scale()
         else:
@@ -125,8 +125,8 @@ class FastLMM(Function):
 
     def copy(self):
         # pylint: disable=W0212
-        o = FastLMM.__new__(FastLMM)
-        super(FastLMM, o).__init__(logistic=Scalar(self.get('logistic')))
+        o = LMM.__new__(LMM)
+        super(LMM, o).__init__(logistic=Scalar(self.get('logistic')))
         o._flmmc = self._flmmc.copy()
         o.set_nodata()
         return o

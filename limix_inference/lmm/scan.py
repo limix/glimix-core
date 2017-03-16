@@ -7,7 +7,7 @@ from numpy_sugar.linalg import solve
 
 LOG2PI = 1.837877066409345339081937709124758839607238769531250
 
-class FastLMMScanner(object): # pylint: disable=R0903
+class FastScanner(object): # pylint: disable=R0903
     r"""Fast inference over multiple covariates.
 
     Let :math:`\tilde{\mathrm M}_i` be a column-matrix of fixed-effect

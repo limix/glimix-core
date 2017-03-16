@@ -531,10 +531,10 @@ class EP(object):
         sum2diag(K, ttau, out=K)
         QS = economic_qs(K)
 
-        from ...lmm import FastLMM
+        from ...lmm import LMM
         from numpy import newaxis
 
-        fastlmm = FastLMM(y, m[:, newaxis], QS)
+        fastlmm = LMM(y, m[:, newaxis], QS)
         fastlmm.learn(progress=False)
         return fastlmm.lml()
 
@@ -983,10 +983,10 @@ class EP(object):
     #     sum2diag(K, ttau, out=K)
     #     QS = economic_qs(K)
     #
-    #     from ...lmm import FastLMM
+    #     from ...lmm import LMM
     #     from numpy import newaxis
     #
-    #     fastlmm = FastLMM(y, m[:, newaxis], QS)
+    #     fastlmm = LMM(y, m[:, newaxis], QS)
     #     fastlmm.learn(progress=False)
     #     nlt = fastlmm.get_normal_likelihood_trick()
     #     nlt.transform = ttau

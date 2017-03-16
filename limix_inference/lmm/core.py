@@ -7,7 +7,7 @@ from scipy.stats import multivariate_normal
 from numpy_sugar import epsilon
 from numpy_sugar.linalg import ddot, economic_svd, solve, sum2diag
 
-from .scan import FastLMMScanner
+from .scan import FastScanner
 
 
 def _make_sure_has_variance(y):
@@ -24,7 +24,7 @@ def _make_sure_has_variance(y):
     return y
 
 
-class FastLMMCore(object):
+class LMMCore(object):
     def __init__(self, y, M, QS):
         self._QS = QS
         self._y = _make_sure_has_variance(y)
@@ -75,11 +75,11 @@ class FastLMMCore(object):
         self.__tbeta = zeros(self._tM.shape[1])
 
     def get_fast_scanner(self):
-        return FastLMMScanner(self._y, self.M, self._QS, self.delta)
+        return FastScanner(self._y, self.M, self._QS, self.delta)
 
     def copy(self):
         # pylint: disable=W0212
-        o = FastLMMCore.__new__(FastLMMCore)
+        o = LMMCore.__new__(LMMCore)
         o._fix_scale = self._fix_scale
         o._n = self._n
         o._p = self._p
@@ -274,10 +274,10 @@ class FastLMMCore(object):
         cov -= (1 - delta)**2 * CpQ1.dot((CpQ1 / diag1).T)
         cov *= self.scale
 
-        return FastLMMPredictor(mean, cov)
+        return LMMPredictor(mean, cov)
 
 
-class FastLMMPredictor(object):
+class LMMPredictor(object):
     def __init__(self, mean, cov):
         self._mean = mean
         self._cov = cov
