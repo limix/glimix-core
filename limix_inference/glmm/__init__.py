@@ -34,7 +34,7 @@ The marginal likelihood is thus given by
       \mathcal N(\mathbf z ~|~ \mathrm X\boldsymbol\beta,
                  \sigma_g^2\mathrm G\mathrm G^{\intercal}
                  + \sigma_e^2\mathrm I)
-    d\mathbf z
+    \mathrm d\mathbf z
 
 This module implements the Expectation Propagation algorithm for parameter
 fitting via Maximum Likelihood: :class:`.ExpFamEP`.
@@ -43,6 +43,6 @@ Public interface
 ^^^^^^^^^^^^^^^^
 """
 
-# from .glmm import GLMM
-#
-# __all__ = ['GLMM']
+from .glmm import GLMM
+
+__all__ = ['GLMM']

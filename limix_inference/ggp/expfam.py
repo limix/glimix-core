@@ -115,7 +115,17 @@ class ExpFamGP(EP, Composite):
         try:
             self._initialize(mean, (QS[0][0], QS[1]))
             self._params_update()
-            grad = [self._lml_derivative_over_cov(gc) for gc in gcov]
+            QS = economic_qs(gcov[0])
+
+            grad = []
+
+            for gc in gcov:
+                QS = economic_qs(gc)
+                grad += [self._lml_derivative_over_cov((QS[0][0], QS[1]))]
+
+            # QS = economic_qs(gcov[1])
+            # grad += [self._lml_derivative_over_cov((QS[0][0], QS[1]))]
+            # grad = [self._lml_derivative_over_cov(gc) for gc in gcov]
             grad += [self._lml_derivative_over_mean(gm) for gm in gmean]
 
             return grad

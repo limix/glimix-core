@@ -127,7 +127,7 @@ class EP(object):  # pylint: disable=R0903
 
         return dlml
 
-    def _lml_derivative_over_cov(self, dcov):
+    def _lml_derivative_over_cov(self, dQS):
         L = self._posterior.L()
         Q, _ = self._posterior.prior_cov()
         ttau = self._site.tau
@@ -135,14 +135,18 @@ class EP(object):  # pylint: disable=R0903
 
         diff = teta - ttau * self._posterior.prior_mean()
 
-        v0 = dot(dcov, diff)
+        # v0 = dot(dcov, diff)
+        v0 = dot(dQS[0], dQS[1] * dot(dQS[0].T, diff))
         v1 = ttau * dot(Q, cho_solve(L, dot(Q.T, diff)))
 
         dlml = 0.5 * dot(diff, v0)
         dlml -= dot(v0, v1)
-        dlml += 0.5 * dot(v1, dot(dcov, v1))
-        dlml -= 0.5 * sum(ttau * dcov.diagonal())
-        TK = ddot(ttau, dcov, left=True)
+        # dlml += 0.5 * dot(v1, dot(dcov, v1))
+        dlml += 0.5 * dot(v1, dot(dQS[0], dQS[1] * dot(dQS[0].T, v1)))
+        # dlml -= 0.5 * sum(ttau * dcov.diagonal())
+        dK = dot(dQS[0], ddot(dQS[1], dQS[0].T, left=True))
+        dlml -= 0.5 * sum(ttau * dK.diagonal())
+        TK = ddot(ttau, dK, left=True)
         dlml += 0.5 * sum(ttau * dotd(Q, cho_solve(L, dot(Q.T, TK))))
 
         return dlml
