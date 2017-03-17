@@ -123,7 +123,7 @@ class EP(object):  # pylint: disable=R0903
         diff = teta - ttau * self._posterior.prior_mean()
 
         dlml = dot(diff, dm)
-        dlml -= dot(diff, dot(Q, cho_solve(L, dot(Q.T, ttau * dm))))
+        dlml -= dot(diff, dot(Q, cho_solve(L, dot(Q.T, (ttau*dm.T).T))))
 
         return dlml
 

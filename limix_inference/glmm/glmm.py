@@ -2,7 +2,7 @@ from __future__ import absolute_import, division, unicode_literals
 
 import logging
 
-from numpy import sign, zeros, dot, exp
+from numpy import sign, zeros, dot, exp, asarray
 from numpy.linalg import LinAlgError
 from numpy_sugar import epsilon
 from optimix import Function, Scalar, Vector
@@ -10,7 +10,6 @@ from optimix import Function, Scalar, Vector
 from liknorm import LikNormMachine
 
 from ..ep import EP
-
 
 class GLMM(EP, Function):
     r"""Expectation Propagation for Generalised Gaussian Processes.
@@ -79,7 +78,10 @@ class GLMM(EP, Function):
 
         self._logger = logging.getLogger(__name__)
 
-        self._y = y
+        if not isinstance(y, tuple):
+            y = (y, )
+
+        self._y = tuple([asarray(i, float) for i in y])
         self._X = X
         self._QS = QS
 
@@ -119,9 +121,14 @@ class GLMM(EP, Function):
     def _eigval_derivative_over_logitdelta(self):
         x = self.get('logitdelta')
         s = self.scale
-        c = (s * exp(x) / (1 + exp(-x))^2)
-        S = self._QS[1]
-        return c * (1 - S)
+        c = (s * exp(x) / (1 + exp(-x))**2)
+        E = self._QS[1]
+        return c * (1 - E)
+
+    def _S(self):
+        s = self.scale
+        d = self.delta
+        return s * ((1 - d) * self._QS[1] + d)
 
     def value(self):
         r"""Log of the marginal likelihood.
@@ -134,7 +141,7 @@ class GLMM(EP, Function):
             float: log of the marginal likelihood.
         """
         try:
-            self._initialize(self.mean(), self._QS)
+            self._initialize(self.mean(), (self._QS[0], self._S()))
             self._params_update()
             lml = self._lml()
         except (ValueError, LinAlgError) as e:
@@ -156,18 +163,15 @@ class GLMM(EP, Function):
             list: derivatives.
         """
         try:
-            self._initialize(self.mean(), self._QS)
+            self._initialize(self.mean(), (self._QS[0], self._S()))
             self._params_update()
 
-            # dK = [self._QS, ]
-            dS1 = exp()
-
+            dS0 = self._eigval_derivative_over_logitdelta()
             dS1 = self._eigval_derivative_over_logscale()
 
-            # self._lml_derivative_over_cov(dS1)
-
-            # grad = [self._lml_derivative_over_cov(gc) for gc in gcov]
-            # grad += [self._lml_derivative_over_mean(gm) for gm in gmean]
+            grad = [self._lml_derivative_over_cov((self._QS[0], dS0))]
+            grad += [self._lml_derivative_over_cov((self._QS[0], dS1))]
+            grad += [self._lml_derivative_over_mean(self._X)]
 
             return grad
         except (ValueError, LinAlgError) as e:
