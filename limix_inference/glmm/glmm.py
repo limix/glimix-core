@@ -15,6 +15,24 @@ from ..ep import EP
 class GLMM(EP, Function):
     r"""Expectation Propagation for Generalised Gaussian Processes.
 
+    Let
+
+    .. math::
+
+        \mathrm Q \mathrm E \mathrm Q^{\intercal}
+        = \mathrm G\mathrm G^{\intercal}
+
+    be the eigen decomposition of the random effect's covariance.
+    It turns out that the prior covariance of GLMM can be described as
+
+    .. math::
+
+        \mathrm Q s((1-\delta)\mathrm E
+        + \delta\mathrm I) \mathrm Q^{\intercal}.
+
+    This means that :math:`\mathrm Q` does not change during inference, and
+    this fact is used here to speed-up EP inference for GLMM.
+
     Args:
         y (array_like): outcome variable.
         lik_name (str): likelihood name.
