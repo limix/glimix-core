@@ -135,19 +135,17 @@ class EP(object):  # pylint: disable=R0903
 
         diff = teta - ttau * self._posterior.prior_mean()
 
-        # v0 = dot(dcov, diff)
         v0 = dot(dQS[0], dQS[1] * dot(dQS[0].T, diff))
         v1 = ttau * dot(Q, cho_solve(L, dot(Q.T, diff)))
-
         dlml = 0.5 * dot(diff, v0)
         dlml -= dot(v0, v1)
-        # dlml += 0.5 * dot(v1, dot(dcov, v1))
         dlml += 0.5 * dot(v1, dot(dQS[0], dQS[1] * dot(dQS[0].T, v1)))
-        # dlml -= 0.5 * sum(ttau * dcov.diagonal())
-        dK = dot(dQS[0], ddot(dQS[1], dQS[0].T, left=True))
-        dlml -= 0.5 * sum(ttau * dK.diagonal())
-        TK = ddot(ttau, dK, left=True)
-        dlml += 0.5 * sum(ttau * dotd(Q, cho_solve(L, dot(Q.T, TK))))
+        dqs = ddot(dQS[1], dQS[0].T, left=True)
+        diag = dotd(dQS[0], dqs)
+        dlml -= 0.5 * sum(ttau * diag)
+
+        tmp = cho_solve(L, dot(ddot(Q.T, ttau, left=False), dQS[0]))
+        dlml += 0.5 * sum(ttau * dotd(Q, dot(tmp, dqs)))
 
         return dlml
 
