@@ -2,14 +2,15 @@ from __future__ import absolute_import, division, unicode_literals
 
 import logging
 
-from numpy import sign, zeros, dot, exp, asarray
+from numpy import asarray, dot, exp, sign, zeros, log
 from numpy.linalg import LinAlgError
 from numpy_sugar import epsilon
-from optimix import Function, Scalar, Vector
 
 from liknorm import LikNormMachine
+from optimix import Function, Scalar, Vector
 
 from ..ep import EP
+
 
 class GLMM(EP, Function):
     r"""Expectation Propagation for Generalised Gaussian Processes.
@@ -70,11 +71,13 @@ class GLMM(EP, Function):
     #     >>> print('After: %.2f' % ggp.feed().value())
     #     After: -65.39
 
-
     def __init__(self, y, lik_name, X, QS):
         super(GLMM, self).__init__()
-        Function.__init__(self, beta=Vector(zeros(X.shape[1])),
-                          logscale=Scalar(0.0), logitdelta=Scalar(0.0))
+        Function.__init__(
+            self,
+            beta=Vector(zeros(X.shape[1])),
+            logscale=Scalar(0.0),
+            logitdelta=Scalar(0.0))
 
         self._logger = logging.getLogger(__name__)
 
@@ -104,9 +107,13 @@ class GLMM(EP, Function):
     def scale(self):
         return exp(self.get('logscale'))
 
+    @scale.setter
+    def scale(self, v):
+        return self.set('logscale', log(v))
+
     @property
     def delta(self):
-        return 1/(1 + exp(-self.get('logitdelta')))
+        return 1 / (1 + exp(-self.get('logitdelta')))
 
     @property
     def beta(self):
@@ -140,6 +147,7 @@ class GLMM(EP, Function):
         Returns:
             float: log of the marginal likelihood.
         """
+        # print(self.scale, self.delta)
         try:
             self._initialize(self.mean(), (self._QS[0], self._S()))
             self._params_update()
@@ -148,9 +156,10 @@ class GLMM(EP, Function):
             print(e)
             print("value: returning large value.\n")
             lml = -1 / epsilon.small
+        # print("delta %.7f lml %.7f" % (self.delta, lml))
         return lml
 
-    def gradient(self):
+    def gradient(self):  # pylint: disable=W0221
         r"""Gradient of the log of the marginal likelihood.
 
         Args:
