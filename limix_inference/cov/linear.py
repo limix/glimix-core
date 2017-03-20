@@ -45,7 +45,10 @@ class LinearCov(Function):
         x1 = stack(x1, axis=0)
         return self.scale * x0.dot(x1.T)
 
-    def derivative_logscale(self, x0, x1):
+    def gradient(self, x0, x1):
+        return dict(logscale=self._derivative_logscale(x0, x1))
+
+    def _derivative_logscale(self, x0, x1):
         r"""Derivative of the covariance function evaluated at `(x0, x1)`.
 
         Derivative of the covariance function over :math:`\log(s)`.

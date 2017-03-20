@@ -30,7 +30,10 @@ class OffsetMean(Function):
         """
         return full(size, self.variables().get('offset').value)
 
-    def derivative_offset(self, size):
+    def gradient(self, size):
+        return dict(offset=self._derivative_offset(size))
+
+    def _derivative_offset(self, size):
         r"""Offset function derivative.
 
         Args:

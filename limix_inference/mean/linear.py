@@ -30,7 +30,10 @@ class LinearMean(Function):
         """
         return x.dot(self.variables().get('effsizes').value)
 
-    def derivative_effsizes(self, x):
+    def gradient(self, x):
+        return dict(effsizes=self._derivative_effsizes(x))
+
+    def _derivative_effsizes(self, x):
         r"""Linear mean function derivative.
 
         Args:

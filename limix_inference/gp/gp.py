@@ -49,26 +49,22 @@ class GP(FunctionReduce):
         if var(y) < 1e-8:
             raise ValueError("The phenotype variance is too low: %e." % var(y))
 
-        super(GP, self).__init__(mean=mean, cov=cov)
+        super(GP, self).__init__([mean, cov], name='GP')
         self._y = y
         self._cov = cov
         self._mean = mean
 
     def _lml_gradient_mean(self, mean, cov, gmean):
         Kiym = solve(cov, self._y - mean)
-        return [g.T.dot(Kiym) for g in gmean]
+        return gmean.T.dot(Kiym)
 
     def _lml_gradient_cov(self, mean, cov, gcov):
-
         Kiym = solve(cov, self._y - mean)
+        return -solve(cov, gcov).diagonal().sum() + Kiym.dot(gcov.dot(Kiym))/2
 
-        g = []
-        for c in gcov:
-            g += [-solve(cov, c).diagonal().sum() + Kiym.dot(c.dot(Kiym))]
-
-        return [gi / 2 for gi in g]
-
-    def value(self, mean, cov):
+    def value_reduce(self, values): # pylint: disable=R0201
+        mean = values['GP[0]']
+        cov = values['GP[1]']
         ym = self._y - mean
         Kiym = solve(cov, ym)
 
@@ -78,8 +74,35 @@ class GP(FunctionReduce):
         n = len(self._y)
         return -(logdet + ym.dot(Kiym) + n * log(2 * pi)) / 2
 
-    # pylint: disable=W0221
-    def gradient(self, mean, cov, gmean, gcov):
-        grad_cov = self._lml_gradient_cov(mean, cov, gcov)
-        grad_mean = self._lml_gradient_mean(mean, cov, gmean)
-        return grad_cov + grad_mean
+    # def value(self, mean, cov):
+    #     import pdb; pdb.set_trace()
+    #     ym = self._y - mean
+    #     Kiym = solve(cov, ym)
+    #
+    #     (s, logdet) = slogdet(cov)
+    #     assert s == 1.
+    #
+    #     n = len(self._y)
+    #     return -(logdet + ym.dot(Kiym) + n * log(2 * pi)) / 2
+
+    # # pylint: disable=W0221
+    # def gradient(self, mean, cov, gmean, gcov):
+    #     import pdb; pdb.set_trace()
+    #     grad_cov = self._lml_gradient_cov(mean, cov, gcov)
+    #     grad_mean = self._lml_gradient_mean(mean, cov, gmean)
+    #     return grad_cov + grad_mean
+
+    def gradient_reduce(self, values, gradients):
+        mean = values['GP[0]']
+        cov = values['GP[1]']
+        gmean = gradients['GP[0]']
+        gcov = gradients['GP[1]']
+
+        grad = dict()
+        for n, g in iter(gmean.items()):
+            grad['GP[0].' + n] = self._lml_gradient_mean(mean, cov, g)
+
+        for n, g in iter(gcov.items()):
+            grad['GP[1].' + n] = self._lml_gradient_cov(mean, cov, g)
+
+        return grad
