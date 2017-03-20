@@ -30,11 +30,11 @@ class EyeCov(Function):
     @property
     def scale(self):
         r"""Scale parameter."""
-        return exp(self.get('logscale'))
+        return exp(self.variables().get('logscale').value)
 
     @scale.setter
     def scale(self, scale):
-        self.set('logscale', log(scale))
+        self.variables().get('logscale').value = log(scale)
 
     def value(self, x0, x1):
         r"""Covariance function evaluated at `(x0, x1)`.

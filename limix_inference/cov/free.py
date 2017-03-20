@@ -34,21 +34,21 @@ class FreeFormCov(Function):
 
     @property
     def L(self):
-        self._L[self._tril] = self.get('Lu')
+        self._L[self._tril] = self.variables().get('Lu').value
         return self._L
 
     @L.setter
     def L(self, value):
         self._L[:] = value
-        self.set('Lu', self._L[self._tril])
+        self.variables().get('Lu').value = self._L[self._tril]
 
     @property
     def Lu(self):
-        return self.get('Lu')
+        return self.variables().get('Lu').value
 
     @Lu.setter
     def Lu(self, value):
-        self.set('Lu', value)
+        self.variables().get('Lu').value = value
 
     def value(self, x0, x1):
         L = self.L
@@ -78,7 +78,7 @@ class FreeFormCov(Function):
         x0 = x0.ravel()
         x1 = x1.ravel()
 
-        Lu = self.get('Lu')
+        Lu = self.variables().get('Lu').value
         L = self.L
         size = L.shape[0]
         d = zeros((size, size, len(Lu)))

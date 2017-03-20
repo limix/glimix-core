@@ -105,28 +105,28 @@ class GLMM(EP, Function):
 
     @property
     def scale(self):
-        return exp(self.get('logscale'))
+        return exp(self.variables().get('logscale').value)
 
     @scale.setter
     def scale(self, v):
-        return self.set('logscale', log(v))
+        self.variables().get('logscale').value = log(v)
 
     @property
     def delta(self):
-        return 1 / (1 + exp(-self.get('logitdelta')))
+        return 1 / (1 + exp(-self.variables().get('logitdelta').value))
 
     @property
     def beta(self):
-        return self.get('beta')
+        return self.variables().get('beta').value
 
     def _eigval_derivative_over_logscale(self):
-        x = self.get('logscale')
+        x = self.variables().get('logscale').value
         d = self.delta
         E = self._QS[1]
         return exp(x) * ((1 - d) * E + d)
 
     def _eigval_derivative_over_logitdelta(self):
-        x = self.get('logitdelta')
+        x = self.variables().get('logitdelta').value
         s = self.scale
         c = (s * exp(x) / (1 + exp(-x))**2)
         E = self._QS[1]

@@ -21,14 +21,14 @@ def test_glmm():
     glmm = GLMM((nsuc, ntri), 'binomial', X, QS)
     f0 = glmm.value()
     g0 = glmm.gradient()[0]
-    glmm.set('logitdelta', glmm.get('logitdelta') + step)
+    glmm.set('logitdelta', glmm.variables().get('logitdelta').value + step)
     f1 = glmm.value()
     assert_allclose(g0, (f1 - f0) / step, rtol=1e-4)
 
     glmm = GLMM((nsuc, ntri), 'binomial', X, QS)
     f0 = glmm.value()
     g0 = glmm.gradient()[1]
-    glmm.set('logscale', glmm.get('logscale') + step)
+    glmm.set('logscale', glmm.variables().get('logscale').value + step)
     f1 = glmm.value()
     assert_allclose(g0, (f1 - f0) / step, rtol=1e-4)
 
@@ -36,7 +36,7 @@ def test_glmm():
         glmm = GLMM((nsuc, ntri), 'binomial', X, QS)
         f0 = glmm.value()
         g0 = glmm.gradient()[2][i]
-        beta = glmm.get('beta')
+        beta = glmm.variables().get('beta').value
         beta[i] += step
         glmm.set('beta', beta)
         f1 = glmm.value()

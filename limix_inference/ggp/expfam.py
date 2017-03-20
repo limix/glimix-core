@@ -6,14 +6,14 @@ from numpy import sign
 from numpy.linalg import LinAlgError
 from numpy_sugar import epsilon
 from numpy_sugar.linalg import economic_qs
-from optimix import Composite
+from optimix import FunctionReduce
 
 from liknorm import LikNormMachine
 
 from ..ep import EP
 
 
-class ExpFamGP(EP, Composite):
+class ExpFamGP(EP, FunctionReduce):
     r"""Expectation Propagation for Generalised Gaussian Processes.
 
     Args:
@@ -56,7 +56,7 @@ class ExpFamGP(EP, Composite):
 
     def __init__(self, y, lik_name, mean, cov):
         super(ExpFamGP, self).__init__()
-        Composite.__init__(self, mean=mean, cov=cov)
+        FunctionReduce.__init__(self, mean=mean, cov=cov)
 
         self._logger = logging.getLogger(__name__)
 

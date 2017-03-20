@@ -126,7 +126,7 @@ class LMM(LMMCore, Function):
         o = LMM.__new__(LMM)
 
         LMMCore.__init__(o, self._y, self.X, self._QS)
-        Function.__init__(o, logistic=Scalar(self.get('logistic')))
+        Function.__init__(o, logistic=Scalar(self.variables().get('logistic').value))
 
         o._fix = self._fix.copy()
         o._delta = self._delta
@@ -136,7 +136,7 @@ class LMM(LMMCore, Function):
         return o
 
     def _get_delta(self):
-        v = clip(self.get('logistic'), -20, 20)
+        v = clip(self.variables().get('logistic').value, -20, 20)
         x = 1 / (1 + exp(-v))
         return clip(x, 1e-5, 1 - 1e-5)
 

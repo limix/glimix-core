@@ -28,7 +28,7 @@ class OffsetMean(Function):
         Returns:
             :math:`o \mathbf 1`.
         """
-        return full(size, self.get('offset'))
+        return full(size, self.variables().get('offset').value)
 
     def derivative_offset(self, size):
         r"""Offset function derivative.
@@ -44,8 +44,8 @@ class OffsetMean(Function):
     @property
     def offset(self):
         r"""Offset parameter."""
-        return self.get('offset')
+        return self.variables().get('offset').value
 
     @offset.setter
     def offset(self, v):
-        self.set('offset', v)
+        self.variables().get('offset').value = v

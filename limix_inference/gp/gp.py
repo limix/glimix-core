@@ -6,10 +6,10 @@ from numpy import var
 from numpy.linalg import solve
 from numpy.linalg import slogdet
 
-from optimix import Composite
+from optimix import FunctionReduce
 
 
-class GP(Composite):
+class GP(FunctionReduce):
     r"""Gaussian Process inference via maximum likelihood.
 
     Args:

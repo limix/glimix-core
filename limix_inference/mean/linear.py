@@ -28,7 +28,7 @@ class LinearMean(Function):
         Returns:
             :math:`\mathbf x^\intercal \boldsymbol\alpha`.
         """
-        return x.dot(self.get('effsizes'))
+        return x.dot(self.variables().get('effsizes').value)
 
     def derivative_effsizes(self, x):
         r"""Linear mean function derivative.
@@ -44,8 +44,8 @@ class LinearMean(Function):
     @property
     def effsizes(self):
         r"""Effect-sizes parameter."""
-        return self.get('effsizes')
+        return self.variables().get('effsizes').value
 
     @effsizes.setter
     def effsizes(self, v):
-        self.set('effsizes', ascontiguousarray(v))
+        self.variables().get('effsizes').value = ascontiguousarray(v)
