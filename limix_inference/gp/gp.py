@@ -60,7 +60,7 @@ class GP(FunctionReduce):
 
     def _lml_gradient_cov(self, mean, cov, gcov):
         Kiym = solve(cov, self._y - mean)
-        return -solve(cov, gcov).diagonal().sum() + Kiym.dot(gcov.dot(Kiym))/2
+        return (-solve(cov, gcov).diagonal().sum() + Kiym.dot(gcov.dot(Kiym)))/2
 
     def value_reduce(self, values): # pylint: disable=R0201
         mean = values['GP[0]']
@@ -73,24 +73,6 @@ class GP(FunctionReduce):
 
         n = len(self._y)
         return -(logdet + ym.dot(Kiym) + n * log(2 * pi)) / 2
-
-    # def value(self, mean, cov):
-    #     import pdb; pdb.set_trace()
-    #     ym = self._y - mean
-    #     Kiym = solve(cov, ym)
-    #
-    #     (s, logdet) = slogdet(cov)
-    #     assert s == 1.
-    #
-    #     n = len(self._y)
-    #     return -(logdet + ym.dot(Kiym) + n * log(2 * pi)) / 2
-
-    # # pylint: disable=W0221
-    # def gradient(self, mean, cov, gmean, gcov):
-    #     import pdb; pdb.set_trace()
-    #     grad_cov = self._lml_gradient_cov(mean, cov, gcov)
-    #     grad_mean = self._lml_gradient_mean(mean, cov, gmean)
-    #     return grad_cov + grad_mean
 
     def gradient_reduce(self, values, gradients):
         mean = values['GP[0]']
