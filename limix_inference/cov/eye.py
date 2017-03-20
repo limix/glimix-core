@@ -66,8 +66,10 @@ class EyeCov(Function):
 
         return I
 
+    def gradient(self, x0, x1):
+        return dict(logscale=self._derivative_logscale(x0, x1))
 
-    def derivative_logscale(self, x0, x1):
+    def _derivative_logscale(self, x0, x1):
         r"""Derivative of the covariance function evaluated at `(x0, x1)`.
 
         Derivative of the covariance function over :math:`\log(s)`.

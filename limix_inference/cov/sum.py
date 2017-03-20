@@ -20,12 +20,16 @@ class SumCov(FunctionReduce):
 
     def value_reduce(self, values): # pylint: disable=R0201
         r"""Sum covariance function evaluated at `(f_0, f_1, ...)`."""
-        return add.reduce(values)
+        return add.reduce(list(values.values()))
 
-    def derivative_reduce(self, derivatives): # pylint: disable=R0201
+    def gradient_reduce(self, _, gradients):
         r"""Sum of covariance function derivatives.
 
         Returns:
             :math:`f_0' + f_1' + \dots`
         """
-        return add.reduce(derivatives)
+        grad = dict()
+        for (gn, gv) in iter(gradients.items()):
+            for n, v in iter(gv.items()):
+                grad[gn + '.' + n] = v
+        return grad

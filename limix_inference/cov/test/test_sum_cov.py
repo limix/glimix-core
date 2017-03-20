@@ -1,8 +1,7 @@
 import numpy as np
-import numpy.testing as npt
+from numpy.testing import assert_allclose
 
-from limix_inference.cov import SumCov
-from limix_inference.cov import LinearCov
+from limix_inference.cov import LinearCov, SumCov
 from optimix import check_grad
 
 
@@ -19,8 +18,8 @@ def test_value():
 
     cov = SumCov([cov_left, cov_right])
     K = cov.feed().value()
-    npt.assert_almost_equal(K[0, 0], 37.95568923)
-    npt.assert_almost_equal(K[3, 1], 4.53034295)
+    assert_allclose(K[0, 0], 37.95568923)
+    assert_allclose(K[3, 1], 4.53034295)
 
 
 def test_gradient():
@@ -36,14 +35,7 @@ def test_gradient():
 
     cov = SumCov([cov_left, cov_right])
 
-    def func(x):
-        cov_left.scale = np.exp(x[0])
-        cov_right.scale = np.exp(x[1])
-        return cov.feed().value()
+    assert_allclose(check_grad(cov.feed()), 0, atol=6)
 
-    def grad(x):
-        cov_left.scale = np.exp(x[0])
-        cov_right.scale = np.exp(x[1])
-        return cov.feed().gradient()
-
-    npt.assert_almost_equal(check_grad(func, grad, [2.0, 1.5]), 0, decimal=6)
+if __name__ == '__main__':
+    __import__('pytest').main([__file__, '-s'])
