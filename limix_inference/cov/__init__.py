@@ -6,6 +6,7 @@ Covariance functions
 - :class:`.LinearCov`
 - :class:`.SumCov`
 - :class:`.EyeCov`
+- :class:`.FreeFormCov`
 
 Linear covariance
 ^^^^^^^^^^^^^^^^^

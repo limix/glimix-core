@@ -7,9 +7,6 @@ This is intended to core developers.
 .. automodule:: limix_inference.ep
   :members:
 
-.. automodule:: limix_inference.ep.cavity
-  :members:
-
 .. automodule:: limix_inference.ep.posterior
   :members:
 
