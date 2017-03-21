@@ -1,12 +1,34 @@
+import pytest
+
 from numpy.testing import assert_allclose
 
-from limix_inference.link import ProbitLink
-
+from limix_inference.link import ProbitLink, LogitLink, LogLink
+from limix_inference.link.link import Link
 
 def test_probit_link():
-    lik = ProbitLink()
-    assert_allclose(lik.value(lik.inv(3.2)), 3.2)
+    link = ProbitLink()
+    assert_allclose(link.value(link.inv(3.2)), 3.2)
+    assert_allclose(link.latent_variance, 1.0)
 
+def test_logit_link():
+    link = LogitLink()
+    assert_allclose(link.value(link.inv(3.2)), 3.2)
+    assert_allclose(link.latent_variance, 3.289868133696453)
 
-if __name__ == '__main__':
-    __import__('pytest').main([__file__, '-s'])
+def test_loglink_link():
+    link = LogLink()
+    assert_allclose(link.value(link.inv(3.2)), 3.2)
+    with pytest.raises(NotImplementedError):
+        print(link.latent_variance)
+
+def test_link_interface():
+    link = Link()
+
+    with pytest.raises(NotImplementedError):
+        print(link.value(None))
+
+    with pytest.raises(NotImplementedError):
+        print(link.inv(None))
+
+    with pytest.raises(NotImplementedError):
+        print(link.latent_variance)

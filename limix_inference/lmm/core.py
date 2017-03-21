@@ -1,6 +1,6 @@
 from __future__ import division
 
-from numpy import ascontiguousarray, dot, log, maximum, sqrt, zeros
+from numpy import dot, log, maximum, sqrt, zeros
 from numpy_sugar import epsilon
 from numpy_sugar.linalg import ddot, economic_svd, solve
 
@@ -20,16 +20,6 @@ class LMMCore(object):
 
     def get_fast_scanner(self):
         return FastScanner(self._y, self.X, self._QS, self.delta)
-
-    def copy(self):
-        # pylint: disable=W0212
-        o = LMMCore.__new__(LMMCore)
-        o._QS = self._QS
-        o._y = self._y
-        o._tM = self._tM
-        o.__tbeta = self.__tbeta.copy()
-        o._svd = self._svd
-        return o
 
     @property
     def X(self):
@@ -60,10 +50,7 @@ class LMMCore(object):
 
     @_tbeta.setter
     def _tbeta(self, value):
-        if self.__tbeta is None:
-            self.__tbeta = ascontiguousarray(value, float).copy()
-        else:
-            self.__tbeta[:] = value
+        self.__tbeta[:] = value
 
     @property
     def beta(self):

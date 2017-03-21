@@ -9,6 +9,7 @@ from numpy_sugar.linalg import economic_qs_linear
 from limix_inference.cov import EyeCov, LinearCov, SumCov
 from limix_inference.lik import DeltaProdLik
 from limix_inference.lmm import LMM
+from limix_inference.lmm.core import LMMCore
 from limix_inference.mean import OffsetMean
 from limix_inference.random import GGPSampler
 
@@ -102,6 +103,9 @@ def test_lmm_learn():
     assert_allclose(lmm.beta[0], 0.8997652129631661, rtol=1e-5)
     assert_allclose(lmm.genetic_variance, 1.7303981309775553, rtol=1e-5)
     assert_allclose(lmm.environmental_variance, 1.2950028351268132, rtol=1e-5)
+
+    lmm.beta = [-0.5]
+    assert_allclose(lmm.beta[0], [-0.5])
 
 
 def test_fastlmm_learn_fix():
@@ -203,3 +207,17 @@ def test_lmm_nonfinite_phenotype():
     y[0] = +inf
     with pytest.raises(ValueError):
         LMM(y, ones((N, 1)), QS)
+
+
+def test_lmmcore_interface():
+    random = RandomState(9458)
+    N = 50
+    QS = economic_qs_linear(random.randn(N, N + 1))
+    y = zeros(N)
+
+    lmmc = LMMCore(y, ones((N, 1)), QS)
+    with pytest.raises(NotImplementedError):
+        print(lmmc.delta)
+
+    with pytest.raises(NotImplementedError):
+        lmmc.delta = 1
