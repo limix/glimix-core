@@ -1,3 +1,5 @@
+from __future__ import division
+
 from numpy import full
 from numpy import ones, asarray
 

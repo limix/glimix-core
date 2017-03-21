@@ -1,29 +1,15 @@
-from numpy.random import RandomState
-from numpy.testing import assert_allclose
-
-from optimix import check_grad
-
 from limix_inference.mean import LinearMean
+from optimix.testing import Assertion
 
 
-def test_value():
-    random = RandomState(0)
-    mean = LinearMean(5)
-    effsizes = random.randn(5)
-    mean.effsizes = effsizes
+def test_offsetmean_optimix():
+    item0 = [5.1, 1.0]
+    item1 = [2.1, -0.2]
 
-    x = random.randn(5)
-    assert_allclose(mean.value(x), -0.956409566703)
-
-
-def test_gradient():
-    random = RandomState(1)
-    mean = LinearMean(5)
-    effsizes = random.randn(5)
-    mean.effsizes = effsizes
-    x = random.randn(2, 5)
-    mean.set_data(x)
-    assert_allclose(check_grad(mean.feed()), 0, atol=1e-6)
+    a = Assertion(
+        lambda: LinearMean(2), item0, item1, 0.0, effsizes=[0.5, 1.0])
+    a.assert_layout()
+    a.assert_gradient()
 
 
 if __name__ == '__main__':

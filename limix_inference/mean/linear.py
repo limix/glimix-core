@@ -1,4 +1,6 @@
-from numpy import zeros
+from __future__ import division
+
+from numpy import zeros, dot
 from numpy import ascontiguousarray
 
 from optimix import Function
@@ -20,29 +22,26 @@ class LinearMean(Function):
         Function.__init__(self, effsizes=Vector(zeros(size)))
 
     def value(self, x):
-        r"""Mean function evaluated at `x`.
+        r"""Linear mean function.
 
         Args:
-            x (array_like): sample or samples.
+            x (array_like): covariates.
 
         Returns:
             :math:`\mathbf x^\intercal \boldsymbol\alpha`.
         """
-        return x.dot(self.variables().get('effsizes').value)
+        return dot(x, self.variables().get('effsizes').value)
 
-    def gradient(self, x):
-        return dict(effsizes=self._derivative_effsizes(x))
-
-    def _derivative_effsizes(self, x):
-        r"""Linear mean function derivative.
+    def gradient(self, x): # pylint: disable=R0201
+        r"""Gradient of the linear mean function.
 
         Args:
-            size (int): sample size.
+            x (array_like): covariates.
 
         Returns:
             :math:`\mathbf x`.
         """
-        return x
+        return dict(effsizes=x)
 
     @property
     def effsizes(self):
