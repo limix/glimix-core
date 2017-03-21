@@ -39,7 +39,7 @@ def test_GGPSampler_poisson():
 
     mean = OffsetMean()
     mean.offset = 1.2
-    mean.set_data(10, 'sample')
+    mean.set_data(arange(10), 'sample')
     cov = LinearCov()
     cov.set_data((X, X), 'sample')
     sampler = GGPSampler(lik, mean, cov)
@@ -48,7 +48,7 @@ def test_GGPSampler_poisson():
 
     mean = OffsetMean()
     mean.offset = 0.0
-    mean.set_data(10, 'sample')
+    mean.set_data(arange(10), 'sample')
 
     cov1 = LinearCov()
     cov1.set_data((X, X), 'sample')
@@ -79,7 +79,7 @@ def test_GGPSampler_binomial():
 
     mean = OffsetMean()
     mean.offset = 1.2
-    mean.set_data(10, 'sample')
+    mean.set_data(arange(10), 'sample')
     cov = LinearCov()
     cov.set_data((X, X), 'sample')
     sampler = GGPSampler(lik, mean, cov)
@@ -90,7 +90,7 @@ def test_GGPSampler_binomial():
 
     mean = OffsetMean()
     mean.offset = 0.0
-    mean.set_data(10, 'sample')
+    mean.set_data(arange(10), 'sample')
 
     cov1 = LinearCov()
     cov1.set_data((X, X), 'sample')

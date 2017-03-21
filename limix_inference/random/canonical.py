@@ -166,7 +166,7 @@ def _mean_cov(offset, G, heritability, causal_variants, causal_variance,
     cov2 = EyeCov()
     cov = SumCov([cov1, cov2])
 
-    mean1.set_data(nsamples, 'sample')
+    mean1.set_data(arange(nsamples), 'sample')
     cov1.set_data((G, G), 'sample')
     a = arange(nsamples)
     cov2.set_data((a, a), 'sample')

@@ -16,14 +16,18 @@ class SumMean(FunctionReduce):
         self._means = [c for c in means]
         FunctionReduce.__init__(self, self._means, 'sum')
 
-    def value_reduce(self, values):
+    def value_reduce(self, values): # pylint: disable=R0201
         r"""Sum mean function evaluated at `(f_0, f_1, ...)`."""
-        return add.reduce(values)
+        return add.reduce(list(values.values()))
 
-    def derivative_reduce(self, derivatives):
+    def gradient_reduce(self, _, gradients): # pylint: disable=R0201
         r"""Sum of mean function derivatives.
 
         Returns:
             :math:`f_0' + f_1' + \dots`
         """
-        return add.reduce(derivatives)
+        grad = dict()
+        for (gn, gv) in iter(gradients.items()):
+            for n, v in iter(gv.items()):
+                grad[gn + '.' + n] = v
+        return grad
