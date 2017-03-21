@@ -23,8 +23,8 @@ def _get_data():
 
     mean = OffsetMean()
     mean.offset = offset
-    mean.set_data(N, purpose='sample')
-    mean.set_data(N, purpose='learn')
+    mean.set_data(arange(N), purpose='sample')
+    mean.set_data(arange(N), purpose='learn')
 
     cov_left = LinearCov()
     cov_left.scale = 1.5

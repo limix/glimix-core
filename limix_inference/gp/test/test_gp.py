@@ -19,7 +19,7 @@ def test_gp_value_1():
     mean = OffsetMean()
     mean.offset = offset
     mean.fix('offset')
-    mean.set_data(N)
+    mean.set_data(arange(N))
 
     cov = LinearCov()
     cov.scale = 1.0

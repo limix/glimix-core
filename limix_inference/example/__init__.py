@@ -9,8 +9,8 @@ def offset_mean():
     N = 100
     mean = OffsetMean()
     mean.offset = 0.5
-    mean.set_data(N, purpose='sample')
-    mean.set_data(N, purpose='learn')
+    mean.set_data(arange(N), purpose='sample')
+    mean.set_data(arange(N), purpose='learn')
 
     return mean
 

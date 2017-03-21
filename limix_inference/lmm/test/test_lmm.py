@@ -26,7 +26,7 @@ def test_fastlmm_fast_scan(): # pylint: disable=R0914
 
     mean = OffsetMean()
     mean.offset = offset
-    mean.set_data(N, purpose='sample')
+    mean.set_data(arange(N), purpose='sample')
 
     cov_left = LinearCov()
     cov_left.scale = 1.5
@@ -78,7 +78,7 @@ def test_lmm_learn():
 
     mean = OffsetMean()
     mean.offset = offset
-    mean.set_data(N, purpose='sample')
+    mean.set_data(arange(N), purpose='sample')
 
     cov_left = LinearCov()
     cov_left.scale = 1.5
@@ -104,7 +104,6 @@ def test_lmm_learn():
     assert_allclose(lmm.genetic_variance, 1.7303981309775553, rtol=1e-5)
     assert_allclose(lmm.environmental_variance, 1.2950028351268132, rtol=1e-5)
 
-
 def test_fastlmm_learn_fix():
     random = RandomState(9458)
     N = 500
@@ -116,7 +115,7 @@ def test_fastlmm_learn_fix():
 
     mean = OffsetMean()
     mean.offset = offset
-    mean.set_data(N, purpose='sample')
+    mean.set_data(arange(N), purpose='sample')
 
     cov_left = LinearCov()
     cov_left.scale = 1.5
