@@ -1,5 +1,6 @@
 from __future__ import division
 
+from numpy import arange
 from numpy.random import RandomState
 from numpy.testing import assert_allclose
 
@@ -52,7 +53,7 @@ def test_gp_value_2():
     assert_allclose(gp.feed().value(), -178.273116338)
 
 
-def test_regression_gradient():
+def test_gp_gradient():
     random = RandomState(94584)
     N = 50
     X = random.randn(N, 100)
@@ -61,7 +62,7 @@ def test_regression_gradient():
     mean = OffsetMean()
     mean.offset = offset
     mean.fix('offset')
-    mean.set_data(N)
+    mean.set_data(arange(N))
 
     cov = LinearCov()
     cov.scale = 1.0
@@ -71,10 +72,10 @@ def test_regression_gradient():
 
     gp = GP(y, mean, cov)
 
-    assert_allclose(check_grad(gp.feed()), 0, atol=1e-7)
+    assert_allclose(check_grad(gp.feed()), 0, atol=1e-5)
 
 
-def test_maximize_1():
+def test_gp_maximize():
     random = RandomState(94584)
     N = 50
     X = random.randn(N, 100)
@@ -83,7 +84,7 @@ def test_maximize_1():
     mean = OffsetMean()
     mean.offset = offset
     mean.fix('offset')
-    mean.set_data(N)
+    mean.set_data(arange(N))
 
     cov = LinearCov()
     cov.scale = 1.0
@@ -92,29 +93,10 @@ def test_maximize_1():
     y = random.randn(N)
 
     gp = GP(y, mean, cov)
-    gp.feed().maximize(progress=False)
-    assert_allclose(gp.feed().value(), -79.899212241487518)
 
-
-def test_maximize_2():
-    random = RandomState(94584)
-    N = 50
-    X = random.randn(N, 100)
-    offset = 0.5
-
-    mean = OffsetMean()
-    mean.offset = offset
-    mean.set_data(N)
-
-    cov = LinearCov()
-    cov.scale = 1.0
-    cov.set_data((X, X))
-
-    y = random.randn(N)
-
-    gp = GP(y, mean, cov)
     assert_allclose(gp.feed().value(), -153.623791551)
-    assert_allclose(check_grad(gp.feed()), 0, atol=1e-7)
+    gp.feed().maximize(progress=False)
+    assert_allclose(gp.feed().value(), -79.8992122415)
 
 
 if __name__ == '__main__':
