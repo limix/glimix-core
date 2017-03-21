@@ -1,5 +1,5 @@
 # pylint: disable=R0201
-from __future__ import division
+from __future__ import division, unicode_literals
 
 import scipy.stats as st
 from numpy import ascontiguousarray
@@ -35,7 +35,7 @@ class DeltaProdLik(object):
     def mean(self, x):
         return x
 
-    def sample(self, x, random_state=None): # pylint: disable=W0613
+    def sample(self, x, random_state=None):  # pylint: disable=W0613
         return x
 
     @property
