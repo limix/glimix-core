@@ -97,8 +97,7 @@ class ExpFamGP(EP, FunctionReduce):
             self._params_update()
             lml = self._lml()
         except (ValueError, LinAlgError) as e:
-            print(e)
-            print("value: returning large value.\n")
+            self._logger.info(str(e))
             lml = -1 / epsilon.small
         return lml
 
@@ -138,7 +137,6 @@ class ExpFamGP(EP, FunctionReduce):
 
             return grad
         except (ValueError, LinAlgError) as e:
-            print(e)
-            print("gradient: returning large value.\n")
+            self._logger.info(str(e))
             v = self.variables().select(fixed=False)
             return {i: -sign(v.get(i).value) / epsilon.small for i in v}

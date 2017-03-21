@@ -5,7 +5,7 @@ from numpy.random import RandomState
 from numpy.testing import assert_array_less, assert_equal, assert_allclose
 
 from limix_inference.cov import EyeCov, LinearCov, SumCov
-from limix_inference.lik import BinomialLik, PoissonLik
+from limix_inference.lik import BinomialProdLik, PoissonProdLik
 from limix_inference.link import LogitLink, LogLink
 from limix_inference.mean import OffsetMean
 from limix_inference.random import (GGPSampler, GPSampler, bernoulli_sample,
@@ -15,14 +15,14 @@ from limix_inference.random import (GGPSampler, GPSampler, bernoulli_sample,
 def test_binomial_sampler():
     random = RandomState(4503)
     link = LogitLink()
-    binom = BinomialLik(12, link)
+    binom = BinomialProdLik(12, link)
     assert_equal(binom.sample(0, random), 7)
 
 
 def test_poisson_sampler():
     random = RandomState(4503)
     link = LogLink()
-    poisson = PoissonLik(link)
+    poisson = PoissonProdLik(link)
     assert_equal(poisson.sample(0, random), 1)
     assert_equal(poisson.sample(0, random), 0)
     assert_equal(poisson.sample(0, random), 2)
@@ -35,7 +35,7 @@ def test_GGPSampler_poisson():
     random = RandomState(4503)
     X = random.randn(10, 15)
     link = LogLink()
-    lik = PoissonLik(link)
+    lik = PoissonProdLik(link)
 
     mean = OffsetMean()
     mean.offset = 1.2
@@ -77,7 +77,7 @@ def test_GGPSampler_binomial():
     random = RandomState(4503)
     X = random.randn(10, 15)
     link = LogitLink()
-    lik = BinomialLik(5, link)
+    lik = BinomialProdLik(5, link)
 
     mean = OffsetMean()
     mean.offset = 1.2
@@ -106,7 +106,7 @@ def test_GGPSampler_binomial():
 
     cov = SumCov([cov1, cov2])
 
-    lik = BinomialLik(100, link)
+    lik = BinomialProdLik(100, link)
     sampler = GGPSampler(lik, mean, cov)
     assert_equal(
         sampler.sample(random), [56, 56, 55, 51, 59, 45, 47, 43, 51, 38])

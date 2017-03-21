@@ -39,6 +39,7 @@ def test_binomial_prod_lik():
     random = RandomState(0)
 
     lik = BinomialProdLik([6, 2, 3], ProbitLink())
+    assert_allclose(lik.ntrials, [6, 2, 3])
 
     assert lik.name == 'Binomial'
 

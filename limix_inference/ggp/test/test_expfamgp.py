@@ -72,7 +72,3 @@ def test_expfam_ep_optimize():
     ep.feed().maximize(progress=False)
     assert_allclose(data['cov_right'].scale, 4.165865119892221e-06)
     assert_allclose(data['mean'].offset, 1.0326586373049373)
-
-
-if __name__ == '__main__':
-    __import__('pytest').main([__file__, '-s'])

@@ -3,25 +3,8 @@
 Likelihoods
 ***********
 
-- Single likelihoods: :class:`.DeltaLik`, :class:`.BernoulliLik`,
-  :class:`.BinomialLik`, and :class:`.PoissonLik`.
 - Likelihood products: :class:`.DeltaProdLik`, :class:`.BernoulliProdLik`,
   :class:`.BinomialProdLik`, and :class:`.PoissonProdLik`.
-
-Single likelihoods
-^^^^^^^^^^^^^^^^^^
-
-.. autoclass:: DeltaLik
-  :members:
-
-.. autoclass:: BernoulliLik
-  :members:
-
-.. autoclass:: BinomialLik
-  :members:
-
-.. autoclass:: PoissonLik
-  :members:
 
 Likelihood products
 ^^^^^^^^^^^^^^^^^^^
@@ -40,11 +23,9 @@ Likelihood products
 
 """
 
-from .expfam import (DeltaLik, BernoulliLik, BinomialLik, PoissonLik)
-from .prod import (DeltaProdLik, BernoulliProdLik, BinomialProdLik,
+from .prod import (BernoulliProdLik, BinomialProdLik, DeltaProdLik,
                    PoissonProdLik)
 
 __all__ = [
-    'DeltaLik', 'BernoulliLik', 'BinomialLik', 'PoissonLik',
     'DeltaProdLik', 'BernoulliProdLik', 'BinomialProdLik', 'PoissonProdLik'
 ]
