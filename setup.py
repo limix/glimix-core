@@ -23,7 +23,7 @@ def setup_package():
 
     setup_requires = ['ncephes>=1.0.21'] + pytest_runner
     install_requires = [
-        'scipy', 'ncephes>=1.0.21', 'numpy', 'numpy-sugar>=1.0.26',
+        'scipy', 'ncephes>=1.0.21', 'numpy', 'numpy-sugar[numba]>=1.0.26',
         'scipy-sugar>=1.0.1', 'optimix>=1.2.3', 'cachetools>=2.0', 'tqdm>=4',
         'liknorm-py>=1.0.2'
     ]
