@@ -22,7 +22,7 @@ class SumCov(FunctionReduce):
         r"""Sum covariance function evaluated at `(f_0, f_1, ...)`."""
         return add.reduce(list(values.values()))
 
-    def gradient_reduce(self, _, gradients):
+    def gradient_reduce(self, _, gradients): # pylint: disable=R0201
         r"""Sum of covariance function derivatives.
 
         Returns:

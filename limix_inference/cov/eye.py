@@ -1,17 +1,8 @@
 from __future__ import division
 
-from numpy import exp
-from numpy import log, squeeze
-from numpy import eye
-from numpy import ix_
-from numpy import isscalar
-from numpy import ascontiguousarray
-from numpy import atleast_1d
-from numpy import asarray, dot
-from numpy import newaxis, transpose
+from numpy import asarray, exp, log, newaxis, atleast_1d
 
-from optimix import Function
-from optimix import Scalar
+from optimix import Function, Scalar
 
 
 class EyeCov(Function):
@@ -26,6 +17,7 @@ class EyeCov(Function):
     where :math:`s` is the scale parameter and :math:`\delta` is the Kronecker
     delta.
     """
+
     def __init__(self):
         Function.__init__(self, logscale=Scalar(0.0))
 
@@ -56,9 +48,6 @@ class EyeCov(Function):
         return v.reshape(x0.shape + x1.shape)
 
     def gradient(self, x0, x1):
-        return dict(logscale=self._derivative_logscale(x0, x1))
-
-    def _derivative_logscale(self, x0, x1):
         r"""Derivative of the covariance function evaluated at `(x0, x1)`.
 
         Derivative of the covariance function over :math:`\log(s)`.
@@ -70,4 +59,4 @@ class EyeCov(Function):
         Returns:
             :math:`s \delta[\mathrm x_0 = \mathrm x_1]`.
         """
-        return self.value(x0, x1)
+        return dict(logscale=self.value(x0, x1))
