@@ -13,42 +13,31 @@ matrix:
     env: NUMBA="false" "PATH=~/bin:$PATH"
   - python: 2.7
     compiler: clang-3.8
-    env: NUMBA="true" LLVM_VERSION="3.8" CXX="clang++-3.8" LLVM_CONFIG="llvm-config-3.8"
-      "PATH=~/bin:$PATH"
+    env: NUMBA="true" LLVM_VERSION="3.8" CXX="clang++-3.8" LLVM_CONFIG="llvm-config-3.8" "PATH=~/bin:$PATH"
   - python: 3.5
     compiler: clang-3.8
-    env: NUMBA="true" LLVM_VERSION="3.8" CXX="clang++-3.8" LLVM_CONFIG="llvm-config-3.8"
-      "PATH=~/bin:$PATH"
+    env: NUMBA="true" LLVM_VERSION="3.8" CXX="clang++-3.8" LLVM_CONFIG="llvm-config-3.8" "PATH=~/bin:$PATH"
   - python: 3.6
     compiler: clang-3.8
-    env: NUMBA="true" LLVM_VERSION="3.8" CXX="clang++-3.8" LLVM_CONFIG="llvm-config-3.8"
-      "PATH=~/bin:$PATH"
+    env: NUMBA="true" LLVM_VERSION="3.8" CXX="clang++-3.8" LLVM_CONFIG="llvm-config-3.8" "PATH=~/bin:$PATH"
 before_install:
-- |
-  if [ "${NUMBA}" == "true" ]; then
-    travis/install_clang38.sh;
-    travis/install_llvmlite.sh;
-  fi
-- travis_retry travis/install_pandoc.sh
-- travis/install_liknorm.sh
+  - >
+    if [ "${NUMBA}" == "true" ]; then
+      travis/install_clang38.sh;
+      travis/install_llvmlite.sh;
+    fi
+  - travis_retry travis/install_pandoc.sh
+  - travis/install_liknorm.sh
 script:
-- python setup.py sdist
-- |
-  if [ "${NUMBA}" == "true" ]; then
-    pip install dist/`ls dist | grep -i -E '\.(gz)$' | head -1`[numba] -vvv;
-  else
-    pip install dist/`ls dist | grep -i -E '\.(gz)$' | head -1` -vvv;
-  fi
-- pushd /
-- python -c "import sys; import limix_inference; sys.exit(limix_inference.test())"
-- popd
+  - python setup.py sdist
+  - >
+    if [ "${NUMBA}" == "true" ]; then
+      pip install dist/`ls dist | grep -i -E '\.(gz)$' | head -1`[numba] -vvv;
+    else
+      pip install dist/`ls dist | grep -i -E '\.(gz)$' | head -1` -vvv;
+    fi
+  - pushd /
+  - python -c "import sys; import limix_inference; sys.exit(limix_inference.test())"
+  - popd
 notifications:
   email: false
-deploy:
-  provider: pypi
-  user: dhorta
-  password:
-    secure: T5/oVMKgzegpUgjdVTjZP1DCy382ig6HoTOzp2HxyOQZaZJTgwhdiJfmmDDLPaYUCAPbmwF5BZBtIFq1aEaD1Gm68gE2WNNwcgVk4bTprC8WQVTpu2buXs65v24qGrO9AycY7MKhdKS7LWabf1kQzQdVpKaVEsHNDMhp2qZxK5OTnttlaVcbx5vZgpwlWArwI9tlCDU6Pfciyzt0iGXj7CtPrc1lQA6zDDDDoZSk3pmkW1Gm4iDEWru52QsA7fUDkcPvft9Pgubq1PaAek9BFvvSuNY74Db+FQ0iEfb9fVVoxQzWqQwCXPjZL7F60fr5eI988GnsN8nZVcs2euIBO6dYrHKroGf7OyWumBb7wJT2YItTGKOpdPfuzM14PJdKjQsSFQaD1y4pUE1CMFBWd2j0LTnfXIyq4+7NyijPBF+V0jX0NnRyBhzsFCcNUg2R9WZscKUXwY8pnYkbDjw0n7t9YKrKZXoQ9IN6gRI75tOowEyqwnqU3J0Y09vJQqIImmyUF2iSHk+u8vmnek72nn8aTtwh4kvsfMl0mTP88quwWO5YzPvY6bpYiEVh8qfuznRnjdU5xMfZYFhTUNKVJsDK4pMOUE+N4BQh/ljx9G0lPGiB4Y706XQLd55faq4JMn2ASCDrHc/zAUZK0a8JSWmseh7Ih1W5ybCxvUzkOWk=
-  on:
-    repo: glimix/limix-inference
-    branch: 1.1.x
