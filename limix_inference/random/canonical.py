@@ -186,10 +186,6 @@ def _stdnorm(X, axis=None, out=None):
 
     out -= m
 
-    if out.ndim == 1:
-        if s > 0:
-            out /= s
-    else:
-        out[..., ok] /= s[ok]
+    out[..., ok] /= s[ok]
 
     return out
