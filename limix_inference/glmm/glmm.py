@@ -178,9 +178,10 @@ class GLMM(EP, Function):
             dS0 = self._eigval_derivative_over_logitdelta()
             dS1 = self._eigval_derivative_over_logscale()
 
-            grad = [self._lml_derivative_over_cov((self._QS[0], dS0))]
-            grad += [self._lml_derivative_over_cov((self._QS[0], dS1))]
-            grad += [self._lml_derivative_over_mean(self._X)]
+            grad = dict()
+            grad['logitdelta'] = self._lml_derivative_over_cov((self._QS[0], dS0))
+            grad['logscale'] = self._lml_derivative_over_cov((self._QS[0], dS1))
+            grad['beta'] = self._lml_derivative_over_mean(self._X)
 
             return grad
         except (ValueError, LinAlgError) as e:

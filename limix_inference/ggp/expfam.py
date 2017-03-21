@@ -2,13 +2,13 @@ from __future__ import absolute_import, division, unicode_literals
 
 import logging
 
+from liknorm import LikNormMachine
 from numpy import sign
 from numpy.linalg import LinAlgError
 from numpy_sugar import epsilon
 from numpy_sugar.linalg import economic_qs
-from optimix import FunctionReduce
 
-from liknorm import LikNormMachine
+from optimix import FunctionReduce
 
 from ..ep import EP
 
@@ -56,7 +56,7 @@ class ExpFamGP(EP, FunctionReduce):
 
     def __init__(self, y, lik_name, mean, cov):
         super(ExpFamGP, self).__init__()
-        FunctionReduce.__init__(self, mean=mean, cov=cov)
+        FunctionReduce.__init__(self, [mean, cov], name='ExpFamGP')
 
         self._logger = logging.getLogger(__name__)
 
@@ -78,7 +78,8 @@ class ExpFamGP(EP, FunctionReduce):
         eta = self._cav.eta
         self._machine.moments(self._y, eta, tau, self._moments)
 
-    def value(self, mean, cov):
+    # def value(self, mean, cov):
+    def value_reduce(self, values):  # pylint: disable=R0201
         r"""Log of the marginal likelihood.
 
         Args:
@@ -88,6 +89,8 @@ class ExpFamGP(EP, FunctionReduce):
         Returns:
             float: log of the marginal likelihood.
         """
+        mean = values['ExpFamGP[0]']
+        cov = values['ExpFamGP[1]']
         QS = economic_qs(cov)
         try:
             self._initialize(mean, (QS[0][0], QS[1]))
@@ -99,7 +102,8 @@ class ExpFamGP(EP, FunctionReduce):
             lml = -1 / epsilon.small
         return lml
 
-    def gradient(self, mean, cov, gmean, gcov):  # pylint: disable=W0221
+    # def gradient(self, mean, cov, gmean, gcov):  # pylint: disable=W0221
+    def gradient_reduce(self, values, gradients):
         r"""Gradient of the log of the marginal likelihood.
 
         Args:
@@ -112,22 +116,29 @@ class ExpFamGP(EP, FunctionReduce):
             list: derivatives.
         """
 
+        mean = values['ExpFamGP[0]']
+        cov = values['ExpFamGP[1]']
+        gmean = gradients['ExpFamGP[0]']
+        gcov = gradients['ExpFamGP[1]']
+
         try:
             QS = economic_qs(cov)
             self._initialize(mean, (QS[0][0], QS[1]))
             self._params_update()
 
-            grad = []
+            grad = dict()
 
-            for gc in gcov:
-                QS = economic_qs(gc)
-                grad += [self._lml_derivative_over_cov((QS[0][0], QS[1]))]
+            for n, g in iter(gmean.items()):
+                grad['ExpFamGP[0].' + n] = self._lml_derivative_over_mean(g)
 
-            grad += [self._lml_derivative_over_mean(gm) for gm in gmean]
+            for n, g in iter(gcov.items()):
+                QS = economic_qs(g)
+                grad['ExpFamGP[1].' + n] = self._lml_derivative_over_cov(
+                    (QS[0][0], QS[1]))
 
             return grad
         except (ValueError, LinAlgError) as e:
             print(e)
             print("gradient: returning large value.\n")
             v = self.variables().select(fixed=False)
-            return [-sign(v.get(i).value) / epsilon.small for i in v]
+            return {i: -sign(v.get(i).value) / epsilon.small for i in v}

@@ -10,6 +10,7 @@ from limix_inference.lik import BernoulliProdLik
 from limix_inference.link import LogitLink
 from limix_inference.mean import OffsetMean
 from limix_inference.random import GGPSampler
+from optimix import check_grad
 
 
 def _get_data():
@@ -61,21 +62,7 @@ def test_expfam_ep_function():
     data = _get_data()
     ep = ExpFamGP((data['y'], ), 'bernoulli', data['mean'], data['cov'])
 
-    grad = ep.feed().gradient()
-
-    x0 = ep.variables().flatten()
-    f0 = ep.feed().value()
-    step = 1e-4
-
-    emp_grad = []
-    for i, v in enumerate(x0):
-        x1 = x0.copy()
-        x1[i] = v + step
-        ep.variables().from_flat(x1)
-        f1 = ep.feed().value()
-        emp_grad.append((f1 - f0) / step)
-
-    assert_allclose(grad, emp_grad, rtol=1e-3)
+    assert_allclose(check_grad(ep.feed()), 0, atol=1e-5)
 
 
 def test_expfam_ep_optimize():

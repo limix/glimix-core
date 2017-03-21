@@ -5,6 +5,7 @@ from numpy_sugar.linalg import economic_qs
 from limix_inference.example import linear_eye_cov
 from limix_inference.glmm import GLMM
 
+from optimix import check_grad
 
 def test_glmm():
     random = RandomState(0)
@@ -16,48 +17,35 @@ def test_glmm():
     ntri = random.randint(1, 30, 100)
     nsuc = [random.randint(0, i) for i in ntri]
 
-    step = 1e-7
+    glmm = GLMM((nsuc, ntri), 'binomial', X, QS)
+
+    assert_allclose(glmm.value(), -272.1213895386019)
+    assert_allclose(check_grad(glmm), 0, atol=1e-4)
+
+def test_glmm_optimize():
+    random = RandomState(0)
+    X = random.randn(100, 5)
+    K = linear_eye_cov().feed().value()
+    QS = economic_qs(K)
+    QS = (QS[0][0], QS[1])
+
+    ntri = random.randint(1, 30, 100)
+    nsuc = [random.randint(0, i) for i in ntri]
 
     glmm = GLMM((nsuc, ntri), 'binomial', X, QS)
-    f0 = glmm.value()
-    g0 = glmm.gradient()[0]
-    glmm.set('logitdelta', glmm.variables().get('logitdelta').value + step)
-    f1 = glmm.value()
-    assert_allclose(g0, (f1 - f0) / step, rtol=1e-4)
 
-    glmm = GLMM((nsuc, ntri), 'binomial', X, QS)
-    f0 = glmm.value()
-    g0 = glmm.gradient()[1]
-    glmm.set('logscale', glmm.variables().get('logscale').value + step)
-    f1 = glmm.value()
-    assert_allclose(g0, (f1 - f0) / step, rtol=1e-4)
+    assert_allclose(glmm.value(), -272.1213895386019)
+    glmm.fix('beta')
+    glmm.fix('logscale')
 
-    for i in range(5):
-        glmm = GLMM((nsuc, ntri), 'binomial', X, QS)
-        f0 = glmm.value()
-        g0 = glmm.gradient()[2][i]
-        beta = glmm.variables().get('beta').value
-        beta[i] += step
-        glmm.set('beta', beta)
-        f1 = glmm.value()
-        assert_allclose(g0, (f1 - f0) / step, rtol=1e-4)
+    glmm.feed().maximize(progress=False)
+    assert_allclose(glmm.value(), -271.367864630782)
 
-# def test_glmm_optimize():
-#     random = RandomState(0)
-#     X = random.randn(100, 5)
-#     K = linear_eye_cov().feed().value()
-#     QS = economic_qs(K)
-#     QS = (QS[0][0], QS[1])
-#
-#     ntri = random.randint(1, 30, 100)
-#     nsuc = [random.randint(0, i) for i in ntri]
-#
-#     glmm = GLMM((nsuc, ntri), 'binomial', X, QS)
-#     # f0 = glmm.value()
-#     glmm.fix('beta')
-#     glmm.fix('logscale')
-#     from numpy import linspace
-#     glmm.feed().maximize()
-#     # for s in linspace(0.1, 10):
-#     #     glmm.scale = s
-#     #     print("%f %f %f" % (s, glmm.feed().value(), glmm.feed().gradient()[0]))
+    glmm.unfix('beta')
+    glmm.unfix('logscale')
+
+    glmm.feed().maximize(progress=False)
+    assert_allclose(glmm.value(), -266.9517518211878)
+
+if __name__ == '__main__':
+    __import__('pytest').main([__file__, '-s'])
