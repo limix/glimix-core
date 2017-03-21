@@ -1,6 +1,8 @@
 from __future__ import division
 
-from numpy import arange
+import pytest
+
+from numpy import arange, inf, nan, zeros
 from numpy.random import RandomState
 from numpy.testing import assert_allclose
 
@@ -99,5 +101,31 @@ def test_gp_maximize():
     assert_allclose(gp.feed().value(), -79.8992122415)
 
 
-if __name__ == '__main__':
-    __import__('pytest').main([__file__, '-s'])
+def test_lmm_nonfinite_phenotype():
+    random = RandomState(94584)
+    N = 50
+    X = random.randn(N, 100)
+    offset = 0.5
+
+    mean = OffsetMean()
+    mean.offset = offset
+    mean.fix('offset')
+    mean.set_data(arange(N))
+
+    cov = LinearCov()
+    cov.scale = 1.0
+    cov.set_data((X, X))
+
+    y = zeros(N)
+
+    y[0] = nan
+    with pytest.raises(ValueError):
+        GP(y, mean, cov)
+
+    y[0] = -inf
+    with pytest.raises(ValueError):
+        GP(y, mean, cov)
+
+    y[0] = +inf
+    with pytest.raises(ValueError):
+        GP(y, mean, cov)

@@ -10,7 +10,3 @@ def test_eyecov_optimix():
     a = Assertion(EyeCov, item0, item1, 0.0, logscale=0.0)
     a.assert_layout()
     a.assert_gradient()
-
-
-if __name__ == '__main__':
-    __import__('pytest').main([__file__, '-s'])

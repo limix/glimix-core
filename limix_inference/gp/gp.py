@@ -1,10 +1,8 @@
 from __future__ import division
 
-from numpy import log
-from numpy import pi
-from numpy import var
-from numpy.linalg import solve
-from numpy.linalg import slogdet
+from numpy import log, pi
+from numpy.linalg import slogdet, solve
+from numpy_sugar import is_all_finite
 
 from optimix import FunctionReduce
 
@@ -45,11 +43,13 @@ class GP(FunctionReduce):
         >>> print('After: %.4f' % gp.feed().value())
         After: -163.4192
     """
-    def __init__(self, y, mean, cov):
-        if var(y) < 1e-8:
-            raise ValueError("The phenotype variance is too low: %e." % var(y))
 
+    def __init__(self, y, mean, cov):
         super(GP, self).__init__([mean, cov], name='GP')
+
+        if not is_all_finite(y):
+            raise ValueError("There are non-finite values in the phenotype.")
+
         self._y = y
         self._cov = cov
         self._mean = mean
@@ -60,9 +60,10 @@ class GP(FunctionReduce):
 
     def _lml_gradient_cov(self, mean, cov, gcov):
         Kiym = solve(cov, self._y - mean)
-        return (-solve(cov, gcov).diagonal().sum() + Kiym.dot(gcov.dot(Kiym)))/2
+        return (
+            -solve(cov, gcov).diagonal().sum() + Kiym.dot(gcov.dot(Kiym))) / 2
 
-    def value_reduce(self, values): # pylint: disable=R0201
+    def value_reduce(self, values):  # pylint: disable=R0201
         mean = values['GP[0]']
         cov = values['GP[1]']
         ym = self._y - mean

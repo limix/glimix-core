@@ -1,21 +1,19 @@
 from __future__ import division
 
+import pytest
+from numpy import arange, concatenate, inf, nan, newaxis, ones, sqrt, zeros
 from numpy.random import RandomState
-from numpy import ones, concatenate, sqrt
-from numpy import arange, newaxis, zeros
 from numpy.testing import assert_allclose
-
 from numpy_sugar.linalg import economic_qs_linear
 
-from limix_inference.lmm import LMM
+from limix_inference.cov import EyeCov, LinearCov, SumCov
 from limix_inference.lik import DeltaProdLik
-from limix_inference.cov import LinearCov
-from limix_inference.cov import EyeCov
-from limix_inference.cov import SumCov
+from limix_inference.lmm import LMM
 from limix_inference.mean import OffsetMean
 from limix_inference.random import GGPSampler
 
-def test_fastlmm_fast_scan(): # pylint: disable=R0914
+
+def test_fastlmm_fast_scan():  # pylint: disable=R0914
     random = RandomState(9458)
     N = 500
     X = random.randn(N, N + 1)
@@ -67,6 +65,7 @@ def test_fastlmm_fast_scan(): # pylint: disable=R0914
     lmls = fast_scanner.fast_scan(markers)[0]
     assert_allclose(lmls, [lml0, lml1])
 
+
 def test_lmm_learn():
     random = RandomState(9458)
     N = 500
@@ -103,6 +102,7 @@ def test_lmm_learn():
     assert_allclose(lmm.beta[0], 0.8997652129631661, rtol=1e-5)
     assert_allclose(lmm.genetic_variance, 1.7303981309775553, rtol=1e-5)
     assert_allclose(lmm.environmental_variance, 1.2950028351268132, rtol=1e-5)
+
 
 def test_fastlmm_learn_fix():
     random = RandomState(9458)
@@ -166,6 +166,7 @@ def test_fastlmm_learn_fix():
     assert_allclose(lmm.environmental_variance, 1.29500280131)
     assert_allclose(lmm.lml(), -948.798268063)
 
+
 def test_lmm_unique_outcome():
     random = RandomState(9458)
     N = 50
@@ -184,5 +185,21 @@ def test_lmm_unique_outcome():
     assert_allclose(lmm.genetic_variance, 0, atol=1e-7)
     assert_allclose(lmm.environmental_variance, 0, atol=1e-7)
 
-if __name__ == '__main__':
-    __import__('pytest').main([__file__, '-s'])
+
+def test_lmm_nonfinite_phenotype():
+    random = RandomState(9458)
+    N = 50
+    QS = economic_qs_linear(random.randn(N, N + 1))
+    y = zeros(N)
+
+    y[0] = nan
+    with pytest.raises(ValueError):
+        LMM(y, ones((N, 1)), QS)
+
+    y[0] = -inf
+    with pytest.raises(ValueError):
+        LMM(y, ones((N, 1)), QS)
+
+    y[0] = +inf
+    with pytest.raises(ValueError):
+        LMM(y, ones((N, 1)), QS)
