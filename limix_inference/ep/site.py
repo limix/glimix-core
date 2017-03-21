@@ -9,5 +9,5 @@ class Site(object): # pylint: disable=R0903
         self.eta = zeros(n)
 
     def update(self, mean, variance, cav):
-        self.tau[:] = maximum(1.0 / variance - cav.tau, 0)
-        self.eta[:] = mean / variance - cav.eta
+        self.tau[:] = maximum(1.0 / variance - cav['tau'], 0)
+        self.eta[:] = mean / variance - cav['eta']

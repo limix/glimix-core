@@ -3,12 +3,11 @@ from __future__ import absolute_import, division, unicode_literals
 import logging
 from math import fsum
 
-from numpy import dot, empty, inf, isfinite, log, maximum
+from numpy import dot, empty, inf, isfinite, log, maximum, zeros
 from numpy.linalg import norm
 from numpy_sugar import epsilon
 from numpy_sugar.linalg import cho_solve, ddot, dotd
 
-from .cavity import Cavity
 from .posterior import Posterior
 from .site import Site
 
@@ -68,7 +67,7 @@ class EP(object):  # pylint: disable=R0903
         self._site = Site(nsamples)
         self._psite = Site(nsamples)
 
-        self._cav = Cavity(nsamples)
+        self._cav = dict(tau=zeros(nsamples), eta=zeros(nsamples))
         self._posterior = Posterior(self._site)
         self._posterior.set_prior_mean(mean)
         self._posterior.set_prior_cov(QS)
@@ -86,8 +85,8 @@ class EP(object):  # pylint: disable=R0903
         Q, S = self._posterior.prior_cov()
         ttau = self._site.tau
         teta = self._site.eta
-        ctau = self._cav.tau
-        ceta = self._cav.eta
+        ctau = self._cav['tau']
+        ceta = self._cav['eta']
         m = self._posterior.prior_mean()
 
         TS = ttau + ctau
@@ -158,8 +157,8 @@ class EP(object):  # pylint: disable=R0903
             self._psite.tau[:] = self._site.tau
             self._psite.eta[:] = self._site.eta
 
-            self._cav.tau[:] = maximum(self._posterior.tau - self._site.tau, 0)
-            self._cav.eta[:] = self._posterior.eta - self._site.eta
+            self._cav['tau'][:] = maximum(self._posterior.tau - self._site.tau, 0)
+            self._cav['eta'][:] = self._posterior.eta - self._site.eta
             self._compute_moments()
 
             self._site.update(self._moments['mean'], self._moments['variance'],

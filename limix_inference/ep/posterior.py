@@ -2,7 +2,7 @@ from __future__ import division
 
 from numpy import dot, empty, sqrt
 from numpy import sum as npsum
-from numpy_sugar.linalg import cho_solve, ddot, dotd, economic_qs, sum2diag
+from numpy_sugar.linalg import cho_solve, ddot, dotd, sum2diag
 from scipy.linalg import cho_factor
 
 

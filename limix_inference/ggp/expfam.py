@@ -74,8 +74,8 @@ class ExpFamGP(EP, FunctionReduce):
             self._machine.finish()
 
     def _compute_moments(self):
-        tau = self._cav.tau
-        eta = self._cav.eta
+        tau = self._cav['tau']
+        eta = self._cav['eta']
         self._machine.moments(self._y, eta, tau, self._moments)
 
     # def value(self, mean, cov):
