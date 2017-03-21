@@ -1,5 +1,5 @@
 from numpy.random import RandomState
-from numpy.testing import assert_almost_equal
+from numpy.testing import assert_allclose
 
 from optimix import check_grad
 
@@ -13,7 +13,7 @@ def test_value():
     mean.effsizes = effsizes
 
     x = random.randn(5)
-    assert_almost_equal(mean.value(x), -0.956409566703)
+    assert_allclose(mean.value(x), -0.956409566703)
 
 
 def test_gradient():
@@ -21,18 +21,9 @@ def test_gradient():
     mean = LinearMean(5)
     effsizes = random.randn(5)
     mean.effsizes = effsizes
-
-    x = random.randn(5)
-
-    def func(x0):
-        mean.effsizes[0] = x0[0]
-        return mean.value(x)
-
-    def grad(x0):
-        mean.effsizes[0] = x0[0]
-        return [mean.derivative_effsizes(x)[0]]
-
-    assert_almost_equal(check_grad(func, grad, [1.2]), 0, decimal=6)
+    x = random.randn(2, 5)
+    mean.set_data(x)
+    assert_allclose(check_grad(mean.feed()), 0, atol=1e-6)
 
 
 if __name__ == '__main__':

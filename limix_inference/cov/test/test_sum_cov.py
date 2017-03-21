@@ -37,5 +37,6 @@ def test_gradient():
 
     assert_allclose(check_grad(cov.feed()), 0, atol=6)
 
+
 if __name__ == '__main__':
     __import__('pytest').main([__file__, '-s'])
