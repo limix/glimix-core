@@ -25,6 +25,12 @@ Identity covariance
 
 .. autoclass:: EyeCov
   :members:
+
+Free-form covariance
+^^^^^^^^^^^^^^^^^^^^
+
+.. autoclass:: FreeFormCov
+  :members:
 """
 
 from .linear import LinearCov
