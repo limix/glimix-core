@@ -1,22 +1,13 @@
+# pylint: disable=R0913
+
 from __future__ import division
 
-from numpy import sqrt, std, ascontiguousarray, arange
+from numpy import arange, ascontiguousarray, atleast_2d, sqrt, std
 
-from ..link import LogitLink
-from ..link import LogLink
-
-from ..lik import BernoulliProdLik
-from ..lik import BinomialProdLik
-from ..lik import PoissonProdLik
-
-from ..mean import OffsetMean
-from ..mean import LinearMean
-from ..mean import SumMean
-
-from ..cov import LinearCov
-from ..cov import SumCov
-from ..cov import EyeCov
-
+from ..cov import EyeCov, LinearCov, SumCov
+from ..lik import BernoulliProdLik, BinomialProdLik, PoissonProdLik
+from ..link import LogitLink, LogLink
+from ..mean import LinearMean, OffsetMean, SumMean
 from .ggp import GGPSampler
 
 
@@ -134,6 +125,7 @@ def poisson_sample(offset,
 
 
 def _causal_mean(causal_variants, causal_variance, random):
+    causal_variants = atleast_2d(causal_variants)
     causal_variants = _stdnorm(causal_variants, axis=0)
     causal_variants /= sqrt(causal_variants.shape[1])
     p = causal_variants.shape[1]

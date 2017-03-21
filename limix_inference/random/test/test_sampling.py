@@ -2,13 +2,13 @@ from __future__ import division
 
 from numpy import arange
 from numpy.random import RandomState
-from numpy.testing import assert_array_less, assert_equal
+from numpy.testing import assert_array_less, assert_equal, assert_allclose
 
 from limix_inference.cov import EyeCov, LinearCov, SumCov
 from limix_inference.lik import BinomialLik, PoissonLik
 from limix_inference.link import LogitLink, LogLink
 from limix_inference.mean import OffsetMean
-from limix_inference.random import (GGPSampler, bernoulli_sample,
+from limix_inference.random import (GGPSampler, GPSampler, bernoulli_sample,
                                     binomial_sample, poisson_sample)
 
 
@@ -69,6 +69,8 @@ def test_GGPSampler_poisson():
     cov2.scale = 100.
     sampler = GGPSampler(lik, mean, cov)
     assert_equal(sampler.sample(random), [0, 0, 0, 0, 1, 0, 0, 1196, 0, 0])
+
+    sampler.sample()
 
 
 def test_GGPSampler_binomial():
@@ -134,6 +136,16 @@ def test_canonical_binomial_sampler():
     y = binomial_sample(ntrials, -0.1, G, random_state=random)
     assert_array_less(y, [i + 1 for i in ntrials])
 
+    X = random.randn(len(ntrials))
+    y = binomial_sample(
+        ntrials, -0.1, G, causal_variants=X, random_state=random)
+    assert_array_less(y, [i + 1 for i in ntrials])
+
+    X = random.randn(len(ntrials), 2)
+    y = binomial_sample(
+        ntrials, -0.1, G, causal_variants=X, random_state=random)
+    assert_array_less(y, [i + 1 for i in ntrials])
+
 
 def test_canonical_poisson_sampler():
     random = RandomState(10)
@@ -143,5 +155,20 @@ def test_canonical_poisson_sampler():
     assert_array_less(y, [20] * len(y))
 
 
-if __name__ == '__main__':
-    __import__('pytest').main([__file__, '-s'])
+def test_GPSampler():
+    random = RandomState(4503)
+    X = random.randn(10, 15)
+
+    mean = OffsetMean()
+    mean.offset = 1.2
+    mean.set_data(arange(10), 'sample')
+    cov = LinearCov()
+    cov.set_data((X, X), 'sample')
+    sampler = GPSampler(mean, cov)
+
+    x = [
+        -1.34664027, 5.68720656, -6.01941814, 2.70860707, -1.81883975,
+        0.21338045, 5.16462597, -2.23134206, 5.49661095, 4.38526077
+    ]
+    assert_allclose(sampler.sample(random), x)
+    sampler.sample()
