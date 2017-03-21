@@ -1,5 +1,5 @@
 from numpy import full
-from numpy import ones
+from numpy import ones, asarray
 
 from optimix import Function
 from optimix import Scalar
@@ -19,30 +19,29 @@ class OffsetMean(Function):
     def __init__(self):
         Function.__init__(self, offset=Scalar(1.0))
 
-    def value(self, size):
-        r"""Offset function evaluated for `size` samples.
+    def value(self, x):
+        r"""Offset function evaluated at ``x``.
 
         Args:
-            size (int): sample size.
+            x (array_like): sample ids.
 
         Returns:
             :math:`o \mathbf 1`.
         """
-        return full(size, self.variables().get('offset').value)
+        x = asarray(x)
+        return full(x.shape, self.variables().get('offset').value)
 
-    def gradient(self, size):
-        return dict(offset=self._derivative_offset(size))
-
-    def _derivative_offset(self, size):
-        r"""Offset function derivative.
+    def gradient(self, x): # pylint: disable=R0201
+        r"""Offset function gradient.
 
         Args:
-            size (int): sample size.
+            x (array_like): sample ids.
 
         Returns:
             :math:`\mathbf 1`.
         """
-        return ones(size)
+        x = asarray(x)
+        return dict(offset=ones(x.shape))
 
     @property
     def offset(self):
