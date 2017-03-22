@@ -2,7 +2,7 @@ from __future__ import absolute_import, division, unicode_literals
 
 import logging
 
-from numpy import asarray, dot, exp, sign, zeros, log
+from numpy import asarray, dot, exp, sign, zeros, log, ndarray
 from numpy.linalg import LinAlgError
 from numpy_sugar import epsilon
 
@@ -86,6 +86,16 @@ class GLMM(EP, Function):
 
         self._y = tuple([asarray(i, float) for i in y])
         self._X = X
+
+        if not isinstance(QS, tuple):
+            raise ValueError("QS must be a tuple.")
+
+        if not isinstance(QS[0], ndarray):
+            raise ValueError("QS[0] has to be numpy.ndarray.")
+
+        if not isinstance(QS[1], ndarray):
+            raise ValueError("QS[1] has to be numpy.ndarray.")
+
         self._QS = QS
 
         self._machine = LikNormMachine(lik_name, 500)

@@ -1,3 +1,5 @@
+import pytest
+
 from numpy.random import RandomState
 from numpy.testing import assert_allclose
 from numpy_sugar.linalg import economic_qs
@@ -21,6 +23,18 @@ def test_glmm():
 
     assert_allclose(glmm.value(), -272.1213895386019)
     assert_allclose(check_grad(glmm), 0, atol=1e-4)
+
+def test_glmm_wrong_qs():
+    random = RandomState(0)
+    X = random.randn(10, 15)
+    K = linear_eye_cov().feed().value()
+    QS = economic_qs(K)
+
+    ntri = random.randint(1, 30, 10)
+    nsuc = [random.randint(0, i) for i in ntri]
+
+    with pytest.raises(ValueError):
+        glmm = GLMM((nsuc, ntri), 'binomial', X, QS)
 
 def test_glmm_optimize():
     random = RandomState(0)

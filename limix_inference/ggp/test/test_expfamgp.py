@@ -62,7 +62,7 @@ def test_expfam_ep_function():
     data = _get_data()
     ep = ExpFamGP((data['y'], ), 'bernoulli', data['mean'], data['cov'])
 
-    assert_allclose(check_grad(ep.feed()), 0, atol=1e-5)
+    assert_allclose(check_grad(ep.feed()), 0, atol=1e-4)
 
 
 def test_expfam_ep_optimize():
