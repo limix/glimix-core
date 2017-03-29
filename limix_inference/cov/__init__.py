@@ -3,10 +3,29 @@
 Covariance functions
 ********************
 
+- :class:`.FreeFormCov`
+- :class:`.GivenCov`
+- :class:`.EyeCov`
 - :class:`.LinearCov`
 - :class:`.SumCov`
-- :class:`.EyeCov`
-- :class:`.FreeFormCov`
+
+Free-form covariance
+^^^^^^^^^^^^^^^^^^^^
+
+.. autoclass:: FreeFormCov
+  :members:
+
+Given covariance
+^^^^^^^^^^^^^^^^
+
+.. autoclass:: GivenCov
+  :members:
+
+Identity covariance
+^^^^^^^^^^^^^^^^^^^
+
+.. autoclass:: EyeCov
+  :members:
 
 Linear covariance
 ^^^^^^^^^^^^^^^^^
@@ -19,23 +38,12 @@ Sum covariance
 
 .. autoclass:: SumCov
   :members:
-
-Identity covariance
-^^^^^^^^^^^^^^^^^^^
-
-.. autoclass:: EyeCov
-  :members:
-
-Free-form covariance
-^^^^^^^^^^^^^^^^^^^^
-
-.. autoclass:: FreeFormCov
-  :members:
 """
 
-from .linear import LinearCov
-from .sum import SumCov
 from .eye import EyeCov
 from .free import FreeFormCov
+from .given import GivenCov
+from .linear import LinearCov
+from .sum import SumCov
 
-__all__ = ['LinearCov', 'SumCov', 'EyeCov', 'FreeFormCov']
+__all__ = ['GivenCov', 'LinearCov', 'SumCov', 'EyeCov', 'FreeFormCov']

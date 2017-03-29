@@ -23,21 +23,21 @@ def setup_package():
 
     setup_requires = ['ncephes>=1.0.21'] + pytest_runner
     install_requires = [
-        'scipy', 'ncephes>=1.0.21', 'numpy', 'numpy-sugar[numba]>=1.0.26',
-        'scipy-sugar>=1.0.1', 'optimix>=1.2.3', 'cachetools>=2.0', 'tqdm>=4',
+        'scipy', 'ncephes>=1.0.21', 'numpy', 'numpy-sugar[numba]>=1.0.28',
+        'scipy-sugar>=1.0.1', 'optimix>=1.2.5', 'cachetools>=2.0', 'tqdm>=4',
         'liknorm-py>=1.0.2'
     ]
     tests_require = ['pytest']
 
     metadata = dict(
         name='limix-inference',
-        version='1.1.2',
+        version='1.1.4',
         maintainer="Limix Developers",
         maintainer_email="horta@ebi.ac.uk",
         license="MIT",
         description="Fast inference for Generalized Linear Mixed Models.",
         long_description=long_description,
-        url='https://github.com/glimix/limix-inference',
+        url='https://github.com/limix/limix-inference',
         packages=find_packages(),
         zip_safe=False,
         install_requires=install_requires,

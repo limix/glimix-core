@@ -1,24 +1,25 @@
 from __future__ import division
 
-from numpy import exp, log, stack
+from numpy import exp, log
 
 from optimix import Function, Scalar
 
 
-class LinearCov(Function):
-    r"""Linear covariance function.
+class GivenCov(Function):
+    r"""Given covariance function.
 
     The mathematical representation is
 
     .. math::
 
-        f(\mathrm x_0, \mathrm x_1) = s \mathrm x_0^\intercal \mathrm x_1
+        f(x_0, x_1) = s \mathrm K_{x0, x1}
 
-    where :math:`s` is the scale parameter.
+    where :math:`s` is the scale parameter and :math:`\mathrm K` is given.
     """
 
-    def __init__(self):
+    def __init__(self, K):
         Function.__init__(self, logscale=Scalar(0.0))
+        self._K = K
 
     @property
     def scale(self):
@@ -39,9 +40,7 @@ class LinearCov(Function):
         Returns:
             :math:`s \mathrm x_0^\intercal \mathrm x_1`.
         """
-        x0 = stack(x0, axis=0)
-        x1 = stack(x1, axis=0)
-        return self.scale * x0.dot(x1.T)
+        return self.scale * self._K[x0, :][..., x1]
 
     def gradient(self, x0, x1):
         r"""Derivative of the covariance function evaluated at `(x0, x1)`.
@@ -55,6 +54,4 @@ class LinearCov(Function):
         Returns:
             :math:`s \mathrm x_0^\intercal \mathrm x_1`.
         """
-        x0 = stack(x0, axis=0)
-        x1 = stack(x1, axis=0)
-        return dict(logscale=self.scale * x0.dot(x1.T))
+        return dict(logscale=self.scale * self._K[x0, :][..., x1])

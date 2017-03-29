@@ -2,12 +2,14 @@ from __future__ import absolute_import, division, unicode_literals
 
 import logging
 
-from numpy import asarray, dot, exp, sign, zeros, log, ndarray
+from numpy import asarray, dot, exp, zeros, log, ndarray, clip
 from numpy.linalg import LinAlgError
+
 from numpy_sugar import epsilon
 
 from liknorm import LikNormMachine
 from optimix import Function, Scalar, Vector
+from optimix.optimize import BadSolutionError
 
 from ..ep import EP
 
@@ -113,6 +115,26 @@ class GLMM(EP, Function):
     def mean(self):
         return dot(self._X, self.beta)
 
+    def fix(self, var_name):
+        if var_name == 'scale':
+            Function.fix(self, 'logscale')
+        elif var_name == 'delta':
+            Function.fix(self, 'logitdelta')
+        elif var_name == 'beta':
+            Function.fix(self, 'beta')
+        else:
+            raise ValueError("Unknown parameter name %s." % var_name)
+
+    def unfix(self, var_name):
+        if var_name == 'scale':
+            Function.unfix(self, 'logscale')
+        elif var_name == 'delta':
+            Function.unfix(self, 'logitdelta')
+        elif var_name == 'beta':
+            Function.unfix(self, 'beta')
+        else:
+            raise ValueError("Unknown parameter name %s." % var_name)
+
     @property
     def scale(self):
         return exp(self.variables().get('logscale').value)
@@ -125,9 +147,18 @@ class GLMM(EP, Function):
     def delta(self):
         return 1 / (1 + exp(-self.variables().get('logitdelta').value))
 
+    @delta.setter
+    def delta(self, v):
+        v = clip(v, epsilon.small, 1 - epsilon.small)
+        self.variables().get('logitdelta').value = log(v / (1 - v))
+
     @property
     def beta(self):
         return self.variables().get('beta').value
+
+    @beta.setter
+    def beta(self, v):
+        self.variables().get('beta').value = v
 
     def _eigval_derivative_over_logscale(self):
         x = self.variables().get('logscale').value
@@ -163,7 +194,7 @@ class GLMM(EP, Function):
             lml = self._lml()
         except (ValueError, LinAlgError) as e:
             self._logger.info(str(e))
-            lml = -1 / epsilon.small
+            raise BadSolutionError
         return lml
 
     def gradient(self):  # pylint: disable=W0221
@@ -185,13 +216,13 @@ class GLMM(EP, Function):
             dS0 = self._eigval_derivative_over_logitdelta()
             dS1 = self._eigval_derivative_over_logscale()
 
-            grad = dict()
-            grad['logitdelta'] = self._lml_derivative_over_cov((self._QS[0], dS0))
-            grad['logscale'] = self._lml_derivative_over_cov((self._QS[0], dS1))
-            grad['beta'] = self._lml_derivative_over_mean(self._X)
-
-            return grad
+            grad = [self._lml_derivative_over_cov((self._QS[0], dS0)),
+                    self._lml_derivative_over_cov((self._QS[0], dS1)),
+                    self._lml_derivative_over_mean(self._X)]
         except (ValueError, LinAlgError) as e:
             self._logger.info(str(e))
-            v = self.variables().select(fixed=False)
-            return [-sign(v.get(i).value) / epsilon.small for i in v]
+            raise BadSolutionError
+
+        return dict(logitdelta=grad[0],
+                    logscale=grad[1],
+                    beta=grad[2])
