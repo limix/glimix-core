@@ -1,11 +1,8 @@
 from __future__ import division
 
-from numpy import exp
-from numpy import log
-from numpy import stack
+from numpy import exp, log, stack
 
-from optimix import Scalar
-from optimix import Function
+from optimix import Function, Scalar
 
 
 class LinearCov(Function):
@@ -19,6 +16,7 @@ class LinearCov(Function):
 
     where :math:`s` is the scale parameter.
     """
+
     def __init__(self):
         Function.__init__(self, logscale=Scalar(0.0))
 

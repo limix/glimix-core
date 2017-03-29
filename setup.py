@@ -37,7 +37,7 @@ def setup_package():
         license="MIT",
         description="Fast inference for Generalized Linear Mixed Models.",
         long_description=long_description,
-        url='https://github.com/glimix/limix-inference',
+        url='https://github.com/limix/limix-inference',
         packages=find_packages(),
         zip_safe=False,
         install_requires=install_requires,
