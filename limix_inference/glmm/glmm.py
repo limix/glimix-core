@@ -48,29 +48,31 @@ class GLMM(EP, Function):
 
     .. doctest::
 
+        >>> from numpy import dot
         >>> from numpy.random import RandomState
         >>>
-        >>> from limix_inference.example import offset_mean
-        >>> from limix_inference.example import linear_eye_cov
-        >>> from limix_inference.ggp import ExpFamGP
-        >>> from limix_inference.lik import BernoulliProdLik
-        >>> from limix_inference.link import LogitLink
-        >>> from limix_inference.random import GGPSampler
+        >>> from numpy_sugar.linalg import economic_qs
         >>>
-        >>> random = RandomState(1)
+        >>> from limix_inference.glmm import GLMM
         >>>
-        >>> lik = BernoulliProdLik(LogitLink())
-        >>> mean = offset_mean()
-        >>> cov = linear_eye_cov()
+        >>> random = RandomState(0)
+        >>> nsamples = 50
         >>>
-        >>> y = GGPSampler(lik, mean, cov).sample(random)
+        >>> X = random.randn(50, 2)
+        >>> G = random.randn(50, 100)
+        >>> K = dot(G, G.T)
+        >>> ntrials = random.randint(1, 100, nsamples)
+        >>> successes = [random.randint(0, i + 1) for i in ntrials]
         >>>
-        >>> ggp = ExpFamGP(y, 'bernoulli', mean, cov)
-        >>> print('Before: %.4f' % ggp.feed().value())
-        Before: -65.8090
-        >>> ggp.feed().maximize(progress=False)
-        >>> print('After: %.2f' % ggp.feed().value())
-        After: -65.39
+        >>> y = (successes, ntrials)
+        >>>
+        >>> QS = economic_qs(K)
+        >>> glmm = GLMM(y, 'binomial', X, (QS[0][0], QS[1]))
+        >>> print('Before: %.4f' % glmm.feed().value())
+        Before: -210.3568
+        >>> glmm.feed().maximize(progress=False)
+        >>> print('After: %.2f' % glmm.feed().value())
+        After: -185.16
     """
 
     def __init__(self, y, lik_name, X, QS):
