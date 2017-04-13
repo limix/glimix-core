@@ -2,7 +2,7 @@ from __future__ import absolute_import, division, unicode_literals
 
 import logging
 
-from numpy import asarray, dot, exp, zeros, log, ndarray, clip
+from numpy import asarray, dot, exp, zeros, log, ndarray, clip, concatenate
 from numpy.linalg import LinAlgError
 
 from numpy_sugar import epsilon
@@ -67,7 +67,7 @@ class GLMM(EP, Function):
         >>> y = (successes, ntrials)
         >>>
         >>> QS = economic_qs(K)
-        >>> glmm = GLMM(y, 'binomial', X, (QS[0][0], QS[1]))
+        >>> glmm = GLMM(y, 'binomial', X, QS)
         >>> print('Before: %.4f' % glmm.feed().value())
         Before: -210.3568
         >>> glmm.feed().maximize(progress=False)
@@ -94,13 +94,14 @@ class GLMM(EP, Function):
         if not isinstance(QS, tuple):
             raise ValueError("QS must be a tuple.")
 
-        if not isinstance(QS[0], ndarray):
-            raise ValueError("QS[0] has to be numpy.ndarray.")
+        if not isinstance(QS[0], tuple):
+            raise ValueError("QS[0] must be a tuple.")
 
-        if not isinstance(QS[1], ndarray):
-            raise ValueError("QS[1] has to be numpy.ndarray.")
+        Q = concatenate(QS[0], axis=1)
+        S = zeros(Q.shape[0], dtype=float)
+        S[:QS[1].shape[0]] = QS[1]
 
-        self._QS = QS
+        self._QS = (Q, S)
 
         self._machine = LikNormMachine(lik_name, 500)
         self.set_nodata()
