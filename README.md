@@ -2,7 +2,6 @@
 
 [![PyPIl](https://img.shields.io/pypi/l/glimix-core.svg?style=flat-square)](https://pypi.python.org/pypi/glimix-core/)
 [![PyPIv](https://img.shields.io/pypi/v/glimix-core.svg?style=flat-square)](https://pypi.python.org/pypi/glimix-core/)
-[![Anaconda-Server Badge](https://anaconda.org/conda-forge/glimix-core/badges/version.svg)](https://anaconda.org/conda-forge/glimix-core)
 [![Documentation Status](https://readthedocs.org/projects/glimix-core/badge/?style=flat-square&version=1.2.x)](https://glimix-core.readthedocs.io/)
 
 
@@ -10,13 +9,7 @@ Fast inference for Generalized Linear Mixed Models.
 
 ## Install
 
-The recommended way of installing it is via
-[conda](http://conda.pydata.org/docs/index.html)
-```bash
-conda install -c conda-forge glimix-core
-```
-
-An alternative way would be via [pip](https://pypi.python.org/pypi/pip).
+You can install it via [pip](https://pypi.python.org/pypi/pip).
 First you need to install [liknorm](http://liknorm.readthedocs.io/en/latest/)
 library and then
 ```bash
