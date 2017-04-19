@@ -4,12 +4,12 @@ from numpy import arange, sqrt
 from numpy.random import RandomState
 from numpy.testing import assert_allclose
 
-from limix_inference.cov import EyeCov, LinearCov, SumCov
-from limix_inference.ggp import ExpFamGP
-from limix_inference.lik import BernoulliProdLik
-from limix_inference.link import LogitLink
-from limix_inference.mean import OffsetMean
-from limix_inference.random import GGPSampler
+from glimix_core.cov import EyeCov, LinearCov, SumCov
+from glimix_core.ggp import ExpFamGP
+from glimix_core.lik import BernoulliProdLik
+from glimix_core.link import LogitLink
+from glimix_core.mean import OffsetMean
+from glimix_core.random import GGPSampler
 from optimix import check_grad
 
 

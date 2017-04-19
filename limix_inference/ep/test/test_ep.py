@@ -1,6 +1,6 @@
 import pytest
 
-from limix_inference.ep import EP
+from glimix_core.ep import EP
 
 def test_ep():
     ep = EP()

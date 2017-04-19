@@ -4,11 +4,11 @@ Advanced
 
 This is intended to core developers.
 
-.. automodule:: limix_inference.ep
+.. automodule:: glimix_core.ep
   :members:
 
-.. automodule:: limix_inference.ep.posterior
+.. automodule:: glimix_core.ep.posterior
   :members:
 
-.. automodule:: limix_inference.ep.site
+.. automodule:: glimix_core.ep.site
   :members:

@@ -1,6 +1,6 @@
 from numpy.testing import assert_allclose
 
-from limix_inference.mean import LinearMean
+from glimix_core.mean import LinearMean
 from optimix.testing import Assertion
 
 

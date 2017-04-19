@@ -91,9 +91,9 @@ qthelp:
 	@echo
 	@echo "Build finished; now you can run "qcollectiongenerator" with the" \
 	      ".qhcp project file in $(BUILDDIR)/qthelp, like this:"
-	@echo "# qcollectiongenerator $(BUILDDIR)/qthelp/limix-inference.qhcp"
+	@echo "# qcollectiongenerator $(BUILDDIR)/qthelp/glimix-core.qhcp"
 	@echo "To view the help file:"
-	@echo "# assistant -collectionFile $(BUILDDIR)/qthelp/limix-inference.qhc"
+	@echo "# assistant -collectionFile $(BUILDDIR)/qthelp/glimix-core.qhc"
 
 .PHONY: applehelp
 applehelp:
@@ -110,8 +110,8 @@ devhelp:
 	@echo
 	@echo "Build finished."
 	@echo "To view the help file:"
-	@echo "# mkdir -p $$HOME/.local/share/devhelp/limix-inference"
-	@echo "# ln -s $(BUILDDIR)/devhelp $$HOME/.local/share/devhelp/limix-inference"
+	@echo "# mkdir -p $$HOME/.local/share/devhelp/glimix-core"
+	@echo "# ln -s $(BUILDDIR)/devhelp $$HOME/.local/share/devhelp/glimix-core"
 	@echo "# devhelp"
 
 .PHONY: epub

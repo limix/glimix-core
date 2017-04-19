@@ -6,12 +6,12 @@ from numpy.random import RandomState
 from numpy.testing import assert_allclose
 from numpy_sugar.linalg import economic_qs_linear
 
-from limix_inference.cov import EyeCov, LinearCov, SumCov
-from limix_inference.lik import DeltaProdLik
-from limix_inference.lmm import LMM
-from limix_inference.lmm.core import LMMCore
-from limix_inference.mean import OffsetMean
-from limix_inference.random import GGPSampler
+from glimix_core.cov import EyeCov, LinearCov, SumCov
+from glimix_core.lik import DeltaProdLik
+from glimix_core.lmm import LMM
+from glimix_core.lmm.core import LMMCore
+from glimix_core.mean import OffsetMean
+from glimix_core.random import GGPSampler
 
 
 def test_fastlmm_fast_scan():  # pylint: disable=R0914

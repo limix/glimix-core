@@ -5,9 +5,9 @@ from numpy.testing import assert_allclose
 from numpy import ascontiguousarray, sqrt, ones
 from numpy_sugar.linalg import economic_qs, economic_qs_linear
 
-from limix_inference.example import linear_eye_cov
-from limix_inference.glmm import GLMM
-from limix_inference.random import bernoulli_sample
+from glimix_core.example import linear_eye_cov
+from glimix_core.glmm import GLMM
+from glimix_core.random import bernoulli_sample
 
 from optimix import check_grad
 

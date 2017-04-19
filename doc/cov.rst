@@ -1,2 +1,2 @@
-.. automodule:: limix_inference.cov
+.. automodule:: glimix_core.cov
   :members:

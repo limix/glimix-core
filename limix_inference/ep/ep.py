@@ -36,11 +36,11 @@ class EP(object):  # pylint: disable=R0903
     via Expectation Propagation and provides its gradient.
 
     Attributes:
-        _site (:class:`limix_inference.ep.site.Site`): site-likelihood.
-        _psite (:class:`limix_inference.ep.site.Site`): previous
+        _site (:class:`glimix_core.ep.site.Site`): site-likelihood.
+        _psite (:class:`glimix_core.ep.site.Site`): previous
                                                         site-likelihood.
-        _cav (:class:`limix_inference.ep.cavity.Cavity`): cavity distribution.
-        _posterior (:class:`limix_inference.ep.posterior.Posterior`):
+        _cav (:class:`glimix_core.ep.cavity.Cavity`): cavity distribution.
+        _posterior (:class:`glimix_core.ep.posterior.Posterior`):
                                                         posterior distribution.
         _moments (dict): moments for KL moment matching.
     """

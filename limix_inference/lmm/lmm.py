@@ -38,7 +38,7 @@ class LMM(LMMCore, Function):
 
         >>> from numpy import array
         >>> from numpy_sugar.linalg import economic_qs_linear
-        >>> from limix_inference.lmm import LMM
+        >>> from glimix_core.lmm import LMM
         >>>
         >>> X = array([[1, 2], [3, -1]], float)
         >>> QS = economic_qs_linear(X)
@@ -55,7 +55,7 @@ class LMM(LMMCore, Function):
 
         >>> from numpy import array
         >>> from numpy_sugar.linalg import economic_qs_linear
-        >>> from limix_inference.lmm import LMM
+        >>> from glimix_core.lmm import LMM
         >>>
         >>> X = array([[1, 2], [3, -1]], float)
         >>> QS = economic_qs_linear(X)

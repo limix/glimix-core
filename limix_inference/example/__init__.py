@@ -1,8 +1,8 @@
 from numpy import arange, sqrt
 from numpy.random import RandomState
 
-from limix_inference.cov import EyeCov, LinearCov, SumCov
-from limix_inference.mean import OffsetMean
+from glimix_core.cov import EyeCov, LinearCov, SumCov
+from glimix_core.mean import OffsetMean
 
 
 def offset_mean():

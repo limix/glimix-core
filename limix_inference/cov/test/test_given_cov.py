@@ -1,7 +1,7 @@
 from numpy import dot
 from numpy.random import RandomState
 
-from limix_inference.cov import GivenCov
+from glimix_core.cov import GivenCov
 from optimix.testing import Assertion
 
 

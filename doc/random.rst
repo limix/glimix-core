@@ -1,2 +1,2 @@
-.. automodule:: limix_inference.random
+.. automodule:: glimix_core.random
   :members:

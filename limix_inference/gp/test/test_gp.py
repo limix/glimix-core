@@ -6,9 +6,9 @@ from numpy import arange, inf, nan, zeros
 from numpy.random import RandomState
 from numpy.testing import assert_allclose
 
-from limix_inference.cov import LinearCov
-from limix_inference.gp import GP
-from limix_inference.mean import LinearMean, OffsetMean
+from glimix_core.cov import LinearCov
+from glimix_core.gp import GP
+from glimix_core.mean import LinearMean, OffsetMean
 from optimix import check_grad
 
 

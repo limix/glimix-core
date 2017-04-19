@@ -1,4 +1,4 @@
-from limix_inference.mean import OffsetMean
+from glimix_core.mean import OffsetMean
 from optimix.testing import Assertion
 
 

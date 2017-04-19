@@ -1,2 +1,2 @@
-.. automodule:: limix_inference.lmm
+.. automodule:: glimix_core.lmm
   :members:

@@ -53,7 +53,7 @@ class GLMM(EP, Function):
         >>>
         >>> from numpy_sugar.linalg import economic_qs
         >>>
-        >>> from limix_inference.glmm import GLMM
+        >>> from glimix_core.glmm import GLMM
         >>>
         >>> random = RandomState(0)
         >>> nsamples = 50

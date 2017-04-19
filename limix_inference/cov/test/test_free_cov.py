@@ -3,7 +3,7 @@ from __future__ import division
 from numpy import zeros
 from numpy.testing import assert_allclose
 
-from limix_inference.cov import FreeFormCov
+from glimix_core.cov import FreeFormCov
 from optimix.testing import Assertion
 
 

@@ -24,10 +24,10 @@ class GP(FunctionReduce):
 
         >>> from numpy.random import RandomState
         >>>
-        >>> from limix_inference.example import offset_mean
-        >>> from limix_inference.example import linear_eye_cov
-        >>> from limix_inference.gp import GP
-        >>> from limix_inference.random import GPSampler
+        >>> from glimix_core.example import offset_mean
+        >>> from glimix_core.example import linear_eye_cov
+        >>> from glimix_core.gp import GP
+        >>> from glimix_core.random import GPSampler
         >>>
         >>> random = RandomState(94584)
         >>>

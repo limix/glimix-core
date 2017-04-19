@@ -3,8 +3,8 @@ from __future__ import unicode_literals
 from numpy.random import RandomState
 from numpy.testing import assert_allclose
 
-from limix_inference.link import ProbitLink
-from limix_inference.lik import (BernoulliProdLik, BinomialProdLik,
+from glimix_core.link import ProbitLink
+from glimix_core.lik import (BernoulliProdLik, BinomialProdLik,
                                  DeltaProdLik, PoissonProdLik)
 
 def test_delta_prod_lik():

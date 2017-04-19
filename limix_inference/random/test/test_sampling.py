@@ -4,11 +4,11 @@ from numpy import arange
 from numpy.random import RandomState
 from numpy.testing import assert_array_less, assert_equal, assert_allclose
 
-from limix_inference.cov import EyeCov, LinearCov, SumCov
-from limix_inference.lik import BinomialProdLik, PoissonProdLik
-from limix_inference.link import LogitLink, LogLink
-from limix_inference.mean import OffsetMean
-from limix_inference.random import (GGPSampler, GPSampler, bernoulli_sample,
+from glimix_core.cov import EyeCov, LinearCov, SumCov
+from glimix_core.lik import BinomialProdLik, PoissonProdLik
+from glimix_core.link import LogitLink, LogLink
+from glimix_core.mean import OffsetMean
+from glimix_core.random import (GGPSampler, GPSampler, bernoulli_sample,
                                     binomial_sample, poisson_sample)
 
 

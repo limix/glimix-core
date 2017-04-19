@@ -1,7 +1,7 @@
 import numpy as np
 from numpy.testing import assert_allclose
 
-from limix_inference.cov import LinearCov, SumCov
+from glimix_core.cov import LinearCov, SumCov
 from optimix import check_grad
 
 

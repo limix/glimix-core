@@ -1,2 +1,2 @@
-.. automodule:: limix_inference.mean
+.. automodule:: glimix_core.mean
   :members:

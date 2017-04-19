@@ -48,7 +48,7 @@ def bernoulli_sample(offset,
 
     .. doctest::
 
-        >>> from limix_inference.random import bernoulli_sample
+        >>> from glimix_core.random import bernoulli_sample
         >>> from numpy.random import RandomState
         >>> offset = 5
         >>> G = [[1, -1], [2, 1]]
@@ -78,7 +78,7 @@ def binomial_sample(ntrials,
 
     .. doctest::
 
-        >>> from limix_inference.random import binomial_sample
+        >>> from glimix_core.random import binomial_sample
         >>> from numpy.random import RandomState
         >>> ntrials = [5, 15]
         >>> offset = 0.5
@@ -108,7 +108,7 @@ def poisson_sample(offset,
 
     .. doctest::
 
-        >>> from limix_inference.random import poisson_sample
+        >>> from glimix_core.random import poisson_sample
         >>> from numpy.random import RandomState
         >>> offset = -0.5
         >>> G = [[0.5, -1], [2, 1]]

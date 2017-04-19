@@ -23,7 +23,7 @@ script:
 - python setup.py sdist
 - pip install dist/`ls dist | grep -i -E '\.(gz)$' | head -1`[numba] -vvv;
 - pushd /
-- python -c "import sys; import limix_inference; sys.exit(limix_inference.test())"
+- python -c "import sys; import glimix_core; sys.exit(glimix_core.test())"
 - popd
 notifications:
   email: false

@@ -1,6 +1,6 @@
 from numpy import array
 
-from limix_inference.cov import LinearCov
+from glimix_core.cov import LinearCov
 from optimix.testing import Assertion
 
 

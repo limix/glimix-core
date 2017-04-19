@@ -2,8 +2,8 @@ import pytest
 
 from numpy.testing import assert_allclose
 
-from limix_inference.link import ProbitLink, LogitLink, LogLink
-from limix_inference.link.link import Link
+from glimix_core.link import ProbitLink, LogitLink, LogLink
+from glimix_core.link.link import Link
 
 def test_probit_link():
     link = ProbitLink()

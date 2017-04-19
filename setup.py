@@ -30,14 +30,14 @@ def setup_package():
     tests_require = ['pytest']
 
     metadata = dict(
-        name='limix-inference',
+        name='glimix-core',
         version='1.1.6',
         maintainer="Limix Developers",
         maintainer_email="horta@ebi.ac.uk",
         license="MIT",
         description="Fast inference for Generalized Linear Mixed Models.",
         long_description=long_description,
-        url='https://github.com/limix/limix-inference',
+        url='https://github.com/limix/glimix-core',
         packages=find_packages(),
         zip_safe=False,
         install_requires=install_requires,

@@ -30,10 +30,10 @@ class GGPSampler(object): # pylint: disable=R0903
 
         >>> from numpy.random import RandomState
         >>>
-        >>> from limix_inference.example import offset_mean
-        >>> from limix_inference.example import linear_eye_cov
-        >>> from limix_inference.random import GGPSampler
-        >>> from limix_inference.lik import DeltaProdLik
+        >>> from glimix_core.example import offset_mean
+        >>> from glimix_core.example import linear_eye_cov
+        >>> from glimix_core.random import GGPSampler
+        >>> from glimix_core.lik import DeltaProdLik
         >>>
         >>> random = RandomState(1)
         >>>

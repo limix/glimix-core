@@ -1,6 +1,6 @@
 from __future__ import division
 
-from limix_inference.cov import EyeCov
+from glimix_core.cov import EyeCov
 from optimix.testing import Assertion
 
 

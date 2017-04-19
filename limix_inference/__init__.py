@@ -1,6 +1,6 @@
 """
 ***********************
-limix_inference package
+glimix_core package
 ***********************
 
 Fast inference for Generalized Linear Mixed Models.
@@ -15,14 +15,14 @@ from pkg_resources import get_distribution as _get_distribution
 from . import cov, ggp, glmm, gp, lik, link, lmm, mean, random
 
 try:
-    __version__ = _get_distribution('limix_inference').version
+    __version__ = _get_distribution('glimix_core').version
 except _DistributionNotFound:
     __version__ = 'unknown'
 
 
 def test():
     import os
-    p = __import__('limix_inference').__path__[0]
+    p = __import__('glimix_core').__path__[0]
     src_path = os.path.abspath(p)
     old_path = os.getcwd()
     os.chdir(src_path)

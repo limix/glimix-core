@@ -1,8 +1,8 @@
 from __future__ import unicode_literals
 
 try:
-    import limix_inference
-    version = limix_inference.__version__
+    import glimix_core
+    version = glimix_core.__version__
 except ImportError:
     version = 'unknown'
 
@@ -20,7 +20,7 @@ napoleon_google_docstring = True
 templates_path = ['_templates']
 source_suffix = '.rst'
 master_doc = 'index'
-project = 'limix-inference'
+project = 'glimix-core'
 # pylint: disable=W0622
 copyright = '2016, Danilo Horta'
 author = 'Danilo Horta'
@@ -30,19 +30,19 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 pygments_style = 'sphinx'
 todo_include_todos = False
 html_theme = 'default'
-htmlhelp_basename = 'limix-inferencedoc'
+htmlhelp_basename = 'glimix-coredoc'
 latex_elements = {}
 latex_documents = [
-    (master_doc, 'limix-inference.tex', 'limix-inference Documentation',
+    (master_doc, 'glimix-core.tex', 'glimix-core Documentation',
      'Danilo Horta', 'manual'),
 ]
 man_pages = [
-    (master_doc, 'limix-inference', 'limix-inference Documentation',
+    (master_doc, 'glimix-core', 'glimix-core Documentation',
      [author], 1)
 ]
 texinfo_documents = [
-    (master_doc, 'limix-inference', 'limix-inference Documentation',
-     author, 'limix-inference', 'One line description of project.',
+    (master_doc, 'glimix-core', 'glimix-core Documentation',
+     author, 'glimix-core', 'One line description of project.',
      'Miscellaneous'),
 ]
 intersphinx_mapping = {
