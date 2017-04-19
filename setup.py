@@ -23,15 +23,15 @@ def setup_package():
 
     setup_requires = ['ncephes>=1.0.21'] + pytest_runner
     install_requires = [
-        'scipy', 'ncephes>=1.0.21', 'numpy', 'numpy-sugar[numba]>=1.0.28',
+        'scipy', 'ncephes>=1.0.21', 'numpy', 'numpy-sugar[numba]>=1.0.32',
         'scipy-sugar>=1.0.1', 'optimix>=1.2.5', 'cachetools>=2.0', 'tqdm>=4',
-        'liknorm-py>=1.0.2'
+        'liknorm-py>=1.0.4'
     ]
     tests_require = ['pytest']
 
     metadata = dict(
         name='limix-inference',
-        version='1.1.4',
+        version='1.1.6',
         maintainer="Limix Developers",
         maintainer_email="horta@ebi.ac.uk",
         license="MIT",

@@ -16,7 +16,6 @@ def test_glmm():
     X = random.randn(100, 5)
     K = linear_eye_cov().feed().value()
     QS = economic_qs(K)
-    QS = (QS[0][0], QS[1])
 
     ntri = random.randint(1, 30, 100)
     nsuc = [random.randint(0, i) for i in ntri]
@@ -30,7 +29,7 @@ def test_glmm_wrong_qs():
     random = RandomState(0)
     X = random.randn(10, 15)
     K = linear_eye_cov().feed().value()
-    QS = economic_qs(K)
+    QS = [0, 1]
 
     ntri = random.randint(1, 30, 10)
     nsuc = [random.randint(0, i) for i in ntri]
@@ -43,7 +42,6 @@ def test_glmm_optimize():
     X = random.randn(100, 5)
     K = linear_eye_cov().feed().value()
     QS = economic_qs(K)
-    QS = (QS[0][0], QS[1])
 
     ntri = random.randint(1, 30, 100)
     nsuc = [random.randint(0, i) for i in ntri]
@@ -79,7 +77,7 @@ def test_glmm_bernoulli_problematic():
     S0 /= S0.mean()
 
     X = ones((len(y[0]), 1))
-    model = GLMM(y, 'bernoulli', X, QS=(QS[0][0], QS[1]))
+    model = GLMM(y, 'bernoulli', X, QS=(QS[0], QS[1]))
     model.delta = 0
     model.fix('delta')
     model.feed().maximize(progress=False)
