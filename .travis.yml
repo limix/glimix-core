@@ -7,13 +7,16 @@ matrix:
   include:
   - python: 2.7
     compiler: clang-3.8
-    env: NUMBA="true" LLVM_VERSION="3.8" CXX="clang++-3.8" LLVM_CONFIG="llvm-config-3.8" "PATH=~/bin:$PATH"
+    env: NUMBA="true" LLVM_VERSION="3.8" CXX="clang++-3.8" LLVM_CONFIG="llvm-config-3.8"
+      "PATH=~/bin:$PATH"
   - python: 3.5
     compiler: clang-3.8
-    env: NUMBA="true" LLVM_VERSION="3.8" CXX="clang++-3.8" LLVM_CONFIG="llvm-config-3.8" "PATH=~/bin:$PATH"
+    env: NUMBA="true" LLVM_VERSION="3.8" CXX="clang++-3.8" LLVM_CONFIG="llvm-config-3.8"
+      "PATH=~/bin:$PATH"
   - python: 3.6
     compiler: clang-3.8
-    env: NUMBA="true" LLVM_VERSION="3.8" CXX="clang++-3.8" LLVM_CONFIG="llvm-config-3.8" "PATH=~/bin:$PATH"
+    env: NUMBA="true" LLVM_VERSION="3.8" CXX="clang++-3.8" LLVM_CONFIG="llvm-config-3.8"
+      "PATH=~/bin:$PATH"
 before_install:
 - travis_retry travis/install_clang38.sh;
 - travis_retry travis/install_llvmlite.sh;
@@ -27,3 +30,11 @@ script:
 - popd
 notifications:
   email: false
+deploy:
+  provider: pypi
+  user: dhorta
+  password:
+    secure: nTvIndLvkqWXIQYgOjcLtlfBUcfUhR5VfcFxr+YO6kCDHHcqJgloBzeYDE0rNRGm3BDLZor9ZWW2V2w83jMHvtTkrWGR4RZKx0dS4k+pDq0IdsIG7MX0ydokqPwtz8AFDixsGutLiXjmuZWqjOtxIh+8KeG8+BRsqDFvnvOtmc4uZgNkWBlAawHpWQ5bNuVZfjCXtnrHSaGBtNYPE/05CsrtuC1Q1kz5VaGRtoA2kkjksFsdazoVaHeFBYMYDFAv+BnvmbOCeX1QO/xG/cPC8GmjOBtaddrMJ7squo+Iga5ipknk7hUSV83FX9QrmmmB/yjEjwm96iwXPf7kA13Azu47lEdX7X+LgMdesWXnCTN66QwRyFClIkQoS2SwkWxxDOin7VgtgRJPcZBrvBFdEz6nsbr2XlDG+OAVINu8sUxom40pGE4Gy9pSOrkVuj0I6hdx+r8p6XCmwWH56m9oW5H2xnSIJwIsJs1EofTULDz9upoASEY/Gv9SvmYvP+ad77v+xlCdQwtOP15+Igu37BUg/oAFuTsrWthjm0bLJKIL7GwjWFMLgmYRwBxPXy+F1LlWl2734ldpx/RPvmdWTucSCtuDqSkzsEAi2mo0AEMaH8axke1Jl5yTP03zBb7YelsV8WHJx04L97bR+ssE0nsitHDeTd8BUaDX+d61Kfw=
+  on:
+    repo: limix/glimix-core
+    branch: 1.2.x
