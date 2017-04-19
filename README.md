@@ -3,7 +3,7 @@
 [![PyPIl](https://img.shields.io/pypi/l/glimix-core.svg?style=flat-square)](https://pypi.python.org/pypi/glimix-core/)
 [![PyPIv](https://img.shields.io/pypi/v/glimix-core.svg?style=flat-square)](https://pypi.python.org/pypi/glimix-core/)
 [![Anaconda-Server Badge](https://anaconda.org/conda-forge/glimix-core/badges/version.svg)](https://anaconda.org/conda-forge/glimix-core)
-[![Documentation Status](https://readthedocs.org/projects/glimix-core/badge/?style=flat-square&version=latest)](https://glimix-core.readthedocs.io/en/latest/)
+[![Documentation Status](https://readthedocs.org/projects/glimix-core/badge/?style=flat-square&version=1.2.x)](https://glimix-core.readthedocs.io/)
 
 
 Fast inference for Generalized Linear Mixed Models.
@@ -23,7 +23,7 @@ library and then
 pip install glimix-core
 ```
 
-Refer to [documentation](http://glimix-core.readthedocs.io/en/latest/)
+Refer to [documentation](http://glimix-core.readthedocs.io/)
 for more information.
 
 ## Running the tests
