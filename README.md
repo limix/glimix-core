@@ -27,6 +27,9 @@ python -c "import glimix_core; glimix_core.test()"
 ```
 as long as you have [pytest](http://docs.pytest.org/en/latest/).
 
+If you encounter any issue, please,
+[submit it](https://github.com/limix/glimix-core/issues/new).
+
 ## Authors
 
 * **Danilo Horta** - [https://github.com/Horta](https://github.com/Horta)
