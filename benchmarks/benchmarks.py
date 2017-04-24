@@ -13,7 +13,7 @@ class TimeSuite:
         n = 100
         self._X = random.randn(n, 5)
         self._K = linear_eye_cov().feed().value()
-        self._QS = economic_qs(K)
+        self._QS = economic_qs(self._K)
 
         self._ntri = random.randint(1, 30, n)
         self._nsuc = [random.randint(0, i) for i in self._ntri]

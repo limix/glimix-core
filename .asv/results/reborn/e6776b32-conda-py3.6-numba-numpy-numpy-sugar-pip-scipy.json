@@ -2,8 +2,8 @@
     "commit_hash": "e6776b32440917a5cf548e5eb9e0f64403f5108d",
     "date": 1492613029000,
     "ended_at": {
-        "benchmarks.TimeSuite.time_qep_binomial_lml_learn": 1493036988000,
-        "benchmarks.TimeSuite.time_qep_binomial_lml_no_learn": 1493036990000
+        "benchmarks.TimeSuite.time_qep_binomial_lml_learn": 1493037062000,
+        "benchmarks.TimeSuite.time_qep_binomial_lml_no_learn": 1493037064000
     },
     "env_name": "conda-py3.6-numba-numpy-numpy-sugar-pip-scipy",
     "params": {
@@ -33,8 +33,8 @@
         "benchmarks.TimeSuite.time_qep_binomial_lml_no_learn": null
     },
     "started_at": {
-        "benchmarks.TimeSuite.time_qep_binomial_lml_learn": 1493036987000,
-        "benchmarks.TimeSuite.time_qep_binomial_lml_no_learn": 1493036988000
+        "benchmarks.TimeSuite.time_qep_binomial_lml_learn": 1493037060000,
+        "benchmarks.TimeSuite.time_qep_binomial_lml_no_learn": 1493037062000
     },
     "version": 1
 }
