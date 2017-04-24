@@ -2,8 +2,8 @@
     "commit_hash": "e6776b32440917a5cf548e5eb9e0f64403f5108d",
     "date": 1492613029000,
     "ended_at": {
-        "benchmarks.TimeSuite.time_qep_binomial_lml_learn": 1493037062000,
-        "benchmarks.TimeSuite.time_qep_binomial_lml_no_learn": 1493037064000
+        "benchmarks.TimeSuite.time_qep_binomial_lml_learn": 1493037101000,
+        "benchmarks.TimeSuite.time_qep_binomial_lml_no_learn": 1493037104000
     },
     "env_name": "conda-py3.6-numba-numpy-numpy-sugar-pip-scipy",
     "params": {
@@ -29,12 +29,32 @@
         "scipy": ""
     },
     "results": {
-        "benchmarks.TimeSuite.time_qep_binomial_lml_learn": null,
-        "benchmarks.TimeSuite.time_qep_binomial_lml_no_learn": null
+        "benchmarks.TimeSuite.time_qep_binomial_lml_learn": 11.802764999999999,
+        "benchmarks.TimeSuite.time_qep_binomial_lml_no_learn": {
+            "result": [
+                0.23331899999999983
+            ],
+            "stats": [
+                {
+                    "ci_99": [
+                        0.23010549999999985,
+                        0.23489749999999998
+                    ],
+                    "max": 0.235309,
+                    "mean": 0.232813,
+                    "min": 0.22946799999999978,
+                    "n": 10,
+                    "q_25": 0.2312517500000003,
+                    "q_75": 0.23422925000000017,
+                    "std": 0.0018046007868777957,
+                    "systematic": 0.0
+                }
+            ]
+        }
     },
     "started_at": {
-        "benchmarks.TimeSuite.time_qep_binomial_lml_learn": 1493037060000,
-        "benchmarks.TimeSuite.time_qep_binomial_lml_no_learn": 1493037062000
+        "benchmarks.TimeSuite.time_qep_binomial_lml_learn": 1493037093000,
+        "benchmarks.TimeSuite.time_qep_binomial_lml_no_learn": 1493037101000
     },
     "version": 1
 }
