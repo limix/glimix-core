@@ -24,7 +24,7 @@ class TimeSuite:
         self._QS1k = economic_qs(self._K1k)
 
         self._ntri1k = random.randint(1, 30, n1k)
-        self._nsuc1k = [random.randint(0, i) for i in self._ntri]
+        self._nsuc1k = [random.randint(0, i) for i in self._ntri1k]
 
     def time_qep_binomial_lml_no_learn(self):
         glmm = GLMM((self._nsuc, self._ntri), 'binomial', self._X, self._QS)
