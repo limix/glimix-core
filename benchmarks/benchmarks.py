@@ -1,30 +1,26 @@
-# Write the benchmarking functions here.
-# See "Writing benchmarks" in the asv docs for more information.
+import pytest
 
+from numpy.random import RandomState
+from numpy.testing import assert_allclose
+from numpy import ascontiguousarray, sqrt, ones
+from numpy_sugar.linalg import economic_qs, economic_qs_linear
+
+from glimix_core.example import linear_eye_cov
+from glimix_core.glmm import GLMM
+from glimix_core.random import bernoulli_sample
+
+from optimix import check_grad
 
 class TimeSuite:
-    """
-    An example benchmark that times the performance of various kinds
-    of iterating over dictionaries in Python.
-    """
     def setup(self):
-        self.d = {}
-        for x in range(500):
-            self.d[x] = None
+        random = RandomState(0)
+        self._X = random.randn(100, 5)
+        self._K = linear_eye_cov().feed().value()
+        self._QS = economic_qs(K)
 
-    def time_keys(self):
-        for key in self.d.keys():
-            pass
+        self._ntri = random.randint(1, 30, 100)
+        self._nsuc = [random.randint(0, i) for i in self._ntri]
 
-    def time_iterkeys(self):
-        for key in self.d.iterkeys():
-            pass
-
-    def time_range(self):
-        d = self.d
-        for key in range(500):
-            x = d[key]
-
-class MemSuite:
-    def mem_list(self):
-        return [0] * 256
+    def time_qep_binomial_lml_no_learn(self):
+        glmm = GLMM((self._nsuc, self._ntri), 'binomial', self._X, self._QS)
+        assert_allclose(glmm.value(), -272.1213895386019)
