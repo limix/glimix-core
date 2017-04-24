@@ -127,6 +127,7 @@ class GLMM(EP, Function):
             Function.fix(self, 'beta')
         else:
             raise ValueError("Unknown parameter name %s." % var_name)
+        self._need_params_update = True
 
     def unfix(self, var_name):
         if var_name == 'scale':
@@ -137,6 +138,7 @@ class GLMM(EP, Function):
             Function.unfix(self, 'beta')
         else:
             raise ValueError("Unknown parameter name %s." % var_name)
+        self._need_params_update = True
 
     @property
     def scale(self):
@@ -145,6 +147,7 @@ class GLMM(EP, Function):
     @scale.setter
     def scale(self, v):
         self.variables().get('logscale').value = log(v)
+        self._need_params_update = True
 
     @property
     def delta(self):
@@ -154,6 +157,7 @@ class GLMM(EP, Function):
     def delta(self, v):
         v = clip(v, epsilon.small, 1 - epsilon.small)
         self.variables().get('logitdelta').value = log(v / (1 - v))
+        self._need_params_update = True
 
     @property
     def beta(self):
@@ -162,6 +166,7 @@ class GLMM(EP, Function):
     @beta.setter
     def beta(self, v):
         self.variables().get('beta').value = v
+        self._need_params_update = True
 
     def _eigval_derivative_over_logscale(self):
         x = self.variables().get('logscale').value

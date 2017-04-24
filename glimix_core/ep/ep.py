@@ -56,6 +56,8 @@ class EP(object):  # pylint: disable=R0903
 
         self._moments = {'log_zeroth': None, 'mean': None, 'variance': None}
 
+        self._need_params_update = True
+
     def _compute_moments(self):
         raise NotImplementedError
 
@@ -149,6 +151,9 @@ class EP(object):  # pylint: disable=R0903
         return dlml
 
     def _params_update(self):
+        if not self._need_params_update:
+            return
+
         self._logger.debug('EP parameters update loop has started.')
 
         i = 0
@@ -173,4 +178,5 @@ class EP(object):  # pylint: disable=R0903
             raise ValueError('Maximum number of EP iterations has' +
                              ' been attained.')
 
+        self._need_params_update = True
         self._logger.debug('EP loop has performed %d iterations.', i)
