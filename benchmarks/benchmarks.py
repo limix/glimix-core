@@ -20,3 +20,19 @@ class TimeSuite:
     def time_qep_binomial_lml_no_learn(self):
         glmm = GLMM((self._nsuc, self._ntri), 'binomial', self._X, self._QS)
         assert_allclose(glmm.value(), -272.1213895386019)
+
+    def time_qep_binomial_lml_learn(self):
+        glmm = GLMM((self._nsuc, self._ntri), 'binomial', self._X, self._QS)
+
+        assert_allclose(glmm.value(), -272.1213895386019)
+        glmm.fix('beta')
+        glmm.fix('scale')
+
+        glmm.feed().maximize(progress=False)
+        assert_allclose(glmm.value(), -271.367864630782)
+
+        glmm.unfix('beta')
+        glmm.unfix('scale')
+
+        glmm.feed().maximize(progress=False)
+        assert_allclose(glmm.value(), -266.9517518211878)
