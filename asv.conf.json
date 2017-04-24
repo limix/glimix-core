@@ -57,6 +57,7 @@
         "scipy": [],
         "pip": [],
         "numba": [],
+        "numpy-sugar": [],
     },
 
     // Combinations of libraries/python versions can be excluded/included

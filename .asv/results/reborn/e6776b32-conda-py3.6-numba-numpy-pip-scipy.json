@@ -5,6 +5,7 @@
         "benchmarks.MemSuite.mem_list": 1493031028000,
         "benchmarks.TimeSuite.time_iterkeys": 1493031028000,
         "benchmarks.TimeSuite.time_keys": 1493031030000,
+        "benchmarks.TimeSuite.time_qep_binomial_lml_no_learn": 1493031807000,
         "benchmarks.TimeSuite.time_range": 1493031031000,
         "benchmarks.TimeSuite.time_xrange": 1493030938000
     },
@@ -53,6 +54,7 @@
                 }
             ]
         },
+        "benchmarks.TimeSuite.time_qep_binomial_lml_no_learn": null,
         "benchmarks.TimeSuite.time_range": {
             "result": [
                 2.7175506130595954e-05
@@ -80,6 +82,7 @@
         "benchmarks.MemSuite.mem_list": 1493031028000,
         "benchmarks.TimeSuite.time_iterkeys": 1493031028000,
         "benchmarks.TimeSuite.time_keys": 1493031028000,
+        "benchmarks.TimeSuite.time_qep_binomial_lml_no_learn": 1493031805000,
         "benchmarks.TimeSuite.time_range": 1493031030000,
         "benchmarks.TimeSuite.time_xrange": 1493030938000
     },
