@@ -50,3 +50,9 @@ class TimeSuite:
         glmm = GLMM((self._nsuc1k, self._ntri1k), 'binomial', self._X1k,
                     self._QS1k)
         glmm.feed().maximize(progress=False)
+
+        glmm = GLMM((nsuc1k, ntri1k), 'binomial', X1k,
+                    QS1k)
+        glmm.feed().maximize(progress=False)
+        print(".12f" % glmm.feed().value())
+        assert_allclose(glmm.feed().value(), -2611.6160207784023)

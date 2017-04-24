@@ -1,0 +1,63 @@
+{
+    "commit_hash": "f438b948a979831fc0978cddef4a7bb978eabced",
+    "date": 1493038177000,
+    "ended_at": {
+        "benchmarks.TimeSuite.time_qep_binomial_1k_learn": 1493038218000,
+        "benchmarks.TimeSuite.time_qep_binomial_lml_learn": 1493038227000,
+        "benchmarks.TimeSuite.time_qep_binomial_lml_no_learn": 1493038230000
+    },
+    "env_name": "conda-py3.6-numba-numpy-numpy-sugar-pip-scipy",
+    "params": {
+        "arch": "x86_64",
+        "cpu": "Intel(R) Core(TM) i7-5557U CPU @ 3.10GHz",
+        "machine": "reborn",
+        "numba": "",
+        "numpy": "",
+        "numpy-sugar": "",
+        "os": "Darwin 16.5.0",
+        "pip": "",
+        "python": "3.6",
+        "ram": "17179869184",
+        "scipy": ""
+    },
+    "profiles": {},
+    "python": "3.6",
+    "requirements": {
+        "numba": "",
+        "numpy": "",
+        "numpy-sugar": "",
+        "pip": "",
+        "scipy": ""
+    },
+    "results": {
+        "benchmarks.TimeSuite.time_qep_binomial_1k_learn": null,
+        "benchmarks.TimeSuite.time_qep_binomial_lml_learn": 12.396886,
+        "benchmarks.TimeSuite.time_qep_binomial_lml_no_learn": {
+            "result": [
+                0.23843199999999976
+            ],
+            "stats": [
+                {
+                    "ci_99": [
+                        0.23390049999999962,
+                        0.24619600000000075
+                    ],
+                    "max": 0.2496780000000003,
+                    "mean": 0.2391754,
+                    "min": 0.23342199999999957,
+                    "n": 10,
+                    "q_25": 0.23778949999999988,
+                    "q_75": 0.23975775,
+                    "std": 0.0042953451130267025,
+                    "systematic": 0.0
+                }
+            ]
+        }
+    },
+    "started_at": {
+        "benchmarks.TimeSuite.time_qep_binomial_1k_learn": 1493038217000,
+        "benchmarks.TimeSuite.time_qep_binomial_lml_learn": 1493038218000,
+        "benchmarks.TimeSuite.time_qep_binomial_lml_no_learn": 1493038227000
+    },
+    "version": 1
+}

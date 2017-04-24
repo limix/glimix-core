@@ -2,9 +2,9 @@ from __future__ import absolute_import, division, unicode_literals
 
 import logging
 
-from numpy import asarray, dot, exp, zeros, log, ndarray, clip, concatenate
+from numpy import (asarray, clip, concatenate, dot, exp, inf, log, ndarray,
+                   zeros)
 from numpy.linalg import LinAlgError
-
 from numpy_sugar import epsilon
 
 from liknorm import LikNormMachine
@@ -84,6 +84,9 @@ class GLMM(EP, Function):
             logitdelta=Scalar(0.0))
 
         self._logger = logging.getLogger(__name__)
+
+        logscale = self.variables()['logscale']
+        logscale.bounds = (-inf, 3.0)
 
         if not isinstance(y, tuple):
             y = (y, )
@@ -224,13 +227,13 @@ class GLMM(EP, Function):
             dS0 = self._eigval_derivative_over_logitdelta()
             dS1 = self._eigval_derivative_over_logscale()
 
-            grad = [self._lml_derivative_over_cov((self._QS[0], dS0)),
-                    self._lml_derivative_over_cov((self._QS[0], dS1)),
-                    self._lml_derivative_over_mean(self._X)]
+            grad = [
+                self._lml_derivative_over_cov((self._QS[0], dS0)),
+                self._lml_derivative_over_cov((self._QS[0], dS1)),
+                self._lml_derivative_over_mean(self._X)
+            ]
         except (ValueError, LinAlgError) as e:
             self._logger.info(str(e))
             raise BadSolutionError
 
-        return dict(logitdelta=grad[0],
-                    logscale=grad[1],
-                    beta=grad[2])
+        return dict(logitdelta=grad[0], logscale=grad[1], beta=grad[2])
