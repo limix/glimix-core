@@ -1,7 +1,7 @@
 from numpy.random import RandomState
 from numpy.testing import assert_allclose
 from numpy import ascontiguousarray, sqrt, ones
-from numpy_sugar.linalg import economic_qs, economic_qs_linear
+from numpy_sugar.linalg import economic_qs, economic_qs_linear, sum2diag
 
 from glimix_core.example import linear_eye_cov
 from glimix_core.glmm import GLMM
@@ -20,31 +20,12 @@ class TimeSuite:
         self._nsuc = [random.randint(0, i) for i in self._ntri]
 
         self._X1k = random.randn(n1k, 5)
-        self._K1k = linear_eye_cov().feed().value()
+        self._K1k = self._X1k.dot(self._X1k.T)
+        sum2diag(self._K1k, 1e-3, out=self._K1k)
         self._QS1k = economic_qs(self._K1k)
 
         self._ntri1k = random.randint(1, 30, n1k)
         self._nsuc1k = [random.randint(0, i) for i in self._ntri1k]
-
-    def time_qep_binomial_lml_no_learn(self):
-        glmm = GLMM((self._nsuc, self._ntri), 'binomial', self._X, self._QS)
-        assert_allclose(glmm.value(), -272.1213895386019)
-
-    def time_qep_binomial_lml_learn(self):
-        glmm = GLMM((self._nsuc, self._ntri), 'binomial', self._X, self._QS)
-
-        assert_allclose(glmm.value(), -272.1213895386019)
-        glmm.fix('beta')
-        glmm.fix('scale')
-
-        glmm.feed().maximize(progress=False)
-        assert_allclose(glmm.value(), -271.367864630782)
-
-        glmm.unfix('beta')
-        glmm.unfix('scale')
-
-        glmm.feed().maximize(progress=False)
-        assert_allclose(glmm.value(), -266.9517518211878)
 
     def time_qep_binomial_1k_learn(self):
         glmm = GLMM((self._nsuc1k, self._ntri1k), 'binomial', self._X1k,
