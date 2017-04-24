@@ -14,7 +14,7 @@ class TimeSuite:
         self._K = linear_eye_cov().feed().value()
         self._QS = economic_qs(K)
 
-        self._ntri = random.randint(1, 30, 100)
+        self._ntri = random.randint(1, 30, 500)
         self._nsuc = [random.randint(0, i) for i in self._ntri]
 
     def time_qep_binomial_lml_no_learn(self):
