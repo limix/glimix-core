@@ -11,12 +11,20 @@ class TimeSuite:
     def setup(self):
         random = RandomState(0)
         n = 100
+        n1k = 1000
         self._X = random.randn(n, 5)
         self._K = linear_eye_cov().feed().value()
         self._QS = economic_qs(self._K)
 
         self._ntri = random.randint(1, 30, n)
         self._nsuc = [random.randint(0, i) for i in self._ntri]
+
+        self._X1k = random.randn(n1k, 5)
+        self._K1k = linear_eye_cov().feed().value()
+        self._QS1k = economic_qs(self._K1k)
+
+        self._ntri1k = random.randint(1, 30, n1k)
+        self._nsuc1k = [random.randint(0, i) for i in self._ntri]
 
     def time_qep_binomial_lml_no_learn(self):
         glmm = GLMM((self._nsuc, self._ntri), 'binomial', self._X, self._QS)
@@ -37,3 +45,8 @@ class TimeSuite:
 
         glmm.feed().maximize(progress=False)
         assert_allclose(glmm.value(), -266.9517518211878)
+
+    def time_qep_binomial_1k_learn(self):
+        glmm = GLMM((self._nsuc1k, self._ntri1k), 'binomial', self._X1k,
+                    self._QS1k)
+        glmm.feed().maximize(progress=False)
