@@ -53,13 +53,13 @@ def test_glmm_optimize():
     glmm.fix('scale')
 
     glmm.feed().maximize(progress=False)
-    assert_allclose(glmm.value(), -271.367864630782)
+    assert_allclose(glmm.value(), -271.3681536575776)
 
     glmm.unfix('beta')
     glmm.unfix('scale')
 
     glmm.feed().maximize(progress=False)
-    assert_allclose(glmm.value(), -266.9517518211878)
+    assert_allclose(glmm.value(), -264.67173062461313)
 
 def test_glmm_bernoulli_problematic():
     random = RandomState(1)

@@ -11,7 +11,7 @@ from numpy_sugar.linalg import cho_solve, ddot, dotd
 from .posterior import Posterior
 from .site import Site
 
-MAX_ITERS = 30
+MAX_ITERS = 100
 RTOL = epsilon.small
 ATOL = epsilon.small
 
@@ -124,7 +124,7 @@ class EP(object):  # pylint: disable=R0903
         diff = teta - ttau * self._posterior.prior_mean()
 
         dlml = dot(diff, dm)
-        dlml -= dot(diff, dot(Q, cho_solve(L, dot(Q.T, (ttau*dm.T).T))))
+        dlml -= dot(diff, dot(Q, cho_solve(L, dot(Q.T, (ttau * dm.T).T))))
 
         return dlml
 
@@ -162,7 +162,8 @@ class EP(object):  # pylint: disable=R0903
             self._psite.tau[:] = self._site.tau
             self._psite.eta[:] = self._site.eta
 
-            self._cav['tau'][:] = maximum(self._posterior.tau - self._site.tau, 0)
+            self._cav['tau'][:] = maximum(self._posterior.tau - self._site.tau,
+                                          0)
             self._cav['eta'][:] = self._posterior.eta - self._site.eta
             self._compute_moments()
 
@@ -175,8 +176,9 @@ class EP(object):  # pylint: disable=R0903
             i += 1
 
         if i == MAX_ITERS:
-            raise ValueError('Maximum number of EP iterations has' +
-                             ' been attained.')
+            msg = ('Maximum number of EP iterations has' + ' been attained.')
+            msg = " Last EP step was: %.10f." % norm(self._site.tau - self._psite.tau)
+            raise ValueError(msg)
 
         self._need_params_update = True
         self._logger.debug('EP loop has performed %d iterations.', i)

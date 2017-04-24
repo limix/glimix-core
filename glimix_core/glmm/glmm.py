@@ -72,7 +72,7 @@ class GLMM(EP, Function):
         Before: -210.3568
         >>> glmm.feed().maximize(progress=False)
         >>> print('After: %.2f' % glmm.feed().value())
-        After: -185.16
+        After: -182.57
     """
 
     def __init__(self, y, lik_name, X, QS):
@@ -86,7 +86,10 @@ class GLMM(EP, Function):
         self._logger = logging.getLogger(__name__)
 
         logscale = self.variables()['logscale']
-        logscale.bounds = (-inf, 3.0)
+        logscale.bounds = (-10, 4.0)
+
+        logitdelta = self.variables()['logitdelta']
+        logitdelta.bounds = (-40.0, +40.0)
 
         if not isinstance(y, tuple):
             y = (y, )
@@ -205,7 +208,10 @@ class GLMM(EP, Function):
             lml = self._lml()
         except (ValueError, LinAlgError) as e:
             self._logger.info(str(e))
-            raise BadSolutionError
+            self._logger.info("Beta: %s", str(self.beta))
+            self._logger.info("Delta: %.10f", self.delta)
+            self._logger.info("Scale: %.10f", self.scale)
+            raise BadSolutionError(str(e))
         return lml
 
     def gradient(self):  # pylint: disable=W0221
@@ -234,6 +240,9 @@ class GLMM(EP, Function):
             ]
         except (ValueError, LinAlgError) as e:
             self._logger.info(str(e))
-            raise BadSolutionError
+            self._logger.info("Beta: %s", str(self.beta))
+            self._logger.info("Delta: %.10f", self.delta)
+            self._logger.info("Scale: %.10f", self.scale)
+            raise BadSolutionError(str(e))
 
         return dict(logitdelta=grad[0], logscale=grad[1], beta=grad[2])
