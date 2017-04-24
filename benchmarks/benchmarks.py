@@ -10,11 +10,12 @@ from glimix_core.random import bernoulli_sample
 class TimeSuite:
     def setup(self):
         random = RandomState(0)
-        self._X = random.randn(100, 5)
+        n = 100
+        self._X = random.randn(n, 5)
         self._K = linear_eye_cov().feed().value()
         self._QS = economic_qs(K)
 
-        self._ntri = random.randint(1, 30, 500)
+        self._ntri = random.randint(1, 30, n)
         self._nsuc = [random.randint(0, i) for i in self._ntri]
 
     def time_qep_binomial_lml_no_learn(self):
