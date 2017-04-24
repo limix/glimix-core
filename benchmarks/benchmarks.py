@@ -25,12 +25,6 @@ class TimeSuite:
         for key in range(500):
             x = d[key]
 
-    def time_xrange(self):
-        d = self.d
-        for key in xrange(500):
-            x = d[key]
-
-
 class MemSuite:
     def mem_list(self):
         return [0] * 256

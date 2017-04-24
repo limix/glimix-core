@@ -1,0 +1,8 @@
+{
+    "arch": "x86_64",
+    "cpu": "Intel(R) Core(TM) i7-5557U CPU @ 3.10GHz",
+    "machine": "reborn",
+    "os": "Darwin 16.5.0",
+    "ram": "17179869184",
+    "version": 1
+}

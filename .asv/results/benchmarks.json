@@ -1,0 +1,55 @@
+{
+    "benchmarks.MemSuite.mem_list": {
+        "code": "def mem_list(self):\n    return [0] * 256\n",
+        "name": "benchmarks.MemSuite.mem_list",
+        "param_names": [],
+        "params": [],
+        "pretty_name": "benchmarks.MemSuite.mem_list",
+        "timeout": 60.0,
+        "type": "memory",
+        "unit": "bytes"
+    },
+    "benchmarks.TimeSuite.time_iterkeys": {
+        "code": "def time_iterkeys(self):\n    for key in self.d.iterkeys():\n        pass\n",
+        "goal_time": 0.1,
+        "name": "benchmarks.TimeSuite.time_iterkeys",
+        "number": 0,
+        "param_names": [],
+        "params": [],
+        "pretty_name": "benchmarks.TimeSuite.time_iterkeys",
+        "repeat": 0,
+        "timeout": 60.0,
+        "type": "time",
+        "unit": "seconds",
+        "warmup_time": -1
+    },
+    "benchmarks.TimeSuite.time_keys": {
+        "code": "def time_keys(self):\n    for key in self.d.keys():\n        pass\n",
+        "goal_time": 0.1,
+        "name": "benchmarks.TimeSuite.time_keys",
+        "number": 0,
+        "param_names": [],
+        "params": [],
+        "pretty_name": "benchmarks.TimeSuite.time_keys",
+        "repeat": 0,
+        "timeout": 60.0,
+        "type": "time",
+        "unit": "seconds",
+        "warmup_time": -1
+    },
+    "benchmarks.TimeSuite.time_range": {
+        "code": "def time_range(self):\n    d = self.d\n    for key in range(500):\n        x = d[key]\n",
+        "goal_time": 0.1,
+        "name": "benchmarks.TimeSuite.time_range",
+        "number": 0,
+        "param_names": [],
+        "params": [],
+        "pretty_name": "benchmarks.TimeSuite.time_range",
+        "repeat": 0,
+        "timeout": 60.0,
+        "type": "time",
+        "unit": "seconds",
+        "warmup_time": -1
+    },
+    "version": 1
+}
