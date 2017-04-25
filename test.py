@@ -10,7 +10,7 @@ from glimix_core.random import bernoulli_sample
 class TimeSuite(object):
     def setup(self):
         random = RandomState(0)
-        n = 50
+        n = 100
 
         self._X = ones((n, 1))
         self._G = random.randn(n, n + 5)
@@ -32,4 +32,9 @@ class TimeSuite(object):
         glmm = GLMM((self._nsuc, self._ntri), 'binomial', self._X,
                     self._QS)
         glmm.feed().maximize(progress=False)
-        assert_allclose(glmm.feed().value(), -112.59122608467725)
+        print(glmm.feed().value())
+        assert_allclose(glmm.feed().value(), -218.95038533366554)
+
+ts = TimeSuite()
+ts.setup()
+ts.time_qep_binomial_1k_learn()
