@@ -100,7 +100,9 @@ class GLMM(EP, Function):
 
         self.variables()['beta'].listen(self._clear_cache)
 
-        if not isinstance(y, tuple):
+        if isinstance(y, list):
+            y = tuple(y)
+        elif not isinstance(y, tuple):
             y = (y, )
 
         self._y = tuple([asarray(i, float) for i in y])
