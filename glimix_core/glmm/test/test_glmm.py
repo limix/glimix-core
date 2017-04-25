@@ -2,7 +2,7 @@ import pytest
 
 from numpy.random import RandomState
 from numpy.testing import assert_allclose
-from numpy import ascontiguousarray, sqrt, ones
+from numpy import ascontiguousarray, sqrt, ones, dot, zeros
 from numpy_sugar.linalg import economic_qs, economic_qs_linear
 
 from glimix_core.example import linear_eye_cov
@@ -105,3 +105,24 @@ def _stdnorm(X, axis=None, out=None):
         out[..., ok] /= s[ok]
 
     return out
+
+def test_glmm_binomial_pheno_list():
+    random = RandomState(0)
+    nsamples = 50
+
+    X = random.randn(50, 2)
+    G = random.randn(50, 100)
+    K = dot(G, G.T)
+    ntrials = random.randint(1, 100, nsamples)
+    z = dot(G, random.randn(100)) / sqrt(100)
+
+    successes = zeros(len(ntrials), int)
+    for i in range(len(ntrials)):
+        for j in range(ntrials[i]):
+            successes[i] += int(z[i] + 0.5 * random.randn() > 0)
+
+    y = [successes, ntrials]
+
+    QS = economic_qs(K)
+    glmm = GLMM(y, 'binomial', X, QS)
+    glmm.feed().maximize(progress=False)
