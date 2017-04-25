@@ -58,8 +58,10 @@
         "pip": [],
         "numba": [],
         "pip+optimix": [],
-        "numpy-sugar": [],
+        "numpy-sugar[numba]": [],
+	"scipy-sugar": [],
 	"liknorm": [],
+	"ncephes": [],
 	"pip+liknorm-py": [],
     },
 
