@@ -59,6 +59,8 @@
         "numba": [],
         "pip+optimix": [],
         "numpy-sugar": [],
+	"liknorm": [],
+	"pip+liknorm-py": [],
     },
 
     // Combinations of libraries/python versions can be excluded/included
