@@ -31,7 +31,7 @@ def setup_package():
 
     metadata = dict(
         name='glimix-core',
-        version='1.2.1',
+        version='1.2.2',
         maintainer="Limix Developers",
         maintainer_email="horta@ebi.ac.uk",
         license="MIT",
