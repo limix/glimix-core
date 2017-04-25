@@ -1,36 +1,47 @@
 from numpy.random import RandomState
 from numpy.testing import assert_allclose
-from numpy import ascontiguousarray, sqrt, ones
+from numpy import ascontiguousarray, sqrt, ones, dot, zeros
 from numpy_sugar.linalg import economic_qs, economic_qs_linear, sum2diag
 
 from glimix_core.example import linear_eye_cov
 from glimix_core.glmm import GLMM
 from glimix_core.random import bernoulli_sample
 
-class TimeSuite:
+def get_data(n):
+    random = RandomState(0)
+
+    X = ones((n, 1))
+    G = random.randn(n, n + 5)
+    K = dot(G, G.T)
+    K /= K.diagonal().mean()
+    sum2diag(K, 1e-3, out=K)
+    QS = economic_qs(K)
+
+    ntri = random.randint(1, 30, n)
+
+    z = dot(G, random.randn(n + 5)) / sqrt(n + 5)
+
+    nsuc = zeros(len(ntri), int)
+    for i in range(len(ntri)):
+        for j in range(ntri[i]):
+            nsuc[i] += int(z[i] + 0.5 * random.randn() > 0)
+
+    return (ntri, nsuc, QS, X)
+
+class TimeSuite(object):
     def setup(self):
-        random = RandomState(0)
-        n = 100
-        n1k = 1000
-        self._X = random.randn(n, 5)
-        self._K = linear_eye_cov().feed().value()
-        self._QS = economic_qs(self._K)
+        self._data = {10: get_data(10), 100: get_data(100)}
 
-        self._ntri = random.randint(1, 30, n)
-        self._nsuc = [random.randint(0, i) for i in self._ntri]
+    def time_qep_binomial_10_learn(self):
+        (ntri, nsuc, QS, X) = self._data[10]
 
-        self._X1k = random.randn(n1k, 5)
-        self._K1k = self._X1k.dot(self._X1k.T)
-        self._K1k /= self._K1k.diagonal().mean()
-        sum2diag(self._K1k, 1e-3, out=self._K1k)
-        self._QS1k = economic_qs(self._K1k)
-
-        self._ntri1k = random.randint(1, 30, n1k)
-        self._nsuc1k = [random.randint(0, i) for i in self._ntri1k]
-
-    def time_qep_binomial_1k_learn(self):
-        glmm = GLMM((self._nsuc1k, self._ntri1k), 'binomial', self._X1k,
-                    self._QS1k)
+        glmm = GLMM((nsuc, ntri), 'binomial', X, QS)
         glmm.feed().maximize(progress=False)
-        print(".12f" % glmm.feed().value())
-        assert_allclose(glmm.feed().value(), -2611.6160207784023)
+        assert_allclose(glmm.feed().value(), -19.74077399053363)
+
+    def time_qep_binomial_100_learn(self):
+        (ntri, nsuc, QS, X) = self._data[100]
+
+        glmm = GLMM((nsuc, ntri), 'binomial', X, QS)
+        glmm.feed().maximize(progress=False)
+        assert_allclose(glmm.feed().value(), -218.9503853656612)

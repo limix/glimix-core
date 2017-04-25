@@ -1,17 +1,29 @@
 {
-    "benchmarks.TimeSuite.time_qep_binomial_1k_learn": {
-        "code": "def time_qep_binomial_1k_learn(self):\n    glmm = GLMM((self._nsuc1k, self._ntri1k), 'binomial', self._X1k,\n                self._QS1k)\n    glmm.feed().maximize(progress=False)\n\n    glmm = GLMM((nsuc1k, ntri1k), 'binomial', X1k,\n                QS1k)\n    import pdb; pdb.set_trace()\n    glmm.feed().maximize(progress=False)\n    print(\".12f\" % glmm.feed().value())\n    assert_allclose(glmm.feed().value(), -2611.6160207784023)\n",
-        "goal_time": 0.1,
-        "name": "benchmarks.TimeSuite.time_qep_binomial_1k_learn",
+    "benchmarks.TimeSuite.time_qep_binomial_100_learn": {
+        "code": "def time_qep_binomial_100_learn(self):\n    (ntri, nsuc, QS, X) = self._data[100]\n\n    glmm = GLMM((nsuc, ntri), 'binomial', X, QS)\n    glmm.feed().maximize(progress=False)\n    assert_allclose(glmm.feed().value(), -218.9503853656612)\n",
+        "goal_time": 2.0,
+        "name": "benchmarks.TimeSuite.time_qep_binomial_100_learn",
         "number": 0,
         "param_names": [],
         "params": [],
-        "pretty_name": "benchmarks.TimeSuite.time_qep_binomial_1k_learn",
+        "pretty_name": "benchmarks.TimeSuite.time_qep_binomial_100_learn",
         "repeat": 0,
         "timeout": 60.0,
         "type": "time",
-        "unit": "seconds",
-        "warmup_time": -1
+        "unit": "seconds"
+    },
+    "benchmarks.TimeSuite.time_qep_binomial_10_learn": {
+        "code": "def time_qep_binomial_10_learn(self):\n    (ntri, nsuc, QS, X) = self._data[10]\n\n    glmm = GLMM((nsuc, ntri), 'binomial', X, QS)\n    glmm.feed().maximize(progress=False)\n    assert_allclose(glmm.feed().value(), -19.74077399053363)\n",
+        "goal_time": 2.0,
+        "name": "benchmarks.TimeSuite.time_qep_binomial_10_learn",
+        "number": 0,
+        "param_names": [],
+        "params": [],
+        "pretty_name": "benchmarks.TimeSuite.time_qep_binomial_10_learn",
+        "repeat": 0,
+        "timeout": 60.0,
+        "type": "time",
+        "unit": "seconds"
     },
     "version": 1
 }

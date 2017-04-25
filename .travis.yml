@@ -30,3 +30,12 @@ script:
 - popd
 notifications:
   email: false
+deploy:
+  provider: pypi
+  user: dhorta
+  password:
+    secure: apCcwzNkdWGEN42y1O2fIR8/X9QQj4IQ8oKHc0tQw5IybeZoC6paRGz2Zt52ZaZ+tegropB1fjawmC8MbZkK/uHb5ooeSkhzj+gaFNv+MqFYTY0Je9gV6INJDX/VP8UAnnR9g8ctVpeNGxt6xH7OGdsugDtKNiFhop59Pt5yERDuz9WEGkpdh0U8lQkXtU0GP0a9UshqxOK0zFxaHb5aZ/66yYu1USyTKCVmaHnFyjFMY2ecRuiVSDpuwx7MXif09dZZ1vQadzzC1XaXP0mak0xJXJfajx7X0NO53cIMLSZQFh67UlvZI5x6H9G8iQyz8B5/HvU1NMijXG4C6+IVLaaKRfL1BYhug5EDQT1s7oVt+n/az/3D1sGqmcU7xZ78MQ//HZ8lA1a08qENQAxk4oGyTJ/cil8CYJ8xqeF1MlGNgWRBvP/n5b6/8Om33WCBhcDLOnwr8tyf8oDaple3qAU1xiUZfy7GpWUXuCCmYmQMEhu684J8altDUIBeeECLUirDxuj81A0qBdnGjFQ/SSx1oN04T9XX6CozJ7L9hrbF1DHRTJcXmB56157ozsBbR+EgF2Q6qeBDhLZTzaQeAuOJ5dNgbUILQNVH/cm5aD1cMvJ+5eGfYaJ0dNF4+SvEV/LFb6uoOQcKFKPimDLrVeAn70UaAFZhgp5t/6L3ubc=
+  on:
+    tags: true
+    repo: limix/glimix-core
+    branch: master
