@@ -1,8 +1,0 @@
-{
-    "arch": "x86_64",
-    "cpu": "Intel(R) Xeon(R) CPU E5-2660 v3 @ 2.60GHz",
-    "machine": "hh-yoda-03-13.ebi.ac.uk",
-    "os": "Linux 3.10.0-327.10.1.el7.x86_64",
-    "ram": "131735616",
-    "version": 1
-}
