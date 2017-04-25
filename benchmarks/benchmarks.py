@@ -31,5 +31,5 @@ class TimeSuite(object):
     def time_qep_binomial_1k_learn(self):
         glmm = GLMM((self._nsuc, self._ntri), 'binomial', self._X,
                     self._QS)
-        #glmm.feed().maximize(progress=False)
+        glmm.feed().maximize(progress=False)
         #assert_allclose(glmm.feed().value(), -112.59122608467725)
