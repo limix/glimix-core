@@ -1,0 +1,47 @@
+{
+    "commit_hash": "18a7fcedc5f652306e5dc0394b37cdd1b2d8dc47",
+    "date": 1493119602000,
+    "ended_at": {
+        "benchmarks.TimeSuite.time_qep_binomial_1k_learn": 1493119649000
+    },
+    "env_name": "conda-py3.5-liknorm-ncephes-numba-numpy-numpy-sugar-pip-pip+liknorm-py-pip+optimix-scipy-scipy-sugar",
+    "params": {
+        "arch": "x86_64",
+        "cpu": "Intel(R) Xeon(R) CPU E5-2660 v3 @ 2.60GHz",
+        "liknorm": "",
+        "machine": "hh-yoda-03-13.ebi.ac.uk",
+        "ncephes": "",
+        "numba": "",
+        "numpy": "",
+        "numpy-sugar": "",
+        "os": "Linux 3.10.0-327.10.1.el7.x86_64",
+        "pip": "",
+        "pip+liknorm-py": "",
+        "pip+optimix": "",
+        "python": "3.5",
+        "ram": "131735616",
+        "scipy": "",
+        "scipy-sugar": ""
+    },
+    "profiles": {},
+    "python": "3.5",
+    "requirements": {
+        "liknorm": "",
+        "ncephes": "",
+        "numba": "",
+        "numpy": "",
+        "numpy-sugar": "",
+        "pip": "",
+        "pip+liknorm-py": "",
+        "pip+optimix": "",
+        "scipy": "",
+        "scipy-sugar": ""
+    },
+    "results": {
+        "benchmarks.TimeSuite.time_qep_binomial_1k_learn": 55.131217524
+    },
+    "started_at": {
+        "benchmarks.TimeSuite.time_qep_binomial_1k_learn": 1493119639000
+    },
+    "version": 1
+}

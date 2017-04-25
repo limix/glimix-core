@@ -28,7 +28,7 @@ class TimeSuite(object):
             for j in range(self._ntri[i]):
                 self._nsuc[i] += int(z[i] + 0.5 * random.randn() > 0)
 
-    def time_qep_binomial_1k_learn(self):
+    def time_qep_binomial_10_learn(self):
         glmm = GLMM((self._nsuc, self._ntri), 'binomial', self._X,
                     self._QS)
         glmm.feed().maximize(progress=False)
