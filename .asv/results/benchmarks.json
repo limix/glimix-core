@@ -1,6 +1,6 @@
 {
     "benchmarks.TimeSuite.time_qep_binomial_1k_learn": {
-        "code": "def time_qep_binomial_1k_learn(self):\n    glmm = GLMM((self._nsuc1k, self._ntri1k), 'binomial', self._X1k,\n                self._QS1k)\n    glmm.feed().maximize(progress=False)\n\n    glmm = GLMM((nsuc1k, ntri1k), 'binomial', X1k,\n                QS1k)\n    glmm.feed().maximize(progress=False)\n    print(\".12f\" % glmm.feed().value())\n    assert_allclose(glmm.feed().value(), -2611.6160207784023)\n",
+        "code": "def time_qep_binomial_1k_learn(self):\n    glmm = GLMM((self._nsuc1k, self._ntri1k), 'binomial', self._X1k,\n                self._QS1k)\n    glmm.feed().maximize(progress=False)\n\n    glmm = GLMM((nsuc1k, ntri1k), 'binomial', X1k,\n                QS1k)\n    import pdb; pdb.set_trace()\n    glmm.feed().maximize(progress=False)\n    print(\".12f\" % glmm.feed().value())\n    assert_allclose(glmm.feed().value(), -2611.6160207784023)\n",
         "goal_time": 0.1,
         "name": "benchmarks.TimeSuite.time_qep_binomial_1k_learn",
         "number": 0,

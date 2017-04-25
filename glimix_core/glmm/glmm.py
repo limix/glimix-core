@@ -48,7 +48,7 @@ class GLMM(EP, Function):
 
     .. doctest::
 
-        >>> from numpy import dot
+        >>> from numpy import dot, sqrt, zeros
         >>> from numpy.random import RandomState
         >>>
         >>> from numpy_sugar.linalg import economic_qs
@@ -62,17 +62,22 @@ class GLMM(EP, Function):
         >>> G = random.randn(50, 100)
         >>> K = dot(G, G.T)
         >>> ntrials = random.randint(1, 100, nsamples)
-        >>> successes = [random.randint(0, i + 1) for i in ntrials]
+        >>> z = dot(G, random.randn(100)) / sqrt(100)
+        >>>
+        >>> successes = zeros(len(ntrials), int)
+        >>> for i in range(len(ntrials)):
+        ...     for j in range(ntrials[i]):
+        ...         successes[i] += int(z[i] + 0.5 * random.randn() > 0)
         >>>
         >>> y = (successes, ntrials)
         >>>
         >>> QS = economic_qs(K)
         >>> glmm = GLMM(y, 'binomial', X, QS)
         >>> print('Before: %.4f' % glmm.feed().value())
-        Before: -210.3568
+        Before: -151.5476
         >>> glmm.feed().maximize(progress=False)
         >>> print('After: %.2f' % glmm.feed().value())
-        After: -182.57
+        After: -147.53
     """
 
     def __init__(self, y, lik_name, X, QS):
@@ -86,10 +91,14 @@ class GLMM(EP, Function):
         self._logger = logging.getLogger(__name__)
 
         logscale = self.variables()['logscale']
-        logscale.bounds = (-10, 4.0)
+        logscale.bounds = (-5, 4.0)
+        logscale.listen(self._clear_cache)
 
         logitdelta = self.variables()['logitdelta']
-        logitdelta.bounds = (-40.0, +40.0)
+        logitdelta.bounds = (-30.0, +30.0)
+        logitdelta.listen(self._clear_cache)
+
+        self.variables()['beta'].listen(self._clear_cache)
 
         if not isinstance(y, tuple):
             y = (y, )
@@ -112,6 +121,9 @@ class GLMM(EP, Function):
         self._machine = LikNormMachine(lik_name, 500)
         self.set_nodata()
 
+    def _clear_cache(self, _):
+        self._need_params_update = True
+
     def __del__(self):
         if hasattr(self, '_machine'):
             self._machine.finish()
@@ -133,7 +145,7 @@ class GLMM(EP, Function):
             Function.fix(self, 'beta')
         else:
             raise ValueError("Unknown parameter name %s." % var_name)
-        self._need_params_update = True
+        self._clear_cache(None)
 
     def unfix(self, var_name):
         if var_name == 'scale':
@@ -144,7 +156,7 @@ class GLMM(EP, Function):
             Function.unfix(self, 'beta')
         else:
             raise ValueError("Unknown parameter name %s." % var_name)
-        self._need_params_update = True
+        self._clear_cache(None)
 
     @property
     def scale(self):
@@ -153,7 +165,7 @@ class GLMM(EP, Function):
     @scale.setter
     def scale(self, v):
         self.variables().get('logscale').value = log(v)
-        self._need_params_update = True
+        self._clear_cache(None)
 
     @property
     def delta(self):
@@ -163,7 +175,7 @@ class GLMM(EP, Function):
     def delta(self, v):
         v = clip(v, epsilon.small, 1 - epsilon.small)
         self.variables().get('logitdelta').value = log(v / (1 - v))
-        self._need_params_update = True
+        self._clear_cache(None)
 
     @property
     def beta(self):
@@ -172,7 +184,7 @@ class GLMM(EP, Function):
     @beta.setter
     def beta(self, v):
         self.variables().get('beta').value = v
-        self._need_params_update = True
+        self._clear_cache(None)
 
     def _eigval_derivative_over_logscale(self):
         x = self.variables().get('logscale').value
@@ -185,7 +197,11 @@ class GLMM(EP, Function):
         s = self.scale
         c = (s * exp(x) / (1 + exp(-x))**2)
         E = self._QS[1]
-        return c * (1 - E)
+        cond = abs(E.max())/abs(E.min())
+        if cond > 1e5:
+            self._logger.info("Conditioning number too high: %.5f", cond)
+        res = c * (1 - E)
+        return res
 
     def _S(self):
         s = self.scale

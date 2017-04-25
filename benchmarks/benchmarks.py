@@ -21,6 +21,7 @@ class TimeSuite:
 
         self._X1k = random.randn(n1k, 5)
         self._K1k = self._X1k.dot(self._X1k.T)
+        self._K1k /= self._K1k.diagonal().mean()
         sum2diag(self._K1k, 1e-3, out=self._K1k)
         self._QS1k = economic_qs(self._K1k)
 
@@ -30,10 +31,6 @@ class TimeSuite:
     def time_qep_binomial_1k_learn(self):
         glmm = GLMM((self._nsuc1k, self._ntri1k), 'binomial', self._X1k,
                     self._QS1k)
-        glmm.feed().maximize(progress=False)
-
-        glmm = GLMM((nsuc1k, ntri1k), 'binomial', X1k,
-                    QS1k)
         glmm.feed().maximize(progress=False)
         print(".12f" % glmm.feed().value())
         assert_allclose(glmm.feed().value(), -2611.6160207784023)

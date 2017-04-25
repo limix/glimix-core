@@ -12,8 +12,8 @@ from .posterior import Posterior
 from .site import Site
 
 MAX_ITERS = 100
-RTOL = epsilon.small
-ATOL = epsilon.small
+RTOL = epsilon.small * 1000
+ATOL = epsilon.small * 1000
 
 
 class EP(object):  # pylint: disable=R0903
@@ -63,6 +63,7 @@ class EP(object):  # pylint: disable=R0903
 
     def _initialize(self, mean, QS):
         self._logger.debug("EP parameters initialization.")
+        self._need_params_update = True
 
         nsamples = len(mean)
 
@@ -177,8 +178,9 @@ class EP(object):  # pylint: disable=R0903
 
         if i == MAX_ITERS:
             msg = ('Maximum number of EP iterations has' + ' been attained.')
-            msg = " Last EP step was: %.10f." % norm(self._site.tau - self._psite.tau)
+            msg += " Last EP step was: %.10f." % norm(self._site.tau -
+                                                      self._psite.tau)
             raise ValueError(msg)
 
-        self._need_params_update = True
+        self._need_params_update = False
         self._logger.debug('EP loop has performed %d iterations.', i)
