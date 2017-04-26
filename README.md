@@ -10,7 +10,7 @@ Fast inference for Generalized Linear Mixed Models.
 ## Install
 
 You can install it via [pip](https://pypi.python.org/pypi/pip).
-First you need to install [liknorm](http://liknorm.readthedocs.io/en/latest/)
+First you need to install [liknorm](http://liknorm.readthedocs.io/)
 library and then
 ```bash
 pip install glimix-core
