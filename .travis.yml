@@ -1,55 +1,28 @@
 language: python
 sudo: required
 dist: trusty
+services: docker
 git:
   depth: 5
+cache:
+  pip: true
+  directories:
+  - "$HOME/bin"
+  - "$HOME/.download"
 matrix:
   include:
   - python: 2.7
-    compiler: clang-3.8
-    env: NUMBA="true" LLVM_VERSION="3.8" CXX="clang++-3.8" LLVM_CONFIG="llvm-config-3.8"
-      "PATH=~/bin:$PATH"
   - python: 3.5
-    compiler: clang-3.8
-    env: NUMBA="true" LLVM_VERSION="3.8" CXX="clang++-3.8" LLVM_CONFIG="llvm-config-3.8"
-      "PATH=~/bin:$PATH"
   - python: 3.6
-    compiler: clang-3.8
-    env: NUMBA="true" LLVM_VERSION="3.8" CXX="clang++-3.8" LLVM_CONFIG="llvm-config-3.8"
-      "PATH=~/bin:$PATH"
-  - sudo: required
-    services:
-    - docker
-    env: DOCKER_IMAGE=quay.io/pypa/manylinux1_x86_64 NUMBA="true"
+  - env: DOCKER_IMAGE=quay.io/pypa/manylinux1_x86_64
   - os: osx
-    osx_image: xcode7.3
     language: generic
-    sudo: required
     env: PYENV=py27
   - os: osx
-    osx_image: xcode8.3
     language: generic
-    sudo: required
-    env: PYENV=py27
-  - os: osx
-    osx_image: xcode7.3
-    language: generic
-    sudo: required
     env: PYENV=py35
   - os: osx
-    osx_image: xcode8.3
     language: generic
-    sudo: required
-    env: PYENV=py35
-  - os: osx
-    osx_image: xcode7.3
-    language: generic
-    sudo: required
-    env: PYENV=py36
-  - os: osx
-    osx_image: xcode8.3
-    language: generic
-    sudo: required
     env: PYENV=py36
 before_install:
 - travis_retry bash <(curl -s https://raw.githubusercontent.com/limix/travis-tools/master/get-travis-tools.sh)
@@ -64,8 +37,12 @@ deploy:
   provider: pypi
   user: dhorta
   password:
-    secure: apCcwzNkdWGEN42y1O2fIR8/X9QQj4IQ8oKHc0tQw5IybeZoC6paRGz2Zt52ZaZ+tegropB1fjawmC8MbZkK/uHb5ooeSkhzj+gaFNv+MqFYTY0Je9gV6INJDX/VP8UAnnR9g8ctVpeNGxt6xH7OGdsugDtKNiFhop59Pt5yERDuz9WEGkpdh0U8lQkXtU0GP0a9UshqxOK0zFxaHb5aZ/66yYu1USyTKCVmaHnFyjFMY2ecRuiVSDpuwx7MXif09dZZ1vQadzzC1XaXP0mak0xJXJfajx7X0NO53cIMLSZQFh67UlvZI5x6H9G8iQyz8B5/HvU1NMijXG4C6+IVLaaKRfL1BYhug5EDQT1s7oVt+n/az/3D1sGqmcU7xZ78MQ//HZ8lA1a08qENQAxk4oGyTJ/cil8CYJ8xqeF1MlGNgWRBvP/n5b6/8Om33WCBhcDLOnwr8tyf8oDaple3qAU1xiUZfy7GpWUXuCCmYmQMEhu684J8altDUIBeeECLUirDxuj81A0qBdnGjFQ/SSx1oN04T9XX6CozJ7L9hrbF1DHRTJcXmB56157ozsBbR+EgF2Q6qeBDhLZTzaQeAuOJ5dNgbUILQNVH/cm5aD1cMvJ+5eGfYaJ0dNF4+SvEV/LFb6uoOQcKFKPimDLrVeAn70UaAFZhgp5t/6L3ubc=
+    secure: kJx9NqIGL2zSc5+R6Ktqssv6/n1whi6sB0FQKK+/SE/tNl3OnmqJ9lYF8/J2IMt1Uhz44gIWJl0uzPWUCQqghT7pSqUy1MN1yhlkxh4W0thZMc6eXEWbOHrPp0pC2GvpgDy0xys5+OzI1v1khpZMt0KP1vuSb/Z5G+wkDxqCU/ep2JObI/3GgbkNx/3I0SBKDvYmvNgq39HMwidx3YW+LgWsWsEYAJBFmKM58UkT+EXfcWOxy2K0Aqt6uULEZEYk3y39nJxOTaLGUx19wfQNQQO0ugOX6mGHKRK34mb+DFfV2VOMrV093dSyelsHq5pT9d628L+l9TEg0WlXgt3ABOagB6dBV66CNRCD29SuOBbQebKNjBV0OLX8xB0BcEG9n/H0GWkOSxP79wL1oB3kIJB6pasZ0rCvgfddyjFr900+okdXCqiXH4bPfvOMRsSGF9gNqERWbGlqs2lAnUZlkdt2l+1w2KSRTDvogGaXT1cC/T71ttnPkATJN+SagPEPGTOUYFgLGsdYY9/j0zrSXzbXujR2lTG0zAsvZ4lhGujc/EBdAZ4/di+wZfOM+EyU6pefzYVZg4q2yDkdr1GxwAPN5BB4VHRLsw2IgEyYedWHYS66vvNZ7KuuF336Y3Sp6lDXz0mL6AYixOBh46YolxlGqhcGFkpkE7I0WBQD2c4=
   on:
     tags: true
     repo: limix/glimix-core
-    branch: master
+env:
+  global:
+    - secure: A0SPfnMMsWf0eoEnOfrCd6yRrdGseBz1dKCN1O7AkzUG6LguFXru2dyHKiSdjL3oKuSzXH1IXZUbZqSQ9Y9DHscsYhuNWYRTRNfhw5pp+CMhOzAlqiNTGQZ3OSC/v9jq2YEfImgT7/kYfYT3w/eEVfg5GrxloRAlKk0fvihhseOx9NsuUFEPMWSo+J75kXcCXMhdV8gSrVtBVvhCtUiUkT4uQLlWwfofWc7ROtarPv6pg/MfT/f/13Ts9/V+lraubVy8RWd+OP0e7fjb6jVRP9IwsZ3yd2lKMXscoKNG1Mc9Sq18MmLuUJeHG20wqjpHoYlKEAvVAgmk40w/zLFOuCZyoPQQ3Zl/eluGxGdHy1UUyLmrVB2Mj1cHkLbU8TCyrTmn4B/yb58H4gzyCdn7Ho/HrvRr7B7yfySqIoW5sojf0n4VqzGaxlDFP7MpZt6jWRUwaU3Bs+rcGeRGMek5ByBgO3cKVUlGOAkdts7kY6JeFNp2WHMfzeM1jtnP1LGSHmjy6D9pLt1NH15pwD+b0ujc69StuQ6iGlZI6c1zX7gypFK0/c3Fiux8WbHZGt6pvnzliYQRZ5FPQa+VpiUb8ev6xKHxR6zKPo3cIyxJU/tpYrorZt8iyuZarRV5fVpmMz/W2tgslVnlxaAzkAASfF3GE2J42PEpNJpEBDtB8vo=
+    - PKG_NAME=glimix_core
+    - PY_DEPS="ncephes numpy-sugar scipy scipy-sugar"
