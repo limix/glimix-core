@@ -2,7 +2,7 @@
 
 [![PyPIl](https://img.shields.io/pypi/l/glimix-core.svg?style=flat-square)](https://pypi.python.org/pypi/glimix-core/)
 [![PyPIv](https://img.shields.io/pypi/v/glimix-core.svg?style=flat-square)](https://pypi.python.org/pypi/glimix-core/)
-[![Documentation Status](https://readthedocs.org/projects/glimix-core/badge/?style=flat-square&version=1.2.x)](https://glimix-core.readthedocs.io/)
+[![Documentation Status](https://readthedocs.org/projects/glimix-core/badge/?style=flat-square&version=latest)](https://glimix-core.readthedocs.io/)
 
 
 Fast inference for Generalized Linear Mixed Models.
