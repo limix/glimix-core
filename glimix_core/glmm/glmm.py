@@ -162,7 +162,7 @@ class GLMM(EP, Function):
 
     @property
     def scale(self):
-        return exp(self.variables().get('logscale').value)
+        return float(exp(self.variables().get('logscale').value))
 
     @scale.setter
     def scale(self, v):
@@ -171,7 +171,7 @@ class GLMM(EP, Function):
 
     @property
     def delta(self):
-        return 1 / (1 + exp(-self.variables().get('logitdelta').value))
+        return float(1 / (1 + exp(-self.variables().get('logitdelta').value)))
 
     @delta.setter
     def delta(self, v):
