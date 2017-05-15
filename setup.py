@@ -25,13 +25,13 @@ def setup_package():
     install_requires = [
         'scipy>=0.18', 'ncephes>=1.0.21', 'numpy>=1.10', 'numpy-sugar>=1.0.38',
         'scipy-sugar>=1.0.2', 'optimix>=1.2.10', 'cachetools>=2.0', 'tqdm>=4',
-        'liknorm-py>=1.0.4'
+        'liknorm-py>=1.0.5'
     ]
     tests_require = ['pytest']
 
     metadata = dict(
         name='glimix-core',
-        version='1.2.5',
+        version='1.2.6',
         maintainer="Limix Developers",
         maintainer_email="horta@ebi.ac.uk",
         license="MIT",
