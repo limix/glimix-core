@@ -66,9 +66,9 @@ def test_GGPSampler_poisson():
 
     assert_equal(sampler.sample(random), [2, 0, 1, 2, 1, 1, 1, 2, 0, 0])
 
-    cov2.scale = 100.
+    cov2.scale = 20.
     sampler = GGPSampler(lik, mean, cov)
-    assert_equal(sampler.sample(random), [0, 0, 0, 0, 1, 0, 0, 1196, 0, 0])
+    assert_equal(sampler.sample(random), [0, 0, 0, 2, 0, 0, 1, 22, 0, 0])
 
     sampler.sample()
 
