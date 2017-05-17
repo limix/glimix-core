@@ -125,10 +125,12 @@ def test_glmm_binomial_pheno_list():
     successes = zeros(len(ntrials), int)
     for i in range(len(ntrials)):
         for j in range(ntrials[i]):
-            successes[i] += int(z[i] + 0.5 * random.randn() > 0)
+            successes[i] += int(z[i] + 0.1 * random.randn() > 0)
 
     y = [successes, ntrials]
 
     QS = economic_qs(K)
     glmm = GLMM(y, 'binomial', X, QS)
     glmm.feed().maximize(progress=False)
+
+    assert_allclose(glmm.value(), -64.84640479143297)

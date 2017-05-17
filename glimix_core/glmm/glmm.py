@@ -66,18 +66,17 @@ class GLMM(EP, Function):
         >>>
         >>> successes = zeros(len(ntrials), int)
         >>> for i in range(len(ntrials)):
-        ...     for j in range(ntrials[i]):
-        ...         successes[i] += int(z[i] + 0.5 * random.randn() > 0)
+        ...     successes[i] = sum(z[i] + 0.2 * random.randn(ntrials[i]) > 0)
         >>>
         >>> y = (successes, ntrials)
         >>>
         >>> QS = economic_qs(K)
         >>> glmm = GLMM(y, 'binomial', X, QS)
         >>> print('Before: %.4f' % glmm.feed().value())
-        Before: -151.5476
+        Before: -95.1854
         >>> glmm.feed().maximize(progress=False)
         >>> print('After: %.2f' % glmm.feed().value())
-        After: -147.53
+        After: -92.25
     """
 
     def __init__(self, y, lik_name, X, QS):
