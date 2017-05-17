@@ -121,9 +121,11 @@ class GLMM(EP, Function):
         self._QS = (Q, S)
 
         self._machine = LikNormMachine(lik_name, 500)
+        self._initialized = False
         self.set_nodata()
 
     def _clear_cache(self, _):
+        self._initialized = False
         self._need_params_update = True
 
     def __del__(self):
@@ -221,7 +223,10 @@ class GLMM(EP, Function):
             float: log of the marginal likelihood.
         """
         try:
-            self._initialize(self.mean(), (self._QS[0], self._S()))
+            if not self._initialized:
+                self._initialize(self.mean(), (self._QS[0], self._S()))
+                self._initialized = True
+
             self._params_update()
             lml = self._lml()
         except (ValueError, LinAlgError) as e:
@@ -245,7 +250,10 @@ class GLMM(EP, Function):
             list: derivatives.
         """
         try:
-            self._initialize(self.mean(), (self._QS[0], self._S()))
+            if not self._initialized:
+                self._initialize(self.mean(), (self._QS[0], self._S()))
+                self._initialized = True
+
             self._params_update()
 
             dS0 = self._eigval_derivative_over_logitdelta()
