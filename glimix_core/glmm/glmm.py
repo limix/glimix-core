@@ -200,9 +200,6 @@ class GLMM(EP, Function):
         s = self.scale
         c = (s * exp(x) / (1 + exp(-x))**2)
         E = self._QS[1]
-        cond = abs(E.max())/abs(E.min())
-        if cond > 1e5:
-            self._logger.info("Conditioning number too high: %.5f", cond)
         res = c * (1 - E)
         return res
 
