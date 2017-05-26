@@ -75,7 +75,7 @@ class FastScanner(object): # pylint: disable=R0903
         lmls = empty(p)
         effect_sizes = empty(p)
 
-        nchunks = min(p, 100)
+        nchunks = min(p, 30)
         chunk_size = (p + nchunks - 1) // nchunks
 
         for i in tqdm(range(nchunks), desc="Scanning", disable=not verbose):
