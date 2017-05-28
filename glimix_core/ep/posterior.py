@@ -141,6 +141,19 @@ class PosteriorLinearKernel(Posterior):
         self.eta[:] = self._mean
         self.eta[:] *= self.tau
 
+    def L(self):
+        r"""Cholesky decomposition of :math:`\mathrm B`.
+
+        .. math::
+
+            \mathrm B = \mathrm Q^{\intercal}\tilde{\mathrm{T}}\mathrm Q
+                + \mathrm{S}^{-1}
+        """
+        QS = self._QS
+        B = dot(QS[0].T, ddot(self._site.tau, QS[0], left=True))
+        sum2diag(B, 1. / self._S, out=B)
+        return cho_factor(B, lower=True)[0]
+
     def update(self):
         QS = self._QS
 
