@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, unicode_literals
 import logging
 
 from liknorm import LikNormMachine
-from numpy import sign
+from numpy import sign, zeros, concatenate
 from numpy.linalg import LinAlgError
 from numpy_sugar import epsilon
 from numpy_sugar.linalg import economic_qs
@@ -92,7 +92,7 @@ class ExpFamGP(EP, FunctionReduce):
         cov = values['ExpFamGP[1]']
         QS = economic_qs(cov)
         try:
-            self._initialize(mean, dict(QS=(QS[0][0], QS[1])))
+            self._initialize(mean, dict(QS=QS))
             self._params_update()
             lml = self._lml()
         except (ValueError, LinAlgError) as e:
@@ -120,7 +120,7 @@ class ExpFamGP(EP, FunctionReduce):
 
         try:
             QS = economic_qs(cov)
-            self._initialize(mean, dict(QS=(QS[0][0], QS[1])))
+            self._initialize(mean, dict(QS=QS))
             self._params_update()
 
             grad = dict()
@@ -131,7 +131,7 @@ class ExpFamGP(EP, FunctionReduce):
             for n, g in iter(gcov.items()):
                 QS = economic_qs(g)
                 grad['ExpFamGP[1].' + n] = self._lml_derivative_over_cov(
-                    (QS[0][0], QS[1]))
+                     QS)
 
             return grad
         except (ValueError, LinAlgError) as e:

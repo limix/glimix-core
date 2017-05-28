@@ -114,11 +114,7 @@ class GLMM(EP, Function):
         if not isinstance(QS[0], tuple):
             raise ValueError("QS[0] must be a tuple.")
 
-        Q = concatenate(QS[0], axis=1)
-        S = zeros(Q.shape[0], dtype=float)
-        S[:QS[1].shape[0]] = QS[1]
-
-        self._QS = (Q, S)
+        self._QS = QS
 
         self._machine = LikNormMachine(lik_name, 500)
         self._initialized = False
