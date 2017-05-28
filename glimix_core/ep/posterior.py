@@ -110,16 +110,18 @@ class PosteriorLinearKernel(Posterior):
         super(PosteriorLinearKernel, self).__init__(site)
         self._scale = None
         self._delta = None
+        self._QS0Qt = None
 
     def set_prior_cov(self, QS, scale, delta):
-        self._QS = QS
-        self._QS0Qt = dot(QS[0], ddot(QS[1], QS[0].T, left=True))
+        if self._QS is None:
+            self._QS = QS
+            self._QS0Qt = dot(QS[0], ddot(QS[1], QS[0].T, left=True))
+
         self._scale = scale
         self._delta = delta
         self._S = scale * ((1 - delta) * QS[1] + delta)
 
     def prior_cov(self):
-        # return (self._QS, self._scale, self._delta)
         return (self._QS[0], self._S)
 
     def initialize(self):
@@ -139,29 +141,11 @@ class PosteriorLinearKernel(Posterior):
         self.eta[:] = self._mean
         self.eta[:] *= self.tau
 
-    def L(self):
-        r"""Cholesky decomposition of :math:`\mathrm B`.
-
-        .. math::
-
-            \mathrm B = \mathrm Q^{\intercal}\tilde{\mathrm{T}}\mathrm Q
-                + \mathrm{S}^{-1}
-        """
-        QS = self._QS
-        B = dot(QS[0].T, ddot(self._site.tau, QS[0], left=True))
-        sum2diag(B, 1. / self._S, out=B)
-        return cho_factor(B, lower=True)[0]
-
-    def _BiQt(self):
-        return cho_solve(self.L(), self._QS[0].T)
-
     def update(self):
         QS = self._QS
 
-        import numpy as np
-        cov = self._scale * (1 - self._delta) * self._QS0Qt + self._scale * self._delta * np.eye(self._QS0Qt.shape[0])
-        # cov = dot(ddot(QS[0], self._S, left=False), QS[0].T)
-        # assert abs(cov2 - cov).max() < 1e-13
+        cov = self._scale * (1 - self._delta) * self._QS0Qt
+        sum2diag(cov, self._scale * self._delta, out=cov)
 
         BiQt = self._BiQt()
         TK = ddot(self._site.tau, cov, left=True)

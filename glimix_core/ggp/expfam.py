@@ -78,7 +78,6 @@ class ExpFamGP(EP, FunctionReduce):
         eta = self._cav['eta']
         self._machine.moments(self._y, eta, tau, self._moments)
 
-    # def value(self, mean, cov):
     def value_reduce(self, values):  # pylint: disable=R0201
         r"""Log of the marginal likelihood.
 
