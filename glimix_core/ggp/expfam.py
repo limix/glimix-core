@@ -51,7 +51,7 @@ class ExpFamGP(EP, FunctionReduce):
         Before: -65.8090
         >>> ggp.feed().maximize(progress=False)
         >>> print('After: %.2f' % ggp.feed().value())
-        After: -65.39
+        After: -65.59
     """
 
     def __init__(self, y, lik_name, mean, cov):

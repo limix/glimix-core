@@ -69,24 +69,25 @@ class EP(object):  # pylint: disable=R0903
 
         nsamples = len(mean)
 
-        self._site = Site(nsamples)
-        self._psite = Site(nsamples)
+        if self._site is None:
+            self._site = Site(nsamples)
+            self._psite = Site(nsamples)
 
-        self._cav = dict(tau=zeros(nsamples), eta=zeros(nsamples))
+            self._cav = dict(tau=zeros(nsamples), eta=zeros(nsamples))
 
-        self._posterior = self._posterior_type(self._site)
+            self._posterior = self._posterior_type(self._site)
 
         self._posterior.set_prior_mean(mean)
-
         self._posterior.set_prior_cov(cov)
 
-        self._moments = {
-            'log_zeroth': empty(nsamples),
-            'mean': empty(nsamples),
-            'variance': empty(nsamples)
-        }
+        if self._moments['log_zeroth'] is None:
+            self._moments = {
+                'log_zeroth': empty(nsamples),
+                'mean': empty(nsamples),
+                'variance': empty(nsamples)
+            }
 
-        self._posterior.initialize()
+            self._posterior.initialize()
 
     def _lml(self):
         L = self._posterior.L()

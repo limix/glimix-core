@@ -89,9 +89,8 @@ def test_glmm_bernoulli_problematic():
     model.feed().maximize(progress=False)
     assert_allclose(model.feed().value(), -344.86474884323525)
     assert_allclose(model.delta, 0, atol=1e-6)
-    assert_allclose(model.scale, 0.6025069154820977)
-    assert_allclose(model.scale, 0.6025069154820977)
-    assert_allclose(model.beta, [-0.018060946539989742])
+    assert_allclose(model.scale, 0.6027972365996683)
+    assert_allclose(model.beta, [-0.018073717897607946])
 
 def _stdnorm(X, axis=None, out=None):
     X = ascontiguousarray(X)
@@ -133,4 +132,4 @@ def test_glmm_binomial_pheno_list():
     glmm = GLMM(y, 'binomial', X, QS)
     glmm.feed().maximize(progress=False)
 
-    assert_allclose(glmm.value(), -64.84640479143297)
+    assert_allclose(glmm.value(), -64.84605684476243)

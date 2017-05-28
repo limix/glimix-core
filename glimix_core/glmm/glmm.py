@@ -77,7 +77,7 @@ class GLMM(EP, Function):
         Before: -95.1854
         >>> glmm.feed().maximize(progress=False)
         >>> print('After: %.2f' % glmm.feed().value())
-        After: -92.25
+        After: -92.24
     """
 
     def __init__(self, y, lik_name, X, QS):
