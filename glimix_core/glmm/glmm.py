@@ -66,18 +66,17 @@ class GLMM(EP, Function):
         >>>
         >>> successes = zeros(len(ntrials), int)
         >>> for i in range(len(ntrials)):
-        ...     for j in range(ntrials[i]):
-        ...         successes[i] += int(z[i] + 0.5 * random.randn() > 0)
+        ...     successes[i] = sum(z[i] + 0.2 * random.randn(ntrials[i]) > 0)
         >>>
         >>> y = (successes, ntrials)
         >>>
         >>> QS = economic_qs(K)
         >>> glmm = GLMM(y, 'binomial', X, QS)
         >>> print('Before: %.4f' % glmm.feed().value())
-        Before: -151.5476
+        Before: -95.1854
         >>> glmm.feed().maximize(progress=False)
         >>> print('After: %.2f' % glmm.feed().value())
-        After: -147.53
+        After: -92.25
     """
 
     def __init__(self, y, lik_name, X, QS):
@@ -121,9 +120,11 @@ class GLMM(EP, Function):
         self._QS = (Q, S)
 
         self._machine = LikNormMachine(lik_name, 500)
+        self._initialized = False
         self.set_nodata()
 
     def _clear_cache(self, _):
+        self._initialized = False
         self._need_params_update = True
 
     def __del__(self):
@@ -199,9 +200,6 @@ class GLMM(EP, Function):
         s = self.scale
         c = (s * exp(x) / (1 + exp(-x))**2)
         E = self._QS[1]
-        cond = abs(E.max())/abs(E.min())
-        if cond > 1e5:
-            self._logger.info("Conditioning number too high: %.5f", cond)
         res = c * (1 - E)
         return res
 
@@ -221,7 +219,10 @@ class GLMM(EP, Function):
             float: log of the marginal likelihood.
         """
         try:
-            self._initialize(self.mean(), (self._QS[0], self._S()))
+            if not self._initialized:
+                self._initialize(self.mean(), (self._QS[0], self._S()))
+                self._initialized = True
+
             self._params_update()
             lml = self._lml()
         except (ValueError, LinAlgError) as e:
@@ -245,7 +246,10 @@ class GLMM(EP, Function):
             list: derivatives.
         """
         try:
-            self._initialize(self.mean(), (self._QS[0], self._S()))
+            if not self._initialized:
+                self._initialize(self.mean(), (self._QS[0], self._S()))
+                self._initialized = True
+
             self._params_update()
 
             dS0 = self._eigval_derivative_over_logitdelta()

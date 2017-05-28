@@ -41,25 +41,31 @@ def test_glmm_optimize():
     random = RandomState(0)
     X = random.randn(100, 5)
     K = linear_eye_cov().feed().value()
+    z = random.multivariate_normal(0.2 * ones(100), K)
     QS = economic_qs(K)
 
     ntri = random.randint(1, 30, 100)
-    nsuc = [random.randint(0, i) for i in ntri]
+    nsuc = zeros(100, dtype=int)
+    for (i, ni) in enumerate(ntri):
+        nsuc[i] += sum(z[i] + 0.2 * random.randn(ni) > 0)
 
+    ntri = ascontiguousarray(ntri)
     glmm = GLMM((nsuc, ntri), 'binomial', X, QS)
 
-    assert_allclose(glmm.value(), -272.1213895386019)
+    assert_allclose(glmm.value(), -323.53924104721864)
     glmm.fix('beta')
     glmm.fix('scale')
 
     glmm.feed().maximize(progress=False)
-    assert_allclose(glmm.value(), -271.3681536575776)
+
+    assert_allclose(glmm.value(), -299.47042725069565)
 
     glmm.unfix('beta')
     glmm.unfix('scale')
 
     glmm.feed().maximize(progress=False)
-    assert_allclose(glmm.value(), -264.67173062461313)
+
+    assert_allclose(glmm.value(), -159.1688201218538)
 
 def test_glmm_bernoulli_problematic():
     random = RandomState(1)
@@ -119,10 +125,12 @@ def test_glmm_binomial_pheno_list():
     successes = zeros(len(ntrials), int)
     for i in range(len(ntrials)):
         for j in range(ntrials[i]):
-            successes[i] += int(z[i] + 0.5 * random.randn() > 0)
+            successes[i] += int(z[i] + 0.1 * random.randn() > 0)
 
     y = [successes, ntrials]
 
     QS = economic_qs(K)
     glmm = GLMM(y, 'binomial', X, QS)
     glmm.feed().maximize(progress=False)
+
+    assert_allclose(glmm.value(), -64.84640479143297)
