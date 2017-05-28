@@ -52,7 +52,8 @@ class Posterior(object):
 
         as the initial posterior mean and covariance.
         """
-        self.tau[:] = 1 / npsum((self._QS[0] * sqrt(self._QS[1]))**2, axis=1)
+        #self.tau[:] = 1 / npsum((self._QS[0] * sqrt(self._QS[1]))**2, axis=1)
+        self.tau[:] = 1 / npsum((self._QS[0][0] * sqrt(self._QS[1]))**2, axis=1)
         self.eta[:] = self._mean
         self.eta[:] *= self.tau
 
@@ -65,31 +66,32 @@ class Posterior(object):
                 + \mathrm{S}^{-1}
         """
         QS = self._QS
-        B = dot(QS[0].T, ddot(self._site.tau, QS[0], left=True))
+        #B = dot(QS[0].T, ddot(self._site.tau, QS[0], left=True))
+        B = dot(QS[0][0].T, ddot(self._site.tau, QS[0][0], left=True))
         sum2diag(B, 1. / QS[1], out=B)
         return cho_factor(B, lower=True)[0]
 
     def _BiQt(self):
-        return cho_solve(self.L(), self._QS[0].T)
+        return cho_solve(self.L(), self._QS[0][0].T)
 
     def update(self):
         QS = self._QS
-        cov = dot(ddot(QS[0], QS[1], left=False), QS[0].T)
+        cov = dot(ddot(QS[0][0], QS[1], left=False), QS[0][0].T)
 
         BiQt = self._BiQt()
         TK = ddot(self._site.tau, cov, left=True)
         BiQtTK = dot(BiQt, TK)
 
         self.tau[:] = cov.diagonal()
-        self.tau -= dotd(QS[0], BiQtTK)
+        self.tau -= dotd(QS[0][0], BiQtTK)
         self.tau[:] = 1 / self.tau
 
         assert all(self.tau >= 0.)
 
         self.eta[:] = dot(cov, self._site.eta)
         self.eta[:] += self._mean
-        self.eta[:] -= dot(QS[0], dot(BiQtTK, self._site.eta))
-        self.eta[:] -= dot(QS[0], dot(BiQt, self._site.tau * self._mean))
+        self.eta[:] -= dot(QS[0][0], dot(BiQtTK, self._site.eta))
+        self.eta[:] -= dot(QS[0][0], dot(BiQt, self._site.tau * self._mean))
 
         self.eta *= self.tau
 
@@ -115,8 +117,8 @@ class PosteriorLinearKernel(Posterior):
     def set_prior_cov(self, cov):
         if self._QS is None:
             self._QS = cov['QS']
-            self._QS0Qt = dot(self._QS[0],
-                              ddot(self._QS[1], self._QS[0].T, left=True))
+            self._QS0Qt = dot(self._QS[0][0],
+                              ddot(self._QS[1], self._QS[0][0].T, left=True))
 
         self._scale = cov['scale']
         self._delta = cov['delta']
@@ -138,7 +140,7 @@ class PosteriorLinearKernel(Posterior):
 
         as the initial posterior mean and covariance.
         """
-        self.tau[:] = 1 / npsum((self._QS[0] * sqrt(self._S))**2, axis=1)
+        self.tau[:] = 1 / npsum((self._QS[0][0] * sqrt(self._S))**2, axis=1)
         self.eta[:] = self._mean
         self.eta[:] *= self.tau
 
@@ -151,7 +153,7 @@ class PosteriorLinearKernel(Posterior):
                 + \mathrm{S}^{-1}
         """
         QS = self._QS
-        B = dot(QS[0].T, ddot(self._site.tau, QS[0], left=True))
+        B = dot(QS[0][0].T, ddot(self._site.tau, QS[0][0], left=True))
         sum2diag(B, 1. / self._S, out=B)
         return cho_factor(B, lower=True)[0]
 
@@ -166,14 +168,14 @@ class PosteriorLinearKernel(Posterior):
         BiQtTK = dot(BiQt, TK)
 
         self.tau[:] = cov.diagonal()
-        self.tau -= dotd(QS[0], BiQtTK)
+        self.tau -= dotd(QS[0][0], BiQtTK)
         self.tau[:] = 1 / self.tau
 
         assert all(self.tau >= 0.)
 
         self.eta[:] = dot(cov, self._site.eta)
         self.eta[:] += self._mean
-        self.eta[:] -= dot(QS[0], dot(BiQtTK, self._site.eta))
-        self.eta[:] -= dot(QS[0], dot(BiQt, self._site.tau * self._mean))
+        self.eta[:] -= dot(QS[0][0], dot(BiQtTK, self._site.eta))
+        self.eta[:] -= dot(QS[0][0], dot(BiQt, self._site.tau * self._mean))
 
         self.eta *= self.tau

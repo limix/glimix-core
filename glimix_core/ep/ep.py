@@ -92,6 +92,7 @@ class EP(object):  # pylint: disable=R0903
     def _lml(self):
         L = self._posterior.L()
         Q, S = self._posterior.prior_cov()
+        Q = Q[0]
         ttau = self._site.tau
         teta = self._site.eta
         ctau = self._cav['tau']
@@ -125,6 +126,7 @@ class EP(object):  # pylint: disable=R0903
     def _lml_derivative_over_mean(self, dm):
         L = self._posterior.L()
         Q, _ = self._posterior.prior_cov()
+        Q = Q[0]
         ttau = self._site.tau
         teta = self._site.eta
 
@@ -138,21 +140,22 @@ class EP(object):  # pylint: disable=R0903
     def _lml_derivative_over_cov(self, dQS):
         L = self._posterior.L()
         Q, _ = self._posterior.prior_cov()
+        Q = Q[0]
         ttau = self._site.tau
         teta = self._site.eta
 
         diff = teta - ttau * self._posterior.prior_mean()
 
-        v0 = dot(dQS[0], dQS[1] * dot(dQS[0].T, diff))
+        v0 = dot(dQS[0][0], dQS[1] * dot(dQS[0][0].T, diff))
         v1 = ttau * dot(Q, cho_solve(L, dot(Q.T, diff)))
         dlml = 0.5 * dot(diff, v0)
         dlml -= dot(v0, v1)
-        dlml += 0.5 * dot(v1, dot(dQS[0], dQS[1] * dot(dQS[0].T, v1)))
-        dqs = ddot(dQS[1], dQS[0].T, left=True)
-        diag = dotd(dQS[0], dqs)
+        dlml += 0.5 * dot(v1, dot(dQS[0][0], dQS[1] * dot(dQS[0][0].T, v1)))
+        dqs = ddot(dQS[1], dQS[0][0].T, left=True)
+        diag = dotd(dQS[0][0], dqs)
         dlml -= 0.5 * sum(ttau * diag)
 
-        tmp = cho_solve(L, dot(ddot(Q.T, ttau, left=False), dQS[0]))
+        tmp = cho_solve(L, dot(ddot(Q.T, ttau, left=False), dQS[0][0]))
         dlml += 0.5 * sum(ttau * dotd(Q, dot(tmp, dqs)))
 
         return dlml
