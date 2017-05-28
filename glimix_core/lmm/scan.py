@@ -3,6 +3,8 @@ from __future__ import division
 from numpy import append, dot, empty, log, full
 from numpy import sum as npsum
 
+from tqdm import tqdm
+
 from numpy_sugar.linalg import solve
 
 LOG2PI = 1.837877066409345339081937709124758839607238769531250
@@ -57,7 +59,7 @@ class FastScanner(object): # pylint: disable=R0903
         static_lml -= (n - p) * log(self._diags[1])
         return static_lml
 
-    def fast_scan(self, markers):
+    def fast_scan(self, markers, verbose=True):
         r"""LMLs of markers by fitting scale and fixed-effect sizes parameters.
 
         Args:
@@ -67,6 +69,27 @@ class FastScanner(object): # pylint: disable=R0903
         Returns:
             tuple: LMLs and effect-sizes, respectively.
         """
+        assert markers.ndim == 2
+        p = markers.shape[1]
+
+        lmls = empty(p)
+        effect_sizes = empty(p)
+
+        nchunks = min(p, 30)
+        chunk_size = (p + nchunks - 1) // nchunks
+
+        for i in tqdm(range(nchunks), desc="Scanning", disable=not verbose):
+            start = i * chunk_size
+            stop = min(start + chunk_size, markers.shape[1])
+
+            l, e = self._fast_scan_chunk(markers[:, start:stop])
+
+            lmls[start:stop] = l
+            effect_sizes[start:stop] = e
+
+        return lmls, effect_sizes
+
+    def _fast_scan_chunk(self, markers):
         assert markers.ndim == 2
 
         mTQ = [dot(markers.T, Q) for Q in self._QS[0]]
