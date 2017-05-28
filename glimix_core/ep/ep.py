@@ -8,7 +8,7 @@ from numpy.linalg import norm
 from numpy_sugar import epsilon
 from numpy_sugar.linalg import cho_solve, ddot, dotd
 
-from .posterior import Posterior
+from .posterior import Posterior, PosteriorLinearKernel
 from .site import Site
 
 MAX_ITERS = 100
@@ -61,7 +61,7 @@ class EP(object):  # pylint: disable=R0903
     def _compute_moments(self):
         raise NotImplementedError
 
-    def _initialize(self, mean, QS):
+    def _initialize(self, mean, QS, linear=False, scale=None, delta=None):
         self._logger.debug("EP parameters initialization.")
         self._need_params_update = True
 
@@ -71,9 +71,17 @@ class EP(object):  # pylint: disable=R0903
         self._psite = Site(nsamples)
 
         self._cav = dict(tau=zeros(nsamples), eta=zeros(nsamples))
-        self._posterior = Posterior(self._site)
+
+        if linear:
+            self._posterior = PosteriorLinearKernel(self._site)
+        else:
+            self._posterior = Posterior(self._site)
+
         self._posterior.set_prior_mean(mean)
-        self._posterior.set_prior_cov(QS)
+        if linear:
+            self._posterior.set_prior_cov(QS, scale, delta)
+        else:
+            self._posterior.set_prior_cov(QS)
 
         self._moments = {
             'log_zeroth': empty(nsamples),

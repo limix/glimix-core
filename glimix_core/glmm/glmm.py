@@ -220,7 +220,7 @@ class GLMM(EP, Function):
         """
         try:
             if not self._initialized:
-                self._initialize(self.mean(), (self._QS[0], self._S()))
+                self._initialize(self.mean(), (self._QS[0], self._QS[1]), True, self.scale, self.delta)
                 self._initialized = True
 
             self._params_update()
@@ -247,7 +247,7 @@ class GLMM(EP, Function):
         """
         try:
             if not self._initialized:
-                self._initialize(self.mean(), (self._QS[0], self._S()))
+                self._initialize(self.mean(), (self._QS[0], self._QS[1]), True, self.scale, self.delta)
                 self._initialized = True
 
             self._params_update()
