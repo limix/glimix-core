@@ -113,6 +113,7 @@ class PosteriorLinearKernel(Posterior):
 
     def set_prior_cov(self, QS, scale, delta):
         self._QS = QS
+        self._QS0Qt = dot(QS[0], ddot(QS[1], QS[0].T, left=True))
         self._scale = scale
         self._delta = delta
         self._S = scale * ((1 - delta) * QS[1] + delta)
@@ -156,7 +157,11 @@ class PosteriorLinearKernel(Posterior):
 
     def update(self):
         QS = self._QS
-        cov = dot(ddot(QS[0], self._S, left=False), QS[0].T)
+
+        import numpy as np
+        cov = self._scale * (1 - self._delta) * self._QS0Qt + self._scale * self._delta * np.eye(self._QS0Qt.shape[0])
+        # cov = dot(ddot(QS[0], self._S, left=False), QS[0].T)
+        # assert abs(cov2 - cov).max() < 1e-13
 
         BiQt = self._BiQt()
         TK = ddot(self._site.tau, cov, left=True)

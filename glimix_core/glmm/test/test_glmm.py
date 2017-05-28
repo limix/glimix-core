@@ -65,7 +65,7 @@ def test_glmm_optimize():
 
     glmm.feed().maximize(progress=False)
 
-    assert_allclose(glmm.value(), -159.1688201218538)
+    assert_allclose(glmm.value(), -159.1688201218538, rtol=1e-06)
 
 def test_glmm_bernoulli_problematic():
     random = RandomState(1)
