@@ -45,8 +45,10 @@ class EP(object):  # pylint: disable=R0903
         _moments (dict): moments for KL moment matching.
     """
 
-    def __init__(self):
+    def __init__(self, posterior_type=Posterior):
         self._logger = logging.getLogger(__name__)
+
+        self._posterior_type = posterior_type
 
         self._site = None
         self._psite = None
@@ -61,7 +63,7 @@ class EP(object):  # pylint: disable=R0903
     def _compute_moments(self):
         raise NotImplementedError
 
-    def _initialize(self, mean, QS, linear=False, scale=None, delta=None):
+    def _initialize(self, mean, cov):
         self._logger.debug("EP parameters initialization.")
         self._need_params_update = True
 
@@ -72,16 +74,11 @@ class EP(object):  # pylint: disable=R0903
 
         self._cav = dict(tau=zeros(nsamples), eta=zeros(nsamples))
 
-        if linear:
-            self._posterior = PosteriorLinearKernel(self._site)
-        else:
-            self._posterior = Posterior(self._site)
+        self._posterior = self._posterior_type(self._site)
 
         self._posterior.set_prior_mean(mean)
-        if linear:
-            self._posterior.set_prior_cov(QS, scale, delta)
-        else:
-            self._posterior.set_prior_cov(QS)
+
+        self._posterior.set_prior_cov(cov)
 
         self._moments = {
             'log_zeroth': empty(nsamples),

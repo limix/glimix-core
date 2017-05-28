@@ -2,16 +2,17 @@ from __future__ import absolute_import, division, unicode_literals
 
 import logging
 
+from liknorm import LikNormMachine
 from numpy import (asarray, clip, concatenate, dot, exp, inf, log, ndarray,
                    zeros)
 from numpy.linalg import LinAlgError
-from numpy_sugar import epsilon
 
-from liknorm import LikNormMachine
+from numpy_sugar import epsilon
 from optimix import Function, Scalar, Vector
 from optimix.optimize import BadSolutionError
 
 from ..ep import EP
+from ..ep.posterior import PosteriorLinearKernel
 
 
 class GLMM(EP, Function):
@@ -80,7 +81,7 @@ class GLMM(EP, Function):
     """
 
     def __init__(self, y, lik_name, X, QS):
-        super(GLMM, self).__init__()
+        super(GLMM, self).__init__(PosteriorLinearKernel)
         Function.__init__(
             self,
             beta=Vector(zeros(X.shape[1])),
@@ -220,7 +221,8 @@ class GLMM(EP, Function):
         """
         try:
             if not self._initialized:
-                self._initialize(self.mean(), (self._QS[0], self._QS[1]), True, self.scale, self.delta)
+                cov = dict(QS=self._QS, scale=self.scale, delta=self.delta)
+                self._initialize(self.mean(), cov)
                 self._initialized = True
 
             self._params_update()
@@ -247,7 +249,8 @@ class GLMM(EP, Function):
         """
         try:
             if not self._initialized:
-                self._initialize(self.mean(), (self._QS[0], self._QS[1]), True, self.scale, self.delta)
+                cov = dict(QS=self._QS, scale=self.scale, delta=self.delta)
+                self._initialize(self.mean(), cov)
                 self._initialized = True
 
             self._params_update()

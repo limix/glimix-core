@@ -92,7 +92,7 @@ class ExpFamGP(EP, FunctionReduce):
         cov = values['ExpFamGP[1]']
         QS = economic_qs(cov)
         try:
-            self._initialize(mean, (QS[0][0], QS[1]))
+            self._initialize(mean, dict(QS=(QS[0][0], QS[1])))
             self._params_update()
             lml = self._lml()
         except (ValueError, LinAlgError) as e:
@@ -100,7 +100,6 @@ class ExpFamGP(EP, FunctionReduce):
             lml = -1 / epsilon.small
         return lml
 
-    # def gradient(self, mean, cov, gmean, gcov):  # pylint: disable=W0221
     def gradient_reduce(self, values, gradients):
         r"""Gradient of the log of the marginal likelihood.
 
@@ -121,7 +120,7 @@ class ExpFamGP(EP, FunctionReduce):
 
         try:
             QS = economic_qs(cov)
-            self._initialize(mean, (QS[0][0], QS[1]))
+            self._initialize(mean, dict(QS=(QS[0][0], QS[1])))
             self._params_update()
 
             grad = dict()

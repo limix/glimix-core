@@ -30,8 +30,8 @@ class Posterior(object):
     def set_prior_mean(self, mean):
         self._mean = mean
 
-    def set_prior_cov(self, QS):
-        self._QS = QS
+    def set_prior_cov(self, cov):
+        self._QS = cov['QS']
 
     def prior_mean(self):
         return self._mean
@@ -112,14 +112,15 @@ class PosteriorLinearKernel(Posterior):
         self._delta = None
         self._QS0Qt = None
 
-    def set_prior_cov(self, QS, scale, delta):
+    def set_prior_cov(self, cov):
         if self._QS is None:
-            self._QS = QS
-            self._QS0Qt = dot(QS[0], ddot(QS[1], QS[0].T, left=True))
+            self._QS = cov['QS']
+            self._QS0Qt = dot(self._QS[0],
+                              ddot(self._QS[1], self._QS[0].T, left=True))
 
-        self._scale = scale
-        self._delta = delta
-        self._S = scale * ((1 - delta) * QS[1] + delta)
+        self._scale = cov['scale']
+        self._delta = cov['delta']
+        self._S = self._scale * ((1 - self._delta) * self._QS[1] + self._delta)
 
     def prior_cov(self):
         return (self._QS[0], self._S)
