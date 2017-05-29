@@ -67,6 +67,25 @@ def test_glmm_optimize():
 
     assert_allclose(glmm.value(), -159.1688201218538, rtol=1e-06)
 
+def test_glmm_optimize_low_rank():
+    random = RandomState(0)
+    X = random.randn(100, 5)
+    K = dot(X, X.T)
+    z = dot(X, 0.2 * random.randn(5))
+    QS = economic_qs(K)
+
+    ntri = random.randint(1, 30, 100)
+    nsuc = zeros(100, dtype=int)
+    for (i, ni) in enumerate(ntri):
+        nsuc[i] += sum(z[i] + 0.2 * random.randn(ni) > 0)
+
+    ntri = ascontiguousarray(ntri)
+    glmm = GLMM((nsuc, ntri), 'binomial', X, QS)
+
+    assert_allclose(glmm.value(), -323.53924104721864)
+    #glmm.feed().maximize(progress=False)
+    #assert_allclose(glmm.value(), -159.1688201218538, rtol=1e-06)
+
 def test_glmm_bernoulli_problematic():
     random = RandomState(1)
     N = 500

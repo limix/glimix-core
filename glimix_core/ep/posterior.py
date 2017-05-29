@@ -117,8 +117,8 @@ class PosteriorLinearKernel(Posterior):
     def set_prior_cov(self, cov):
         if self._QS is None:
             self._QS = cov['QS']
-            self._QS0Qt = dot(self._QS[0][0],
-                              ddot(self._QS[1], self._QS[0][0].T, left=True))
+            self._QS0 = ddot(self._QS[0][0],
+                             self._QS[1], left=False)
 
         self._scale = cov['scale']
         self._delta = cov['delta']
@@ -160,22 +160,34 @@ class PosteriorLinearKernel(Posterior):
     def update(self):
         QS = self._QS
 
-        cov = self._scale * (1 - self._delta) * self._QS0Qt
-        sum2diag(cov, self._scale * self._delta, out=cov)
+        #cov = dot(self._scale * (1 - self._delta) * self._QS0, QS[0][0].T)
+        #sum2diag(cov, self._scale * self._delta, out=cov)
 
         BiQt = self._BiQt()
-        TK = ddot(self._site.tau, cov, left=True)
-        BiQtTK = dot(BiQt, TK)
+        #TK = ddot(self._site.tau, cov, left=True)
+        #BiQtTK = dot(BiQt, TK)
+        
+        #BiQtTK = dot(BiQt, ddot(self._site.tau, cov, left=True))
+        BiQtTK0 = dot(dot(BiQt, ddot(self._site.tau, self._scale * (1 - self._delta) * self._QS0, left=True)), QS[0][0].T)
+        BiQtTK1 = ddot(BiQt, self._site.tau * self._scale * self._delta, left=False)
 
-        self.tau[:] = cov.diagonal()
-        self.tau -= dotd(QS[0][0], BiQtTK)
+        #self.tau[:] = cov.diagonal()
+        #self.tau -= dotd(QS[0][0], BiQtTK)
+        self.tau[:] = dotd(self._scale * (1 - self._delta) * self._QS0, QS[0][0].T)
+        self.tau += self._scale * self._delta
+        self.tau -= dotd(QS[0][0], BiQtTK0)
+        self.tau -= dotd(QS[0][0], BiQtTK1)
         self.tau[:] = 1 / self.tau
 
         assert all(self.tau >= 0.)
 
-        self.eta[:] = dot(cov, self._site.eta)
+        #self.eta[:] = dot(cov, self._site.eta)
+        self.eta[:] = self._scale * (1 - self._delta) * dot(self._QS0, dot(QS[0][0].T, self._site.eta))
+        self.eta[:] += self._scale * self._delta * self._site.eta
         self.eta[:] += self._mean
-        self.eta[:] -= dot(QS[0][0], dot(BiQtTK, self._site.eta))
+        #self.eta[:] -= dot(QS[0][0], dot(BiQtTK, self._site.eta))
+        self.eta[:] -= dot(QS[0][0], dot(BiQtTK0, self._site.eta))
+        self.eta[:] -= dot(QS[0][0], dot(BiQtTK1, self._site.eta))
         self.eta[:] -= dot(QS[0][0], dot(BiQt, self._site.tau * self._mean))
 
         self.eta *= self.tau

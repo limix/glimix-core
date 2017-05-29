@@ -90,6 +90,7 @@ class EP(object):  # pylint: disable=R0903
             self._posterior.initialize()
 
     def _lml(self):
+        import pdb; pdb.set_trace()
         L = self._posterior.L()
         Q, S = self._posterior.prior_cov()
         Q = Q[0]

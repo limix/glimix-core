@@ -216,6 +216,7 @@ class GLMM(EP, Function):
             float: log of the marginal likelihood.
         """
         try:
+            import pdb; pdb.set_trace()
             if not self._initialized:
                 cov = dict(QS=self._QS, scale=self.scale, delta=self.delta)
                 self._initialize(self.mean(), cov)
