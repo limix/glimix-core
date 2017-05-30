@@ -158,7 +158,9 @@ class EP(object):  # pylint: disable=R0903
             # lml -= 0.5 * sum(log(ttau)),
             -0.5 * sum(log(ctau)), #
             +0.5 * dot(ceta / TS, ttau * ceta / ctau - 2 * teta), #
-            -0.5 * sum((teta / ttau) * A * teta) + 0.5 * sum((teta / ttau) * teta)
+            # -0.5 * sum((teta / ttau) * A * teta) + 0.5 * sum((teta / ttau) * teta)
+            # 0.5 * sum(teta * 1/(ttau + 1/s/d) * teta)
+            0.5 * s * d * sum(teta * A * teta)
             # +0.5 * s * d * sum(teta * ttau * A * teta) #!
         ]
         lml = fsum(lml)
