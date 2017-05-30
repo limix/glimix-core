@@ -1,7 +1,7 @@
 from __future__ import division
 
 from numpy import sum as npsum
-from numpy import dot, empty, sqrt
+from numpy import dot, empty, sqrt, concatenate, zeros
 from scipy.linalg import cho_factor
 
 from numpy_sugar.linalg import cho_solve, ddot, dotd, sum2diag
@@ -37,7 +37,7 @@ class Posterior(object):
         return self._mean
 
     def prior_cov(self):
-        return self._QS
+        return (self._QS[0][0], self._QS[1])
 
     def initialize(self):
         r"""Initialize the mean and covariance of the posterior.
@@ -122,10 +122,20 @@ class PosteriorLinearKernel(Posterior):
 
         self._scale = cov['scale']
         self._delta = cov['delta']
-        self._S = self._scale * ((1 - self._delta) * self._QS[1] + self._delta)
+        # self._S = self._scale * ((1 - self._delta) * self._QS[1] + self._delta)
+
+    @property
+    def _A(self):
+        return 1 / (self._scale * self._delta * self._site.tau + 1)
 
     def prior_cov(self):
-        return (self._QS[0], self._S)
+        return dict(QS=self._QS, scale=self._scale, delta=self._delta)
+        # Q = concatenate(self._QS[0], axis=1)
+        # S = zeros(Q.shape[0])
+        # p = self._QS[1].shape[0]
+        # S[:p] = self._scale * (1 - self._delta) * self._QS[1]
+        # S += self._scale * self._delta
+        # return (Q, S)
 
     def initialize(self):
         r"""Initialize the mean and covariance of the posterior.
@@ -140,7 +150,13 @@ class PosteriorLinearKernel(Posterior):
 
         as the initial posterior mean and covariance.
         """
-        self.tau[:] = 1 / npsum((self._QS[0][0] * sqrt(self._S))**2, axis=1)
+        s = self._scale
+        d = self._delta
+        Q = self._QS[0][0]
+        S = self._QS[1]
+        self.tau[:] = s * (1 - d) * npsum((Q * sqrt(S))**2, axis=1)
+        self.tau += s * d
+        self.tau **= -1
         self.eta[:] = self._mean
         self.eta[:] *= self.tau
 
@@ -152,42 +168,42 @@ class PosteriorLinearKernel(Posterior):
             \mathrm B = \mathrm Q^{\intercal}\tilde{\mathrm{T}}\mathrm Q
                 + \mathrm{S}^{-1}
         """
-        QS = self._QS
-        B = dot(QS[0][0].T, ddot(self._site.tau, QS[0][0], left=True))
-        sum2diag(B, 1. / self._S, out=B)
+        A = self._A
+        tQ = sqrt(1 - self._delta) * self._QS[0][0]
+        S = self._QS[1]
+        B = dot(tQ.T, ddot(A * self._site.tau, tQ, left=True))
+        sum2diag(B, 1. / S / self._scale, out=B)
         return cho_factor(B, lower=True)[0]
 
     def update(self):
-        QS = self._QS
+        Q = self._QS[0][0]
+        S = self._QS[1]
+        A = self._A
 
-        #cov = dot(self._scale * (1 - self._delta) * self._QS0, QS[0][0].T)
-        #sum2diag(cov, self._scale * self._delta, out=cov)
+        s = self._scale
+        d = self._delta
 
-        BiQt = self._BiQt()
-        #TK = ddot(self._site.tau, cov, left=True)
-        #BiQtTK = dot(BiQt, TK)
-        
-        #BiQtTK = dot(BiQt, ddot(self._site.tau, cov, left=True))
-        BiQtTK0 = dot(dot(BiQt, ddot(self._site.tau, self._scale * (1 - self._delta) * self._QS0, left=True)), QS[0][0].T)
-        BiQtTK1 = ddot(BiQt, self._site.tau * self._scale * self._delta, left=False)
+        tQ = sqrt(1 - d) * Q
+        QtA = ddot(Q.T, A, left=False)
 
-        #self.tau[:] = cov.diagonal()
-        #self.tau -= dotd(QS[0][0], BiQtTK)
-        self.tau[:] = dotd(self._scale * (1 - self._delta) * self._QS0, QS[0][0].T)
-        self.tau += self._scale * self._delta
-        self.tau -= dotd(QS[0][0], BiQtTK0)
-        self.tau -= dotd(QS[0][0], BiQtTK1)
-        self.tau[:] = 1 / self.tau
+        tBitQt = cho_solve(self.L(), tQ.T)
 
-        assert all(self.tau >= 0.)
+        tBitQtA = ddot(tBitQt, A, left=False)
 
-        #self.eta[:] = dot(cov, self._site.eta)
-        self.eta[:] = self._scale * (1 - self._delta) * dot(self._QS0, dot(QS[0][0].T, self._site.eta))
-        self.eta[:] += self._scale * self._delta * self._site.eta
-        self.eta[:] += self._mean
-        #self.eta[:] -= dot(QS[0][0], dot(BiQtTK, self._site.eta))
-        self.eta[:] -= dot(QS[0][0], dot(BiQtTK0, self._site.eta))
-        self.eta[:] -= dot(QS[0][0], dot(BiQtTK1, self._site.eta))
-        self.eta[:] -= dot(QS[0][0], dot(BiQt, self._site.tau * self._mean))
+        ATtQ = ddot(A * self._site.tau, tQ, left=True)
+        QtATtQ = dot(ddot(QtA, self._site.tau, left=False), tQ)
 
+        self.tau[:] = s * (1 - d) * dotd(self._QS0, QtA)
+        self.tau -= s * (1 - d) * dotd(self._QS0, dot(QtATtQ, tBitQtA))
+        self.tau += s * d * A
+        self.tau -= s * d * dotd(ATtQ, tBitQtA)
+        self.tau **= -1
+
+        t = self._site.tau
+        e = self._site.eta
+
+        v = s * (1 - d) * dot(Q, S * dot(Q.T, e)) + s * d * e + self._mean
+
+        self.eta[:] = A * v
+        self.eta -= A * dot(tQ, dot(tBitQtA, t * v))
         self.eta *= self.tau

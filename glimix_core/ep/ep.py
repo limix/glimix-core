@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, unicode_literals
 import logging
 from math import fsum
 
-from numpy import dot, empty, inf, isfinite, log, maximum, zeros
+from numpy import dot, empty, inf, isfinite, log, maximum, zeros, sqrt
 from numpy.linalg import norm
 from numpy_sugar import epsilon
 from numpy_sugar.linalg import cho_solve, ddot, dotd
@@ -90,10 +90,11 @@ class EP(object):  # pylint: disable=R0903
             self._posterior.initialize()
 
     def _lml(self):
-        import pdb; pdb.set_trace()
+        if isinstance(self._posterior, PosteriorLinearKernel):
+            return self._lml_linear()
+
         L = self._posterior.L()
         Q, S = self._posterior.prior_cov()
-        Q = Q[0]
         ttau = self._site.tau
         teta = self._site.eta
         ctau = self._cav['tau']
@@ -124,10 +125,52 @@ class EP(object):  # pylint: disable=R0903
 
         return lml
 
+    def _lml_linear(self):
+        L = self._posterior.L()
+        cov = self._posterior.prior_cov()
+        Q = cov['QS'][0][0]
+        S = cov['QS'][1]
+        ttau = self._site.tau
+        teta = self._site.eta
+        ctau = self._cav['tau']
+        ceta = self._cav['eta']
+        m = self._posterior.prior_mean()
+
+        TS = ttau + ctau
+
+        s = cov['scale']
+        d = cov['delta']
+        A = self._posterior._A
+        tQ = sqrt(1 - d) * Q
+
+        lml = [
+            -log(L.diagonal()).sum(), #
+            -0.5 * sum(log(s * S)), #
+            +0.5 * sum(log(A)), #
+            # lml += 0.5 * sum(log(ttau)),
+            +0.5 * dot(teta * A, dot(tQ, cho_solve(L, dot(tQ.T, teta * A)))), #!=
+            -0.5 * dot(teta, teta / TS), #
+            +dot(m, A * teta) - 0.5 * dot(m, A * ttau * m), #
+            -0.5 *
+            dot(m * A * ttau, dot(tQ, cho_solve(L, dot(tQ.T, 2 * A * teta - A * ttau * m)))), #
+            +sum(self._moments['log_zeroth']), #
+            +0.5 * sum(log(TS)), #
+            # lml -= 0.5 * sum(log(ttau)),
+            -0.5 * sum(log(ctau)), #
+            +0.5 * dot(ceta / TS, ttau * ceta / ctau - 2 * teta), #
+            -0.5 * sum((teta / ttau) * A * teta) + 0.5 * sum((teta / ttau) * teta)
+            # +0.5 * s * d * sum(teta * ttau * A * teta) #!
+        ]
+        lml = fsum(lml)
+
+        if not isfinite(lml):
+            raise ValueError("LML should not be %f." % lml)
+
+        return lml
+
     def _lml_derivative_over_mean(self, dm):
         L = self._posterior.L()
         Q, _ = self._posterior.prior_cov()
-        Q = Q[0]
         ttau = self._site.tau
         teta = self._site.eta
 
@@ -141,7 +184,6 @@ class EP(object):  # pylint: disable=R0903
     def _lml_derivative_over_cov(self, dQS):
         L = self._posterior.L()
         Q, _ = self._posterior.prior_cov()
-        Q = Q[0]
         ttau = self._site.tau
         teta = self._site.eta
 
