@@ -201,3 +201,38 @@ def test_glmm_binomial_pheno_list():
     glmm.feed().maximize(progress=False)
 
     assert_allclose(glmm.value(), -64.84586890596634)
+
+
+def test_glmm_scale_very_low():
+    random = RandomState(0)
+    X = random.randn(100, 5)
+    K = linear_eye_cov().feed().value()
+    QS = economic_qs(K)
+
+    ntri = random.randint(1, 30, 100)
+    nsuc = [random.randint(0, i) for i in ntri]
+
+    glmm = GLMM((nsuc, ntri), 'binomial', X, QS)
+    glmm.beta = asarray([1.0, 0, 0.5, 0.1, 0.4])
+
+    glmm.scale = 1e-3
+    assert_allclose(glmm.value(), -660.0166421862141)
+
+    assert_allclose(check_grad(glmm), 0, atol=1e-3)
+
+def test_glmm_scale_very_high():
+    random = RandomState(0)
+    X = random.randn(100, 5)
+    K = linear_eye_cov().feed().value()
+    QS = economic_qs(K)
+
+    ntri = random.randint(1, 30, 100)
+    nsuc = [random.randint(0, i) for i in ntri]
+
+    glmm = GLMM((nsuc, ntri), 'binomial', X, QS)
+    glmm.beta = asarray([1.0, 0, 0.5, 0.1, 0.4])
+
+    glmm.scale = 30.
+    assert_allclose(glmm.value(), -328.25708726581706)
+
+    assert_allclose(check_grad(glmm), 0, atol=1e-3)

@@ -91,7 +91,7 @@ class GLMM(EP, Function):
         self._logger = logging.getLogger(__name__)
 
         logscale = self.variables()['logscale']
-        logscale.bounds = (-400., 400.)
+        logscale.bounds = (log(1e-4), 30.)
         # logscale.bounds = (-5., 4.)
         logscale.listen(self._clear_cache)
 
