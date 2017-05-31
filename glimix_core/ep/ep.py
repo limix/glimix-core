@@ -205,9 +205,6 @@ class EP(object):  # pylint: disable=R0903
         return dlml
 
     def _lml_derivative_over_cov(self, dQS):
-        if isinstance(self._posterior, PosteriorLinearKernel):
-            return self._lml_derivative_over_cov_scale()
-
         L = self._posterior.L()
         Q, _ = self._posterior.prior_cov()
         ttau = self._site.tau

@@ -38,44 +38,45 @@ def test_glmm_precise():
     glmm.delta = 0.1
     assert_allclose(glmm.value(), -288.52736106924954)
 
-    theo = glmm._lml_derivative_over_cov_scale()
-    start = glmm.value()
-    glmm.scale += 1e-6
-    end = glmm.value()
+    # theo = glmm._lml_derivative_over_cov_scale()
+    # start = glmm.value()
+    # glmm.scale += 1e-6
+    # end = glmm.value()
+    #
+    # print()
+    # print((end-start)/1e-6)
+    #
+    # print(theo)
+    #
+    # ###################
+    #
+    # theo = glmm._lml_derivative_over_cov_delta()
+    # start = glmm.value()
+    # glmm.delta += 1e-6
+    # end = glmm.value()
+    #
+    # print()
+    # print((end-start)/1e-6)
+    #
+    # print(theo)
+    #
+    # ###################
+    #
+    # theo = glmm._lml_derivative_over_mean_linear(glmm._X)
+    # start = glmm.value()
+    # beta = glmm.beta.copy()
+    # beta[0] += 1e-6
+    # glmm.beta = beta
+    # end = glmm.value()
+    #
+    # print()
+    # print((end-start)/1e-6)
+    #
+    # print(theo)
 
-    print()
-    print((end-start)/1e-6)
 
-    print(theo)
-
-    ###################
-
-    theo = glmm._lml_derivative_over_cov_delta()
-    start = glmm.value()
-    glmm.delta += 1e-6
-    end = glmm.value()
-
-    print()
-    print((end-start)/1e-6)
-
-    print(theo)
-
-    ###################
-
-    theo = glmm._lml_derivative_over_mean_linear(glmm._X)
-    start = glmm.value()
-    beta = glmm.beta.copy()
-    beta[0] += 1e-6
-    glmm.beta = beta
-    end = glmm.value()
-
-    print()
-    print((end-start)/1e-6)
-
-    print(theo)
-
-
-    # # # assert_allclose(check_grad(glmm), 0, atol=1e-4)
+    # import pdb; pdb.set_trace()
+    assert_allclose(check_grad(glmm), 0, atol=1e-4)
 
 def test_glmm_wrong_qs():
     random = RandomState(0)
