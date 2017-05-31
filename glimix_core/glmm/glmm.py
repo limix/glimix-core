@@ -95,7 +95,7 @@ class GLMM(EP, Function):
         logscale.listen(self._clear_cache)
 
         logitdelta = self.variables()['logitdelta']
-        logitdelta.bounds = (-30.0, +30.0)
+        logitdelta.bounds = (-inf, +inf)
         logitdelta.listen(self._clear_cache)
 
         self.variables()['beta'].listen(self._clear_cache)
