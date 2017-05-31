@@ -122,7 +122,6 @@ class PosteriorLinearKernel(Posterior):
 
         self._scale = cov['scale']
         self._delta = cov['delta']
-        # self._S = self._scale * ((1 - self._delta) * self._QS[1] + self._delta)
 
     @property
     def _A(self):
