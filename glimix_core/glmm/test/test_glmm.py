@@ -135,9 +135,9 @@ def test_glmm_optimize_low_rank():
     ntri = ascontiguousarray(ntri)
     glmm = GLMM((nsuc, ntri), 'binomial', X, QS)
 
-    assert_allclose(glmm.value(), 22.994881066533782)
-    #glmm.feed().maximize(progress=False)
-    #assert_allclose(glmm.value(), -159.1688201218538, rtol=1e-06)
+    assert_allclose(glmm.value(), -179.73542932110485)
+    glmm.feed().maximize(progress=False)
+    assert_allclose(glmm.value(), -155.4794212740998, rtol=1e-06)
 
 def test_glmm_bernoulli_problematic():
     random = RandomState(1)
@@ -161,8 +161,8 @@ def test_glmm_bernoulli_problematic():
     model.feed().maximize(progress=False)
     assert_allclose(model.feed().value(), -344.86474884323525)
     assert_allclose(model.delta, 0, atol=1e-6)
-    assert_allclose(model.scale, 0.6027972365996683)
-    assert_allclose(model.beta, [-0.018073717897607946])
+    assert_allclose(model.scale, 0.6025071159678904)
+    assert_allclose(model.beta, [-0.018060947719029948])
 
 def _stdnorm(X, axis=None, out=None):
     X = ascontiguousarray(X)
@@ -204,4 +204,4 @@ def test_glmm_binomial_pheno_list():
     glmm = GLMM(y, 'binomial', X, QS)
     glmm.feed().maximize(progress=False)
 
-    assert_allclose(glmm.value(), -64.84605684476243)
+    assert_allclose(glmm.value(), -64.84586890596634)
