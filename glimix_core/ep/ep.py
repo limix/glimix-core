@@ -273,33 +273,36 @@ class EP(object):  # pylint: disable=R0903
         S = cov['QS'][1]
         d = cov['delta']
         s = cov['scale']
-        Q = sqrt(1 - d) * cov['QS'][0][0]
+        Q = cov['QS'][0][0]
+        tQ = sqrt(1 - d) * cov['QS'][0][0]
 
         e_m = self._site.eta - T * self._posterior.prior_mean()
         Ae_m = A * e_m
-        QTe_m = dot(Q.T, e_m)
+        tQTe_m = dot(tQ.T, e_m)
+        tQS = dotr(tQ, S)
         QS = dotr(Q, S)
         TA = T * A
 
-        tQStQTdi = dot(QS, QTe_m)
+        tQStQTdi = dot(tQS, tQTe_m)
+        tQTAe_m = dot(tQ.T, Ae_m)
         QTAe_m = dot(Q.T, Ae_m)
 
-        dKAd_m = - s * dot(QS, QTAe_m)/(1 - d) + s * Ae_m
+        dKAd_m = - s * dot(QS, QTAe_m) + s * Ae_m
 
-        QLQAd_m = dot(Q, cho_solve(L, QTAe_m))
+        QLQAd_m = dot(tQ, cho_solve(L, tQTAe_m))
         TAQLQAd_m = TA * QLQAd_m
 
         dlml = 0.5 * dot(Ae_m, dKAd_m)
         dlml -= sum(TAQLQAd_m * dKAd_m)
-        dlml += 0.5 * dot(TAQLQAd_m, - s * dot(QS, dot(Q.T, TAQLQAd_m)) / (1 - d) + s * TAQLQAd_m)
+        dlml += 0.5 * dot(TAQLQAd_m, - s * dot(QS, dot(Q.T, TAQLQAd_m)) + s * TAQLQAd_m)
 
-        dlml += 0.5 * s * dotd(ldot(TA, Q), QS.T).sum() / (1 - d)
+        dlml += 0.5 * s * dotd(ldot(TA, Q), QS.T).sum()
         dlml -= 0.5 * sum(TA * s)
 
-        t0 = dot(cho_solve(L, dot(Q.T, ldot(TA, Q))), QS.T)
-        dlml -= 0.5 * s * dotd(ldot(TA, Q), t0).sum() / (1 - d)
+        t0 = dot(cho_solve(L, dot(tQ.T, ldot(TA, Q))), QS.T)
+        dlml -= 0.5 * s * dotd(ldot(TA, tQ), t0).sum()
 
-        dlml += 0.5 * s * dotd(ldot(TA, Q), cho_solve(L, dotr(Q.T, TA))).sum()
+        dlml += 0.5 * s * dotd(ldot(TA, tQ), cho_solve(L, dotr(tQ.T, TA))).sum()
 
         return dlml
 
