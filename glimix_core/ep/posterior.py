@@ -130,12 +130,6 @@ class PosteriorLinearKernel(Posterior):
 
     def prior_cov(self):
         return dict(QS=self._QS, scale=self._scale, delta=self._delta)
-        # Q = concatenate(self._QS[0], axis=1)
-        # S = zeros(Q.shape[0])
-        # p = self._QS[1].shape[0]
-        # S[:p] = self._scale * (1 - self._delta) * self._QS[1]
-        # S += self._scale * self._delta
-        # return (Q, S)
 
     def initialize(self):
         r"""Initialize the mean and covariance of the posterior.

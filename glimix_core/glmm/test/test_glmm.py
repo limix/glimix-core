@@ -24,6 +24,18 @@ def test_glmm_precise():
     glmm.beta = asarray([1.0, 0, 0.5, 0.1, 0.4])
 
     assert_allclose(glmm.value(), -301.131178219417)
+
+    theo = glmm._lml_derivative_over_cov_scale()
+    start = glmm.value()
+    glmm.scale += 1e-6
+    end = glmm.value()
+
+    print()
+    print((end-start)/1e-6)
+
+    # print(glmm._lml_derivative_over_cov_scale())
+    print(theo)
+
     # assert_allclose(check_grad(glmm), 0, atol=1e-4)
 
 def test_glmm_wrong_qs():

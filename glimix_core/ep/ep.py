@@ -158,10 +158,7 @@ class EP(object):  # pylint: disable=R0903
             # lml -= 0.5 * sum(log(ttau)),
             -0.5 * sum(log(ctau)), #
             +0.5 * dot(ceta / TS, ttau * ceta / ctau - 2 * teta), #
-            # -0.5 * sum((teta / ttau) * A * teta) + 0.5 * sum((teta / ttau) * teta)
-            # 0.5 * sum(teta * 1/(ttau + 1/s/d) * teta)
             0.5 * s * d * sum(teta * A * teta)
-            # +0.5 * s * d * sum(teta * ttau * A * teta) #!
         ]
         lml = fsum(lml)
 
@@ -171,6 +168,9 @@ class EP(object):  # pylint: disable=R0903
         return lml
 
     def _lml_derivative_over_mean(self, dm):
+        if isinstance(self._posterior, PosteriorLinearKernel):
+            return self._lml_derivative_over_mean_linear(dm)
+
         L = self._posterior.L()
         Q, _ = self._posterior.prior_cov()
         ttau = self._site.tau
@@ -183,7 +183,24 @@ class EP(object):  # pylint: disable=R0903
 
         return dlml
 
+    def _lml_derivative_over_mean_linear(self, dm):
+        L = self._posterior.L()
+        cov = self._posterior.prior_cov()
+        import pdb; pdb.set_trace()
+        ttau = self._site.tau
+        teta = self._site.eta
+
+        diff = teta - ttau * self._posterior.prior_mean()
+
+        dlml = dot(diff, dm)
+        dlml -= dot(diff, dot(Q, cho_solve(L, dot(Q.T, (ttau * dm.T).T))))
+
+        return dlml
+
     def _lml_derivative_over_cov(self, dQS):
+        if isinstance(self._posterior, PosteriorLinearKernel):
+            return self._lml_derivative_over_cov_scale()
+
         L = self._posterior.L()
         Q, _ = self._posterior.prior_cov()
         ttau = self._site.tau
@@ -204,6 +221,66 @@ class EP(object):  # pylint: disable=R0903
         dlml += 0.5 * sum(ttau * dotd(Q, dot(tmp, dqs)))
 
         return dlml
+
+    def _lml_derivative_over_cov_scale(self):
+        L = self._posterior.L()
+        cov = self._posterior.prior_cov()
+        ttau = self._site.tau
+        teta = self._site.eta
+        A = self._posterior._A
+
+        Q = cov['QS'][0][0]
+        S = cov['QS'][1]
+        delta = cov['delta']
+        scale = cov['scale']
+        tQ = Q * sqrt(1 - delta)
+
+        di = teta - ttau * self._posterior.prior_mean()
+        tQTdi = dot(tQ.T, di)
+        tQStQTdi = dot(tQ, S * tQTdi)
+
+        v0 = tQStQTdi + delta * di
+        v00 = dot(dot(tQ, ddot(S, tQ.T, left=True)), A * di) + delta * A * di
+        v1 = ttau * dot(tQ, cho_solve(L, dot(tQ.T, A * di)))
+
+        dlml = 0.5 * dot(di * A, v00) # correct
+        dlml -= sum(v1 * A * v00)
+        dlml += 0.5 * dot(v1 * A, dot(tQ, S * dot(tQ.T, A * v1)) + delta * A * v1)
+
+        dlml -= 0.5 * dotd(ddot(A * ttau, tQ, left=True), ddot(S, tQ.T, left=True)).sum()
+        dlml -= 0.5 * sum(A * ttau * delta)
+
+        t0 = dot(cho_solve(L, dot(tQ.T, ddot(A * ttau, tQ, left=True))), ddot(S, tQ.T, left=True))
+        dlml += 0.5 * dotd(ddot(A * ttau, tQ, left=True), t0).sum()
+
+        dlml += 0.5 * delta * dotd(ddot(A * ttau, tQ, left=True), cho_solve(L, ddot(tQ.T, ttau * A, left=False))).sum()
+
+        # import numpy as np
+        # K = scale * (1-delta) * Q.dot(np.diag(S)).dot(Q.T) + scale * delta * np.eye(100)
+        # KS = K + np.diag(1/ttau)
+        # iKS = np.linalg.inv(KS)
+        #
+        # dK = K / scale
+        # diff = (teta/ttau - self._posterior.prior_mean())
+        #
+        # import pdb; pdb.set_trace()
+
+        return dlml
+        # diff = teta - ttau * self._posterior.prior_mean()
+        #
+        # v0 = dot(dQS[0][0], dQS[1] * dot(dQS[0][0].T, diff))
+        # v1 = ttau * dot(Q, cho_solve(L, dot(Q.T, diff)))
+        # dlml = 0.5 * dot(diff, v0)
+        # dlml -= dot(v0, v1)
+        # dlml += 0.5 * dot(v1, dot(dQS[0][0], dQS[1] * dot(dQS[0][0].T, v1)))
+        # dqs = ddot(dQS[1], dQS[0][0].T, left=True)
+        # diag = dotd(dQS[0][0], dqs)
+        # dlml -= 0.5 * sum(ttau * diag)
+        #
+        # tmp = cho_solve(L, dot(ddot(Q.T, ttau, left=False), dQS[0][0]))
+        # dlml += 0.5 * sum(ttau * dotd(Q, dot(tmp, dqs)))
+        #
+        # return dlml
 
     def _params_update(self):
         if not self._need_params_update:
