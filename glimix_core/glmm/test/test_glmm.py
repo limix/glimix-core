@@ -60,6 +60,20 @@ def test_glmm_precise():
 
     print(theo)
 
+    ###################
+
+    theo = glmm._lml_derivative_over_mean_linear(glmm._X)
+    start = glmm.value()
+    beta = glmm.beta.copy()
+    beta[0] += 1e-6
+    glmm.beta = beta
+    end = glmm.value()
+
+    print()
+    print((end-start)/1e-6)
+
+    print(theo)
+
 
     # # # assert_allclose(check_grad(glmm), 0, atol=1e-4)
 

@@ -191,14 +191,16 @@ class EP(object):  # pylint: disable=R0903
     def _lml_derivative_over_mean_linear(self, dm):
         L = self._posterior.L()
         cov = self._posterior.prior_cov()
-        import pdb; pdb.set_trace()
         ttau = self._site.tau
         teta = self._site.eta
+        A = self._posterior._A
 
-        diff = teta - ttau * self._posterior.prior_mean()
+        Q = cov['QS'][0][0] * sqrt(1 - cov['delta'])
 
-        dlml = dot(diff, dm)
-        dlml -= dot(diff, dot(Q, cho_solve(L, dot(Q.T, (ttau * dm.T).T))))
+        di = teta - ttau * self._posterior.prior_mean()
+
+        dlml = dot(di, ldot(A, dm))
+        dlml -= dot(di * A, dot(Q, cho_solve(L, dot(Q.T, ldot(A, (ttau * dm.T).T)))))
 
         return dlml
 
