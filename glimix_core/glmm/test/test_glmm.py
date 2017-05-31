@@ -23,20 +23,32 @@ def test_glmm_precise():
     glmm = GLMM((nsuc, ntri), 'binomial', X, QS)
     glmm.beta = asarray([1.0, 0, 0.5, 0.1, 0.4])
 
+    glmm.scale = 1.0
     assert_allclose(glmm.value(), -301.131178219417)
+    glmm.scale = 2.0
+    assert_allclose(glmm.value(), -282.0168292483553)
+    glmm.scale = 3.0
+    assert_allclose(glmm.value(), -278.9578864177154)
+    glmm.scale = 4.0
+    assert_allclose(glmm.value(), -279.7798134817152)
+    glmm.scale = 5.0
+    assert_allclose(glmm.value(), -281.8759791133573)
+    glmm.scale = 6.0
+    assert_allclose(glmm.value(), -284.41654060633704)
+    glmm.delta = 0.1
+    assert_allclose(glmm.value(), -288.52736106924954)
 
     theo = glmm._lml_derivative_over_cov_scale()
     start = glmm.value()
     glmm.scale += 1e-6
     end = glmm.value()
-
+    #
     print()
     print((end-start)/1e-6)
-
-    # print(glmm._lml_derivative_over_cov_scale())
+    #
     print(theo)
-
-    # assert_allclose(check_grad(glmm), 0, atol=1e-4)
+    # #
+    # # # assert_allclose(check_grad(glmm), 0, atol=1e-4)
 
 def test_glmm_wrong_qs():
     random = RandomState(0)
