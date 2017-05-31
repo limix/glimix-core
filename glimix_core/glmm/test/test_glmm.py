@@ -38,44 +38,40 @@ def test_glmm_precise():
     glmm.delta = 0.1
     assert_allclose(glmm.value(), -288.52736106924954)
 
-    # theo = glmm._lml_derivative_over_cov_scale()
-    # start = glmm.value()
-    # glmm.scale += 1e-6
-    # end = glmm.value()
-    #
-    # print()
-    # print((end-start)/1e-6)
-    #
-    # print(theo)
-    #
-    # ###################
-    #
-    # theo = glmm._lml_derivative_over_cov_delta()
-    # start = glmm.value()
-    # glmm.delta += 1e-6
-    # end = glmm.value()
-    #
-    # print()
-    # print((end-start)/1e-6)
-    #
-    # print(theo)
-    #
-    # ###################
-    #
-    # theo = glmm._lml_derivative_over_mean_linear(glmm._X)
-    # start = glmm.value()
-    # beta = glmm.beta.copy()
-    # beta[0] += 1e-6
-    # glmm.beta = beta
-    # end = glmm.value()
-    #
-    # print()
-    # print((end-start)/1e-6)
-    #
-    # print(theo)
+    assert_allclose(check_grad(glmm), 0, atol=1e-4)
 
+def test_glmm_delta0():
+    random = RandomState(0)
+    X = random.randn(100, 5)
+    K = linear_eye_cov().feed().value()
+    QS = economic_qs(K)
 
-    # import pdb; pdb.set_trace()
+    ntri = random.randint(1, 30, 100)
+    nsuc = [random.randint(0, i) for i in ntri]
+
+    glmm = GLMM((nsuc, ntri), 'binomial', X, QS)
+    glmm.beta = asarray([1.0, 0, 0.5, 0.1, 0.4])
+
+    glmm.delta = 0
+
+    assert_allclose(glmm.value(), -294.3278421139486)
+    assert_allclose(check_grad(glmm), 0, atol=1e-4)
+
+def test_glmm_delta1():
+    random = RandomState(0)
+    X = random.randn(100, 5)
+    K = linear_eye_cov().feed().value()
+    QS = economic_qs(K)
+
+    ntri = random.randint(1, 30, 100)
+    nsuc = [random.randint(0, i) for i in ntri]
+
+    glmm = GLMM((nsuc, ntri), 'binomial', X, QS)
+    glmm.beta = asarray([1.0, 0, 0.5, 0.1, 0.4])
+
+    glmm.delta = 1
+
+    assert_allclose(glmm.value(), -317.9113619451949)
     assert_allclose(check_grad(glmm), 0, atol=1e-4)
 
 def test_glmm_wrong_qs():
