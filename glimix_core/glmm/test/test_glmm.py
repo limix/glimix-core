@@ -42,12 +42,25 @@ def test_glmm_precise():
     start = glmm.value()
     glmm.scale += 1e-6
     end = glmm.value()
-    #
+
     print()
     print((end-start)/1e-6)
-    #
+
     print(theo)
-    # #
+
+    ###################
+
+    theo = glmm._lml_derivative_over_cov_delta()
+    start = glmm.value()
+    glmm.delta += 1e-6
+    end = glmm.value()
+
+    print()
+    print((end-start)/1e-6)
+
+    print(theo)
+
+
     # # # assert_allclose(check_grad(glmm), 0, atol=1e-4)
 
 def test_glmm_wrong_qs():

@@ -268,35 +268,39 @@ class EP(object):  # pylint: disable=R0903
     def _lml_derivative_over_cov_delta(self):
         L = self._posterior.L()
         cov = self._posterior.prior_cov()
-        ttau = self._site.tau
-        teta = self._site.eta
+        T = self._site.tau
         A = self._posterior._A
 
-        Q = cov['QS'][0][0]
         S = cov['QS'][1]
-        delta = cov['delta']
-        scale = cov['scale']
-        tQ = Q * sqrt(1 - delta)
+        d = cov['delta']
+        s = cov['scale']
+        Q = sqrt(1 - d) * cov['QS'][0][0]
 
-        di = teta - ttau * self._posterior.prior_mean()
-        tQTdi = dot(tQ.T, di)
-        tQStQTdi = dot(tQ, S * tQTdi)
+        e_m = self._site.eta - T * self._posterior.prior_mean()
+        Ae_m = A * e_m
+        QTe_m = dot(Q.T, e_m)
+        QS = dotr(Q, S)
+        TA = T * A
 
-        v0 = tQStQTdi + delta * di
-        v00 = dot(dot(tQ, ldot(S, tQ.T)), A * di) + delta * A * di
-        v1 = ttau * dot(tQ, cho_solve(L, dot(tQ.T, A * di)))
+        tQStQTdi = dot(QS, QTe_m)
+        QTAe_m = dot(Q.T, Ae_m)
 
-        dlml = 0.5 * dot(di * A, v00) # correct
-        dlml -= sum(v1 * A * v00)
-        dlml += 0.5 * dot(v1 * A, dot(tQ, S * dot(tQ.T, A * v1)) + delta * A * v1)
+        dKAd_m = - s * dot(QS, QTAe_m)/(1 - d) + s * Ae_m
 
-        dlml -= 0.5 * dotd(ldot(A * ttau, tQ), ldot(S, tQ.T)).sum()
-        dlml -= 0.5 * sum(A * ttau * delta)
+        QLQAd_m = dot(Q, cho_solve(L, QTAe_m))
+        TAQLQAd_m = TA * QLQAd_m
 
-        t0 = dot(cho_solve(L, dot(tQ.T, ldot(A * ttau, tQ))), ldot(S, tQ.T))
-        dlml += 0.5 * dotd(ldot(A * ttau, tQ), t0).sum()
+        dlml = 0.5 * dot(Ae_m, dKAd_m)
+        dlml -= sum(TAQLQAd_m * dKAd_m)
+        dlml += 0.5 * dot(TAQLQAd_m, - s * dot(QS, dot(Q.T, TAQLQAd_m)) / (1 - d) + s * TAQLQAd_m)
 
-        dlml += 0.5 * delta * dotd(ldot(A * ttau, tQ), cho_solve(L, dotr(tQ.T, ttau * A))).sum()
+        dlml += 0.5 * s * dotd(ldot(TA, Q), QS.T).sum() / (1 - d)
+        dlml -= 0.5 * sum(TA * s)
+
+        t0 = dot(cho_solve(L, dot(Q.T, ldot(TA, Q))), QS.T)
+        dlml -= 0.5 * s * dotd(ldot(TA, Q), t0).sum() / (1 - d)
+
+        dlml += 0.5 * s * dotd(ldot(TA, Q), cho_solve(L, dotr(Q.T, TA))).sum()
 
         return dlml
 
