@@ -3,31 +3,35 @@ from __future__ import absolute_import, division, unicode_literals
 import logging
 from math import fsum
 
-from numpy import dot, empty, inf, isfinite, log, maximum, zeros, sqrt
+from numpy import dot, empty, inf, isfinite, log, maximum, sqrt, zeros
 from numpy.linalg import norm
 from numpy_sugar import epsilon
 from numpy_sugar.linalg import cho_solve, ddot, dotd
 
+from .ep import EP
 from .posterior_linear_kernel import PosteriorLinearKernel
 from .site import Site
-from .ep import EP
 
 MAX_ITERS = 100
 RTOL = epsilon.small * 1000
 ATOL = epsilon.small * 1000
 
+
 def ldot(A, B):
     return ddot(A, B, left=True)
+
 
 def dotr(A, B):
     return ddot(A, B, left=False)
 
-class EPLinearKernel(EP):  # pylint: disable=R0903
 
+class EPLinearKernel(EP):  # pylint: disable=R0903
     def __init__(self, nsites):
         super(EPLinearKernel, self).__init__(nsites, PosteriorLinearKernel)
 
     def _lml(self):
+        self._params_update()
+
         L = self._posterior.L()
         cov = self._posterior.cov
         Q = cov['QS'][0][0]
@@ -46,20 +50,23 @@ class EPLinearKernel(EP):  # pylint: disable=R0903
         tQ = sqrt(1 - d) * Q
 
         lml = [
-            -log(L.diagonal()).sum(), #
-            -0.5 * sum(log(s * S)), #
-            +0.5 * sum(log(A)), #
+            -log(L.diagonal()).sum(),  #
+            -0.5 * sum(log(s * S)),  #
+            +0.5 * sum(log(A)),  #
             # lml += 0.5 * sum(log(ttau)),
-            +0.5 * dot(teta * A, dot(tQ, cho_solve(L, dot(tQ.T, teta * A)))), #!=
-            -0.5 * dot(teta, teta / TS), #
-            +dot(m, A * teta) - 0.5 * dot(m, A * ttau * m), #
-            -0.5 *
-            dot(m * A * ttau, dot(tQ, cho_solve(L, dot(tQ.T, 2 * A * teta - A * ttau * m)))), #
-            +sum(self._moments['log_zeroth']), #
-            +0.5 * sum(log(TS)), #
+            +0.5 * dot(teta * A, dot(tQ, cho_solve(L, dot(tQ.T,
+                                                          teta * A)))),  #!=
+            -0.5 * dot(teta, teta / TS),  #
+            +dot(m, A * teta) - 0.5 * dot(m, A * ttau * m),  #
+            -0.5 * dot(m * A * ttau,
+                       dot(tQ,
+                           cho_solve(L, dot(tQ.T,
+                                            2 * A * teta - A * ttau * m)))),  #
+            +sum(self._moments['log_zeroth']),  #
+            +0.5 * sum(log(TS)),  #
             # lml -= 0.5 * sum(log(ttau)),
-            -0.5 * sum(log(ctau)), #
-            +0.5 * dot(ceta / TS, ttau * ceta / ctau - 2 * teta), #
+            -0.5 * sum(log(ctau)),  #
+            +0.5 * dot(ceta / TS, ttau * ceta / ctau - 2 * teta),  #
             0.5 * s * d * sum(teta * A * teta)
         ]
         lml = fsum(lml)
@@ -70,6 +77,8 @@ class EPLinearKernel(EP):  # pylint: disable=R0903
         return lml
 
     def _lml_derivative_over_mean(self, dm):
+        self._params_update()
+
         L = self._posterior.L()
         cov = self._posterior.cov
         ttau = self._site.tau
@@ -81,11 +90,14 @@ class EPLinearKernel(EP):  # pylint: disable=R0903
         di = teta - ttau * self._posterior.mean
 
         dlml = dot(di, ldot(A, dm))
-        dlml -= dot(di * A, dot(Q, cho_solve(L, dot(Q.T, ldot(A, (ttau * dm.T).T)))))
+        dlml -= dot(di * A,
+                    dot(Q, cho_solve(L, dot(Q.T, ldot(A, (ttau * dm.T).T)))))
 
         return dlml
 
     def _lml_derivative_over_cov_scale(self):
+        self._params_update()
+
         L = self._posterior.L()
         cov = self._posterior.cov
         T = self._site.tau
@@ -111,7 +123,8 @@ class EPLinearKernel(EP):  # pylint: disable=R0903
 
         dlml = 0.5 * dot(Ae_m, dKAd_m)
         dlml -= sum(TAQLQAd_m * dKAd_m)
-        dlml += 0.5 * dot(TAQLQAd_m, dot(QS, dot(Q.T, TAQLQAd_m)) + d * TAQLQAd_m)
+        dlml += 0.5 * dot(TAQLQAd_m,
+                          dot(QS, dot(Q.T, TAQLQAd_m)) + d * TAQLQAd_m)
 
         dlml -= 0.5 * dotd(ldot(TA, Q), QS.T).sum()
         dlml -= 0.5 * sum(TA * d)
@@ -124,6 +137,8 @@ class EPLinearKernel(EP):  # pylint: disable=R0903
         return dlml
 
     def _lml_derivative_over_cov_delta(self):
+        self._params_update()
+
         L = self._posterior.L()
         cov = self._posterior.cov
         T = self._site.tau
@@ -146,14 +161,15 @@ class EPLinearKernel(EP):  # pylint: disable=R0903
         tQTAe_m = dot(tQ.T, Ae_m)
         QTAe_m = dot(Q.T, Ae_m)
 
-        dKAd_m = - s * dot(QS, QTAe_m) + s * Ae_m
+        dKAd_m = -s * dot(QS, QTAe_m) + s * Ae_m
 
         QLQAd_m = dot(tQ, cho_solve(L, tQTAe_m))
         TAQLQAd_m = TA * QLQAd_m
 
         dlml = 0.5 * dot(Ae_m, dKAd_m)
         dlml -= sum(TAQLQAd_m * dKAd_m)
-        dlml += 0.5 * dot(TAQLQAd_m, - s * dot(QS, dot(Q.T, TAQLQAd_m)) + s * TAQLQAd_m)
+        dlml += 0.5 * dot(TAQLQAd_m,
+                          -s * dot(QS, dot(Q.T, TAQLQAd_m)) + s * TAQLQAd_m)
 
         dlml += 0.5 * s * dotd(ldot(TA, Q), QS.T).sum()
         dlml -= 0.5 * sum(TA * s)
@@ -161,6 +177,7 @@ class EPLinearKernel(EP):  # pylint: disable=R0903
         t0 = dot(cho_solve(L, dot(tQ.T, ldot(TA, Q))), QS.T)
         dlml -= 0.5 * s * dotd(ldot(TA, tQ), t0).sum()
 
-        dlml += 0.5 * s * dotd(ldot(TA, tQ), cho_solve(L, dotr(tQ.T, TA))).sum()
+        dlml += 0.5 * s * dotd(ldot(TA, tQ), cho_solve(L, dotr(tQ.T,
+                                                               TA))).sum()
 
         return dlml

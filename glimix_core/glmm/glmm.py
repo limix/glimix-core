@@ -220,7 +220,6 @@ class GLMM(EPLinearKernel, Function):
                 self._set_prior(self.mean(), cov)
                 self._initialized = True
 
-            self._params_update()
             lml = self._lml()
         except (ValueError, LinAlgError) as e:
             self._logger.info(str(e))
@@ -247,8 +246,6 @@ class GLMM(EPLinearKernel, Function):
                 cov = dict(QS=self._QS, scale=self.scale, delta=self.delta)
                 self._set_prior(self.mean(), cov)
                 self._initialized = True
-
-            self._params_update()
 
             dS0 = self._eigval_derivative_over_logitdelta()
             dS1 = self._eigval_derivative_over_logscale()
