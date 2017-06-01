@@ -11,11 +11,10 @@ from numpy_sugar import epsilon
 from optimix import Function, Scalar, Vector
 from optimix.optimize import BadSolutionError
 
-from ..ep import EP
-from ..ep.posterior import PosteriorLinearKernel
+from ..ep import EPLinearKernel
 
 
-class GLMM(EP, Function):
+class GLMM(EPLinearKernel, Function):
     r"""Expectation Propagation for Generalised Gaussian Processes.
 
     Let
@@ -81,7 +80,7 @@ class GLMM(EP, Function):
     """
 
     def __init__(self, y, lik_name, X, QS):
-        super(GLMM, self).__init__(PosteriorLinearKernel)
+        super(GLMM, self).__init__(len(y[0]))
         Function.__init__(
             self,
             beta=Vector(zeros(X.shape[1])),
@@ -218,7 +217,7 @@ class GLMM(EP, Function):
         try:
             if not self._initialized:
                 cov = dict(QS=self._QS, scale=self.scale, delta=self.delta)
-                self._initialize(self.mean(), cov)
+                self._set_prior(self.mean(), cov)
                 self._initialized = True
 
             self._params_update()
@@ -246,7 +245,7 @@ class GLMM(EP, Function):
         try:
             if not self._initialized:
                 cov = dict(QS=self._QS, scale=self.scale, delta=self.delta)
-                self._initialize(self.mean(), cov)
+                self._set_prior(self.mean(), cov)
                 self._initialized = True
 
             self._params_update()
