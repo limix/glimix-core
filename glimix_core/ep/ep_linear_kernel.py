@@ -76,6 +76,46 @@ class EPLinearKernel(EP):  # pylint: disable=R0903
 
         return lml
 
+    def _lml_derivatives(self, dm):
+        self._params_update()
+
+        L = self._posterior.L()
+        ttau = self._site.tau
+        teta = self._site.eta
+        A = self._posterior._A
+
+        cov = self._posterior.cov
+        Q = cov['QS'][0][0]
+        S = cov['QS'][1]
+        s = cov['scale']
+        d = cov['delta']
+        tQ = sqrt(1 - d) * Q
+        tQS = dotr(tQ, S)
+
+        e_m = teta - ttau * self._posterior.mean
+        Ae_m = A * e_m
+        TA = ttau * A
+        QTAe_m = dot(tQ.T, Ae_m)
+        dKAd_m = dot(tQS, QTAe_m) + d * Ae_m
+        QLQAe_m = dot(tQ, cho_solve(L, QTAe_m))
+        TAQLQAe_m = TA * QLQAe_m
+
+        dlml_mean = dot(e_m, ldot(A, dm)) - dot(
+            Ae_m, dot(tQ, cho_solve(L, dot(tQ.T, ldot(TA, dm)))))
+
+        dlml_scale = 0.5 * dot(Ae_m, dKAd_m)
+        dlml_scale -= sum(TAQLQAe_m * dKAd_m)
+        dlml_scale += 0.5 * dot(TAQLQAe_m,
+                          dot(tQS, dot(tQ.T, TAQLQAe_m)) + d * TAQLQAe_m)
+        dlml_scale -= 0.5 * dotd(ldot(TA, tQ), tQS.T).sum()
+        dlml_scale -= 0.5 * sum(TA * d)
+
+        t0 = dot(cho_solve(L, dot(tQ.T, ldot(TA, tQ))), tQS.T)
+        dlml_scale += 0.5 * dotd(ldot(TA, tQ), t0).sum()
+        dlml_scale += 0.5 * d * dotd(ldot(TA, tQ), cho_solve(L, dotr(tQ.T, TA))).sum()
+
+        return dict(mean=dlml_mean, scale=dlml_scale)
+
     def _lml_derivative_over_mean(self, dm):
         self._params_update()
 
