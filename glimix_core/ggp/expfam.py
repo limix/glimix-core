@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, unicode_literals
 import logging
 
 from liknorm import LikNormMachine
-from numpy import sign
+from numpy import concatenate, sign, zeros
 from numpy.linalg import LinAlgError
 from numpy_sugar import epsilon
 from numpy_sugar.linalg import economic_qs
@@ -55,7 +55,11 @@ class ExpFamGP(EP, FunctionReduce):
     """
 
     def __init__(self, y, lik_name, mean, cov):
-        super(ExpFamGP, self).__init__()
+        if isinstance(y, tuple):
+            n = len(y[0])
+        else:
+            n = len(y)
+        super(ExpFamGP, self).__init__(n)
         FunctionReduce.__init__(self, [mean, cov], name='ExpFamGP')
 
         self._logger = logging.getLogger(__name__)
@@ -78,7 +82,6 @@ class ExpFamGP(EP, FunctionReduce):
         eta = self._cav['eta']
         self._machine.moments(self._y, eta, tau, self._moments)
 
-    # def value(self, mean, cov):
     def value_reduce(self, values):  # pylint: disable=R0201
         r"""Log of the marginal likelihood.
 
@@ -91,17 +94,14 @@ class ExpFamGP(EP, FunctionReduce):
         """
         mean = values['ExpFamGP[0]']
         cov = values['ExpFamGP[1]']
-        QS = economic_qs(cov)
         try:
-            self._initialize(mean, (QS[0][0], QS[1]))
-            self._params_update()
+            self._set_prior(mean, dict(QS=economic_qs(cov)))
             lml = self._lml()
         except (ValueError, LinAlgError) as e:
             self._logger.info(str(e))
             lml = -1 / epsilon.small
         return lml
 
-    # def gradient(self, mean, cov, gmean, gcov):  # pylint: disable=W0221
     def gradient_reduce(self, values, gradients):
         r"""Gradient of the log of the marginal likelihood.
 
@@ -121,9 +121,7 @@ class ExpFamGP(EP, FunctionReduce):
         gcov = gradients['ExpFamGP[1]']
 
         try:
-            QS = economic_qs(cov)
-            self._initialize(mean, (QS[0][0], QS[1]))
-            self._params_update()
+            self._set_prior(mean, dict(QS=economic_qs(cov)))
 
             grad = dict()
 
@@ -132,8 +130,7 @@ class ExpFamGP(EP, FunctionReduce):
 
             for n, g in iter(gcov.items()):
                 QS = economic_qs(g)
-                grad['ExpFamGP[1].' + n] = self._lml_derivative_over_cov(
-                    (QS[0][0], QS[1]))
+                grad['ExpFamGP[1].' + n] = self._lml_derivative_over_cov(QS)
 
             return grad
         except (ValueError, LinAlgError) as e:

@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, unicode_literals
 import logging
 from math import fsum
 
-from numpy import dot, empty, inf, isfinite, log, maximum, zeros
+from numpy import dot, empty, inf, isfinite, log, maximum, sqrt, zeros
 from numpy.linalg import norm
 from numpy_sugar import epsilon
 from numpy_sugar.linalg import cho_solve, ddot, dotd
@@ -14,6 +14,14 @@ from .site import Site
 MAX_ITERS = 100
 RTOL = epsilon.small * 1000
 ATOL = epsilon.small * 1000
+
+
+def ldot(A, B):
+    return ddot(A, B, left=True)
+
+
+def dotr(A, B):
+    return ddot(A, B, left=False)
 
 
 class EP(object):  # pylint: disable=R0903
@@ -45,52 +53,49 @@ class EP(object):  # pylint: disable=R0903
         _moments (dict): moments for KL moment matching.
     """
 
-    def __init__(self):
+    def __init__(self, nsites, posterior_type=Posterior):
         self._logger = logging.getLogger(__name__)
 
-        self._site = None
-        self._psite = None
+        self._posterior_type = Posterior
 
-        self._cav = None
-        self._posterior = None
+        self._site = Site(nsites)
+        self._psite = Site(nsites)
 
-        self._moments = {'log_zeroth': None, 'mean': None, 'variance': None}
+        self._cav = dict(tau=zeros(nsites), eta=zeros(nsites))
+        self._posterior = posterior_type(self._site)
+
+        self._moments = {
+            'log_zeroth': empty(nsites),
+            'mean': empty(nsites),
+            'variance': empty(nsites)
+        }
 
         self._need_params_update = True
 
     def _compute_moments(self):
+        r"""Compute zero-th, first, and second moments.
+
+        This has to be implemented by a parent class.
+        """
         raise NotImplementedError
 
-    def _initialize(self, mean, QS):
-        self._logger.debug("EP parameters initialization.")
+    def _set_prior(self, mean, cov):
+        self._logger.debug("Setting EP prior.")
+        self._posterior.mean = mean
+        self._posterior.cov = cov
         self._need_params_update = True
 
-        nsamples = len(mean)
-
-        self._site = Site(nsamples)
-        self._psite = Site(nsamples)
-
-        self._cav = dict(tau=zeros(nsamples), eta=zeros(nsamples))
-        self._posterior = Posterior(self._site)
-        self._posterior.set_prior_mean(mean)
-        self._posterior.set_prior_cov(QS)
-
-        self._moments = {
-            'log_zeroth': empty(nsamples),
-            'mean': empty(nsamples),
-            'variance': empty(nsamples)
-        }
-
-        self._posterior.initialize()
-
     def _lml(self):
+        self._params_update()
+
         L = self._posterior.L()
-        Q, S = self._posterior.prior_cov()
+        Q, S = self._posterior.cov['QS']
+        Q = Q[0]
         ttau = self._site.tau
         teta = self._site.eta
         ctau = self._cav['tau']
         ceta = self._cav['eta']
-        m = self._posterior.prior_mean()
+        m = self._posterior.mean
 
         TS = ttau + ctau
 
@@ -101,8 +106,8 @@ class EP(object):  # pylint: disable=R0903
             +0.5 * dot(teta, dot(Q, cho_solve(L, dot(Q.T, teta)))),
             -0.5 * dot(teta, teta / TS),
             +dot(m, teta) - 0.5 * dot(m, ttau * m),
-            -0.5 *
-            dot(m * ttau, dot(Q, cho_solve(L, dot(Q.T, 2 * teta - ttau * m)))),
+            -0.5 * dot(m * ttau,
+                       dot(Q, cho_solve(L, dot(Q.T, 2 * teta - ttau * m)))),
             +sum(self._moments['log_zeroth']),
             +0.5 * sum(log(TS)),
             # lml -= 0.5 * sum(log(ttau)),
@@ -117,12 +122,14 @@ class EP(object):  # pylint: disable=R0903
         return lml
 
     def _lml_derivative_over_mean(self, dm):
+        self._params_update()
+
         L = self._posterior.L()
-        Q, _ = self._posterior.prior_cov()
+        Q = self._posterior.cov['QS'][0][0]
         ttau = self._site.tau
         teta = self._site.eta
 
-        diff = teta - ttau * self._posterior.prior_mean()
+        diff = teta - ttau * self._posterior.mean
 
         dlml = dot(diff, dm)
         dlml -= dot(diff, dot(Q, cho_solve(L, dot(Q.T, (ttau * dm.T).T))))
@@ -130,23 +137,25 @@ class EP(object):  # pylint: disable=R0903
         return dlml
 
     def _lml_derivative_over_cov(self, dQS):
+        self._params_update()
+
         L = self._posterior.L()
-        Q, _ = self._posterior.prior_cov()
+        Q = self._posterior.cov['QS'][0][0]
         ttau = self._site.tau
         teta = self._site.eta
 
-        diff = teta - ttau * self._posterior.prior_mean()
+        diff = teta - ttau * self._posterior.mean
 
-        v0 = dot(dQS[0], dQS[1] * dot(dQS[0].T, diff))
+        v0 = dot(dQS[0][0], dQS[1] * dot(dQS[0][0].T, diff))
         v1 = ttau * dot(Q, cho_solve(L, dot(Q.T, diff)))
         dlml = 0.5 * dot(diff, v0)
         dlml -= dot(v0, v1)
-        dlml += 0.5 * dot(v1, dot(dQS[0], dQS[1] * dot(dQS[0].T, v1)))
-        dqs = ddot(dQS[1], dQS[0].T, left=True)
-        diag = dotd(dQS[0], dqs)
+        dlml += 0.5 * dot(v1, dot(dQS[0][0], dQS[1] * dot(dQS[0][0].T, v1)))
+        dqs = ddot(dQS[1], dQS[0][0].T, left=True)
+        diag = dotd(dQS[0][0], dqs)
         dlml -= 0.5 * sum(ttau * diag)
 
-        tmp = cho_solve(L, dot(ddot(Q.T, ttau, left=False), dQS[0]))
+        tmp = cho_solve(L, dot(ddot(Q.T, ttau, left=False), dQS[0][0]))
         dlml += 0.5 * sum(ttau * dotd(Q, dot(tmp, dqs)))
 
         return dlml
@@ -156,6 +165,7 @@ class EP(object):  # pylint: disable=R0903
             return
 
         self._logger.debug('EP parameters update loop has started.')
+        self._posterior.update()
 
         i = 0
         tol = -inf
@@ -178,8 +188,8 @@ class EP(object):  # pylint: disable=R0903
 
         if i == MAX_ITERS:
             msg = ('Maximum number of EP iterations has' + ' been attained.')
-            msg += " Last EP step was: %.10f." % norm(self._site.tau -
-                                                      self._psite.tau)
+            msg += " Last EP step was: %.10f." % norm(
+                self._site.tau - self._psite.tau)
             raise ValueError(msg)
 
         self._need_params_update = False
