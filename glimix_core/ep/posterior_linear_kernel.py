@@ -22,18 +22,6 @@ class PosteriorLinearKernel(Posterior):
 
     def __init__(self, site):
         super(PosteriorLinearKernel, self).__init__(site)
-        # self._scale = None
-        # self._delta = None
-        # self._QS0Qt = None
-
-    # def set_prior_cov(self, cov):
-    #     if self._QS is None:
-    #         self._QS = cov['QS']
-    #         self._QS0 = ddot(self._QS[0][0],
-    #                          self._QS[1], left=False)
-    #
-    #     self._scale = cov['scale']
-    #     self._delta = cov['delta']
 
     @property
     def _A(self):
@@ -90,6 +78,9 @@ class PosteriorLinearKernel(Posterior):
 
         A = self._A
 
+        t = self._site.tau
+        e = self._site.eta
+
         tQ = sqrt(1 - d) * Q
         QtA = ddot(Q.T, A, left=False)
 
@@ -97,8 +88,8 @@ class PosteriorLinearKernel(Posterior):
 
         tBitQtA = ddot(tBitQt, A, left=False)
 
-        ATtQ = ddot(A * self._site.tau, tQ, left=True)
-        QtATtQ = dot(ddot(QtA, self._site.tau, left=False), tQ)
+        ATtQ = ddot(A * t, tQ, left=True)
+        QtATtQ = dot(ddot(QtA, t, left=False), tQ)
 
         QS0 = ddot(Q, S, left=False)
 
@@ -107,9 +98,6 @@ class PosteriorLinearKernel(Posterior):
         self.tau += s * d * A
         self.tau -= s * d * dotd(ATtQ, tBitQtA)
         self.tau **= -1
-
-        t = self._site.tau
-        e = self._site.eta
 
         v = s * (1 - d) * dot(Q, S * dot(Q.T, e)) + s * d * e + self._mean
 

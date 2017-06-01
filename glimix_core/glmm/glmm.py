@@ -229,12 +229,12 @@ class GLMM(EPLinearKernel, Function):
 
             v = self.variables().get('logitdelta').value
             x = self.variables().get('logscale').value
+            g = self._lml_derivatives(self._X)
+            ev = exp(-v)
             grad = [
-                self._lml_derivative_over_cov_delta() * (exp(-v)/(1 + exp(-v)))/(1 + exp(-v)),
-                # self._lml_derivative_over_cov_scale() * exp(x),
-                self._lml_derivatives(self._X)['scale'] * exp(x),
-                # self._lml_derivative_over_mean(self._X)
-                self._lml_derivatives(self._X)['mean']
+                g['delta'] * (ev/(1 + ev))/(1 + ev),
+                g['scale'] * exp(x),
+                g['mean']
             ]
         except (ValueError, LinAlgError) as e:
             self._logger.info(str(e))
