@@ -91,11 +91,11 @@ class GLMM(EP, Function):
         self._logger = logging.getLogger(__name__)
 
         logscale = self.variables()['logscale']
-        logscale.bounds = (-5, 4.0)
+        logscale.bounds = (log(1e-3), 7.)
         logscale.listen(self._clear_cache)
 
         logitdelta = self.variables()['logitdelta']
-        logitdelta.bounds = (-30.0, +30.0)
+        logitdelta.bounds = (-inf, +inf)
         logitdelta.listen(self._clear_cache)
 
         self.variables()['beta'].listen(self._clear_cache)
@@ -173,7 +173,7 @@ class GLMM(EP, Function):
 
     @delta.setter
     def delta(self, v):
-        v = clip(v, epsilon.small, 1 - epsilon.small)
+        v = clip(v, epsilon.large, 1 - epsilon.large)
         self.variables().get('logitdelta').value = log(v / (1 - v))
         self._clear_cache(None)
 
@@ -216,7 +216,6 @@ class GLMM(EP, Function):
             float: log of the marginal likelihood.
         """
         try:
-            import pdb; pdb.set_trace()
             if not self._initialized:
                 cov = dict(QS=self._QS, scale=self.scale, delta=self.delta)
                 self._initialize(self.mean(), cov)
@@ -255,9 +254,11 @@ class GLMM(EP, Function):
             dS0 = self._eigval_derivative_over_logitdelta()
             dS1 = self._eigval_derivative_over_logscale()
 
+            v = self.variables().get('logitdelta').value
+            x = self.variables().get('logscale').value
             grad = [
-                self._lml_derivative_over_cov((self._QS[0], dS0)),
-                self._lml_derivative_over_cov((self._QS[0], dS1)),
+                self._lml_derivative_over_cov_delta() * (exp(-v)/(1 + exp(-v)))/(1 + exp(-v)),
+                self._lml_derivative_over_cov_scale() * exp(x),
                 self._lml_derivative_over_mean(self._X)
             ]
         except (ValueError, LinAlgError) as e:
