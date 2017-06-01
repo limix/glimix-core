@@ -218,7 +218,7 @@ def test_glmm_scale_very_low():
     glmm.scale = 1e-3
     assert_allclose(glmm.value(), -660.0166421862141)
 
-    assert_allclose(check_grad(glmm), 0, atol=1e-3)
+    assert_allclose(check_grad(glmm), 0, atol=1e-2)
 
 def test_glmm_scale_very_high():
     random = RandomState(0)
