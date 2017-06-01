@@ -59,8 +59,6 @@ def test_expfam_ep():
 
 
 def test_expfam_ep_function():
-    import logging
-    logging.basicConfig(level=logging.DEBUG)
     data = _get_data()
     ep = ExpFamGP((data['y'], ), 'bernoulli', data['mean'], data['cov'])
 

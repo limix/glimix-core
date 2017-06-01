@@ -11,11 +11,10 @@ from numpy_sugar import epsilon
 from optimix import Function, Scalar, Vector
 from optimix.optimize import BadSolutionError
 
-from ..ep import EP
-from ..ep.posterior import PosteriorLinearKernel
+from ..ep import EPLinearKernel
 
 
-class GLMM(EP, Function):
+class GLMM(EPLinearKernel, Function):
     r"""Expectation Propagation for Generalised Gaussian Processes.
 
     Let
@@ -81,7 +80,7 @@ class GLMM(EP, Function):
     """
 
     def __init__(self, y, lik_name, X, QS):
-        super(GLMM, self).__init__(PosteriorLinearKernel)
+        super(GLMM, self).__init__(len(y[0]))
         Function.__init__(
             self,
             beta=Vector(zeros(X.shape[1])),
@@ -92,13 +91,13 @@ class GLMM(EP, Function):
 
         logscale = self.variables()['logscale']
         logscale.bounds = (log(1e-3), 7.)
-        logscale.listen(self._clear_cache)
+        logscale.listen(self._set_need_prior_update)
 
         logitdelta = self.variables()['logitdelta']
         logitdelta.bounds = (-inf, +inf)
-        logitdelta.listen(self._clear_cache)
+        logitdelta.listen(self._set_need_prior_update)
 
-        self.variables()['beta'].listen(self._clear_cache)
+        self.variables()['beta'].listen(self._set_need_prior_update)
 
         if isinstance(y, list):
             y = tuple(y)
@@ -117,12 +116,11 @@ class GLMM(EP, Function):
         self._QS = QS
 
         self._machine = LikNormMachine(lik_name, 500)
-        self._initialized = False
+        self._need_prior_update = True
         self.set_nodata()
 
-    def _clear_cache(self, _):
-        self._initialized = False
-        self._need_params_update = True
+    def _set_need_prior_update(self, _=None):
+        self._need_prior_update = True
 
     def __del__(self):
         if hasattr(self, '_machine'):
@@ -145,7 +143,7 @@ class GLMM(EP, Function):
             Function.fix(self, 'beta')
         else:
             raise ValueError("Unknown parameter name %s." % var_name)
-        self._clear_cache(None)
+        self._set_need_prior_update()
 
     def unfix(self, var_name):
         if var_name == 'scale':
@@ -156,7 +154,7 @@ class GLMM(EP, Function):
             Function.unfix(self, 'beta')
         else:
             raise ValueError("Unknown parameter name %s." % var_name)
-        self._clear_cache(None)
+        self._set_need_prior_update()
 
     @property
     def scale(self):
@@ -165,7 +163,7 @@ class GLMM(EP, Function):
     @scale.setter
     def scale(self, v):
         self.variables().get('logscale').value = log(v)
-        self._clear_cache(None)
+        self._set_need_prior_update()
 
     @property
     def delta(self):
@@ -175,7 +173,7 @@ class GLMM(EP, Function):
     def delta(self, v):
         v = clip(v, epsilon.large, 1 - epsilon.large)
         self.variables().get('logitdelta').value = log(v / (1 - v))
-        self._clear_cache(None)
+        self._set_need_prior_update()
 
     @property
     def beta(self):
@@ -184,26 +182,7 @@ class GLMM(EP, Function):
     @beta.setter
     def beta(self, v):
         self.variables().get('beta').value = v
-        self._clear_cache(None)
-
-    def _eigval_derivative_over_logscale(self):
-        x = self.variables().get('logscale').value
-        d = self.delta
-        E = self._QS[1]
-        return exp(x) * ((1 - d) * E + d)
-
-    def _eigval_derivative_over_logitdelta(self):
-        x = self.variables().get('logitdelta').value
-        s = self.scale
-        c = (s * exp(x) / (1 + exp(-x))**2)
-        E = self._QS[1]
-        res = c * (1 - E)
-        return res
-
-    def _S(self):
-        s = self.scale
-        d = self.delta
-        return s * ((1 - d) * self._QS[1] + d)
+        self._set_need_prior_update()
 
     def value(self):
         r"""Log of the marginal likelihood.
@@ -216,12 +195,11 @@ class GLMM(EP, Function):
             float: log of the marginal likelihood.
         """
         try:
-            if not self._initialized:
+            if self._need_prior_update:
                 cov = dict(QS=self._QS, scale=self.scale, delta=self.delta)
-                self._initialize(self.mean(), cov)
-                self._initialized = True
+                self._set_prior(self.mean(), cov)
+                self._need_prior_update = False
 
-            self._params_update()
             lml = self._lml()
         except (ValueError, LinAlgError) as e:
             self._logger.info(str(e))
@@ -244,22 +222,19 @@ class GLMM(EP, Function):
             list: derivatives.
         """
         try:
-            if not self._initialized:
+            if self._need_prior_update:
                 cov = dict(QS=self._QS, scale=self.scale, delta=self.delta)
-                self._initialize(self.mean(), cov)
-                self._initialized = True
-
-            self._params_update()
-
-            dS0 = self._eigval_derivative_over_logitdelta()
-            dS1 = self._eigval_derivative_over_logscale()
+                self._set_prior(self.mean(), cov)
+                self._need_prior_update = False
 
             v = self.variables().get('logitdelta').value
             x = self.variables().get('logscale').value
+            g = self._lml_derivatives(self._X)
+            ev = exp(-v)
             grad = [
-                self._lml_derivative_over_cov_delta() * (exp(-v)/(1 + exp(-v)))/(1 + exp(-v)),
-                self._lml_derivative_over_cov_scale() * exp(x),
-                self._lml_derivative_over_mean(self._X)
+                g['delta'] * (ev/(1 + ev))/(1 + ev),
+                g['scale'] * exp(x),
+                g['mean']
             ]
         except (ValueError, LinAlgError) as e:
             self._logger.info(str(e))
