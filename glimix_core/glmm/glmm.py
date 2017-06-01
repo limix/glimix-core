@@ -91,7 +91,7 @@ class GLMM(EP, Function):
         self._logger = logging.getLogger(__name__)
 
         logscale = self.variables()['logscale']
-        logscale.bounds = (log(1e-3), 10.)
+        logscale.bounds = (log(1e-3), 7.)
         logscale.listen(self._clear_cache)
 
         logitdelta = self.variables()['logitdelta']
@@ -173,7 +173,7 @@ class GLMM(EP, Function):
 
     @delta.setter
     def delta(self, v):
-        v = clip(v, epsilon.small, 1 - epsilon.small)
+        v = clip(v, epsilon.large, 1 - epsilon.large)
         self.variables().get('logitdelta').value = log(v / (1 - v))
         self._clear_cache(None)
 
@@ -257,7 +257,7 @@ class GLMM(EP, Function):
             v = self.variables().get('logitdelta').value
             x = self.variables().get('logscale').value
             grad = [
-                self._lml_derivative_over_cov_delta() * exp(-v)/(1 + exp(-v))**2,
+                self._lml_derivative_over_cov_delta() * (exp(-v)/(1 + exp(-v)))/(1 + exp(-v)),
                 self._lml_derivative_over_cov_scale() * exp(x),
                 self._lml_derivative_over_mean(self._X)
             ]
