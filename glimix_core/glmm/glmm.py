@@ -80,7 +80,7 @@ class GLMM(EPLinearKernel, Function):
     """
 
     def __init__(self, y, lik_name, X, QS):
-        super(GLMM, self).__init__(len(y[0]))
+        super(GLMM, self).__init__(X.shape[0])
         Function.__init__(
             self,
             beta=Vector(zeros(X.shape[1])),
