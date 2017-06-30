@@ -50,23 +50,21 @@ class EPLinearKernel(EP):  # pylint: disable=R0903
         tQ = sqrt(1 - d) * Q
 
         lml = [
-            -log(L.diagonal()).sum(),  #
-            -0.5 * sum(log(s * S)),  #
-            +0.5 * sum(log(A)),  #
+            -log(L.diagonal()).sum(),
+            -0.5 * sum(log(s * S)),
+            +0.5 * sum(log(A)),
             # lml += 0.5 * sum(log(ttau)),
-            +0.5 * dot(teta * A, dot(tQ, cho_solve(L, dot(tQ.T,
-                                                          teta * A)))),  #!=
-            -0.5 * dot(teta, teta / TS),  #
-            +dot(m, A * teta) - 0.5 * dot(m, A * ttau * m),  #
-            -0.5 * dot(m * A * ttau,
-                       dot(tQ,
-                           cho_solve(L, dot(tQ.T,
-                                            2 * A * teta - A * ttau * m)))),  #
-            +sum(self._moments['log_zeroth']),  #
-            +0.5 * sum(log(TS)),  #
+            +0.5 * dot(teta * A, dot(tQ, cho_solve(L, dot(tQ.T, teta * A)))),
+            -0.5 * dot(teta, teta / TS),
+            +dot(m, A * teta) - 0.5 * dot(m, A * ttau * m),
+            -0.5 * dot(
+                m * A * ttau,
+                dot(tQ, cho_solve(L, dot(tQ.T, 2 * A * teta - A * ttau * m)))),
+            +sum(self._moments['log_zeroth']),
+            +0.5 * sum(log(TS)),
             # lml -= 0.5 * sum(log(ttau)),
-            -0.5 * sum(log(ctau)),  #
-            +0.5 * dot(ceta / TS, ttau * ceta / ctau - 2 * teta),  #
+            -0.5 * sum(log(ctau)),
+            +0.5 * dot(ceta / TS, ttau * ceta / ctau - 2 * teta),
             0.5 * s * d * sum(teta * A * teta)
         ]
         lml = fsum(lml)

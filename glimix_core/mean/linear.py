@@ -1,10 +1,8 @@
 from __future__ import division
 
-from numpy import zeros, dot
-from numpy import ascontiguousarray
+from numpy import ascontiguousarray, dot, zeros
 
-from optimix import Function
-from optimix import Vector
+from optimix import Function, Vector
 
 
 class LinearMean(Function):
@@ -18,6 +16,7 @@ class LinearMean(Function):
 
     where :math:`\boldsymbol\alpha` is a vector of effect sizes.
     """
+
     def __init__(self, size):
         Function.__init__(self, effsizes=Vector(zeros(size)))
 
@@ -32,7 +31,7 @@ class LinearMean(Function):
         """
         return dot(x, self.variables().get('effsizes').value)
 
-    def gradient(self, x): # pylint: disable=R0201
+    def gradient(self, x):  # pylint: disable=R0201
         r"""Gradient of the linear mean function.
 
         Args:

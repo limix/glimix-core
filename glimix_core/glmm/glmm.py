@@ -6,8 +6,8 @@ from liknorm import LikNormMachine
 from numpy import (asarray, clip, concatenate, dot, exp, inf, log, ndarray,
                    zeros)
 from numpy.linalg import LinAlgError
-
 from numpy_sugar import epsilon
+
 from optimix import Function, Scalar, Vector
 from optimix.optimize import BadSolutionError
 
@@ -232,8 +232,7 @@ class GLMM(EPLinearKernel, Function):
             g = self._lml_derivatives(self._X)
             ev = exp(-v)
             grad = [
-                g['delta'] * (ev/(1 + ev))/(1 + ev),
-                g['scale'] * exp(x),
+                g['delta'] * (ev / (1 + ev)) / (1 + ev), g['scale'] * exp(x),
                 g['mean']
             ]
         except (ValueError, LinAlgError) as e:

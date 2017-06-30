@@ -1,12 +1,12 @@
 from __future__ import division
 
 from numpy import sum as npsum
-from numpy import dot, empty, sqrt, concatenate, zeros
+from numpy import concatenate, dot, empty, sqrt, zeros
+from numpy_sugar.linalg import cho_solve, ddot, dotd, sum2diag
 from scipy.linalg import cho_factor
 
-from numpy_sugar.linalg import cho_solve, ddot, dotd, sum2diag
-
 from .posterior import Posterior
+
 
 class PosteriorLinearKernel(Posterior):
     r"""EP posterior.

@@ -1,15 +1,14 @@
 import pytest
-
+from numpy import asarray, ascontiguousarray, dot, ones, sqrt, zeros
 from numpy.random import RandomState
 from numpy.testing import assert_allclose
-from numpy import ascontiguousarray, sqrt, ones, dot, zeros, asarray
 from numpy_sugar.linalg import economic_qs, economic_qs_linear
 
 from glimix_core.example import linear_eye_cov
 from glimix_core.glmm import GLMM
 from glimix_core.random import bernoulli_sample
-
 from optimix import check_grad
+
 
 def test_glmm_precise():
     random = RandomState(0)
@@ -40,6 +39,7 @@ def test_glmm_precise():
 
     assert_allclose(check_grad(glmm), 0, atol=1e-4)
 
+
 def test_glmm_delta0():
     random = RandomState(0)
     X = random.randn(100, 5)
@@ -56,6 +56,7 @@ def test_glmm_delta0():
 
     assert_allclose(glmm.value(), -294.3289786264443)
     assert_allclose(check_grad(glmm, step=1e-5), 0, atol=1e-2)
+
 
 def test_glmm_delta1():
     random = RandomState(0)
@@ -74,6 +75,7 @@ def test_glmm_delta1():
     assert_allclose(glmm.value(), -317.9043148331947)
     assert_allclose(check_grad(glmm), 0, atol=1e-4)
 
+
 def test_glmm_wrong_qs():
     random = RandomState(0)
     X = random.randn(10, 15)
@@ -85,6 +87,7 @@ def test_glmm_wrong_qs():
 
     with pytest.raises(ValueError):
         print(GLMM((nsuc, ntri), 'binomial', X, QS))
+
 
 def test_glmm_optimize():
     random = RandomState(0)
@@ -116,6 +119,7 @@ def test_glmm_optimize():
 
     assert_allclose(glmm.value(), -159.1688201218538, rtol=1e-06)
 
+
 def test_glmm_optimize_low_rank():
     random = RandomState(0)
     X = random.randn(100, 5)
@@ -135,10 +139,11 @@ def test_glmm_optimize_low_rank():
     glmm.feed().maximize(progress=False)
     assert_allclose(glmm.value(), -155.4794212740998, rtol=1e-06)
 
+
 def test_glmm_bernoulli_problematic():
     random = RandomState(1)
     N = 500
-    G = random.randn(N, N+50)
+    G = random.randn(N, N + 50)
     y = bernoulli_sample(0.0, G, random_state=random)
     y = (y, )
 
@@ -160,6 +165,7 @@ def test_glmm_bernoulli_problematic():
     assert_allclose(model.scale, 0.6026005889095781, rtol=1e-5)
     assert_allclose(model.beta, [-0.01806123661347892])
 
+
 def _stdnorm(X, axis=None, out=None):
     X = ascontiguousarray(X)
     if out is None:
@@ -178,6 +184,7 @@ def _stdnorm(X, axis=None, out=None):
         out[..., ok] /= s[ok]
 
     return out
+
 
 def test_glmm_binomial_pheno_list():
     random = RandomState(0)
@@ -220,6 +227,7 @@ def test_glmm_scale_very_low():
 
     assert_allclose(check_grad(glmm), 0, atol=1e-2)
 
+
 def test_glmm_scale_very_high():
     random = RandomState(0)
     X = random.randn(100, 5)
@@ -236,6 +244,7 @@ def test_glmm_scale_very_high():
     assert_allclose(glmm.value(), -328.25708726581706)
 
     assert_allclose(check_grad(glmm), 0, atol=1e-3)
+
 
 def test_glmm_delta_zero():
     random = RandomState(0)
@@ -256,6 +265,7 @@ def test_glmm_delta_zero():
     glmm.feed().maximize(progress=False)
     assert_allclose(glmm.value(), -263.56884343483136)
     assert_allclose(glmm.delta, 1)
+
 
 def test_glmm_delta_one():
     random = RandomState(0)
