@@ -177,7 +177,7 @@ class GLMM(EPLinearKernel, Function):
 
     @property
     def beta(self):
-        return self.variables().get('beta').value
+        return asarray(self.variables().get('beta').value, float)
 
     @beta.setter
     def beta(self, v):
