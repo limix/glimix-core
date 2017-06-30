@@ -1,15 +1,14 @@
 from __future__ import division
 
-from numpy import append, dot, empty, log, full
 from numpy import sum as npsum
-
-from tqdm import tqdm
-
+from numpy import append, dot, empty, full, log
 from numpy_sugar.linalg import solve
+from tqdm import tqdm
 
 LOG2PI = 1.837877066409345339081937709124758839607238769531250
 
-class FastScanner(object): # pylint: disable=R0903
+
+class FastScanner(object):  # pylint: disable=R0903
     r"""Fast inference over multiple covariates.
 
     Let :math:`\tilde{\mathrm M}_i` be a column-matrix of fixed-effect
@@ -40,7 +39,7 @@ class FastScanner(object): # pylint: disable=R0903
         self._yTQdiag = [l / r for (l, r) in zip(yTQ, self._diags)]
 
         self._a = [(i**2 / j).sum() for (i, j) in zip(yTQ, self._diags)]
-        self._b = [dot(i, j.T) for(i, j) in zip(self._yTQdiag, MTQ)]
+        self._b = [dot(i, j.T) for (i, j) in zip(self._yTQdiag, MTQ)]
 
         self._MTQdiag = [i / j for (i, j) in zip(MTQ, self._diags)]
 
@@ -119,8 +118,10 @@ class FastScanner(object): # pylint: disable=R0903
             beta = solve(self._C[1] - self._C[0], b11m - b00m)
             effect_sizes[i] = beta[-1]
 
-            p0 = self._a[1] - 2 * b11m.dot(beta) + beta.dot(self._C[1].dot(beta))
-            p1 = self._a[0] - 2 * b00m.dot(beta) + beta.dot(self._C[0]).dot(beta)
+            p0 = self._a[1] - 2 * b11m.dot(beta) + beta.dot(
+                self._C[1].dot(beta))
+            p1 = self._a[0] - 2 * b00m.dot(beta) + beta.dot(
+                self._C[0]).dot(beta)
 
             scale = (p0 + p1) / markers.shape[0]
 

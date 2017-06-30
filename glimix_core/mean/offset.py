@@ -1,10 +1,8 @@
 from __future__ import division
 
-from numpy import full
-from numpy import ones, asarray
+from numpy import asarray, full, ones
 
-from optimix import Function
-from optimix import Scalar
+from optimix import Function, Scalar
 
 
 class OffsetMean(Function):
@@ -18,6 +16,7 @@ class OffsetMean(Function):
 
     where :math:`\mathbf 1` is a :math:`n`-sized vector of ones.
     """
+
     def __init__(self):
         Function.__init__(self, offset=Scalar(1.0))
 
@@ -33,7 +32,7 @@ class OffsetMean(Function):
         x = asarray(x)
         return full(x.shape, self.variables().get('offset').value)
 
-    def gradient(self, x): # pylint: disable=R0201
+    def gradient(self, x):  # pylint: disable=R0201
         r"""Offset function gradient.
 
         Args:

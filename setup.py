@@ -27,7 +27,7 @@ def setup_package():
         'scipy-sugar>=1.0.2', 'optimix>=1.2.12', 'cachetools>=2.0', 'tqdm>=4',
         'liknorm-py>=1.0.6'
     ]
-    tests_require = ['pytest']
+    tests_require = ['pytest', 'pytest-pep8']
 
     metadata = dict(
         name='glimix-core',
