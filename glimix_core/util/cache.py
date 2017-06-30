@@ -3,6 +3,7 @@ def create_cache():
 
     return LRUCache(maxsize=1)
 
+
 def cached(method):
     from operator import attrgetter
     from cachetools import cachedmethod

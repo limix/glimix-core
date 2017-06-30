@@ -1,12 +1,12 @@
 from __future__ import division
 
 from numpy.random import RandomState
-from numpy_sugar.linalg import sum2diag
 from numpy_sugar import epsilon
+from numpy_sugar.linalg import sum2diag
 from numpy_sugar.random import multivariate_normal
 
 
-class GPSampler(object): # pylint: disable=R0903
+class GPSampler(object):  # pylint: disable=R0903
     r"""Sample from a Gaussian Process.
 
     Outcome modelled via
@@ -42,6 +42,7 @@ class GPSampler(object): # pylint: disable=R0903
         >>> print(y[:5])
         [ 1.67474605  1.24736152 -0.77509523  1.88952893  1.62847894]
     """
+
     def __init__(self, mean, cov):
         self._mean = mean
         self._cov = cov
