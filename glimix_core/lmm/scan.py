@@ -1,8 +1,9 @@
 from __future__ import division
 
+from numpy.linalg import LinAlgError
 from numpy import sum as npsum
 from numpy import append, dot, empty, full, log
-from numpy_sugar.linalg import solve
+from numpy_sugar.linalg import solve, rsolve
 from tqdm import tqdm
 
 LOG2PI = 1.837877066409345339081937709124758839607238769531250
@@ -115,7 +116,11 @@ class FastScanner(object):  # pylint: disable=R0903
             self._C[0][-1, -1] = c_11[0][i]
             self._C[1][-1, -1] = c_11[1][i]
 
-            beta = solve(self._C[1] - self._C[0], b11m - b00m)
+            try:
+                beta = solve(self._C[1] - self._C[0], b11m - b00m)
+            except LinAlgError:
+                beta = rsolve(self._C[1] - self._C[0], b11m - b00m)
+
             effect_sizes[i] = beta[-1]
 
             p0 = self._a[1] - 2 * b11m.dot(beta) + beta.dot(
