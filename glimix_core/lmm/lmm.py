@@ -1,6 +1,6 @@
 from __future__ import division
 
-from numpy import clip, exp
+from numpy import clip, exp, dot
 from numpy_sugar import is_all_finite
 
 from optimix import Function, Scalar, maximize_scalar
@@ -170,3 +170,6 @@ class LMM(LMMCore, Function):
     def lml(self):
         self.delta = self._get_delta()
         return LMMCore.lml(self)
+
+    def mean(self):
+        return self.m
