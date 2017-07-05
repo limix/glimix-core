@@ -2,7 +2,7 @@ from __future__ import division
 
 from numpy import dot, log, maximum, sqrt, zeros
 from numpy_sugar import epsilon
-from numpy_sugar.linalg import ddot, economic_svd, solve
+from numpy_sugar.linalg import ddot, economic_svd, rsolve, solve
 
 from .scan import FastScanner
 
@@ -23,6 +23,7 @@ class LMMCore(object):
 
     @property
     def X(self):
+        # m = self.m
         return dot(self._svd[0], ddot(self._svd[1], self._svd[2], left=True))
 
     @X.setter
@@ -54,7 +55,10 @@ class LMMCore(object):
 
     @property
     def beta(self):
-        return solve(self._svd[2].T, self._tbeta / sqrt(self._svd[1]))
+        SVs = ddot(self._svd[0], sqrt(self._svd[1]), left=False)
+        z = rsolve(SVs, self.m)
+        VsD = ddot(sqrt(self._svd[1]), self._svd[2], left=True)
+        return rsolve(VsD, z)
 
     @beta.setter
     def beta(self, value):
