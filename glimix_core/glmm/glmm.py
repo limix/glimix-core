@@ -7,9 +7,7 @@ from numpy import (asarray, clip, concatenate, dot, exp, inf, log, ndarray,
                    zeros)
 from numpy.linalg import LinAlgError
 from numpy_sugar import epsilon
-
 from optimix import Function, Scalar, Vector
-from optimix.optimize import BadSolutionError
 
 from ..ep import EPLinearKernel
 
@@ -74,7 +72,7 @@ class GLMM(EPLinearKernel, Function):
         >>> glmm = GLMM(y, 'binomial', X, QS)
         >>> print('Before: %.4f' % glmm.feed().value())
         Before: -95.1854
-        >>> glmm.feed().maximize(progress=False)
+        >>> glmm.feed().maximize(verbose=False)
         >>> print('After: %.2f' % glmm.feed().value())
         After: -92.24
     """
@@ -243,3 +241,7 @@ class GLMM(EPLinearKernel, Function):
             raise BadSolutionError(str(e))
 
         return dict(logitdelta=grad[0], logscale=grad[1], beta=grad[2])
+
+
+class BadSolutionError(Exception):
+    pass

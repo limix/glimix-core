@@ -97,7 +97,7 @@ def test_gp_maximize():
     gp = GP(y, mean, cov)
 
     assert_allclose(gp.feed().value(), -153.623791551)
-    gp.feed().maximize(progress=False)
+    gp.feed().maximize(verbose=False)
     assert_allclose(gp.feed().value(), -79.8992122415)
 
 
