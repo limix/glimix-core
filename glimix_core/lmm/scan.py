@@ -1,9 +1,11 @@
 from __future__ import division
 
-from numpy.linalg import LinAlgError
+import logging
+
 from numpy import sum as npsum
-from numpy import append, dot, empty, full, log
-from numpy_sugar.linalg import solve, rsolve
+from numpy import append, dot, empty, full, log, zeros
+from numpy.linalg import LinAlgError
+from numpy_sugar.linalg import rsolve, solve
 from tqdm import tqdm
 
 LOG2PI = 1.837877066409345339081937709124758839607238769531250
@@ -33,6 +35,7 @@ class FastScanner(object):  # pylint: disable=R0903
 
         self._QS = QS
         self._diags = [(1 - delta) * QS[1] + delta, delta]
+        self._logger = logging.getLogger(__name__)
 
         yTQ = [dot(y.T, Q) for Q in QS[0]]
         MTQ = [dot(M.T, Q) for Q in QS[0]]
@@ -119,7 +122,14 @@ class FastScanner(object):  # pylint: disable=R0903
             try:
                 beta = solve(self._C[1] - self._C[0], b11m - b00m)
             except LinAlgError:
-                beta = rsolve(self._C[1] - self._C[0], b11m - b00m)
+                try:
+                    beta = rsolve(self._C[1] - self._C[0], b11m - b00m)
+                except LinAlgError:
+                    msg = "Could not converge to the optimal"
+                    msg += " effect-size of one of the candidates."
+                    msg += " Setting its effect-size to zero."
+                    self._logger.warning(warn)
+                    beta = zeros(self._C[1].shape[0])
 
             effect_sizes[i] = beta[-1]
 

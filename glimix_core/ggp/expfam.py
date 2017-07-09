@@ -49,7 +49,7 @@ class ExpFamGP(EP, FunctionReduce):
         >>> ggp = ExpFamGP(y, 'bernoulli', mean, cov)
         >>> print('Before: %.4f' % ggp.feed().value())
         Before: -65.8090
-        >>> ggp.feed().maximize(progress=False)
+        >>> ggp.feed().maximize(verbose=False)
         >>> print('After: %.2f' % ggp.feed().value())
         After: -65.39
     """
