@@ -1,8 +1,7 @@
 from __future__ import division
 
-from numpy import clip, exp, dot
+from numpy import clip, dot, exp
 from numpy_sugar import is_all_finite
-
 from optimix import Function, Scalar, maximize_scalar
 
 from .core import LMMCore
@@ -45,7 +44,7 @@ class LMM(LMMCore, Function):
         >>> covariates = array([[1], [1]])
         >>> y = array([-1, 2], float)
         >>> lmm = LMM(y, covariates, QS)
-        >>> lmm.learn(progress=False)
+        >>> lmm.learn(verbose=False)
         >>> print('%.3f' % lmm.lml())
         -3.649
 
@@ -66,13 +65,13 @@ class LMM(LMMCore, Function):
         >>> lmm.fix('scale')
         >>> lmm.delta = 0.5
         >>> lmm.scale = 1
-        >>> lmm.learn(progress=False)
+        >>> lmm.learn(verbose=False)
         >>> print('%.3f' % lmm.lml())
         -4.232
         >>> print('%.1f' % lmm.heritability)
         0.5
         >>> lmm.unfix('delta')
-        >>> lmm.learn(progress=False)
+        >>> lmm.learn(verbose=False)
         >>> print('%.3f' % lmm.lml())
         -2.838
         >>> print('%.1f' % lmm.heritability)
@@ -126,7 +125,8 @@ class LMM(LMMCore, Function):
         o = LMM.__new__(LMM)
 
         LMMCore.__init__(o, self._y, self.X, self._QS)
-        Function.__init__(o, logistic=Scalar(self.variables().get('logistic').value))
+        Function.__init__(
+            o, logistic=Scalar(self.variables().get('logistic').value))
 
         o._fix = self._fix.copy()
         o._delta = self._delta
@@ -158,8 +158,8 @@ class LMM(LMMCore, Function):
     def environmental_variance(self):
         return self.scale * self.delta
 
-    def learn(self, progress=True):
-        maximize_scalar(self, progress=progress)
+    def learn(self, verbose=True):
+        maximize_scalar(self, verbose=verbose)
         self.update()
         self.delta = self._get_delta()
 

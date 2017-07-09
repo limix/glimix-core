@@ -24,14 +24,14 @@ def setup_package():
     setup_requires = ['ncephes>=1.0.21'] + pytest_runner
     install_requires = [
         'scipy>=0.18', 'ncephes>=1.0.40', 'numpy>=1.10', 'numpy-sugar>=1.0.47',
-        'scipy-sugar>=1.0.2', 'optimix>=1.2.12', 'cachetools>=2.0', 'tqdm>=4',
+        'scipy-sugar>=1.0.2', 'optimix>=1.2.13', 'cachetools>=2.0', 'tqdm>=4',
         'liknorm-py>=1.0.6'
     ]
     tests_require = ['pytest', 'pytest-pep8']
 
     metadata = dict(
         name='glimix-core',
-        version='1.2.18',
+        version='1.2.19',
         maintainer="Limix Developers",
         maintainer_email="horta@ebi.ac.uk",
         license="MIT",
