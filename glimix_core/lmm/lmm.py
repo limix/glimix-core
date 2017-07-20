@@ -1,7 +1,7 @@
 from __future__ import division
 
-from numpy import clip, dot, exp
-from numpy_sugar import is_all_finite
+from numpy import clip, dot, exp, log
+from numpy_sugar import epsilon, is_all_finite
 from optimix import Function, Scalar, maximize_scalar
 
 from .core import LMMCore
@@ -118,7 +118,9 @@ class LMM(LMMCore, Function):
 
     @delta.setter
     def delta(self, delta):
+        delta = clip(delta, epsilon.tiny, 1 - epsilon.tiny)
         self._delta = delta
+        self.variables().set(dict(logistic=log(delta / (1 - delta))))
 
     def copy(self):
         # pylint: disable=W0212
