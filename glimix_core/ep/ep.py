@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, unicode_literals
 import logging
 from math import fsum
 
-from numpy import dot, empty, inf, isfinite, log, maximum, sqrt, zeros
+from numpy import dot, empty, inf, isfinite, log, maximum, zeros
 from numpy.linalg import norm
 from numpy_sugar import epsilon
 from numpy_sugar.linalg import cho_solve, ddot, dotd

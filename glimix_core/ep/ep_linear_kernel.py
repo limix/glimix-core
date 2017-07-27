@@ -1,16 +1,13 @@
 from __future__ import absolute_import, division, unicode_literals
 
-import logging
 from math import fsum
 
-from numpy import dot, empty, inf, isfinite, log, maximum, sqrt, zeros
-from numpy.linalg import norm
+from numpy import dot, isfinite, log, sqrt
 from numpy_sugar import epsilon
 from numpy_sugar.linalg import cho_solve, ddot, dotd
 
 from .ep import EP
 from .posterior_linear_kernel import PosteriorLinearKernel
-from .site import Site
 
 MAX_ITERS = 100
 RTOL = epsilon.small * 1000

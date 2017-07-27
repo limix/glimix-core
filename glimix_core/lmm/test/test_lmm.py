@@ -114,7 +114,6 @@ def test_fastlmm_fast_scan_redundant():  # pylint: disable=R0914
         rtol=1e-5)
 
     lmm.beta
-    pass
 
 
 def test_lmm_learn():

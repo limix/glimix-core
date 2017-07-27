@@ -79,7 +79,7 @@ def test_glmm_delta1():
 def test_glmm_wrong_qs():
     random = RandomState(0)
     X = random.randn(10, 15)
-    K = linear_eye_cov().feed().value()
+    linear_eye_cov().feed().value()
     QS = [0, 1]
 
     ntri = random.randint(1, 30, 10)

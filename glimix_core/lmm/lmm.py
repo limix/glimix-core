@@ -1,6 +1,6 @@
 from __future__ import division
 
-from numpy import clip, dot, exp, log
+from numpy import clip, exp, log
 from numpy_sugar import epsilon, is_all_finite
 from optimix import Function, Scalar, maximize_scalar
 
