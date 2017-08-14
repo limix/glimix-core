@@ -97,6 +97,9 @@ class GLMM(EPLinearKernel, Function):
 
         self.variables()['beta'].listen(self._set_need_prior_update)
 
+        if lik_name.lower() == 'poisson':
+            y = clip(y, 0, 25000)
+
         if isinstance(y, list):
             y = tuple(y)
         elif not isinstance(y, tuple):

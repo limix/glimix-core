@@ -37,7 +37,7 @@ def test_glmm_precise():
     glmm.delta = 0.1
     assert_allclose(glmm.value(), -288.52736106924954)
 
-    assert_allclose(check_grad(glmm), 0, atol=1e-4)
+    assert_allclose(check_grad(glmm), 0, atol=1e-3)
 
 
 def test_glmm_delta0():
