@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, unicode_literals
 import logging
 from math import fsum
 
-from numpy import dot, empty, inf, isfinite, log, maximum, zeros
+from numpy import dot, empty, inf, isfinite, log, maximum, zeros, sqrt
 from numpy.linalg import norm
 from numpy_sugar import epsilon
 from numpy_sugar.linalg import cho_solve, ddot, dotd
@@ -13,7 +13,7 @@ from .site import Site
 
 MAX_ITERS = 100
 RTOL = epsilon.small * 1000
-ATOL = epsilon.small * 1000
+ATOL = epsilon.small
 
 
 def ldot(A, B):
@@ -183,12 +183,12 @@ class EP(object):  # pylint: disable=R0903
 
             self._posterior.update()
 
-            tol = 2.5 * (RTOL * norm(self._psite.tau) + ATOL)
+            n0 = norm(self._psite.tau)
+            n1 = norm(self._cav['tau'])
+            tol = RTOL * sqrt(n0 * n1) + ATOL
             i += 1
 
         if i == MAX_ITERS:
-            import pdb
-            pdb.set_trace()
             msg = ('Maximum number of EP iterations has' + ' been attained.')
             msg += " Last EP step was: %.10f." % norm(
                 self._site.tau - self._psite.tau)
