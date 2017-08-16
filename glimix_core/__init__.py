@@ -9,15 +9,7 @@ Fast inference for Generalized Linear Mixed Models.
 
 from __future__ import absolute_import as _absolute_import
 
-from pkg_resources import DistributionNotFound as _DistributionNotFound
-from pkg_resources import get_distribution as _get_distribution
-
 from . import cov, ggp, glmm, gp, lik, link, lmm, mean, random, util
-
-try:
-    __version__ = _get_distribution('glimix_core').version
-except _DistributionNotFound:
-    __version__ = 'unknown'
 
 
 def test():
