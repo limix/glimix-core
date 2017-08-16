@@ -163,7 +163,7 @@ def test_glmm_bernoulli_problematic():
     assert_allclose(model.feed().value(), -344.86474884323525)
     assert_allclose(model.delta, 0, atol=1e-3)
     assert_allclose(model.scale, 0.6026005889095781, rtol=1e-5)
-    assert_allclose(model.beta, [-0.01806123661347892])
+    assert_allclose(model.beta, [-0.01806123661347892], rtol=1e-5)
 
 
 def _stdnorm(X, axis=None, out=None):

@@ -183,10 +183,12 @@ class EP(object):  # pylint: disable=R0903
 
             self._posterior.update()
 
-            tol = RTOL * norm(self._psite.tau) + ATOL
+            tol = 2.5 * (RTOL * norm(self._psite.tau) + ATOL)
             i += 1
 
         if i == MAX_ITERS:
+            import pdb
+            pdb.set_trace()
             msg = ('Maximum number of EP iterations has' + ' been attained.')
             msg += " Last EP step was: %.10f." % norm(
                 self._site.tau - self._psite.tau)
