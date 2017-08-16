@@ -198,7 +198,7 @@ def test_glmm_binomial_pheno_list():
 
     successes = zeros(len(ntrials), int)
     for i in range(len(ntrials)):
-        for j in range(ntrials[i]):
+        for _ in range(ntrials[i]):
             successes[i] += int(z[i] + 0.1 * random.randn() > 0)
 
     y = [successes, ntrials]

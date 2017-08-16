@@ -1,16 +1,17 @@
 from __future__ import division
 
 import pytest
+from numpy import arange, concatenate, inf, nan, newaxis, ones, sqrt, zeros
+from numpy.random import RandomState
+from numpy.testing import assert_allclose
+from numpy_sugar.linalg import economic_qs_linear
+
 from glimix_core.cov import EyeCov, LinearCov, SumCov
 from glimix_core.lik import DeltaProdLik
 from glimix_core.lmm import LMM
 from glimix_core.lmm.core import LMMCore
 from glimix_core.mean import OffsetMean
 from glimix_core.random import GGPSampler
-from numpy import arange, concatenate, inf, nan, newaxis, ones, sqrt, zeros
-from numpy.random import RandomState
-from numpy.testing import assert_allclose
-from numpy_sugar.linalg import economic_qs_linear
 
 
 def test_fastlmm_fast_scan():  # pylint: disable=R0914
@@ -112,8 +113,6 @@ def test_fastlmm_fast_scan_redundant():  # pylint: disable=R0914
             -948.79826806
         ],
         rtol=1e-5)
-
-    lmm.beta
 
 
 def test_lmm_learn():

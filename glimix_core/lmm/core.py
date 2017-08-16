@@ -76,7 +76,6 @@ class LMMCore(object):
     def _diag(self, i):
         if i == 0:
             return self._QS[1] * (1 - self.delta) + self.delta
-        assert i == 1
         return self.delta
 
     def _a(self, i):

@@ -2,8 +2,9 @@ from __future__ import division
 
 import logging
 
+from numpy import all as npall
 from numpy import sum as npsum
-from numpy import append, dot, empty, full, log, zeros, asarray, isfinite, all
+from numpy import append, asarray, dot, empty, full, isfinite, log, zeros
 from numpy.linalg import LinAlgError
 from numpy_sugar.linalg import rsolve, solve
 from tqdm import tqdm
@@ -72,7 +73,9 @@ class FastScanner(object):  # pylint: disable=R0903
         Returns:
             tuple: LMLs and effect-sizes, respectively.
         """
-        assert markers.ndim == 2
+        if not (markers.ndim == 2):
+            raise NotImplementedError(
+                "This does not work for that number of variants.")
         p = markers.shape[1]
 
         lmls = empty(p)
@@ -94,9 +97,11 @@ class FastScanner(object):  # pylint: disable=R0903
 
     def _fast_scan_chunk(self, markers):
         markers = asarray(markers, float)
-        assert markers.ndim == 2
+        if not markers.ndim == 2:
+            raise NotImplementedError(
+                "This does not work for that number of variants.")
 
-        if not all(isfinite(markers)):
+        if not npall(isfinite(markers)):
             raise ValueError("One or more variants have non-finite value.")
 
         mTQ = [dot(markers.T, Q) for Q in self._QS[0]]
