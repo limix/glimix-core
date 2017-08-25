@@ -7,3 +7,4 @@ optimix>=1.2.14
 cachetools>=2.0
 tqdm>=4
 liknorm-py>=1.0.6
+ndarray-listener
