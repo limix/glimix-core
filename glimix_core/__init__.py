@@ -7,30 +7,16 @@ Fast inference for Generalized Linear Mixed Models.
 
 """
 
-from __future__ import absolute_import as _absolute_import
+from __future__ import absolute_import as _
 
 from . import cov, ggp, glmm, gp, lik, link, lmm, mean, random, util
 
-
-def test():
-    import os
-    p = __import__('glimix_core').__path__[0]
-    src_path = os.path.abspath(p)
-    old_path = os.getcwd()
-    os.chdir(src_path)
-
-    try:
-        return_code = __import__('pytest').main(['-q', '--doctest-modules'])
-    finally:
-        os.chdir(old_path)
-
-    if return_code == 0:
-        print("Congratulations. All tests have passed!")
-
-    return return_code
-
+__name__ = "glimix-core"
+__version__ = "1.2.22"
+__author__ = "Danilo Horta"
+__author_email__ = "horta@ebi.ac.uk"
 
 __all__ = [
-    'test', 'ggp', 'gp', 'lmm', 'glmm', 'cov', 'lik', 'mean', 'link', 'random',
-    'util'
+    "__name__", "__version__", "__author__", "__author_email__", "test", 'ggp',
+    'gp', 'lmm', 'glmm', 'cov', 'lik', 'mean', 'link', 'random', 'util'
 ]
