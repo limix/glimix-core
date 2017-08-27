@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, unicode_literals
 import logging
 from math import fsum
 
-from numpy import dot, empty, inf, isfinite, log, maximum, zeros, sqrt
+from numpy import dot, empty, inf, isfinite, log, maximum, sqrt, zeros
 from numpy.linalg import norm
 from numpy_sugar import epsilon
 from numpy_sugar.linalg import cho_solve, ddot, dotd
@@ -71,6 +71,21 @@ class EP(object):  # pylint: disable=R0903
         }
 
         self._need_params_update = True
+
+    def _copy_to(self, to):
+        self._site.copy_to(to._site)
+        self._psite.copy_to(to._psite)
+
+        to._cav['tau'] = self._cav['tau'].copy()
+        to._cav['eta'] = self._cav['eta'].copy()
+
+        self._posterior.copy_to(to._posterior)
+
+        to._moments['log_zeroth'][:] = self._moments['log_zeroth']
+        to._moments['mean'][:] = self._moments['mean']
+        to._moments['variance'][:] = self._moments['variance']
+
+        to._need_params_update = self._need_params_update
 
     def _compute_moments(self):
         r"""Compute zero-th, first, and second moments.

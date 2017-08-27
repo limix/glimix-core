@@ -9,10 +9,6 @@ from numpy_sugar.linalg import cho_solve, ddot, dotd
 from .ep import EP
 from .posterior_linear_kernel import PosteriorLinearKernel
 
-MAX_ITERS = 100
-RTOL = epsilon.small * 1000
-ATOL = epsilon.small * 1000
-
 
 def ldot(A, B):
     return ddot(A, B, left=True)
@@ -22,7 +18,7 @@ def dotr(A, B):
     return ddot(A, B, left=False)
 
 
-class EPLinearKernel(EP):  # pylint: disable=R0903
+class EPLinearKernel(EP):
     def __init__(self, nsites):
         super(EPLinearKernel, self).__init__(nsites, PosteriorLinearKernel)
 

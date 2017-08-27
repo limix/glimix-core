@@ -116,9 +116,22 @@ class GLMM(EPLinearKernel, Function):
 
         self._QS = QS
 
+        self._lik_name = lik_name
         self._machine = LikNormMachine(lik_name, 500)
         self._need_prior_update = True
         self.set_nodata()
+
+    def copy(self):
+        glmm = GLMM(self._y, self._lik_name, self._X, self._QS)
+
+        glmm._need_prior_update = self._need_prior_update
+        glmm.scale = self.scale
+        glmm.delta = self.delta
+        glmm.beta = self.beta
+
+        self._copy_to(glmm)
+
+        return glmm
 
     def _set_need_prior_update(self, _=None):
         self._need_prior_update = True

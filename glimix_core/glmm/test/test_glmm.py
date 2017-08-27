@@ -293,3 +293,35 @@ def test_glmm_delta_one():
     glmm.feed().maximize(verbose=False)
     assert_allclose(glmm.value(), -20.657040329898603)
     assert_allclose(glmm.delta, 0.01458391103525475, rtol=1e-4)
+
+
+def test_glmm_copy():
+    random = RandomState(0)
+    X = random.randn(100, 5)
+    K = linear_eye_cov().feed().value()
+    z = random.multivariate_normal(0.2 * ones(100), K)
+    QS = economic_qs(K)
+
+    ntri = random.randint(1, 30, 100)
+    nsuc = zeros(100, dtype=int)
+    for (i, ni) in enumerate(ntri):
+        nsuc[i] += sum(z[i] + 0.2 * random.randn(ni) > 0)
+
+    ntri = ascontiguousarray(ntri)
+    glmm0 = GLMM((nsuc, ntri), 'binomial', X, QS)
+
+    assert_allclose(glmm0.value(), -323.53924104721864)
+    glmm0.feed().maximize(verbose=False)
+
+    assert_allclose(glmm0.value(), -159.1688208305131)
+    glmm1 = glmm0.copy()
+    assert_allclose(glmm1.value(), -159.1688208305131)
+    glmm1.scale = 0.92
+    assert_allclose(glmm0.value(), -159.1688208305131)
+    assert_allclose(glmm1.value(), -357.7785166522849)
+
+    glmm0.feed().maximize(verbose=False)
+    glmm1.feed().maximize(verbose=False)
+
+    assert_allclose(glmm0.value(), -159.1688208305131)
+    assert_allclose(glmm1.value(), -159.1688208305131)

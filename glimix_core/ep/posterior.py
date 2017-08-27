@@ -26,6 +26,12 @@ class Posterior(object):
         self._mean = None
         self._cov = None
 
+    def copy_to(self, to):
+        to.tau[:] = self.tau
+        to.eta[:] = self.eta
+        to._mean = self._mean
+        to._cov = self._cov
+
     def _initialize(self):
         r"""Initialize the mean and covariance of the posterior.
 
