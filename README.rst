@@ -24,9 +24,6 @@ An alternative way would be via pip_
 
     pip install glimix-core
 
-Refer to [documentation](http://glimix-core.readthedocs.io/)
-for more information.
-
 Running the tests
 -----------------
 

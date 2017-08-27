@@ -1,6 +1,6 @@
-===============================
-Limix-inference's documentation
-===============================
+===========================
+Glimix-core's documentation
+===========================
 
 Fast inference for Generalized Linear Mixed Models.
 
