@@ -1,5 +1,6 @@
 # glimix-core
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/e0227434c8f040888ff92d1a4d67bcc8)](https://www.codacy.com/app/danilo.horta/glimix-core?utm_source=github.com&utm_medium=referral&utm_content=limix/glimix-core&utm_campaign=badger)
 [![PyPIl](https://img.shields.io/pypi/l/glimix-core.svg?style=flat-square)](https://pypi.python.org/pypi/glimix-core/)
 [![PyPIv](https://img.shields.io/pypi/v/glimix-core.svg?style=flat-square)](https://pypi.python.org/pypi/glimix-core/)
 [![Documentation Status](https://readthedocs.org/projects/glimix-core/badge/?style=flat-square&version=latest)](https://glimix-core.readthedocs.io/)
