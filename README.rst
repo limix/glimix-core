@@ -79,5 +79,3 @@ for details.
 .. _pip: https://pypi.python.org/pypi/pip
 
 .. _pytest: http://docs.pytest.org/en/latest/
-
-.. _documentation: http://glimix-core.readthedocs.io/
