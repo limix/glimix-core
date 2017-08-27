@@ -1,18 +1,11 @@
 language: python
 sudo: required
 dist: trusty
-services: docker
 git:
   depth: 5
-cache:
-  pip: true
-  directories:
-  - "$HOME/bin"
-  - "$HOME/.download"
 matrix:
   include:
   - python: 2.7
-  - python: 3.5
   - python: 3.6
   - env: DOCKER_IMAGE=quay.io/pypa/manylinux1_x86_64
   - os: osx
@@ -20,13 +13,12 @@ matrix:
     env: PYENV=py27
   - os: osx
     language: generic
-    env: PYENV=py35
-  - os: osx
-    language: generic
     env: PYENV=py36
 before_install:
 - travis_retry bash <(curl -s https://raw.githubusercontent.com/limix/travis-tools/master/get-travis-tools.sh)
 - travis_retry travis/before-install.sh
+install:
+- travis_retry travis/install.sh
 script:
 - travis_retry travis/script.sh
 after_success:
@@ -50,6 +42,4 @@ deploy:
 env:
   global:
     - secure: A0SPfnMMsWf0eoEnOfrCd6yRrdGseBz1dKCN1O7AkzUG6LguFXru2dyHKiSdjL3oKuSzXH1IXZUbZqSQ9Y9DHscsYhuNWYRTRNfhw5pp+CMhOzAlqiNTGQZ3OSC/v9jq2YEfImgT7/kYfYT3w/eEVfg5GrxloRAlKk0fvihhseOx9NsuUFEPMWSo+J75kXcCXMhdV8gSrVtBVvhCtUiUkT4uQLlWwfofWc7ROtarPv6pg/MfT/f/13Ts9/V+lraubVy8RWd+OP0e7fjb6jVRP9IwsZ3yd2lKMXscoKNG1Mc9Sq18MmLuUJeHG20wqjpHoYlKEAvVAgmk40w/zLFOuCZyoPQQ3Zl/eluGxGdHy1UUyLmrVB2Mj1cHkLbU8TCyrTmn4B/yb58H4gzyCdn7Ho/HrvRr7B7yfySqIoW5sojf0n4VqzGaxlDFP7MpZt6jWRUwaU3Bs+rcGeRGMek5ByBgO3cKVUlGOAkdts7kY6JeFNp2WHMfzeM1jtnP1LGSHmjy6D9pLt1NH15pwD+b0ujc69StuQ6iGlZI6c1zX7gypFK0/c3Fiux8WbHZGt6pvnzliYQRZ5FPQa+VpiUb8ev6xKHxR6zKPo3cIyxJU/tpYrorZt8iyuZarRV5fVpmMz/W2tgslVnlxaAzkAASfF3GE2J42PEpNJpEBDtB8vo=
-    - PKG_NAME=glimix_core
-    - PY_DEPS="pycparser ncephes numpy-sugar scipy scipy-sugar liknorm-py"
     - LIKNORM=true

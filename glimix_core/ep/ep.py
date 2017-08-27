@@ -1,6 +1,7 @@
 from __future__ import absolute_import, division, unicode_literals
 
 import logging
+from copy import deepcopy
 from math import fsum
 
 from numpy import dot, empty, inf, isfinite, log, maximum, sqrt, zeros
@@ -71,6 +72,7 @@ class EP(object):  # pylint: disable=R0903
         }
 
         self._need_params_update = True
+        self._cache = dict(lml=None)
 
     def _copy_to(self, to):
         self._site.copy_to(to._site)
@@ -86,6 +88,7 @@ class EP(object):  # pylint: disable=R0903
         to._moments['variance'][:] = self._moments['variance']
 
         to._need_params_update = self._need_params_update
+        to._cache = deepcopy(self._cache)
 
     def _compute_moments(self):
         r"""Compute zero-th, first, and second moments.
@@ -99,8 +102,12 @@ class EP(object):  # pylint: disable=R0903
         self._posterior.mean = mean
         self._posterior.cov = cov
         self._need_params_update = True
+        self._cache['lml'] = None
 
     def _lml(self):
+        if self._cache['lml'] is not None:
+            return self._cache['lml']
+
         self._params_update()
 
         L = self._posterior.L()
@@ -134,6 +141,7 @@ class EP(object):  # pylint: disable=R0903
         if not isfinite(lml):
             raise ValueError("LML should not be %f." % lml)
 
+        self._cache['lml'] = lml
         return lml
 
     def _lml_derivative_over_mean(self, dm):

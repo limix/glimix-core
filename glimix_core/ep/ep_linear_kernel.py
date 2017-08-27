@@ -23,6 +23,9 @@ class EPLinearKernel(EP):
         super(EPLinearKernel, self).__init__(nsites, PosteriorLinearKernel)
 
     def _lml(self):
+        if self._cache['lml'] is not None:
+            return self._cache['lml']
+
         self._params_update()
 
         L = self._posterior.L()
@@ -64,6 +67,8 @@ class EPLinearKernel(EP):
 
         if not isfinite(lml):
             raise ValueError("LML should not be %f." % lml)
+
+        self._cache['lml'] = lml
 
         return lml
 
