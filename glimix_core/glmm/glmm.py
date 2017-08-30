@@ -223,7 +223,7 @@ class GLMM(EPLinearKernel, Function):
             raise BadSolutionError(str(e))
         return lml
 
-    def gradient(self):  # pylint: disable=W0221
+    def gradient(self):
         r"""Gradient of the log of the marginal likelihood.
 
         Args:
@@ -241,6 +241,9 @@ class GLMM(EPLinearKernel, Function):
                 self._set_prior(self.mean(), cov)
                 self._need_prior_update = False
 
+            if self._cache['grad'] is not None:
+                return self._cache['grad']
+
             v = self.variables().get('logitdelta').value
             x = self.variables().get('logscale').value
             g = self._lml_derivatives(self._X)
@@ -256,7 +259,9 @@ class GLMM(EPLinearKernel, Function):
             self._logger.info("Scale: %.10f", self.scale)
             raise BadSolutionError(str(e))
 
-        return dict(logitdelta=grad[0], logscale=grad[1], beta=grad[2])
+        self._cache['grad'] = dict(
+            logitdelta=grad[0], logscale=grad[1], beta=grad[2])
+        return self._cache['grad']
 
 
 class BadSolutionError(Exception):

@@ -72,7 +72,7 @@ class EP(object):  # pylint: disable=R0903
         }
 
         self._need_params_update = True
-        self._cache = dict(lml=None)
+        self._cache = dict(lml=None, grad=None)
 
     def _copy_to(self, to):
         self._site.copy_to(to._site)
@@ -103,6 +103,7 @@ class EP(object):  # pylint: disable=R0903
         self._posterior.cov = cov
         self._need_params_update = True
         self._cache['lml'] = None
+        self._cache['grad'] = None
 
     def _lml(self):
         if self._cache['lml'] is not None:
