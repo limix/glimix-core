@@ -11,8 +11,6 @@ from optimix import check_grad
 
 ATOL = 1e-6
 RTOL = 1e-6
-FACTR = 1e5
-PGTOL = 1e-5
 
 
 def assert_allclose(*args, **kwargs):
@@ -122,14 +120,14 @@ def test_glmm_optimize():
     glmm.fix('beta')
     glmm.fix('scale')
 
-    glmm.feed().maximize(verbose=False, factr=FACTR, pgtol=PGTOL)
+    glmm.feed().maximize(verbose=False)
 
     assert_allclose(glmm.value(), -299.47042725069565)
 
     glmm.unfix('beta')
     glmm.unfix('scale')
 
-    glmm.feed().maximize(verbose=False, factr=FACTR, pgtol=PGTOL)
+    glmm.feed().maximize(verbose=False)
 
     assert_allclose(glmm.value(), -159.1688201218538, rtol=1e-06)
 
@@ -150,7 +148,7 @@ def test_glmm_optimize_low_rank():
     glmm = GLMM((nsuc, ntri), 'binomial', X, QS)
 
     assert_allclose(glmm.value(), -179.73542932110485)
-    glmm.feed().maximize(verbose=False, factr=FACTR, pgtol=PGTOL)
+    glmm.feed().maximize(verbose=False)
     assert_allclose(glmm.value(), -155.4794212740998, rtol=1e-06)
 
 
@@ -173,7 +171,7 @@ def test_glmm_bernoulli_problematic():
     model = GLMM(y, 'bernoulli', X, QS=(QS[0], QS[1]))
     model.delta = 0
     model.fix('delta')
-    model.feed().maximize(verbose=False, factr=FACTR, pgtol=PGTOL)
+    model.feed().maximize(verbose=False)
     assert_allclose(model.feed().value(), -344.86474884323525)
     assert_allclose(model.delta, 0, atol=1e-3)
     assert_allclose(model.scale, 0.6026005889095781, rtol=1e-5)
@@ -219,7 +217,7 @@ def test_glmm_binomial_pheno_list():
 
     QS = economic_qs(K)
     glmm = GLMM(y, 'binomial', X, QS)
-    glmm.feed().maximize(verbose=False, factr=FACTR, pgtol=PGTOL)
+    glmm.feed().maximize(verbose=False)
 
     assert_allclose(glmm.value(), -64.84586890596634)
 
@@ -276,7 +274,7 @@ def test_glmm_delta_zero():
     assert_allclose(glmm.value(), -294.3289786264443)
     assert_allclose(check_grad(glmm, step=1e-4), 0, atol=1e-2)
 
-    glmm.feed().maximize(verbose=False, factr=FACTR, pgtol=PGTOL)
+    glmm.feed().maximize(verbose=False)
     assert_allclose(glmm.value(), -263.56884343483136)
     assert_allclose(glmm.delta, 1)
 
@@ -304,7 +302,7 @@ def test_glmm_delta_one():
     assert_allclose(glmm.value(), -426.18257638533225)
     assert_allclose(check_grad(glmm, step=1e-4), 0, atol=1e-2)
 
-    glmm.feed().maximize(verbose=False, factr=FACTR, pgtol=PGTOL)
+    glmm.feed().maximize(verbose=False)
     assert_allclose(glmm.value(), -20.657040329898603)
     assert_allclose(glmm.delta, 0.01458391103525475, rtol=1e-4)
 
@@ -325,7 +323,7 @@ def test_glmm_copy():
     glmm0 = GLMM((nsuc, ntri), 'binomial', X, QS)
 
     assert_allclose(glmm0.value(), -323.53924104721864)
-    glmm0.feed().maximize(verbose=False, factr=FACTR, pgtol=PGTOL)
+    glmm0.feed().maximize(verbose=False)
 
     assert_allclose(glmm0.value(), -159.1688208305131)
     glmm1 = glmm0.copy()
@@ -334,8 +332,8 @@ def test_glmm_copy():
     assert_allclose(glmm0.value(), -159.1688208305131)
     assert_allclose(glmm1.value(), -357.7785166522849)
 
-    glmm0.feed().maximize(verbose=False, factr=FACTR, pgtol=PGTOL)
-    glmm1.feed().maximize(verbose=False, factr=FACTR, pgtol=PGTOL)
+    glmm0.feed().maximize(verbose=False)
+    glmm1.feed().maximize(verbose=False)
 
     assert_allclose(glmm0.value(), -159.1688208305131)
     assert_allclose(glmm1.value(), -159.1688208305131)

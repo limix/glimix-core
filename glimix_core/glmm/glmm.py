@@ -85,6 +85,9 @@ class GLMM(EPLinearKernel, Function):
             logscale=Scalar(0.0),
             logitdelta=Scalar(0.0))
 
+        self._factr = 1e5
+        self._pgtol = 1e-5
+
         self._logger = logging.getLogger(__name__)
 
         logscale = self.variables()['logscale']

@@ -3,7 +3,7 @@ ncephes
 numpy
 numpy-sugar
 scipy-sugar
-optimix
+optimix>=1.2.18
 cachetools
 tqdm
 liknorm-py
