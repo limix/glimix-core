@@ -1,7 +1,7 @@
 """
-***********************
+*******************
 glimix_core package
-***********************
+*******************
 
 Fast inference for Generalized Linear Mixed Models.
 
