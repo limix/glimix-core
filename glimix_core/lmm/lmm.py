@@ -1,7 +1,8 @@
 from __future__ import division
 
-from numpy import clip, dot, exp, log
+from numpy import clip, exp, log
 from numpy_sugar import epsilon, is_all_finite
+
 from optimix import Function, Scalar, maximize_scalar
 
 from .core import LMMCore
@@ -161,7 +162,7 @@ class LMM(LMMCore, Function):
         return self.scale * self.delta
 
     def learn(self, verbose=True):
-        maximize_scalar(self, verbose=verbose)
+        maximize_scalar(self, 'LMM', verbose=verbose)
         self.update()
         self.delta = self._get_delta()
 

@@ -1,11 +1,5 @@
 from __future__ import unicode_literals
 
-try:
-    import glimix_core
-    version = glimix_core.__version__
-except ImportError:
-    version = 'unknown'
-
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.doctest',
@@ -20,10 +14,8 @@ templates_path = ['_templates']
 source_suffix = '.rst'
 master_doc = 'index'
 project = 'glimix-core'
-# pylint: disable=W0622
 copyright = '2016, Danilo Horta'
 author = 'Danilo Horta'
-release = version
 language = None
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 pygments_style = 'sphinx'
@@ -35,14 +27,11 @@ latex_documents = [
     (master_doc, 'glimix-core.tex', 'glimix-core Documentation',
      'Danilo Horta', 'manual'),
 ]
-man_pages = [
-    (master_doc, 'glimix-core', 'glimix-core Documentation',
-     [author], 1)
-]
+man_pages = [(master_doc, 'glimix-core', 'glimix-core Documentation', [author],
+              1)]
 texinfo_documents = [
-    (master_doc, 'glimix-core', 'glimix-core Documentation',
-     author, 'glimix-core', 'One line description of project.',
-     'Miscellaneous'),
+    (master_doc, 'glimix-core', 'glimix-core Documentation', author,
+     'glimix-core', 'One line description of project.', 'Miscellaneous'),
 ]
 intersphinx_mapping = {
     'python': ('http://docs.python.org/', None),

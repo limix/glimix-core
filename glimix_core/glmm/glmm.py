@@ -3,10 +3,10 @@ from __future__ import absolute_import, division, unicode_literals
 import logging
 
 from liknorm import LikNormMachine
-from numpy import (asarray, clip, concatenate, dot, exp, inf, log, ndarray,
-                   zeros)
+from numpy import asarray, clip, dot, exp, inf, log, ndarray, zeros
 from numpy.linalg import LinAlgError
 from numpy_sugar import epsilon
+
 from optimix import Function, Scalar, Vector
 
 from ..ep import EPLinearKernel
@@ -85,6 +85,9 @@ class GLMM(EPLinearKernel, Function):
             logscale=Scalar(0.0),
             logitdelta=Scalar(0.0))
 
+        self._factr = 1e5
+        self._pgtol = 1e-5
+
         self._logger = logging.getLogger(__name__)
 
         logscale = self.variables()['logscale']
@@ -96,6 +99,9 @@ class GLMM(EPLinearKernel, Function):
         logitdelta.listen(self._set_need_prior_update)
 
         self.variables()['beta'].listen(self._set_need_prior_update)
+
+        if lik_name.lower() == 'poisson':
+            y = clip(y, 0, 25000)
 
         if isinstance(y, list):
             y = tuple(y)
@@ -113,9 +119,22 @@ class GLMM(EPLinearKernel, Function):
 
         self._QS = QS
 
+        self._lik_name = lik_name
         self._machine = LikNormMachine(lik_name, 500)
         self._need_prior_update = True
         self.set_nodata()
+
+    def copy(self):
+        glmm = GLMM(self._y, self._lik_name, self._X, self._QS)
+
+        glmm._need_prior_update = self._need_prior_update
+        glmm.scale = self.scale
+        glmm.delta = self.delta
+        glmm.beta = self.beta
+
+        self._copy_to(glmm)
+
+        return glmm
 
     def _set_need_prior_update(self, _=None):
         self._need_prior_update = True
@@ -207,7 +226,7 @@ class GLMM(EPLinearKernel, Function):
             raise BadSolutionError(str(e))
         return lml
 
-    def gradient(self):  # pylint: disable=W0221
+    def gradient(self):
         r"""Gradient of the log of the marginal likelihood.
 
         Args:
@@ -225,6 +244,9 @@ class GLMM(EPLinearKernel, Function):
                 self._set_prior(self.mean(), cov)
                 self._need_prior_update = False
 
+            if self._cache['grad'] is not None:
+                return self._cache['grad']
+
             v = self.variables().get('logitdelta').value
             x = self.variables().get('logscale').value
             g = self._lml_derivatives(self._X)
@@ -240,7 +262,9 @@ class GLMM(EPLinearKernel, Function):
             self._logger.info("Scale: %.10f", self.scale)
             raise BadSolutionError(str(e))
 
-        return dict(logitdelta=grad[0], logscale=grad[1], beta=grad[2])
+        self._cache['grad'] = dict(
+            logitdelta=grad[0], logscale=grad[1], beta=grad[2])
+        return self._cache['grad']
 
 
 class BadSolutionError(Exception):

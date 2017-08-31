@@ -1,10 +1,9 @@
 from __future__ import division
 
 from numpy import sum as npsum
-from numpy import dot, empty, sqrt, concatenate, zeros
-from scipy.linalg import cho_factor
-
+from numpy import dot, empty, sqrt
 from numpy_sugar.linalg import cho_solve, ddot, dotd, sum2diag
+from scipy.linalg import cho_factor
 
 
 class Posterior(object):
@@ -26,6 +25,12 @@ class Posterior(object):
         self._site = site
         self._mean = None
         self._cov = None
+
+    def copy_to(self, to):
+        to.tau[:] = self.tau
+        to.eta[:] = self.eta
+        to._mean = self._mean
+        to._cov = self._cov
 
     def _initialize(self):
         r"""Initialize the mean and covariance of the posterior.
@@ -100,7 +105,8 @@ class Posterior(object):
         self.tau -= dotd(Q, BiQtTK)
         self.tau[:] = 1 / self.tau
 
-        assert all(self.tau >= 0.)
+        if not all(self.tau >= 0.):
+            raise RuntimeError("'tau' has to be non-negative.")
 
         self.eta[:] = dot(K, self._site.eta)
         self.eta[:] += self._mean

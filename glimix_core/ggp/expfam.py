@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, unicode_literals
 import logging
 
 from liknorm import LikNormMachine
-from numpy import concatenate, sign, zeros
+from numpy import sign
 from numpy.linalg import LinAlgError
 from numpy_sugar import epsilon
 from numpy_sugar.linalg import economic_qs

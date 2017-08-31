@@ -1,13 +1,25 @@
 import pytest
 from numpy import asarray, ascontiguousarray, dot, ones, sqrt, zeros
 from numpy.random import RandomState
-from numpy.testing import assert_allclose
+from numpy_sugar import epsilon
 from numpy_sugar.linalg import economic_qs, economic_qs_linear
 
 from glimix_core.example import linear_eye_cov
 from glimix_core.glmm import GLMM
 from glimix_core.random import bernoulli_sample
 from optimix import check_grad
+
+ATOL = 1e-6
+RTOL = 1e-6
+
+
+def assert_allclose(*args, **kwargs):
+    from numpy.testing import assert_allclose as aa
+    if 'atol' not in kwargs:
+        kwargs['atol'] = ATOL
+    if 'rtol' not in kwargs:
+        kwargs['rtol'] = RTOL
+    return aa(*args, **kwargs)
 
 
 def test_glmm_precise():
@@ -37,7 +49,7 @@ def test_glmm_precise():
     glmm.delta = 0.1
     assert_allclose(glmm.value(), -288.52736106924954)
 
-    assert_allclose(check_grad(glmm), 0, atol=1e-4)
+    assert_allclose(check_grad(glmm), 0, atol=1e-3)
 
 
 def test_glmm_delta0():
@@ -55,7 +67,7 @@ def test_glmm_delta0():
     glmm.delta = 0
 
     assert_allclose(glmm.value(), -294.3289786264443)
-    assert_allclose(check_grad(glmm, step=1e-5), 0, atol=1e-2)
+    assert_allclose(check_grad(glmm, step=2e-5), 0, atol=1e-2)
 
 
 def test_glmm_delta1():
@@ -79,7 +91,7 @@ def test_glmm_delta1():
 def test_glmm_wrong_qs():
     random = RandomState(0)
     X = random.randn(10, 15)
-    K = linear_eye_cov().feed().value()
+    linear_eye_cov().feed().value()
     QS = [0, 1]
 
     ntri = random.randint(1, 30, 10)
@@ -163,7 +175,7 @@ def test_glmm_bernoulli_problematic():
     assert_allclose(model.feed().value(), -344.86474884323525)
     assert_allclose(model.delta, 0, atol=1e-3)
     assert_allclose(model.scale, 0.6026005889095781, rtol=1e-5)
-    assert_allclose(model.beta, [-0.01806123661347892])
+    assert_allclose(model.beta, [-0.01806123661347892], rtol=1e-5)
 
 
 def _stdnorm(X, axis=None, out=None):
@@ -198,7 +210,7 @@ def test_glmm_binomial_pheno_list():
 
     successes = zeros(len(ntrials), int)
     for i in range(len(ntrials)):
-        for j in range(ntrials[i]):
+        for _ in range(ntrials[i]):
             successes[i] += int(z[i] + 0.1 * random.randn() > 0)
 
     y = [successes, ntrials]
@@ -293,3 +305,35 @@ def test_glmm_delta_one():
     glmm.feed().maximize(verbose=False)
     assert_allclose(glmm.value(), -20.657040329898603)
     assert_allclose(glmm.delta, 0.01458391103525475, rtol=1e-4)
+
+
+def test_glmm_copy():
+    random = RandomState(0)
+    X = random.randn(100, 5)
+    K = linear_eye_cov().feed().value()
+    z = random.multivariate_normal(0.2 * ones(100), K)
+    QS = economic_qs(K)
+
+    ntri = random.randint(1, 30, 100)
+    nsuc = zeros(100, dtype=int)
+    for (i, ni) in enumerate(ntri):
+        nsuc[i] += sum(z[i] + 0.2 * random.randn(ni) > 0)
+
+    ntri = ascontiguousarray(ntri)
+    glmm0 = GLMM((nsuc, ntri), 'binomial', X, QS)
+
+    assert_allclose(glmm0.value(), -323.53924104721864)
+    glmm0.feed().maximize(verbose=False)
+
+    assert_allclose(glmm0.value(), -159.1688208305131)
+    glmm1 = glmm0.copy()
+    assert_allclose(glmm1.value(), -159.1688208305131)
+    glmm1.scale = 0.92
+    assert_allclose(glmm0.value(), -159.1688208305131)
+    assert_allclose(glmm1.value(), -357.7785166522849)
+
+    glmm0.feed().maximize(verbose=False)
+    glmm1.feed().maximize(verbose=False)
+
+    assert_allclose(glmm0.value(), -159.1688208305131)
+    assert_allclose(glmm1.value(), -159.1688208305131)

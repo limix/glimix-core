@@ -1,4 +1,1 @@
-include LICENSE
-include README.md
-include setup.cfg
-recursive-include glimix_core *.py
+include LICENSE.txt

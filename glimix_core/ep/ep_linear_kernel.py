@@ -1,20 +1,13 @@
 from __future__ import absolute_import, division, unicode_literals
 
-import logging
 from math import fsum
 
-from numpy import dot, empty, inf, isfinite, log, maximum, sqrt, zeros
-from numpy.linalg import norm
+from numpy import dot, isfinite, log, sqrt
 from numpy_sugar import epsilon
 from numpy_sugar.linalg import cho_solve, ddot, dotd
 
 from .ep import EP
 from .posterior_linear_kernel import PosteriorLinearKernel
-from .site import Site
-
-MAX_ITERS = 100
-RTOL = epsilon.small * 1000
-ATOL = epsilon.small * 1000
 
 
 def ldot(A, B):
@@ -25,11 +18,14 @@ def dotr(A, B):
     return ddot(A, B, left=False)
 
 
-class EPLinearKernel(EP):  # pylint: disable=R0903
+class EPLinearKernel(EP):
     def __init__(self, nsites):
         super(EPLinearKernel, self).__init__(nsites, PosteriorLinearKernel)
 
     def _lml(self):
+        if self._cache['lml'] is not None:
+            return self._cache['lml']
+
         self._params_update()
 
         L = self._posterior.L()
@@ -71,6 +67,8 @@ class EPLinearKernel(EP):  # pylint: disable=R0903
 
         if not isfinite(lml):
             raise ValueError("LML should not be %f." % lml)
+
+        self._cache['lml'] = lml
 
         return lml
 

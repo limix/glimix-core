@@ -70,7 +70,8 @@ class GP(FunctionReduce):
         Kiym = solve(cov, ym)
 
         (s, logdet) = slogdet(cov)
-        assert s == 1.
+        if not s == 1.0:
+            raise RuntimeError("This determinant should not be negative.")
 
         n = len(self._y)
         return -(logdet + ym.dot(Kiym) + n * log(2 * pi)) / 2
