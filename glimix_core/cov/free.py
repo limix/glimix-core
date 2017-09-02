@@ -16,8 +16,8 @@ class FreeFormCov(Function):
         """
         Args:
             dim:        dimension of the free-form covariance
-            jitter:     extent of diagonal offset which is added for numerical stability
-                        (default value: 1e-4)
+            jitter:     extent of diagonal offset which is added for numerical
+                        stability (default value: 1e-4)
         """
         tsize = ((size + 1) * size) / 2
         tsize = int(tsize)
