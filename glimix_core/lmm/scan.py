@@ -1,13 +1,12 @@
 from __future__ import division
 
 import logging
-from time import time
 
 from numpy import all as npall
 from numpy import sum as npsum
 from numpy import (
-    append, asarray, clip, dot, empty, errstate, full, inf, isfinite, log,
-    maximum, nan_to_num, zeros
+    asarray, clip, dot, empty, errstate, full, inf, isfinite, log,
+    nan_to_num, zeros
 )
 from numpy.linalg import LinAlgError
 from numpy_sugar import epsilon
@@ -168,7 +167,7 @@ class FastScanner(object):  # pylint: disable=R0903
                     msg = "Could not converge to the optimal"
                     msg += " effect-size of one of the candidates."
                     msg += " Setting its effect-size to zero."
-                    logging.getLogger(__name__).warning(warn)
+                    logging.getLogger(__name__).warning(msg)
                     beta = zeros(self._C[1].shape[0])
 
             effect_sizes[i] = beta[-1]

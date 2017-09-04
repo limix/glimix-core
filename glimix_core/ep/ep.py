@@ -74,21 +74,57 @@ class EP(object):  # pylint: disable=R0903
         self._need_params_update = True
         self._cache = dict(lml=None, grad=None)
 
+    @property
+    def site(self):
+        return self._site
+
+    @property
+    def psite(self):
+        return self._psite
+
+    @property
+    def cav(self):
+        return self._cav
+
+    @property
+    def posterior(self):
+        return self._posterior
+
+    @property
+    def moments(self):
+        return self._moments
+
+    @property
+    def cache(self):
+        return self._cache
+
+    @cache.setter
+    def cache(self, v):
+        self._cache = v
+
+    @property
+    def need_params_update(self):
+        return self._need_params_update
+
+    @need_params_update.setter
+    def need_params_update(self, v):
+        self._need_params_update = v
+
     def _copy_to(self, to):
-        self._site.copy_to(to._site)
-        self._psite.copy_to(to._psite)
+        self._site.copy_to(to.site)
+        self._psite.copy_to(to.psite)
 
-        to._cav['tau'] = self._cav['tau'].copy()
-        to._cav['eta'] = self._cav['eta'].copy()
+        to.cav['tau'] = self._cav['tau'].copy()
+        to.cav['eta'] = self._cav['eta'].copy()
 
-        self._posterior.copy_to(to._posterior)
+        self._posterior.copy_to(to.posterior)
 
-        to._moments['log_zeroth'][:] = self._moments['log_zeroth']
-        to._moments['mean'][:] = self._moments['mean']
-        to._moments['variance'][:] = self._moments['variance']
+        to.moments['log_zeroth'][:] = self._moments['log_zeroth']
+        to.moments['mean'][:] = self._moments['mean']
+        to.moments['variance'][:] = self._moments['variance']
 
-        to._need_params_update = self._need_params_update
-        to._cache = deepcopy(self._cache)
+        to.need_params_update = self._need_params_update
+        to.cache = deepcopy(self._cache)
 
     def _compute_moments(self):
         r"""Compute zero-th, first, and second moments.

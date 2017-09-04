@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, unicode_literals
 import logging
 
 from liknorm import LikNormMachine
-from numpy import asarray, clip, dot, exp, inf, log, ndarray, zeros
+from numpy import asarray, clip, dot, exp, inf, log, zeros
 from numpy.linalg import LinAlgError
 from numpy_sugar import epsilon
 

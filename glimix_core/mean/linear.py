@@ -20,26 +20,34 @@ class LinearMean(Function):
     def __init__(self, size):
         Function.__init__(self, effsizes=Vector(zeros(size)))
 
-    def value(self, x):
+    def value(self, *args):
         r"""Linear mean function.
 
-        Args:
-            x (array_like): covariates.
+        Parameters
+        ----------
+        x : array_like
+            Covariates.
 
-        Returns:
-            :math:`\mathbf x^\intercal \boldsymbol\alpha`.
+        Returns
+        -------
+        float : :math:`\mathbf x^\intercal \boldsymbol\alpha`.
         """
+        x = args[0]
         return dot(x, self.variables().get('effsizes').value)
 
-    def gradient(self, x):  # pylint: disable=R0201
+    def gradient(self, *args):
         r"""Gradient of the linear mean function.
 
-        Args:
-            x (array_like): covariates.
+        Parameters
+        ----------
+        x : array_like
+            Covariates.
 
-        Returns:
-            :math:`\mathbf x`.
+        Returns
+        -------
+        array_like : :math:`\mathbf x`.
         """
+        x = args[0]
         return dict(effsizes=x)
 
     @property
