@@ -20,7 +20,7 @@ class OffsetMean(Function):
     def __init__(self):
         Function.__init__(self, offset=Scalar(1.0))
 
-    def value(self, *args):
+    def value(self, x):
         r"""Offset function evaluated at ``x``.
 
         Parameters
@@ -32,10 +32,10 @@ class OffsetMean(Function):
         -------
         :math:`o \mathbf 1`.
         """
-        x = asarray(args[0])
+        x = asarray(x)
         return full(x.shape, self.variables().get('offset').value)
 
-    def gradient(self, *args):
+    def gradient(self, x):
         r"""Offset function gradient.
 
         Parameters
@@ -47,7 +47,7 @@ class OffsetMean(Function):
         -------
         :math:`\mathbf 1`.
         """
-        x = asarray(args[0])
+        x = asarray(x)
         return dict(offset=ones(x.shape))
 
     @property
