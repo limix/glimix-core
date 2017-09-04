@@ -13,7 +13,8 @@ from .posterior import Posterior
 from .site import Site
 
 MAX_ITERS = 100
-RTOL = epsilon.small * 1000
+# RTOL = epsilon.small * 1000
+RTOL = epsilon.small
 ATOL = epsilon.small
 
 

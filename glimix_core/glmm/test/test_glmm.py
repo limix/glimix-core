@@ -129,7 +129,7 @@ def test_glmm_optimize():
 
     glmm.feed().maximize(verbose=False)
 
-    assert_allclose(glmm.value(), -35.2285842788653, rtol=1e-06)
+    assert_allclose(glmm.value(), -35.22754172936816, rtol=1e-06)
 
 
 def test_glmm_optimize_low_rank():
@@ -219,7 +219,7 @@ def test_glmm_binomial_pheno_list():
     glmm = GLMM(y, 'binomial', X, QS)
     glmm.feed().maximize(verbose=False)
 
-    assert_allclose(glmm.value(), -64.84586890596634)
+    assert_allclose(glmm.value(), -64.8433300480514)
 
 
 def test_glmm_scale_very_low():
@@ -303,7 +303,7 @@ def test_glmm_delta_one():
     assert_allclose(check_grad(glmm, step=1e-4), 0, atol=1e-2)
 
     glmm.feed().maximize(verbose=False)
-    assert_allclose(glmm.value(), -9.309188051280541)
+    assert_allclose(glmm.value(), -9.308984106518762)
     assert_allclose(glmm.delta, 9.930610996068862e-08, rtol=1e-4)
 
 
@@ -325,15 +325,17 @@ def test_glmm_copy():
     assert_allclose(glmm0.value(), -99.33404651904951)
     glmm0.feed().maximize(verbose=False)
 
-    assert_allclose(glmm0.value(), -35.22858362559554)
+    v = -35.22754141429125
+    assert_allclose(glmm0.value(), v)
     glmm1 = glmm0.copy()
-    assert_allclose(glmm1.value(), -35.2286561485445)
+    assert_allclose(glmm1.value(), v)
     glmm1.scale = 0.92
-    assert_allclose(glmm0.value(), -35.22858362559554)
-    assert_allclose(glmm1.value(), -219.59236024472935)
+    assert_allclose(glmm0.value(), -35.227541384298654)
+    assert_allclose(glmm1.value(), -219.4745424133988)
 
     glmm0.feed().maximize(verbose=False)
     glmm1.feed().maximize(verbose=False)
 
-    assert_allclose(glmm0.value(), -35.22858362559547)
-    assert_allclose(glmm1.value(), -35.22858362559547)
+    v = -35.227541384298654
+    assert_allclose(glmm0.value(), v)
+    assert_allclose(glmm1.value(), v)

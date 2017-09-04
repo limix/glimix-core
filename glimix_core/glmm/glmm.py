@@ -70,8 +70,8 @@ class GLMM(EPLinearKernel, Function):
         >>>
         >>> QS = economic_qs(K)
         >>> glmm = GLMM(y, 'binomial', X, QS)
-        >>> print('Before: %.4f' % glmm.feed().value())
-        Before: -95.1854
+        >>> print('Before: %.2f' % glmm.feed().value())
+        Before: -95.19
         >>> glmm.feed().maximize(verbose=False)
         >>> print('After: %.2f' % glmm.feed().value())
         After: -92.24
@@ -120,19 +120,27 @@ class GLMM(EPLinearKernel, Function):
         self._QS = QS
 
         self._lik_name = lik_name
-        self._machine = LikNormMachine(lik_name, 500)
+        self._machine = LikNormMachine(lik_name, 1000)
         self._need_prior_update = True
         self.set_nodata()
+
+    @property
+    def need_prior_update(self):
+        return self._need_prior_update
+
+    @need_prior_update.setter
+    def need_prior_update(self, v):
+        self._need_prior_update = v
 
     def copy(self):
         glmm = GLMM(self._y, self._lik_name, self._X, self._QS)
 
-        glmm._need_prior_update = self._need_prior_update
         glmm.scale = self.scale
         glmm.delta = self.delta
         glmm.beta = self.beta
 
         self._copy_to(glmm)
+        glmm.need_prior_update = self._need_prior_update
 
         return glmm
 
