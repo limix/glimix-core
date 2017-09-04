@@ -16,13 +16,16 @@ from ..ep import EP
 class ExpFamGP(EP, FunctionReduce):
     r"""Expectation Propagation for Generalised Gaussian Processes.
 
-    Args:
-        y (array_like): outcome variable.
-        lik_name (str): likelihood name.
-        mean (:class:`optimix.Function`): mean function.
-                                          (Refer to :doc:`mean`.)
-        cov (:class:`optimix.Function`): covariance function.
-                                         (Refer to :doc:`cov`.)
+    Parameters
+    ----------
+    y : array_like
+        Outcome variable.
+    lik_name : str
+        Likelihood name.
+    mean : :class:`optimix.Function`
+        Mean function. (Refer to :doc:`mean`.)
+    cov : :class:`optimix.Function`
+        Covariance function. (Refer to :doc:`cov`.)
 
     Example
     -------
@@ -48,10 +51,10 @@ class ExpFamGP(EP, FunctionReduce):
         >>>
         >>> ggp = ExpFamGP(y, 'bernoulli', mean, cov)
         >>> print('Before: %.4f' % ggp.feed().value())
-        Before: -65.8090
+        Before: -18.9215
         >>> ggp.feed().maximize(verbose=False)
-        >>> print('After: %.2f' % ggp.feed().value())
-        After: -65.39
+        >>> print('After: %.4f' % ggp.feed().value())
+        After: -17.5326
     """
 
     def __init__(self, y, lik_name, mean, cov):

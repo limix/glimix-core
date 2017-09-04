@@ -38,10 +38,10 @@ class GP(FunctionReduce):
         >>>
         >>> gp = GP(y, mean, cov)
         >>> print('Before: %.4f' % gp.feed().value())
-        Before: -164.0064
+        Before: -49.4450
         >>> gp.feed().maximize(verbose=False)
         >>> print('After: %.4f' % gp.feed().value())
-        After: -163.4192
+        After: -49.2888
     """
 
     def __init__(self, y, mean, cov):

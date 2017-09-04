@@ -23,22 +23,28 @@ class LinearMean(Function):
     def value(self, x):
         r"""Linear mean function.
 
-        Args:
-            x (array_like): covariates.
+        Parameters
+        ----------
+        x : array_like
+            Covariates.
 
-        Returns:
-            :math:`\mathbf x^\intercal \boldsymbol\alpha`.
+        Returns
+        -------
+        float : :math:`\mathbf x^\intercal \boldsymbol\alpha`.
         """
         return dot(x, self.variables().get('effsizes').value)
 
-    def gradient(self, x):  # pylint: disable=R0201
+    def gradient(self, x):
         r"""Gradient of the linear mean function.
 
-        Args:
-            x (array_like): covariates.
+        Parameters
+        ----------
+        x : array_like
+            Covariates.
 
-        Returns:
-            :math:`\mathbf x`.
+        Returns
+        -------
+        array_like : :math:`\mathbf x`.
         """
         return dict(effsizes=x)
 
