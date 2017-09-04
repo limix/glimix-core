@@ -87,6 +87,12 @@ def setup_package():
         metadata['author_email'] = get_init_metadata(metadata, 'author_email')
         metadata['name'] = get_init_metadata(metadata, 'name')
 
+        with open('requirements.txt') as f:
+            metadata['install_requires'] = f.read().splitlines()
+
+        with open('test-requirements.txt') as f:
+            metadata['tests_require'] = f.read().splitlines()
+
         if_set_list(metadata, 'classifiers')
         if_set_list(metadata, 'keywords')
         if_set_list(metadata, 'cffi_modules')
