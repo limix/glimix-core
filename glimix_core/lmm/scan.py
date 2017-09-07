@@ -22,7 +22,7 @@ class FastScanner(object):
     Let :math:`\mathrm X` a samples-by-covariates matrix,
     :math:`\mathrm M` a samples-by-markers matrix, and
     :math:`\mathbf y` an array of outcome.
-    A covariace :math:`\mathrm K` will be provided by its economic eigen
+    A covariance :math:`\mathrm K` will be provided via its economic eigen
     decomposition ``((Q0, Q1), S0)`` and ``delta`` will define the ratio of
     covariation between :math:`\mathrm K` and the identity in the formulae
 
@@ -34,11 +34,13 @@ class FastScanner(object):
 
 
     Note that :math:`\alpha_i` is a scalar multiplying a column-matrix
-    :math:`\mathrm{M}_i`. The variabla :math:`s` is a scalar that is
-    jointly adjusted with :math:`\alpha_i` in order the maximize the marginal
-    likelihood, ultimately providing the degree of association between the
-    marker :math:`\mathrm{M}_i` with the outcome :math:`\mathbf y` via
-    an p-value.
+    :math:`\mathrm{M}_i`.
+    The variable :math:`s` is a scalar that is jointly adjusted with
+    :math:`\alpha_i` in order the maximize the marginal likelihood, ultimately
+    providing the degree of association between the marker :math:`\mathrm{M}_i`
+    with the outcome :math:`\mathbf y` via an p-value.
+    As mentioned before, the ratio :math:`\delta` is not adjusted for
+    performance reason.
 
     Parameters
     ----------
@@ -48,6 +50,8 @@ class FastScanner(object):
         Matrix of covariates.
     QS : tuple
         Economic eigen decomposition ``((Q0, Q1), S0)``.
+    delta : float
+        Ratio of total variance between ``K`` and ``I``.
     """
 
     def __init__(self, y, X, QS, delta):
@@ -74,14 +78,6 @@ class FastScanner(object):
         for i in range(2):
             self._C[i][:-1, :-1] = dot(self._XTQdiag[i], XTQ[i].T)
 
-    def _static_lml(self):
-        n = self._QS[0][0].shape[0]
-        p = len(self._diags[0])
-        static_lml = -n * LOG2PI - n
-        static_lml -= npsum(log(self._diags[0]))
-        static_lml -= (n - p) * log(self._diags[1])
-        return static_lml
-
     def fast_scan(self, markers, verbose=True):
         r"""LMLs of markers by fitting scale and fixed-effect sizes parameters.
 
@@ -89,6 +85,9 @@ class FastScanner(object):
         ----------
         markers : array_like
             Matrix of fixed-effects across columns.
+        verbose : bool, optional
+            ``True`` for progress information; ``False`` otherwise.
+            Defaults to ``True``.
 
         Returns
         -------
@@ -120,6 +119,14 @@ class FastScanner(object):
             effect_sizes[start:stop] = e
 
         return lmls, effect_sizes
+
+    def _static_lml(self):
+        n = self._QS[0][0].shape[0]
+        p = len(self._diags[0])
+        static_lml = -n * LOG2PI - n
+        static_lml -= npsum(log(self._diags[0]))
+        static_lml -= (n - p) * log(self._diags[1])
+        return static_lml
 
     def _fast_scan_chunk(self, markers):
         markers = asarray(markers, float)

@@ -6,6 +6,7 @@ from numpy_sugar import epsilon, is_all_finite
 from optimix import Function, Scalar, maximize_scalar
 
 from .core import LMMCore
+from .scan import FastScanner
 
 
 class LMM(LMMCore, Function):
@@ -96,7 +97,7 @@ class LMM(LMMCore, Function):
 
         self._fix = dict(beta=False, scale=False)
         self._delta = 0.5
-        self._scale = LMMCore.scale.fget(self)  # pylint: disable=E1101
+        self._scale = LMMCore.scale.fget(self)
         self.set_nodata()
 
     def fix(self, var_name):
@@ -113,9 +114,10 @@ class LMM(LMMCore, Function):
 
     @property
     def scale(self):
+        r"""Overall variance :math:`s`."""
         if self._fix['scale']:
             return self._scale
-        return LMMCore.scale.fget(self)  # pylint: disable=E1101
+        return LMMCore.scale.fget(self)
 
     @scale.setter
     def scale(self, v):
@@ -123,6 +125,7 @@ class LMM(LMMCore, Function):
 
     @property
     def delta(self):
+        r"""Variance ratio between ``K`` and ``I``."""
         return self._delta
 
     @delta.setter
@@ -132,7 +135,7 @@ class LMM(LMMCore, Function):
         self.variables().set(dict(logistic=log(delta / (1 - delta))))
 
     def copy(self):
-        # pylint: disable=W0212
+        r"""Return a copy of this object."""
         o = LMM.__new__(LMM)
 
         LMMCore.__init__(o, self._y, self.X, self._QS)
@@ -150,6 +153,11 @@ class LMM(LMMCore, Function):
         v = clip(self.variables().get('logistic').value, -20, 20)
         x = 1 / (1 + exp(-v))
         return clip(x, 1e-5, 1 - 1e-5)
+
+    def get_fast_scanner(self):
+        r"""Return :class:`.glimix_core.lmm.FastScanner` for the current
+        delta."""
+        return FastScanner(self._y, self.X, self._QS, self.delta)
 
     @property
     def heritability(self):
@@ -179,8 +187,10 @@ class LMM(LMMCore, Function):
         return self.lml()
 
     def lml(self):
+        r"""Log of the marginal likelihood."""
         self.delta = self._get_delta()
         return LMMCore.lml(self)
 
     def mean(self):
+        r"""Estimated mean :math:`\mathrm X\boldsymbol\beta`."""
         return self.m

@@ -18,9 +18,6 @@ class LMMCore(object):
         self._svd = None
         self.X = X
 
-    def get_fast_scanner(self):
-        return FastScanner(self._y, self.X, self._QS, self.delta)
-
     @property
     def X(self):
         # m = self.m
