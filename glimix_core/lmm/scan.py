@@ -5,8 +5,8 @@ import logging
 from numpy import all as npall
 from numpy import sum as npsum
 from numpy import (
-    asarray, clip, dot, empty, errstate, full, inf, isfinite, log,
-    nan_to_num, zeros
+    asarray, clip, dot, empty, errstate, full, inf, isfinite, log, nan_to_num,
+    zeros
 )
 from numpy.linalg import LinAlgError
 from numpy_sugar import epsilon
@@ -16,49 +16,63 @@ from tqdm import tqdm
 LOG2PI = 1.837877066409345339081937709124758839607238769531250
 
 
-class FastScanner(object):  # pylint: disable=R0903
-    r"""Fast inference over multiple covariates.
+class FastScanner(object):
+    r"""Approximated fast inference over several covariates.
 
-    Let :math:`\tilde{\mathrm M}_i` be a column-matrix of fixed-effect
-    :math:`i`.
-    It fits :math:`\alpha_i` and refits :math:`\boldsymbol\beta` and :math:`s`
-    for each fixed-effect :math:`i` in order to compute LMLs:
+    Let :math:`\mathrm X` a samples-by-covariates matrix,
+    :math:`\mathrm M` a samples-by-markers matrix, and
+    :math:`\mathbf y` an array of outcome.
+    A covariace :math:`\mathrm K` will be provided by its economic eigen
+    decomposition ``((Q0, Q1), S0)`` and ``delta`` will define the ratio of
+    covariation between :math:`\mathrm K` and the identity in the formulae
 
     .. math::
 
-        \mathbf y \sim \mathcal N\big(~ \mathrm M\boldsymbol\beta
-        + \tilde{\mathrm M}_i \alpha_i;~ s \mathrm K ~\big)
+        \mathbf y \sim \mathcal N\big(~ \mathrm X\boldsymbol\beta
+        + \mathrm{M}_i \alpha_i;~
+        s ((1 - \delta) \mathrm K + \delta\mathrm I) ~\big)
 
-    Args:
 
-        y (array_like): real-valued outcome.
-        M (array_like): matrix of covariates.
-        QS (tuple): economic eigen decomposition ``((Q0, Q1), S0)``.
+    Note that :math:`\alpha_i` is a scalar multiplying a column-matrix
+    :math:`\mathrm{M}_i`. The variabla :math:`s` is a scalar that is
+    jointly adjusted with :math:`\alpha_i` in order the maximize the marginal
+    likelihood, ultimately providing the degree of association between the
+    marker :math:`\mathrm{M}_i` with the outcome :math:`\mathbf y` via
+    an p-value.
+
+    Parameters
+    ----------
+    y : array_like
+        Real-valued outcome.
+    X : array_like
+        Matrix of covariates.
+    QS : tuple
+        Economic eigen decomposition ``((Q0, Q1), S0)``.
     """
 
-    def __init__(self, y, M, QS, delta):
+    def __init__(self, y, X, QS, delta):
 
         self._QS = QS
         self._diags = [(1 - delta) * QS[1] + delta, delta]
 
         yTQ = [dot(y.T, Q) for Q in QS[0]]
 
-        MTQ = [dot(M.T, Q) for Q in QS[0]]
+        XTQ = [dot(X.T, Q) for Q in QS[0]]
 
         self._yTQdiag = [l / r for (l, r) in zip(yTQ, self._diags)]
 
         self._a = [(i**2 / j).sum() for (i, j) in zip(yTQ, self._diags)]
 
-        self._b = [dot(i, j.T) for (i, j) in zip(self._yTQdiag, MTQ)]
+        self._b = [dot(i, j.T) for (i, j) in zip(self._yTQdiag, XTQ)]
 
-        self._MTQdiag = [i / j for (i, j) in zip(MTQ, self._diags)]
+        self._XTQdiag = [i / j for (i, j) in zip(XTQ, self._diags)]
 
-        nc = M.shape[1]
+        nc = X.shape[1]
 
         self._C = [empty((nc + 1, nc + 1)), empty((nc + 1, nc + 1))]
 
         for i in range(2):
-            self._C[i][:-1, :-1] = dot(self._MTQdiag[i], MTQ[i].T)
+            self._C[i][:-1, :-1] = dot(self._XTQdiag[i], XTQ[i].T)
 
     def _static_lml(self):
         n = self._QS[0][0].shape[0]
@@ -71,17 +85,19 @@ class FastScanner(object):  # pylint: disable=R0903
     def fast_scan(self, markers, verbose=True):
         r"""LMLs of markers by fitting scale and fixed-effect sizes parameters.
 
-        Args:
+        Parameters
+        ----------
+        markers : array_like
+            Matrix of fixed-effects across columns.
 
-            markers (array_like): matrix of fixed-effects across columns.
-
-        Returns:
-            tuple: LMLs and effect-sizes, respectively.
+        Returns
+        -------
+        array_like : LMLs.
+        array_like : Effect-sizes.
         """
 
         if not (markers.ndim == 2):
-            raise NotImplementedError(
-                "This does not work for that number of variants.")
+            raise ValueError("`markers` array must be bidimensional.")
         p = markers.shape[1]
 
         lmls = empty(p)
@@ -94,9 +110,7 @@ class FastScanner(object):  # pylint: disable=R0903
 
         chunk_size = (p + nchunks - 1) // nchunks
 
-        for i in tqdm(
-                range(nchunks), desc="Scanning",
-                disable=not verbose):  # TODO: OPTIMISE
+        for i in tqdm(range(nchunks), desc="Scanning", disable=not verbose):
             start = i * chunk_size
             stop = min(start + chunk_size, markers.shape[1])
 
@@ -111,8 +125,7 @@ class FastScanner(object):  # pylint: disable=R0903
         markers = asarray(markers, float)
 
         if not markers.ndim == 2:
-            raise NotImplementedError(
-                "This does not work for that number of variants.")
+            raise ValueError("`markers` array must be bidimensional.")
 
         if not npall(isfinite(markers)):
             raise ValueError("One or more variants have non-finite value.")
@@ -120,7 +133,7 @@ class FastScanner(object):  # pylint: disable=R0903
         mTQ = [dot(markers.T, Q) for Q in self._QS[0]]
         bm = [dot(i, j.T) for (i, j) in zip(self._yTQdiag, mTQ)]
 
-        c_01 = [dot(i, j.T) for (i, j) in zip(self._MTQdiag, mTQ)]
+        c_01 = [dot(i, j.T) for (i, j) in zip(self._XTQdiag, mTQ)]
         c_11 = [npsum((i / j) * i, axis=1) for (i, j) in zip(mTQ, self._diags)]
 
         nsamples = markers.shape[0]
@@ -129,7 +142,7 @@ class FastScanner(object):  # pylint: disable=R0903
         lmls = full(nmarkers, self._static_lml())
         effect_sizes = empty(nmarkers)
 
-        if self._MTQdiag[0].shape[0] == 1:
+        if self._XTQdiag[0].shape[0] == 1:
             return self._fast_scan_chunk_1covariate_loop(
                 lmls, effect_sizes, bm, c_01, c_11, nsamples)
         else:

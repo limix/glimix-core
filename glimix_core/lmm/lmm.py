@@ -11,25 +11,33 @@ from .core import LMMCore
 class LMM(LMMCore, Function):
     r"""Fast Linear Mixed Models inference via maximum likelihood.
 
-    It models
+    It perform inference on the exactly the same model given above but with
+    a different variance parameterization:
 
     .. math::
 
         \mathbf y \sim \mathcal N\Big(~ \mathrm X\boldsymbol\beta;~
           s \big(
             (1-\delta)
-              \mathrm Q \mathrm S \mathrm Q^{\intercal} +
+              \mathrm K +
             \delta \mathrm I
           \big)
         ~\Big)
 
-    for which :math:`\mathrm Q\mathrm S\mathrm Q^{\intercal}=\tilde{\mathrm K}`
-    is the eigen decomposition of :math:`\tilde{\mathrm K}`.
+    for which ``K`` is the covariance matrix represented internally as an
+    economic eigen decomposition.
+    Naturally, we have :math:`\sigma_g^2 = s (1 - \delta)` and
+    :math:`\sigma_e^2 = s \delta`.
 
-    Args:
-        y (array_like): outcome.
-        X (array_like): covariates as a two-dimensional array.
-        QS (tuple): economic eigen decompositon ((Q0, Q1), S0).
+    Parameters
+    ----------
+    y : array_like
+        Outcome.
+    X : array_like
+        Covariates as a two-dimensional array.
+    QS : tuple
+        Economic eigen decompositon in form of ``((Q0, Q1), S0)`` of a
+        covariance matrix ``K``.
 
     Examples
     --------
