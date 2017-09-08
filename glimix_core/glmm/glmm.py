@@ -17,21 +17,28 @@ from .expfam import GLMMExpFam
 
 
 class GLMM(object):
-    r"""Expectation Propagation for Generalised Gaussian Processes.
+    r"""Generalised Gaussian Processes.
+
+    The variances :math:`v_0` and :math:`v_1` are internally replaced by
+    the scale and ratio parameters:
+
+    .. math::
+        v_0 = s (1 - \delta) ~\text{ and }~
+        v_1 = s \delta.
 
     Let
 
     .. math::
 
         \mathrm Q \mathrm E \mathrm Q^{\intercal}
-        = \mathrm G\mathrm G^{\intercal}
+        \mathrm K = \mathrm G\mathrm G^{\intercal}
 
     be the eigen decomposition of the random effect's covariance.
-    It turns out that the prior covariance of GLMM can be described as
+    It turns out that the covariance of the prior can be described as
 
     .. math::
 
-        \mathrm Q s((1-\delta)\mathrm E
+        s \mathrm Q ((1-\delta)\mathrm E
         + \delta\mathrm I) \mathrm Q^{\intercal}.
 
     This means that :math:`\mathrm Q` does not change during inference, and
@@ -39,12 +46,15 @@ class GLMM(object):
 
     Parameters
     ----------
-        y (array_like): outcome variable.
-        lik_name (str): likelihood name.
-        mean (:class:`optimix.Function`): mean function.
-                                          (Refer to :doc:`mean`.)
-        cov (:class:`optimix.Function`): covariance function.
-                                         (Refer to :doc:`cov`.)
+    y : array_like
+        Outcome variable.
+    lik_name : str
+        Likelihood name. It supports `Bernoulli`, `Binomial`, `Normal`, and
+        `Poisson`.
+    X : array_like
+        Covariates.
+    QS : tuple
+        Economic eigen decomposition.
 
     Example
     -------
@@ -106,6 +116,13 @@ class GLMM(object):
 
     @property
     def beta(self):
+        r"""Fixed-effect sizes.
+
+        Returns
+        -------
+        array_like
+            :math:`\boldsymbol\beta`.
+        """
         return self._func.beta
 
     @beta.setter
@@ -113,15 +130,30 @@ class GLMM(object):
         self._func.beta = v
 
     def copy(self):
+        r"""Create a copy of this object."""
         return copy(self)
 
     def covariance(self):
+        r"""Covariance of the prior.
+
+        Returns
+        -------
+        array_like
+            :math:`v_0 \mathrm K + v_1 \mathrm I`.
+        """
         Q0 = self._QS[0][0]
         S0 = self._QS[1]
         return sum2diag(dot(ddot(Q0, self.v0 * S0), Q0.T), self.v1)
 
     @property
     def delta(self):
+        r"""Ratio of variance between ``K`` and ``I``.
+
+        Returns
+        -------
+        float
+            :math:`\delta`.
+        """
         return 1 / (1 + exp(-self._func.logitdelta))
 
     @delta.setter
@@ -130,13 +162,35 @@ class GLMM(object):
         self._func.logitdelta = log(v / (1 - v))
 
     def fix(self, var_name):
+        r"""Prevent a variable to be adjusted.
+
+        Parameters
+        ----------
+        var_name : str
+            Variable name.
+        """
         self._func.fix(_to_internal_name(var_name))
 
     def fit(self, verbose=True):
+        r"""Maximise the marginal likelihood.
+
+        Parameters
+        ----------
+        verbose : bool
+            ``True`` for progress output; ``False`` otherwise.
+            Defaults to ``True``.
+        """
         self._func.feed().maximize(verbose=verbose)
 
     @property
     def function(self):
+        r"""Function representing the marginal likelihood.
+
+        Returns
+        -------
+        :class:`optimix.Function`
+            Representation.
+        """
         return self._func
 
     def lml(self):
@@ -145,15 +199,29 @@ class GLMM(object):
         Returns
         -------
         float
-            Log of the marginal likelihood.
+            :math:`\log p(\mathbf y)`
         """
         return self._func.value()
 
     def mean(self):
+        r"""Mean of the prior.
+
+        Returns
+        -------
+        array_like
+            :math:`\mathrm X\boldsymbol\beta`.
+        """
         return self._func.mean()
 
     @property
     def scale(self):
+        r"""Overall variance.
+
+        Returns
+        -------
+        float
+            :math:`s`.
+        """
         return exp(self._func.logscale)
 
     @scale.setter
@@ -161,14 +229,35 @@ class GLMM(object):
         self._func.logscale = log(v)
 
     def unfix(self, var_name):
+        r"""Let a variable be adjusted.
+
+        Parameters
+        ----------
+        var_name : str
+            Variable name.
+        """
         self._func.unfix(_to_internal_name(var_name))
 
     @property
     def v0(self):
+        r"""First variance.
+
+        Returns
+        -------
+        float
+            :math:`v_0 = s (1 - \delta)`
+        """
         return self.scale * (1 - self.delta)
 
     @property
     def v1(self):
+        r"""Second variance.
+
+        Returns
+        -------
+        float
+            :math:`v_1 = s \delta`
+        """
         return self.scale * self.delta
 
 

@@ -2,7 +2,7 @@
 Glimix-core's documentation
 ===========================
 
-Fast inference for Generalized Linear Mixed Models.
+Fast inference for Generalised Linear Mixed Models.
 
 .. toctree::
     :caption: Table of contents
@@ -19,6 +19,7 @@ Fast inference for Generalized Linear Mixed Models.
     ggp
     random
     advanced
+    zreferences
 
 *****************
 Comments and bugs

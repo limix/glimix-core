@@ -35,9 +35,6 @@ across several (millions, for example) covariates independently.
 This is achieved by not fitting the ratio between the total variance of ``K``
 and ``I``.
 
-.. bibliography:: refs.bib
-    :style: unsrt
-
 LMM class
 ^^^^^^^^^
 

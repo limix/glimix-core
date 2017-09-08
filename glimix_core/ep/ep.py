@@ -13,8 +13,7 @@ from .posterior import Posterior
 from .site import Site
 
 MAX_ITERS = 100
-# RTOL = epsilon.small * 1000
-RTOL = epsilon.small
+RTOL = epsilon.small * 10
 ATOL = epsilon.small
 
 
@@ -26,7 +25,7 @@ def dotr(A, B):
     return ddot(A, B, left=False)
 
 
-class EP(object):  # pylint: disable=R0903
+class EP(object):
     r"""Expectation Propagation algorithm.
 
     Let

@@ -27,6 +27,8 @@ class GLMMExpFam(Function):
         self._machine = LikNormMachine(lik_name, 1000)
         self.set_nodata()
         self.update_approx = True
+        self._factr = 1e5
+        self._pgtol = 1e-6
         self.variables().get('beta').listen(self.set_update_approx)
         self.variables().get('logscale').listen(self.set_update_approx)
         self.variables().get('logitdelta').listen(self.set_update_approx)
@@ -73,9 +75,6 @@ class GLMMExpFam(Function):
 
     def compute_moments(self, eta, tau, moments):
         self._machine.moments(self._y, eta, tau, moments)
-
-    def copy(self):
-        pass
 
     def covariance(self):
         scale = exp(self.logscale)
