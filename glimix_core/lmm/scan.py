@@ -78,6 +78,21 @@ class FastScanner(object):
         for i in range(2):
             self._C[i][:-1, :-1] = dot(self._XTQdiag[i], XTQ[i].T)
 
+    def null_lml(self):
+        # TODO
+        # def _diag(self, i):
+        #     if i == 0:
+        #         return self._QS[1] * (1 - self.delta) + self.delta
+        #     return self.delta
+
+        n = len(self._y)
+        p = n - self._QS[1].shape[0]
+        LOG2PI = 1.837877066409345339081937709124758839607238769531250
+        lml = -n * LOG2PI - n - n * log(self.scale)
+        lml += -sum(log(self._diags[0])) - p * log(self._diags[1])
+        lml /= 2
+        return lml
+
     def fast_scan(self, markers, verbose=True):
         r"""LMLs of markers by fitting scale and fixed-effect sizes parameters.
 

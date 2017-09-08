@@ -6,6 +6,7 @@ from math import fsum
 
 from numpy import dot, empty, inf, isfinite, log, maximum, sqrt, zeros
 from numpy.linalg import norm
+
 from numpy_sugar import epsilon
 from numpy_sugar.linalg import cho_solve, ddot, dotd
 
@@ -55,7 +56,7 @@ class EP(object):  # pylint: disable=R0903
         _moments (dict): moments for KL moment matching.
     """
 
-    def __init__(self, nsites, posterior_type=Posterior):
+    def __init__(self, nsites, posterior_type=Posterior, compute_moments=None):
         self._logger = logging.getLogger(__name__)
 
         self._posterior_type = Posterior
@@ -73,6 +74,7 @@ class EP(object):  # pylint: disable=R0903
         }
 
         self._need_params_update = True
+        self._compute_moments = compute_moments
         self._cache = dict(lml=None, grad=None)
 
     @property
@@ -127,22 +129,15 @@ class EP(object):  # pylint: disable=R0903
         to.need_params_update = self._need_params_update
         to.cache = deepcopy(self._cache)
 
-    def _compute_moments(self):
-        r"""Compute zero-th, first, and second moments.
-
-        This has to be implemented by a parent class.
-        """
-        raise NotImplementedError
-
-    def _set_prior(self, mean, cov):
+    def set_prior(self, mean, covariance):
         self._logger.debug("Setting EP prior.")
         self._posterior.mean = mean
-        self._posterior.cov = cov
+        self._posterior.cov = covariance
         self._need_params_update = True
         self._cache['lml'] = None
         self._cache['grad'] = None
 
-    def _lml(self):
+    def lml(self):
         if self._cache['lml'] is not None:
             return self._cache['lml']
 
@@ -182,7 +177,7 @@ class EP(object):  # pylint: disable=R0903
         self._cache['lml'] = lml
         return lml
 
-    def _lml_derivative_over_mean(self, dm):
+    def lml_derivative_over_mean(self, dm):
         self._params_update()
 
         L = self._posterior.L()
@@ -197,7 +192,7 @@ class EP(object):  # pylint: disable=R0903
 
         return dlml
 
-    def _lml_derivative_over_cov(self, dQS):
+    def lml_derivative_over_cov(self, dQS):
         self._params_update()
 
         L = self._posterior.L()
@@ -237,7 +232,8 @@ class EP(object):  # pylint: disable=R0903
             self._cav['tau'][:] = maximum(self._posterior.tau - self._site.tau,
                                           0)
             self._cav['eta'][:] = self._posterior.eta - self._site.eta
-            self._compute_moments()
+            self._compute_moments(self._cav['eta'], self._cav['tau'],
+                                  self._moments)
 
             self._site.update(self._moments['mean'], self._moments['variance'],
                               self._cav)

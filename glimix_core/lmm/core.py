@@ -4,8 +4,6 @@ from numpy import dot, log, maximum, sqrt, zeros
 from numpy_sugar import epsilon
 from numpy_sugar.linalg import ddot, economic_svd, rsolve, solve
 
-from .scan import FastScanner
-
 
 class LMMCore(object):
     def __init__(self, y, X, QS):
@@ -20,7 +18,6 @@ class LMMCore(object):
 
     @property
     def X(self):
-        # m = self.m
         return dot(self._svd[0], ddot(self._svd[1], self._svd[2], left=True))
 
     @X.setter

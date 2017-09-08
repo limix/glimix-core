@@ -1,18 +1,27 @@
 from __future__ import absolute_import, division, unicode_literals
 
-import logging
-
 from liknorm import LikNormMachine
 from numpy import asarray, clip, dot, exp, inf, log, zeros
 from numpy.linalg import LinAlgError
-from numpy_sugar import epsilon
 
+from numpy_sugar import epsilon
+from numpy_sugar.linalg import ddot, sum2diag
 from optimix import Function, Scalar, Vector
 
+from ..check import check_covariates, check_economic_qs, check_outcome
 from ..ep import EPLinearKernel
+from ..io import eprint, wprint
+from .expfam import GLMMExpFam
+
+_FACTR = 1e5
+_PGTOL = 1e-5
 
 
-class GLMM(EPLinearKernel, Function):
+class GLMMNormal(Function):
+    pass
+
+
+class GLMM(object):
     r"""Expectation Propagation for Generalised Gaussian Processes.
 
     Let
@@ -33,7 +42,8 @@ class GLMM(EPLinearKernel, Function):
     This means that :math:`\mathrm Q` does not change during inference, and
     this fact is used here to speed-up EP inference for GLMM.
 
-    Args:
+    Parameters
+    ----------
         y (array_like): outcome variable.
         lik_name (str): likelihood name.
         mean (:class:`optimix.Function`): mean function.
@@ -78,202 +88,97 @@ class GLMM(EPLinearKernel, Function):
     """
 
     def __init__(self, y, lik_name, X, QS):
-        super(GLMM, self).__init__(X.shape[0])
-        Function.__init__(
-            self,
-            beta=Vector(zeros(X.shape[1])),
-            logscale=Scalar(0.0),
-            logitdelta=Scalar(0.0))
 
-        self._factr = 1e5
-        self._pgtol = 1e-5
+        X = asarray(X, float)
+        y = _normalise_outcome(y)
+        y = check_outcome(y, lik_name)
+        X = check_covariates(X)
+        QS = check_economic_qs(QS)
 
-        self._logger = logging.getLogger(__name__)
+        self._func = GLMMExpFam(y, lik_name, X, QS)
 
-        logscale = self.variables()['logscale']
-        logscale.bounds = (log(1e-3), 7.)
-        logscale.listen(self._set_need_prior_update)
+        self._func.set_variable_bounds('logscale', (log(1e-3), 7.))
+        self._func.set_variable_bounds('logitdelta', (-inf, +inf))
 
-        logitdelta = self.variables()['logitdelta']
-        logitdelta.bounds = (-inf, +inf)
-        logitdelta.listen(self._set_need_prior_update)
-
-        self.variables()['beta'].listen(self._set_need_prior_update)
-
-        if lik_name.lower() == 'poisson':
-            y = clip(y, 0, 25000)
-
-        if isinstance(y, list):
-            y = tuple(y)
-        elif not isinstance(y, tuple):
-            y = (y, )
-
-        self._y = tuple([asarray(i, float) for i in y])
         self._X = X
-
-        if not isinstance(QS, tuple):
-            raise ValueError("QS must be a tuple.")
-
-        if not isinstance(QS[0], tuple):
-            raise ValueError("QS[0] must be a tuple.")
-
         self._QS = QS
 
-        self._lik_name = lik_name
-        self._machine = LikNormMachine(lik_name, 1000)
-        self._need_prior_update = True
-        self.set_nodata()
-
     @property
-    def need_prior_update(self):
-        return self._need_prior_update
+    def beta(self):
+        return self._func.beta
 
-    @need_prior_update.setter
-    def need_prior_update(self, v):
-        self._need_prior_update = v
+    @beta.setter
+    def beta(self, v):
+        self._func.beta = v
 
     def copy(self):
-        glmm = GLMM(self._y, self._lik_name, self._X, self._QS)
+        pass
 
-        glmm.scale = self.scale
-        glmm.delta = self.delta
-        glmm.beta = self.beta
-
-        self._copy_to(glmm)
-        glmm.need_prior_update = self._need_prior_update
-
-        return glmm
-
-    def _set_need_prior_update(self, _=None):
-        self._need_prior_update = True
-
-    def __del__(self):
-        if hasattr(self, '_machine'):
-            self._machine.finish()
-
-    def _compute_moments(self):
-        tau = self._cav['tau']
-        eta = self._cav['eta']
-        self._machine.moments(self._y, eta, tau, self._moments)
-
-    def mean(self):
-        return dot(self._X, self.beta)
-
-    def fix(self, var_name):
-        if var_name == 'scale':
-            Function.fix(self, 'logscale')
-        elif var_name == 'delta':
-            Function.fix(self, 'logitdelta')
-        elif var_name == 'beta':
-            Function.fix(self, 'beta')
-        else:
-            raise ValueError("Unknown parameter name %s." % var_name)
-        self._set_need_prior_update()
-
-    def unfix(self, var_name):
-        if var_name == 'scale':
-            Function.unfix(self, 'logscale')
-        elif var_name == 'delta':
-            Function.unfix(self, 'logitdelta')
-        elif var_name == 'beta':
-            Function.unfix(self, 'beta')
-        else:
-            raise ValueError("Unknown parameter name %s." % var_name)
-        self._set_need_prior_update()
-
-    @property
-    def scale(self):
-        return float(exp(self.variables().get('logscale').value))
-
-    @scale.setter
-    def scale(self, v):
-        self.variables().get('logscale').value = log(v)
-        self._set_need_prior_update()
+    def covariance(self):
+        Q0 = self._QS[0][0]
+        S0 = self._QS[1]
+        return sum2diag(dot(ddot(Q0, self.v0 * S0), Q0.T), self.v1)
 
     @property
     def delta(self):
-        return float(1 / (1 + exp(-self.variables().get('logitdelta').value)))
+        return 1 / (1 + exp(-self._func.logitdelta))
 
     @delta.setter
     def delta(self, v):
         v = clip(v, epsilon.large, 1 - epsilon.large)
-        self.variables().get('logitdelta').value = log(v / (1 - v))
-        self._set_need_prior_update()
+        self._func.logitdelta = log(v / (1 - v))
+
+    def fix(self, var_name):
+        self._func.fix(_to_internal_name(var_name))
+
+    def fit(self, verbose=True):
+        self._func.feed().maximize(verbose=verbose)
 
     @property
-    def beta(self):
-        return asarray(self.variables().get('beta').value, float)
+    def function(self):
+        return self._func
 
-    @beta.setter
-    def beta(self, v):
-        self.variables().get('beta').value = v
-        self._set_need_prior_update()
-
-    def value(self):
+    def lml(self):
         r"""Log of the marginal likelihood.
 
-        Args:
-            mean (array_like): realised mean.
-            cov (array_like): realised covariance.
-
-        Returns:
-            float: log of the marginal likelihood.
+        Returns
+        -------
+        float
+            Log of the marginal likelihood.
         """
-        try:
-            if self._need_prior_update:
-                cov = dict(QS=self._QS, scale=self.scale, delta=self.delta)
-                self._set_prior(self.mean(), cov)
-                self._need_prior_update = False
+        return self._func.value()
 
-            lml = self._lml()
-        except (ValueError, LinAlgError) as e:
-            self._logger.info(str(e))
-            self._logger.info("Beta: %s", str(self.beta))
-            self._logger.info("Delta: %.10f", self.delta)
-            self._logger.info("Scale: %.10f", self.scale)
-            raise BadSolutionError(str(e))
-        return lml
+    def mean(self):
+        return self._func.mean()
 
-    def gradient(self):
-        r"""Gradient of the log of the marginal likelihood.
+    @property
+    def scale(self):
+        return exp(self._func.logscale)
 
-        Args:
-            mean (array_like): realised mean.
-            cov (array_like): realised cov.
-            gmean (array_like): realised mean derivative.
-            gcov (array_like): realised covariance derivative.
+    @scale.setter
+    def scale(self, v):
+        self._func.logscale = log(v)
 
-        Returns:
-            list: derivatives.
-        """
-        try:
-            if self._need_prior_update:
-                cov = dict(QS=self._QS, scale=self.scale, delta=self.delta)
-                self._set_prior(self.mean(), cov)
-                self._need_prior_update = False
+    def unfix(self, var_name):
+        self._func.unfix(_to_internal_name(var_name))
 
-            if self._cache['grad'] is not None:
-                return self._cache['grad']
+    @property
+    def v0(self):
+        return self.scale * (1 - self.delta)
 
-            v = self.variables().get('logitdelta').value
-            x = self.variables().get('logscale').value
-            g = self._lml_derivatives(self._X)
-            ev = exp(-v)
-            grad = [
-                g['delta'] * (ev / (1 + ev)) / (1 + ev), g['scale'] * exp(x),
-                g['mean']
-            ]
-        except (ValueError, LinAlgError) as e:
-            self._logger.info(str(e))
-            self._logger.info("Beta: %s", str(self.beta))
-            self._logger.info("Delta: %.10f", self.delta)
-            self._logger.info("Scale: %.10f", self.scale)
-            raise BadSolutionError(str(e))
-
-        self._cache['grad'] = dict(
-            logitdelta=grad[0], logscale=grad[1], beta=grad[2])
-        return self._cache['grad']
+    @property
+    def v1(self):
+        return self.scale * self.delta
 
 
-class BadSolutionError(Exception):
-    pass
+def _normalise_outcome(y):
+    if isinstance(y, list):
+        y = tuple(y)
+    elif not isinstance(y, tuple):
+        y = (y, )
+    return tuple([asarray(i, float) for i in y])
+
+
+def _to_internal_name(name):
+    translation = dict(scale='logscale', delta='logitdelta', beta='beta')
+    return translation[name]
