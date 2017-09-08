@@ -40,6 +40,7 @@ extensions = [
     'sphinx.ext.coverage', 'sphinx.ext.viewcode', 'sphinx.ext.napoleon',
     'sphinx.ext.mathjax', 'sphinxcontrib.bibtex'
 ]
+mathjax_path = "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.2/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
 napoleon_google_docstring = True
 master_doc = 'index'
 copyright = '%s, %s' % (strftime("%Y"), author)

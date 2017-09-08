@@ -49,6 +49,18 @@ GLMM class
 
 .. autoclass:: glimix_core.glmm.GLMM
     :members:
+
+GLMMExpFam class
+^^^^^^^^^^^^^^^^
+
+.. autoclass:: glimix_core.glmm.expfam.GLMMExpFam
+    :members:
+
+GLMMNormal class
+^^^^^^^^^^^^^^^^
+
+.. autoclass:: glimix_core.glmm.normal.GLMMNormal
+    :members:
 """
 
 from .glmm import GLMM

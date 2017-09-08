@@ -11,6 +11,8 @@ from ..ep import EPLinearKernel
 
 
 class GLMMExpFam(Function):
+    r"""Alguma coisa"""
+
     def __init__(self, y, lik_name, X, QS):
         Function.__init__(
             self,
@@ -39,17 +41,15 @@ class GLMMExpFam(Function):
         gef.__dict__['_ep'].set_compute_moments(gef.compute_moments)
         gef.update_approx = self.update_approx
 
-        beta = gef.variables().get('beta')
-        beta.value = asarray(self.variables().get('beta').value, float)
-        beta.bounds = self.variables().get('beta').bounds
+        d = gef.variables()
+        s = self.variables()
 
-        logscale = gef.variables().get('logscale')
-        logscale.value = float(self.variables().get('logscale').value)
-        logscale.bounds = self.variables().get('logscale').bounds
+        d.get('beta').value = asarray(s.get('beta').value, float)
+        d.get('beta').bounds = s.get('beta').bounds
 
-        logitdelta = gef.variables().get('logitdelta')
-        logitdelta.value = float(self.variables().get('logitdelta').value)
-        logitdelta.bounds = self.variables().get('logitdelta').bounds
+        for v in ['logscale', 'logitdelta']:
+            d.get(v).value = float(s.get(v).value)
+            d.get(v).bounds = s.get(v).bounds
 
         return gef
 

@@ -5,6 +5,7 @@ from numpy.testing import assert_allclose
 
 from glimix_core.example import linear_eye_cov, nsamples
 from glimix_core.glmm import GLMM
+from glimix_core.glmm.normal import GLMMNormal
 from glimix_core.random import bernoulli_sample
 from numpy_sugar import epsilon
 from numpy_sugar.linalg import economic_qs, economic_qs_linear
@@ -14,32 +15,46 @@ ATOL = 1e-6
 RTOL = 1e-6
 
 
+def test_glmmnormal():
+    random = RandomState(0)
+    X = random.randn(nsamples(), 5)
+    K = linear_eye_cov().feed().value()
+    QS = economic_qs(K)
+
+    eta = random.randn(nsamples())
+    tau = 10 * random.rand(nsamples())
+
+    glmm = GLMMNormal(eta, tau, X, QS)
+    glmm.beta = asarray([1.0, 0, 0.5, 0.1, 0.4])
+    assert_allclose(glmm.feed().value(), 50.6974841768)
+
+
 def test_glmm_precise():
     random = RandomState(0)
     X = random.randn(nsamples(), 5)
     K = linear_eye_cov().feed().value()
     QS = economic_qs(K)
 
-    ntri = random.randint(1, 30, 100)
+    ntri = random.randint(1, 30, nsamples())
     nsuc = [random.randint(0, i) for i in ntri]
 
     glmm = GLMM((nsuc, ntri), 'binomial', X, QS)
     glmm.beta = asarray([1.0, 0, 0.5, 0.1, 0.4])
 
     glmm.scale = 1.0
-    assert_allclose(glmm.lml(), -84.45744885880542, atol=ATOL, rtol=RTOL)
+    assert_allclose(glmm.lml(), -83.60701102862096, atol=ATOL, rtol=RTOL)
     glmm.scale = 2.0
-    assert_allclose(glmm.lml(), -80.72774727035623, atol=ATOL, rtol=RTOL)
+    assert_allclose(glmm.lml(), -80.27206896319716, atol=ATOL, rtol=RTOL)
     glmm.scale = 3.0
-    assert_allclose(glmm.lml(), -80.88552880499182, atol=ATOL, rtol=RTOL)
+    assert_allclose(glmm.lml(), -80.258491082353, atol=ATOL, rtol=RTOL)
     glmm.scale = 4.0
-    assert_allclose(glmm.lml(), -81.85135542384927, atol=ATOL, rtol=RTOL)
+    assert_allclose(glmm.lml(), -80.98308047220573, atol=ATOL, rtol=RTOL)
     glmm.scale = 5.0
-    assert_allclose(glmm.lml(), -83.01324393832967, atol=ATOL, rtol=RTOL)
+    assert_allclose(glmm.lml(), -81.90719565722284, atol=ATOL, rtol=RTOL)
     glmm.scale = 6.0
-    assert_allclose(glmm.lml(), -84.19516223411439, atol=ATOL, rtol=RTOL)
+    assert_allclose(glmm.lml(), -82.86902861753809, atol=ATOL, rtol=RTOL)
     glmm.delta = 0.1
-    assert_allclose(glmm.lml(), -85.71734789051598, atol=ATOL, rtol=RTOL)
+    assert_allclose(glmm.lml(), -84.33056430633508, atol=ATOL, rtol=RTOL)
 
     assert_allclose(check_grad(glmm.function), 0, atol=1e-3, rtol=RTOL)
 
