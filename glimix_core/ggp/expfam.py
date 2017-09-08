@@ -5,15 +5,15 @@ import logging
 from liknorm import LikNormMachine
 from numpy import sign
 from numpy.linalg import LinAlgError
+
 from numpy_sugar import epsilon
 from numpy_sugar.linalg import economic_qs
-
 from optimix import FunctionReduce
 
 from ..ep import EP
 
 
-class ExpFamGP(EP, FunctionReduce):
+class ExpFamGP(FunctionReduce):
     r"""Expectation Propagation for Generalised Gaussian Processes.
 
     Parameters
@@ -62,7 +62,6 @@ class ExpFamGP(EP, FunctionReduce):
             n = len(y[0])
         else:
             n = len(y)
-        super(ExpFamGP, self).__init__(n)
         FunctionReduce.__init__(self, [mean, cov], name='ExpFamGP')
 
         self._logger = logging.getLogger(__name__)
@@ -70,6 +69,8 @@ class ExpFamGP(EP, FunctionReduce):
         self._y = y
         self._mean = mean
         self._cov = cov
+        self._ep = EP(n)
+        self._ep.set_compute_moments(self.compute_moments)
 
         self._mean_value = None
         self._cov_value = None
@@ -80,10 +81,8 @@ class ExpFamGP(EP, FunctionReduce):
         if hasattr(self, '_machine'):
             self._machine.finish()
 
-    def _compute_moments(self):
-        tau = self._cav['tau']
-        eta = self._cav['eta']
-        self._machine.moments(self._y, eta, tau, self._moments)
+    def compute_moments(self, eta, tau, moments):
+        self._machine.moments(self._y, eta, tau, moments)
 
     def value_reduce(self, values):  # pylint: disable=R0201
         r"""Log of the marginal likelihood.
@@ -98,8 +97,8 @@ class ExpFamGP(EP, FunctionReduce):
         mean = values['ExpFamGP[0]']
         cov = values['ExpFamGP[1]']
         try:
-            self._set_prior(mean, dict(QS=economic_qs(cov)))
-            lml = self._lml()
+            self._ep.set_prior(mean, dict(QS=economic_qs(cov)))
+            lml = self._ep.lml()
         except (ValueError, LinAlgError) as e:
             self._logger.info(str(e))
             lml = -1 / epsilon.small
@@ -124,16 +123,16 @@ class ExpFamGP(EP, FunctionReduce):
         gcov = gradients['ExpFamGP[1]']
 
         try:
-            self._set_prior(mean, dict(QS=economic_qs(cov)))
+            self._ep.set_prior(mean, dict(QS=economic_qs(cov)))
 
             grad = dict()
 
             for n, g in iter(gmean.items()):
-                grad['ExpFamGP[0].' + n] = self._lml_derivative_over_mean(g)
+                grad['ExpFamGP[0].' + n] = self._ep.lml_derivative_over_mean(g)
 
             for n, g in iter(gcov.items()):
                 QS = economic_qs(g)
-                grad['ExpFamGP[1].' + n] = self._lml_derivative_over_cov(QS)
+                grad['ExpFamGP[1].' + n] = self._ep.lml_derivative_over_cov(QS)
 
             return grad
         except (ValueError, LinAlgError) as e:

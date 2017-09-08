@@ -315,27 +315,29 @@ def test_glmm_copy():
     QS = economic_qs(K)
 
     ntri = random.randint(1, 30, nsamples())
-    nsuc = zeros(100, dtype=int)
+    nsuc = zeros(nsamples(), dtype=int)
     for (i, ni) in enumerate(ntri):
         nsuc[i] += sum(z[i] + 0.2 * random.randn(ni) > 0)
 
     ntri = ascontiguousarray(ntri)
     glmm0 = GLMM((nsuc, ntri), 'binomial', X, QS)
 
-    assert_allclose(glmm0.value(), -99.33404651904951)
+    assert_allclose(glmm0.lml(), -99.33404651904951)
     glmm0.fit(verbose=False)
 
     v = -35.22754141429125
-    assert_allclose(glmm0.value(), v)
+    assert_allclose(glmm0.lml(), v)
+
     glmm1 = glmm0.copy()
-    assert_allclose(glmm1.value(), v)
+    assert_allclose(glmm1.lml(), v)
+
     glmm1.scale = 0.92
-    assert_allclose(glmm0.value(), -35.227541384298654)
-    assert_allclose(glmm1.value(), -219.4745424133988)
+    assert_allclose(glmm0.lml(), -35.227541384298654)
+    assert_allclose(glmm1.lml(), -219.44355209729233)
 
     glmm0.fit(verbose=False)
     glmm1.fit(verbose=False)
 
     v = -35.227541384298654
-    assert_allclose(glmm0.value(), v)
-    assert_allclose(glmm1.value(), v)
+    assert_allclose(glmm0.lml(), v)
+    assert_allclose(glmm1.lml(), v)

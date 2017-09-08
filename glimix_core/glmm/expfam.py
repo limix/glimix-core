@@ -1,5 +1,7 @@
 from __future__ import absolute_import, division, unicode_literals
 
+from copy import copy
+
 from liknorm import LikNormMachine
 from numpy import asarray, dot, exp, zeros
 
@@ -20,13 +22,34 @@ class GLMMExpFam(Function):
         self._lik_name = lik_name
         self._X = X
         self._QS = QS
-        self._ep = EPLinearKernel(X.shape[0], self.compute_moments)
+        self._ep = EPLinearKernel(X.shape[0])
+        self._ep.set_compute_moments(self.compute_moments)
         self._machine = LikNormMachine(lik_name, 1000)
         self.set_nodata()
         self.update_approx = True
         self.variables().get('beta').listen(self.set_update_approx)
         self.variables().get('logscale').listen(self.set_update_approx)
         self.variables().get('logitdelta').listen(self.set_update_approx)
+
+    def __copy__(self):
+        gef = GLMMExpFam(self._y, self._lik_name, self._X, self._QS)
+        gef.__dict__['_ep'] = copy(self._ep)
+        gef.__dict__['_ep'].set_compute_moments(gef.compute_moments)
+        gef.update_approx = self.update_approx
+
+        beta = gef.variables().get('beta')
+        beta.value = asarray(self.variables().get('beta').value, float)
+        beta.bounds = self.variables().get('beta').bounds
+
+        logscale = gef.variables().get('logscale')
+        logscale.value = float(self.variables().get('logscale').value)
+        logscale.bounds = self.variables().get('logscale').bounds
+
+        logitdelta = gef.variables().get('logitdelta')
+        logitdelta.value = float(self.variables().get('logitdelta').value)
+        logitdelta.bounds = self.variables().get('logitdelta').bounds
+
+        return gef
 
     def __del__(self):
         if hasattr(self, '_machine'):

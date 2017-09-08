@@ -1,5 +1,7 @@
 from __future__ import absolute_import, division, unicode_literals
 
+from copy import copy
+
 from liknorm import LikNormMachine
 from numpy import asarray, clip, dot, exp, inf, log, zeros
 from numpy.linalg import LinAlgError
@@ -12,13 +14,6 @@ from ..check import check_covariates, check_economic_qs, check_outcome
 from ..ep import EPLinearKernel
 from ..io import eprint, wprint
 from .expfam import GLMMExpFam
-
-_FACTR = 1e5
-_PGTOL = 1e-5
-
-
-class GLMMNormal(Function):
-    pass
 
 
 class GLMM(object):
@@ -80,10 +75,10 @@ class GLMM(object):
         >>>
         >>> QS = economic_qs(K)
         >>> glmm = GLMM(y, 'binomial', X, QS)
-        >>> print('Before: %.2f' % glmm.feed().value())
+        >>> print('Before: %.2f' % glmm.lml())
         Before: -95.19
-        >>> glmm.feed().maximize(verbose=False)
-        >>> print('After: %.2f' % glmm.feed().value())
+        >>> glmm.fit(verbose=False)
+        >>> print('After: %.2f' % glmm.lml())
         After: -92.24
     """
 
@@ -100,8 +95,14 @@ class GLMM(object):
         self._func.set_variable_bounds('logscale', (log(1e-3), 7.))
         self._func.set_variable_bounds('logitdelta', (-inf, +inf))
 
-        self._X = X
         self._QS = QS
+
+    def __copy__(self):
+        cls = self.__class__
+        glmm = cls.__new__(cls)
+        glmm.__dict__['_func'] = copy(self.function)
+        glmm.__dict__['_QS'] = self._QS
+        return glmm
 
     @property
     def beta(self):
@@ -112,7 +113,7 @@ class GLMM(object):
         self._func.beta = v
 
     def copy(self):
-        pass
+        return copy(self)
 
     def covariance(self):
         Q0 = self._QS[0][0]

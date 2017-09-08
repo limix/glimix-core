@@ -1,6 +1,5 @@
 from __future__ import absolute_import, division, unicode_literals
 
-import logging
 from copy import deepcopy
 from math import fsum
 
@@ -56,10 +55,7 @@ class EP(object):  # pylint: disable=R0903
         _moments (dict): moments for KL moment matching.
     """
 
-    def __init__(self, nsites, posterior_type=Posterior, compute_moments=None):
-        self._logger = logging.getLogger(__name__)
-
-        self._posterior_type = Posterior
+    def __init__(self, nsites, posterior_type=Posterior):
 
         self._site = Site(nsites)
         self._psite = Site(nsites)
@@ -73,75 +69,79 @@ class EP(object):  # pylint: disable=R0903
             'variance': empty(nsites)
         }
 
-        self._need_params_update = True
-        self._compute_moments = compute_moments
+        self._need_update = True
+        self._compute_moments = None
         self._cache = dict(lml=None, grad=None)
 
-    @property
-    def site(self):
-        return self._site
+    def __copy__(self):
+        cls = self.__class__
+        ep = cls.__new__(cls)
 
-    @property
-    def psite(self):
-        return self._psite
+        ep.__dict__['_site'] = deepcopy(self.site)
+        ep.__dict__['_psite'] = deepcopy(self.__dict__['_psite'])
+        ep.__dict__['_cav'] = deepcopy(self.cav)
 
-    @property
-    def cav(self):
-        return self._cav
+        posterior_type = type(self.posterior)
+        ep.__dict__['_posterior'] = posterior_type(ep.site)
 
-    @property
-    def posterior(self):
-        return self._posterior
+        ep.__dict__['_moments'] = deepcopy(self.moments)
 
-    @property
-    def moments(self):
-        return self._moments
+        ep.__dict__['_need_update'] = self._need_update
+        ep.__dict__['_compute_moments'] = None
+        ep.__dict__['_cache'] = deepcopy(self._cache)
+
+        return ep
+
+    def _update(self):
+        if not self._need_update:
+            return
+
+        self._posterior.update()
+
+        i = 0
+        tol = -inf
+        while i < MAX_ITERS and norm(self._site.tau - self._psite.tau) > tol:
+            self._psite.tau[:] = self._site.tau
+            self._psite.eta[:] = self._site.eta
+
+            self._cav['tau'][:] = maximum(self._posterior.tau - self._site.tau,
+                                          0)
+            self._cav['eta'][:] = self._posterior.eta - self._site.eta
+            self._compute_moments(self._cav['eta'], self._cav['tau'],
+                                  self._moments)
+
+            self._site.update(self._moments['mean'], self._moments['variance'],
+                              self._cav)
+
+            self._posterior.update()
+
+            n0 = norm(self._psite.tau)
+            n1 = norm(self._cav['tau'])
+            tol = RTOL * sqrt(n0 * n1) + ATOL
+            i += 1
+
+        if i == MAX_ITERS:
+            msg = ('Maximum number of EP iterations has' + ' been attained.')
+            msg += " Last EP step was: %.10f." % norm(
+                self._site.tau - self._psite.tau)
+            raise ValueError(msg)
+
+        self._need_update = False
+        # self._logger.debug('EP loop has performed %d iterations.', i)
 
     @property
     def cache(self):
         return self._cache
 
-    @cache.setter
-    def cache(self, v):
-        self._cache = v
-
     @property
-    def need_params_update(self):
-        return self._need_params_update
-
-    @need_params_update.setter
-    def need_params_update(self, v):
-        self._need_params_update = v
-
-    def _copy_to(self, to):
-        self._site.copy_to(to.site)
-        self._psite.copy_to(to.psite)
-
-        to.cav['tau'] = self._cav['tau'].copy()
-        to.cav['eta'] = self._cav['eta'].copy()
-
-        self._posterior.copy_to(to.posterior)
-
-        to.moments['log_zeroth'][:] = self._moments['log_zeroth']
-        to.moments['mean'][:] = self._moments['mean']
-        to.moments['variance'][:] = self._moments['variance']
-
-        to.need_params_update = self._need_params_update
-        to.cache = deepcopy(self._cache)
-
-    def set_prior(self, mean, covariance):
-        self._logger.debug("Setting EP prior.")
-        self._posterior.mean = mean
-        self._posterior.cov = covariance
-        self._need_params_update = True
-        self._cache['lml'] = None
-        self._cache['grad'] = None
+    def cav(self):
+        return self._cav
 
     def lml(self):
         if self._cache['lml'] is not None:
             return self._cache['lml']
 
-        self._params_update()
+        self._update()
 
         L = self._posterior.L()
         Q, S = self._posterior.cov['QS']
@@ -177,23 +177,8 @@ class EP(object):  # pylint: disable=R0903
         self._cache['lml'] = lml
         return lml
 
-    def lml_derivative_over_mean(self, dm):
-        self._params_update()
-
-        L = self._posterior.L()
-        Q = self._posterior.cov['QS'][0][0]
-        ttau = self._site.tau
-        teta = self._site.eta
-
-        diff = teta - ttau * self._posterior.mean
-
-        dlml = dot(diff, dm)
-        dlml -= dot(diff, dot(Q, cho_solve(L, dot(Q.T, (ttau * dm.T).T))))
-
-        return dlml
-
     def lml_derivative_over_cov(self, dQS):
-        self._params_update()
+        self._update()
 
         L = self._posterior.L()
         Q = self._posterior.cov['QS'][0][0]
@@ -216,40 +201,39 @@ class EP(object):  # pylint: disable=R0903
 
         return dlml
 
-    def _params_update(self):
-        if not self._need_params_update:
-            return
+    def lml_derivative_over_mean(self, dm):
+        self._update()
 
-        self._logger.debug('EP parameters update loop has started.')
-        self._posterior.update()
+        L = self._posterior.L()
+        Q = self._posterior.cov['QS'][0][0]
+        ttau = self._site.tau
+        teta = self._site.eta
 
-        i = 0
-        tol = -inf
-        while i < MAX_ITERS and norm(self._site.tau - self._psite.tau) > tol:
-            self._psite.tau[:] = self._site.tau
-            self._psite.eta[:] = self._site.eta
+        diff = teta - ttau * self._posterior.mean
 
-            self._cav['tau'][:] = maximum(self._posterior.tau - self._site.tau,
-                                          0)
-            self._cav['eta'][:] = self._posterior.eta - self._site.eta
-            self._compute_moments(self._cav['eta'], self._cav['tau'],
-                                  self._moments)
+        dlml = dot(diff, dm)
+        dlml -= dot(diff, dot(Q, cho_solve(L, dot(Q.T, (ttau * dm.T).T))))
 
-            self._site.update(self._moments['mean'], self._moments['variance'],
-                              self._cav)
+        return dlml
 
-            self._posterior.update()
+    @property
+    def moments(self):
+        return self._moments
 
-            n0 = norm(self._psite.tau)
-            n1 = norm(self._cav['tau'])
-            tol = RTOL * sqrt(n0 * n1) + ATOL
-            i += 1
+    @property
+    def posterior(self):
+        return self._posterior
 
-        if i == MAX_ITERS:
-            msg = ('Maximum number of EP iterations has' + ' been attained.')
-            msg += " Last EP step was: %.10f." % norm(
-                self._site.tau - self._psite.tau)
-            raise ValueError(msg)
+    def set_compute_moments(self, cm):
+        self._compute_moments = cm
 
-        self._need_params_update = False
-        self._logger.debug('EP loop has performed %d iterations.', i)
+    @property
+    def site(self):
+        return self._site
+
+    def set_prior(self, mean, covariance):
+        self._posterior.mean = mean
+        self._posterior.cov = covariance
+        self._need_update = True
+        self._cache['lml'] = None
+        self._cache['grad'] = None
