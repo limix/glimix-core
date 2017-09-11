@@ -26,7 +26,9 @@ def test_glmmnormal():
 
     glmm = GLMMNormal(eta, tau, X, QS)
     glmm.beta = asarray([1.0, 0, 0.5, 0.1, 0.4])
-    assert_allclose(glmm.feed().value(), 50.6974841768)
+    assert_allclose(glmm.feed().value(), -50.69748417680114)
+
+    assert_allclose(check_grad(glmm), 0, atol=1e-3, rtol=RTOL)
 
 
 def test_glmm_precise():

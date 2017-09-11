@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, unicode_literals
 from copy import copy
 
 from liknorm import LikNormMachine
-from numpy import asarray, dot, exp, log, pi, zeros
+from numpy import asarray, dot, exp, log, pi, trace, zeros
 from numpy.linalg import slogdet, solve
 
 from numpy_sugar.linalg import ddot, sum2diag
@@ -92,17 +92,49 @@ class GLMMNormal(Function):
         # self.set_update_approx()
 
     def gradient(self):
-        pass
+        scale = exp(self.logscale)
+        delta = 1 / (1 + exp(-self.logitdelta))
+
+        v0 = scale * (1 - delta)
+        v1 = scale * delta
+
+        Q0 = self._QS[0][0]
+        S0 = self._QS[1]
+
+        mu = self._eta / self._tau
+        K = dot(ddot(Q0, S0), Q0.T)
+
+        n = K.shape[0]
+        A = sum2diag(sum2diag(v0 * K, v1), 1 / self._tau)
+        X = self._X
+
+        m = mu - self.mean()
+        g = dict()
+        Aim = solve(A, m)
+
+        g['beta'] = dot(m, solve(A, X))
+
+        Kd0 = sum2diag((1 - delta) * K, delta)
+        Kd1 = sum2diag(-scale * K, scale)
+
+        g['scale'] = -trace(solve(A, Kd0))
+        g['scale'] += dot(Aim, dot(Kd0, Aim))
+        g['scale'] *= 1 / 2
+
+        g['delta'] = -trace(solve(A, Kd1))
+        g['delta'] += dot(Aim, dot(Kd1, Aim))
+        g['delta'] *= 1 / 2
+
         # g = self._ep.lml_derivatives(self._X)
-        # ed = exp(-self.logitdelta)
-        # es = exp(self.logscale)
-        #
-        # grad = dict()
-        # grad['logitdelta'] = g['delta'] * (ed / (1 + ed)) / (1 + ed)
-        # grad['logscale'] = g['scale'] * es
-        # grad['beta'] = g['mean']
-        #
-        # return grad
+        ed = exp(-self.logitdelta)
+        es = exp(self.logscale)
+
+        grad = dict()
+        grad['logitdelta'] = g['delta'] * (ed / (1 + ed)) / (1 + ed)
+        grad['logscale'] = g['scale'] * es
+        grad['beta'] = g['beta']
+
+        return grad
 
     @property
     def logitdelta(self):
@@ -138,9 +170,9 @@ class GLMMNormal(Function):
 
         .. math::
 
-            \frac{n}{2}\log{2\pi} + \frac{1}{2} \log{\left|
+            - \frac{n}{2}\log{2\pi} - \frac{1}{2} \log{\left|
                 v_0 \mathrm K + v_1 \mathrm I + \tilde{\Sigma} \right|}
-                    + \frac{1}{2}
+                    - \frac{1}{2}
                     \left(\tilde{\boldsymbol\mu} -
                     \mathrm X\boldsymbol\beta\right)^{\intercal}
                     \left( v_0 \mathrm K + v_1 \mathrm I +
@@ -168,8 +200,9 @@ class GLMMNormal(Function):
         n = K.shape[0]
         A = sum2diag(sum2diag(v0 * K, v1), 1 / self._tau)
         m = mu - self.mean()
-        v = (n / 2) * log(2 * pi)
-        v += (1 / 2) * slogdet(A)[1]
-        v += (1 / 2) * dot(m, solve(A, m))
 
-        return v
+        v = -n * log(2 * pi)
+        v -= slogdet(A)[1]
+        v -= dot(m, solve(A, m))
+
+        return v / 2
