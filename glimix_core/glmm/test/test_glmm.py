@@ -4,8 +4,7 @@ from numpy.random import RandomState
 from numpy.testing import assert_allclose
 
 from glimix_core.example import linear_eye_cov, nsamples
-from glimix_core.glmm import GLMM
-from glimix_core.glmm.normal import GLMMNormal
+from glimix_core.glmm import GLMMExpFam, GLMMNormal
 from glimix_core.random import bernoulli_sample
 from numpy_sugar import epsilon
 from numpy_sugar.linalg import economic_qs, economic_qs_linear
@@ -14,8 +13,23 @@ from optimix import check_grad
 ATOL = 1e-6
 RTOL = 1e-6
 
+# def test_glmmnormal():
+#     random = RandomState(0)
+#     X = random.randn(nsamples(), 5)
+#     K = linear_eye_cov().feed().value()
+#     QS = economic_qs(K)
+#
+#     eta = random.randn(nsamples())
+#     tau = 10 * random.rand(nsamples())
+#
+#     glmm = GLMMNormal(eta, tau, X, QS)
+#     glmm.beta = asarray([1.0, 0, 0.5, 0.1, 0.4])
+#     assert_allclose(glmm.feed().value(), -50.69748417680114)
+#
+#     assert_allclose(check_grad(glmm), 0, atol=1e-3, rtol=RTOL)
 
-def test_glmmnormal():
+
+def test_glmm_glmmnormal():
     random = RandomState(0)
     X = random.randn(nsamples(), 5)
     K = linear_eye_cov().feed().value()
@@ -26,12 +40,13 @@ def test_glmmnormal():
 
     glmm = GLMMNormal(eta, tau, X, QS)
     glmm.beta = asarray([1.0, 0, 0.5, 0.1, 0.4])
+
     assert_allclose(glmm.feed().value(), -50.69748417680114)
 
     assert_allclose(check_grad(glmm), 0, atol=1e-3, rtol=RTOL)
 
 
-def test_glmm_precise():
+def test_glmmexpfam_precise():
     random = RandomState(0)
     X = random.randn(nsamples(), 5)
     K = linear_eye_cov().feed().value()
@@ -40,7 +55,7 @@ def test_glmm_precise():
     ntri = random.randint(1, 30, nsamples())
     nsuc = [random.randint(0, i) for i in ntri]
 
-    glmm = GLMM((nsuc, ntri), 'binomial', X, QS)
+    glmm = GLMMExpFam((nsuc, ntri), 'binomial', X, QS)
     glmm.beta = asarray([1.0, 0, 0.5, 0.1, 0.4])
 
     glmm.scale = 1.0
@@ -58,7 +73,7 @@ def test_glmm_precise():
     glmm.delta = 0.1
     assert_allclose(glmm.lml(), -84.33056430633508, atol=ATOL, rtol=RTOL)
 
-    assert_allclose(check_grad(glmm.function), 0, atol=1e-3, rtol=RTOL)
+    assert_allclose(check_grad(glmm), 0, atol=1e-3, rtol=RTOL)
 
 
 def test_glmm_delta0():
@@ -70,13 +85,13 @@ def test_glmm_delta0():
     ntri = random.randint(1, 30, 100)
     nsuc = [random.randint(0, i) for i in ntri]
 
-    glmm = GLMM((nsuc, ntri), 'binomial', X, QS)
+    glmm = GLMMExpFam((nsuc, ntri), 'binomial', X, QS)
     glmm.beta = asarray([1.0, 0, 0.5, 0.1, 0.4])
 
     glmm.delta = 0
 
     assert_allclose(glmm.lml(), -82.56509596644209, atol=ATOL, rtol=RTOL)
-    assert_allclose(check_grad(glmm.function, step=2e-5), 0, atol=1e-2)
+    assert_allclose(check_grad(glmm, step=2e-5), 0, atol=1e-2)
 
 
 def test_glmm_delta1():
@@ -88,13 +103,13 @@ def test_glmm_delta1():
     ntri = random.randint(1, 30, 100)
     nsuc = [random.randint(0, i) for i in ntri]
 
-    glmm = GLMM((nsuc, ntri), 'binomial', X, QS)
+    glmm = GLMMExpFam((nsuc, ntri), 'binomial', X, QS)
     glmm.beta = asarray([1.0, 0, 0.5, 0.1, 0.4])
 
     glmm.delta = 1
 
     assert_allclose(glmm.lml(), -90.22937890822317, atol=ATOL, rtol=RTOL)
-    assert_allclose(check_grad(glmm.function), 0, atol=1e-4)
+    assert_allclose(check_grad(glmm), 0, atol=1e-4)
 
 
 def test_glmm_wrong_qs():
@@ -107,7 +122,7 @@ def test_glmm_wrong_qs():
     nsuc = [random.randint(0, i) for i in ntri]
 
     with pytest.raises(ValueError):
-        print(GLMM((nsuc, ntri), 'binomial', X, QS))
+        print(GLMMExpFam((nsuc, ntri), 'binomial', X, QS))
 
 
 def test_glmm_optimize():
@@ -123,7 +138,7 @@ def test_glmm_optimize():
         nsuc[i] += sum(z[i] + 0.2 * random.randn(ni) > 0)
 
     ntri = ascontiguousarray(ntri)
-    glmm = GLMM((nsuc, ntri), 'binomial', X, QS)
+    glmm = GLMMExpFam((nsuc, ntri), 'binomial', X, QS)
 
     assert_allclose(glmm.lml(), -99.33404651904951, atol=ATOL, rtol=RTOL)
     glmm.fix('beta')
@@ -154,7 +169,7 @@ def test_glmm_optimize_low_rank():
         nsuc[i] += sum(z[i] + 0.2 * random.randn(ni) > 0)
 
     ntri = ascontiguousarray(ntri)
-    glmm = GLMM((nsuc, ntri), 'binomial', X, QS)
+    glmm = GLMMExpFam((nsuc, ntri), 'binomial', X, QS)
 
     assert_allclose(glmm.lml(), -54.05478637740203, atol=ATOL, rtol=RTOL)
     glmm.fit(verbose=False)
@@ -177,7 +192,7 @@ def test_glmm_bernoulli_problematic():
     S0 /= S0.mean()
 
     X = ones((len(y[0]), 1))
-    model = GLMM(y, 'bernoulli', X, QS=(QS[0], QS[1]))
+    model = GLMMExpFam(y, 'bernoulli', X, QS=(QS[0], QS[1]))
     model.delta = 0
     model.fix('delta')
     model.fit(verbose=False)
@@ -225,7 +240,7 @@ def test_glmm_binomial_pheno_list():
     y = [successes, ntrials]
 
     QS = economic_qs(K)
-    glmm = GLMM(y, 'binomial', X, QS)
+    glmm = GLMMExpFam(y, 'binomial', X, QS)
     glmm.fit(verbose=False)
 
     assert_allclose(glmm.lml(), -64.8433300480514)
@@ -240,13 +255,13 @@ def test_glmm_scale_very_low():
     ntri = random.randint(1, 30, nsamples())
     nsuc = [random.randint(0, i) for i in ntri]
 
-    glmm = GLMM((nsuc, ntri), 'binomial', X, QS)
+    glmm = GLMMExpFam((nsuc, ntri), 'binomial', X, QS)
     glmm.beta = asarray([1.0, 0, 0.5, 0.1, 0.4])
 
     glmm.scale = 1e-3
     assert_allclose(glmm.lml(), -151.19262511895698, atol=ATOL, rtol=RTOL)
 
-    assert_allclose(check_grad(glmm.function), 0, atol=1e-2)
+    assert_allclose(check_grad(glmm), 0, atol=1e-2)
 
 
 def test_glmm_scale_very_high():
@@ -258,13 +273,13 @@ def test_glmm_scale_very_high():
     ntri = random.randint(1, 30, nsamples())
     nsuc = [random.randint(0, i) for i in ntri]
 
-    glmm = GLMM((nsuc, ntri), 'binomial', X, QS)
+    glmm = GLMMExpFam((nsuc, ntri), 'binomial', X, QS)
     glmm.beta = asarray([1.0, 0, 0.5, 0.1, 0.4])
 
     glmm.scale = 30.
     assert_allclose(glmm.lml(), -96.75175059098383, atol=ATOL, rtol=RTOL)
 
-    assert_allclose(check_grad(glmm.function), 0, atol=1e-3)
+    assert_allclose(check_grad(glmm), 0, atol=1e-3)
 
 
 def test_glmm_delta_zero():
@@ -276,12 +291,12 @@ def test_glmm_delta_zero():
     ntri = random.randint(1, 30, nsamples())
     nsuc = [random.randint(0, i) for i in ntri]
 
-    glmm = GLMM((nsuc, ntri), 'binomial', X, QS)
+    glmm = GLMMExpFam((nsuc, ntri), 'binomial', X, QS)
     glmm.beta = asarray([1.0, 0, 0.5, 0.1, 0.4])
 
     glmm.delta = 0
     assert_allclose(glmm.lml(), -82.3831297143636)
-    assert_allclose(check_grad(glmm.function, step=1e-4), 0, atol=1e-2)
+    assert_allclose(check_grad(glmm, step=1e-4), 0, atol=1e-2)
 
     glmm.fit(verbose=False)
     assert_allclose(glmm.lml(), -76.20092968002656, atol=ATOL, rtol=RTOL)
@@ -305,11 +320,11 @@ def test_glmm_delta_one():
     for i in range(nsamples()):
         nsuc[i] = sum(z[i] + 0.001 * random.randn(ntri[i]) > 0)
 
-    glmm = GLMM((nsuc, ntri), 'binomial', ones((nsamples(), 1)), QS)
+    glmm = GLMMExpFam((nsuc, ntri), 'binomial', ones((nsamples(), 1)), QS)
 
     glmm.delta = 1
     assert_allclose(glmm.lml(), -126.71338343726902, atol=ATOL, rtol=RTOL)
-    assert_allclose(check_grad(glmm.function, step=1e-4), 0, atol=1e-2)
+    assert_allclose(check_grad(glmm, step=1e-4), 0, atol=1e-2)
 
     glmm.fit(verbose=False)
     assert_allclose(glmm.lml(), -9.308984106518762, atol=ATOL, rtol=RTOL)
@@ -329,7 +344,7 @@ def test_glmm_copy():
         nsuc[i] += sum(z[i] + 0.2 * random.randn(ni) > 0)
 
     ntri = ascontiguousarray(ntri)
-    glmm0 = GLMM((nsuc, ntri), 'binomial', X, QS)
+    glmm0 = GLMMExpFam((nsuc, ntri), 'binomial', X, QS)
 
     assert_allclose(glmm0.lml(), -99.33404651904951, atol=ATOL, rtol=RTOL)
     glmm0.fit(verbose=False)

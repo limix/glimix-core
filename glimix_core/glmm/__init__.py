@@ -47,22 +47,24 @@ a closed-form solution otherwise.
 GLMM class
 ^^^^^^^^^^
 
-.. autoclass:: glimix_core.glmm.GLMM
+.. autoclass:: glimix_core.GLMM
     :members:
 
 GLMMExpFam class
 ^^^^^^^^^^^^^^^^
 
-.. autoclass:: glimix_core.glmm.expfam.GLMMExpFam
+.. autoclass:: glimix_core.glmm.GLMMExpFam
     :members:
 
 GLMMNormal class
 ^^^^^^^^^^^^^^^^
 
-.. autoclass:: glimix_core.glmm.normal.GLMMNormal
+.. autoclass:: glimix_core.glmm.GLMMNormal
     :members:
 """
 
+from .expfam import GLMMExpFam
 from .glmm import GLMM
+from .normal import GLMMNormal
 
-__all__ = ['GLMM']
+__all__ = ['GLMM', 'GLMMNormal', 'GLMMExpFam']

@@ -2,21 +2,16 @@ from __future__ import absolute_import, division, unicode_literals
 
 from copy import copy
 
-from liknorm import LikNormMachine
 from numpy import asarray, clip, dot, exp, inf, log, zeros
-from numpy.linalg import LinAlgError
 
 from numpy_sugar import epsilon
 from numpy_sugar.linalg import ddot, sum2diag
 from optimix import Function, Scalar, Vector
 
 from ..check import check_covariates, check_economic_qs, check_outcome
-from ..ep import EPLinearKernel
-from ..io import eprint, wprint
-from .expfam import GLMMExpFam
 
 
-class GLMM(object):
+class GLMM(Function):
     r"""Generalised Gaussian Processes.
 
     The variances :math:`v_0` and :math:`v_1` are internally replaced by
@@ -55,64 +50,46 @@ class GLMM(object):
         Covariates.
     QS : tuple
         Economic eigen decomposition.
-
-    Example
-    -------
-
-    .. doctest::
-
-        >>> from numpy import dot, sqrt, zeros
-        >>> from numpy.random import RandomState
-        >>>
-        >>> from numpy_sugar.linalg import economic_qs
-        >>>
-        >>> from glimix_core.glmm import GLMM
-        >>>
-        >>> random = RandomState(0)
-        >>> nsamples = 50
-        >>>
-        >>> X = random.randn(50, 2)
-        >>> G = random.randn(50, 100)
-        >>> K = dot(G, G.T)
-        >>> ntrials = random.randint(1, 100, nsamples)
-        >>> z = dot(G, random.randn(100)) / sqrt(100)
-        >>>
-        >>> successes = zeros(len(ntrials), int)
-        >>> for i in range(len(ntrials)):
-        ...     successes[i] = sum(z[i] + 0.2 * random.randn(ntrials[i]) > 0)
-        >>>
-        >>> y = (successes, ntrials)
-        >>>
-        >>> QS = economic_qs(K)
-        >>> glmm = GLMM(y, 'binomial', X, QS)
-        >>> print('Before: %.2f' % glmm.lml())
-        Before: -95.19
-        >>> glmm.fit(verbose=False)
-        >>> print('After: %.2f' % glmm.lml())
-        After: -92.24
     """
 
     def __init__(self, y, lik_name, X, QS):
-
         X = asarray(X, float)
-        y = _normalise_outcome(y)
-        y = check_outcome(y, lik_name)
-        X = check_covariates(X)
-        QS = check_economic_qs(QS)
 
-        self._func = GLMMExpFam(y, lik_name, X, QS)
+        Function.__init__(
+            self,
+            beta=Vector(zeros(X.shape[1])),
+            logscale=Scalar(0.0),
+            logitdelta=Scalar(0.0))
 
-        self._func.set_variable_bounds('logscale', (log(1e-3), 7.))
-        self._func.set_variable_bounds('logitdelta', (-inf, +inf))
+        self._lik_name = lik_name.lower()
+        self._y = check_outcome(_normalise_outcome(y), self._lik_name)
+        self._X = check_covariates(X)
+        self._QS = check_economic_qs(QS)
 
-        self._QS = QS
+        self._factr = 1e5
+        self._pgtol = 1e-6
+        self.set_variable_bounds('logscale', (log(1e-3), 7.))
+        self.set_variable_bounds('logitdelta', (-inf, +inf))
 
-    def __copy__(self):
-        cls = self.__class__
-        glmm = cls.__new__(cls)
-        glmm.__dict__['_func'] = copy(self.function)
-        glmm.__dict__['_QS'] = self._QS
-        return glmm
+        self.set_nodata()
+
+    def _copy_to(self, to):
+        d = to.variables()
+        s = self.variables()
+
+        d.get('beta').value = asarray(s.get('beta').value, float)
+        d.get('beta').bounds = s.get('beta').bounds
+
+        for v in ['logscale', 'logitdelta']:
+            d.get(v).value = float(s.get(v).value)
+            d.get(v).bounds = s.get(v).bounds
+
+    # def __copy__(self):
+    #     cls = self.__class__
+    #     glmm = cls.__new__(cls)
+    #     glmm.__dict__['_func'] = copy(self.function)
+    #     glmm.__dict__['_QS'] = self._QS
+    #     return glmm
 
     @property
     def beta(self):
@@ -123,11 +100,11 @@ class GLMM(object):
         array_like
             :math:`\boldsymbol\beta`.
         """
-        return self._func.beta
+        return asarray(self.variables().get('beta').value, float)
 
     @beta.setter
     def beta(self, v):
-        self._func.beta = v
+        self.variables().get('beta').value = v
 
     def copy(self):
         r"""Create a copy of this object."""
@@ -154,12 +131,12 @@ class GLMM(object):
         float
             :math:`\delta`.
         """
-        return 1 / (1 + exp(-self._func.logitdelta))
+        return 1 / (1 + exp(-self.logitdelta))
 
     @delta.setter
     def delta(self, v):
         v = clip(v, epsilon.large, 1 - epsilon.large)
-        self._func.logitdelta = log(v / (1 - v))
+        self.logitdelta = log(v / (1 - v))
 
     def fix(self, var_name):
         r"""Prevent a variable to be adjusted.
@@ -169,7 +146,7 @@ class GLMM(object):
         var_name : str
             Variable name.
         """
-        self._func.fix(_to_internal_name(var_name))
+        Function.fix(self, _to_internal_name(var_name))
 
     def fit(self, verbose=True):
         r"""Maximise the marginal likelihood.
@@ -180,18 +157,18 @@ class GLMM(object):
             ``True`` for progress output; ``False`` otherwise.
             Defaults to ``True``.
         """
-        self._func.feed().maximize(verbose=verbose)
+        self.feed().maximize(verbose=verbose)
 
-    @property
-    def function(self):
-        r"""Function representing the marginal likelihood.
-
-        Returns
-        -------
-        :class:`optimix.Function`
-            Representation.
-        """
-        return self._func
+    # @property
+    # def function(self):
+    #     r"""Function representing the marginal likelihood.
+    #
+    #     Returns
+    #     -------
+    #     :class:`optimix.Function`
+    #         Representation.
+    #     """
+    #     return self._func
 
     def lml(self):
         r"""Log of the marginal likelihood.
@@ -201,7 +178,23 @@ class GLMM(object):
         float
             :math:`\log p(\mathbf y)`
         """
-        return self._func.value()
+        return self.value()
+
+    @property
+    def logitdelta(self):
+        return float(self.variables().get('logitdelta').value)
+
+    @logitdelta.setter
+    def logitdelta(self, v):
+        self.variables().get('logitdelta').value = v
+
+    @property
+    def logscale(self):
+        return float(self.variables().get('logscale').value)
+
+    @logscale.setter
+    def logscale(self, v):
+        self.variables().get('logscale').value = v
 
     def mean(self):
         r"""Mean of the prior.
@@ -211,7 +204,7 @@ class GLMM(object):
         array_like
             :math:`\mathrm X\boldsymbol\beta`.
         """
-        return self._func.mean()
+        return dot(self._X, self.beta)
 
     @property
     def scale(self):
@@ -222,11 +215,14 @@ class GLMM(object):
         float
             :math:`s`.
         """
-        return exp(self._func.logscale)
+        return exp(self.logscale)
 
     @scale.setter
     def scale(self, v):
-        self._func.logscale = log(v)
+        self.logscale = log(v)
+
+    def set_variable_bounds(self, var_name, bounds):
+        self.variables().get(var_name).bounds = bounds
 
     def unfix(self, var_name):
         r"""Let a variable be adjusted.
@@ -236,7 +232,7 @@ class GLMM(object):
         var_name : str
             Variable name.
         """
-        self._func.unfix(_to_internal_name(var_name))
+        Function.unfix(self, _to_internal_name(var_name))
 
     @property
     def v0(self):

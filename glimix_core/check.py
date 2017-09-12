@@ -43,6 +43,12 @@ def check_outcome(y, lik_name):
     if len(set(len(yi) for yi in y)) != 1:
         raise ValueError("Outcome must be a tuple of arrays of the same size.")
 
+    if lik_name.lower() == 'normal':
+        if len(y) != 2:
+            msg = "Outcome must be a tuple of two arrays"
+            msg += " for normal likelihood."
+            raise ValueError(msg)
+
     return y
 
 

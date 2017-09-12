@@ -9,8 +9,10 @@ from numpy.linalg import slogdet, solve
 from numpy_sugar.linalg import ddot, sum2diag
 from optimix import Function, Scalar, Vector
 
+from .glmm import GLMM
 
-class GLMMNormal(Function):
+
+class GLMMNormal(GLMM):
     r"""LMM with heterogeneous Normal likelihoods.
 
     Here we model
@@ -41,55 +43,48 @@ class GLMMNormal(Function):
     """
 
     def __init__(self, eta, tau, X, QS):
-        Function.__init__(
-            self,
-            beta=Vector(zeros(X.shape[1])),
-            logscale=Scalar(0.0),
-            logitdelta=Scalar(0.0))
+        GLMM.__init__(self, (eta, tau), 'normal', X, QS)
 
-        self._eta = eta
-        self._tau = tau
-        self._X = X
-        self._QS = QS
-        self.set_nodata()
-        self._factr = 1e5
-        self._pgtol = 1e-6
-        # self.variables().get('beta').listen(self.set_update_approx)
-        # self.variables().get('logscale').listen(self.set_update_approx)
-        # self.variables().get('logitdelta').listen(self.set_update_approx)
+    # def __copy__(self):
+    #     gef = GLMMNormal(self._y, self._lik_name, self._X, self._QS)
+    #
+    #     d = gef.variables()
+    #     s = self.variables()
+    #
+    #     d.get('beta').value = asarray(s.get('beta').value, float)
+    #     d.get('beta').bounds = s.get('beta').bounds
+    #
+    #     for v in ['logscale', 'logitdelta']:
+    #         d.get(v).value = float(s.get(v).value)
+    #         d.get(v).bounds = s.get(v).bounds
+    #
+    #     return gef
 
-    def __copy__(self):
-        gef = GLMMExpFam(self._y, self._lik_name, self._X, self._QS)
+    # @property
+    # def beta(self):
+    #     return asarray(self.variables().get('beta').value, float)
+    #
+    # @beta.setter
+    # def beta(self, v):
+    #     self.variables().get('beta').value = v
+    #     # self.set_update_approx()
 
-        d = gef.variables()
-        s = self.variables()
+    # def covariance(self):
+    #     scale = exp(self.logscale)
+    #     delta = 1 / (1 + exp(-self.logitdelta))
+    #     return dict(QS=self._QS, scale=scale, delta=delta)
 
-        d.get('beta').value = asarray(s.get('beta').value, float)
-        d.get('beta').bounds = s.get('beta').bounds
-
-        for v in ['logscale', 'logitdelta']:
-            d.get(v).value = float(s.get(v).value)
-            d.get(v).bounds = s.get(v).bounds
-
-        return gef
+    # def fix(self, var_name):
+    #     Function.fix(self, var_name)
+    #     # self.set_update_approx()
 
     @property
-    def beta(self):
-        return asarray(self.variables().get('beta').value, float)
+    def eta(self):
+        return self._y[0]
 
-    @beta.setter
-    def beta(self, v):
-        self.variables().get('beta').value = v
-        # self.set_update_approx()
-
-    def covariance(self):
-        scale = exp(self.logscale)
-        delta = 1 / (1 + exp(-self.logitdelta))
-        return dict(QS=self._QS, scale=scale, delta=delta)
-
-    def fix(self, var_name):
-        Function.fix(self, var_name)
-        # self.set_update_approx()
+    @property
+    def tau(self):
+        return self._y[1]
 
     def gradient(self):
         scale = exp(self.logscale)
@@ -101,11 +96,11 @@ class GLMMNormal(Function):
         Q0 = self._QS[0][0]
         S0 = self._QS[1]
 
-        mu = self._eta / self._tau
+        mu = self.eta / self.tau
         K = dot(ddot(Q0, S0), Q0.T)
 
         n = K.shape[0]
-        A = sum2diag(sum2diag(v0 * K, v1), 1 / self._tau)
+        A = sum2diag(sum2diag(v0 * K, v1), 1 / self.tau)
         X = self._X
 
         m = mu - self.mean()
@@ -136,32 +131,32 @@ class GLMMNormal(Function):
 
         return grad
 
-    @property
-    def logitdelta(self):
-        return float(self.variables().get('logitdelta').value)
+    # @property
+    # def logitdelta(self):
+    #     return float(self.variables().get('logitdelta').value)
+    #
+    # @logitdelta.setter
+    # def logitdelta(self, v):
+    #     self.variables().get('logitdelta').value = v
+    #     # self.set_update_approx()
+    #
+    # @property
+    # def logscale(self):
+    #     return float(self.variables().get('logscale').value)
+    #
+    # @logscale.setter
+    # def logscale(self, v):
+    #     self.variables().get('logscale').value = v
+    #     # self.set_update_approx()
 
-    @logitdelta.setter
-    def logitdelta(self, v):
-        self.variables().get('logitdelta').value = v
-        # self.set_update_approx()
+    # def mean(self):
+    #     return dot(self._X, self.beta)
 
-    @property
-    def logscale(self):
-        return float(self.variables().get('logscale').value)
+    # def set_variable_bounds(self, var_name, bounds):
+    #     self.variables().get(var_name).bounds = bounds
 
-    @logscale.setter
-    def logscale(self, v):
-        self.variables().get('logscale').value = v
-        # self.set_update_approx()
-
-    def mean(self):
-        return dot(self._X, self.beta)
-
-    def set_variable_bounds(self, var_name, bounds):
-        self.variables().get(var_name).bounds = bounds
-
-    def unfix(self, var_name):
-        Function.unfix(self, var_name)
+    # def unfix(self, var_name):
+    #     Function.unfix(self, var_name)
 
     def value(self):
         r"""Log of the marginal likelihood.
@@ -194,11 +189,11 @@ class GLMMNormal(Function):
         Q0 = self._QS[0][0]
         S0 = self._QS[1]
 
-        mu = self._eta / self._tau
+        mu = self.eta / self.tau
         K = dot(ddot(Q0, S0), Q0.T)
 
         n = K.shape[0]
-        A = sum2diag(sum2diag(v0 * K, v1), 1 / self._tau)
+        A = sum2diag(sum2diag(v0 * K, v1), 1 / self.tau)
         m = mu - self.mean()
 
         v = -n * log(2 * pi)

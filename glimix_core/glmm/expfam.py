@@ -3,34 +3,61 @@ from __future__ import absolute_import, division, unicode_literals
 from copy import copy
 
 from liknorm import LikNormMachine
-from numpy import asarray, dot, exp, zeros
+from numpy import exp
 
-from optimix import Function, Scalar, Vector
+from optimix import Function
 
 from ..ep import EPLinearKernel
+from .glmm import GLMM
 
 
-class GLMMExpFam(Function):
-    r"""Alguma coisa"""
+class GLMMExpFam(GLMM):
+    r"""Alguma coisa.
+
+    Example
+    -------
+
+    .. doctest::
+
+        >>> from numpy import dot, sqrt, zeros
+        >>> from numpy.random import RandomState
+        >>>
+        >>> from numpy_sugar.linalg import economic_qs
+        >>>
+        >>> from glimix_core.glmm import GLMMExpFam
+        >>>
+        >>> random = RandomState(0)
+        >>> nsamples = 50
+        >>>
+        >>> X = random.randn(50, 2)
+        >>> G = random.randn(50, 100)
+        >>> K = dot(G, G.T)
+        >>> ntrials = random.randint(1, 100, nsamples)
+        >>> z = dot(G, random.randn(100)) / sqrt(100)
+        >>>
+        >>> successes = zeros(len(ntrials), int)
+        >>> for i in range(len(ntrials)):
+        ...     successes[i] = sum(z[i] + 0.2 * random.randn(ntrials[i]) > 0)
+        >>>
+        >>> y = (successes, ntrials)
+        >>>
+        >>> QS = economic_qs(K)
+        >>> glmm = GLMMExpFam(y, 'binomial', X, QS)
+        >>> print('Before: %.2f' % glmm.lml())
+        Before: -95.19
+        >>> glmm.fit(verbose=False)
+        >>> print('After: %.2f' % glmm.lml())
+        After: -92.24
+    """
 
     def __init__(self, y, lik_name, X, QS):
-        Function.__init__(
-            self,
-            beta=Vector(zeros(X.shape[1])),
-            logscale=Scalar(0.0),
-            logitdelta=Scalar(0.0))
+        GLMM.__init__(self, y, lik_name, X, QS)
 
-        self._y = y
-        self._lik_name = lik_name
-        self._X = X
-        self._QS = QS
-        self._ep = EPLinearKernel(X.shape[0])
+        self._ep = EPLinearKernel(self._X.shape[0])
         self._ep.set_compute_moments(self.compute_moments)
-        self._machine = LikNormMachine(lik_name, 1000)
-        self.set_nodata()
+        self._machine = LikNormMachine(self._lik_name, 1000)
         self.update_approx = True
-        self._factr = 1e5
-        self._pgtol = 1e-6
+
         self.variables().get('beta').listen(self.set_update_approx)
         self.variables().get('logscale').listen(self.set_update_approx)
         self.variables().get('logitdelta').listen(self.set_update_approx)
@@ -41,15 +68,7 @@ class GLMMExpFam(Function):
         gef.__dict__['_ep'].set_compute_moments(gef.compute_moments)
         gef.update_approx = self.update_approx
 
-        d = gef.variables()
-        s = self.variables()
-
-        d.get('beta').value = asarray(s.get('beta').value, float)
-        d.get('beta').bounds = s.get('beta').bounds
-
-        for v in ['logscale', 'logitdelta']:
-            d.get(v).value = float(s.get(v).value)
-            d.get(v).bounds = s.get(v).bounds
+        super()._copy_to(gef)
 
         return gef
 
@@ -66,23 +85,23 @@ class GLMMExpFam(Function):
 
     @property
     def beta(self):
-        return asarray(self.variables().get('beta').value, float)
+        return GLMM.beta.fget(self)
+        # return super().beta
 
     @beta.setter
     def beta(self, v):
-        self.variables().get('beta').value = v
+        GLMM.beta.fset(self, v)
+        # super().beta = v
         self.set_update_approx()
 
     def compute_moments(self, eta, tau, moments):
         self._machine.moments(self._y, eta, tau, moments)
 
     def covariance(self):
-        scale = exp(self.logscale)
-        delta = 1 / (1 + exp(-self.logitdelta))
-        return dict(QS=self._QS, scale=scale, delta=delta)
+        return dict(QS=self._QS, scale=self.scale, delta=self.delta)
 
     def fix(self, var_name):
-        Function.fix(self, var_name)
+        super().fix(var_name)
         self.set_update_approx()
 
     def gradient(self):
@@ -101,34 +120,32 @@ class GLMMExpFam(Function):
 
     @property
     def logitdelta(self):
-        return float(self.variables().get('logitdelta').value)
+        return GLMM.logitdelta.fget(self)
 
     @logitdelta.setter
     def logitdelta(self, v):
-        self.variables().get('logitdelta').value = v
+        GLMM.logitdelta.fset(self, v)
         self.set_update_approx()
 
     @property
     def logscale(self):
-        return float(self.variables().get('logscale').value)
+        return GLMM.logscale.fget(self)
 
     @logscale.setter
     def logscale(self, v):
-        self.variables().get('logscale').value = v
+        # super().logscale = v
+        GLMM.logscale.fset(self, v)
         self.set_update_approx()
-
-    def mean(self):
-        return dot(self._X, self.beta)
 
     def set_update_approx(self, _=None):
         self.update_approx = True
 
     def set_variable_bounds(self, var_name, bounds):
-        self.variables().get(var_name).bounds = bounds
+        super().set_variable_bounds(var_name, bounds)
         self.set_update_approx()
 
     def unfix(self, var_name):
-        Function.unfix(self, var_name)
+        super().unfix(var_name)
         self.set_update_approx()
 
     def value(self):
