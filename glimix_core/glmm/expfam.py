@@ -68,7 +68,7 @@ class GLMMExpFam(GLMM):
         gef.__dict__['_ep'].set_compute_moments(gef.compute_moments)
         gef.update_approx = self.update_approx
 
-        super()._copy_to(gef)
+        GLMM._copy_to(self, gef)
 
         return gef
 
@@ -86,12 +86,10 @@ class GLMMExpFam(GLMM):
     @property
     def beta(self):
         return GLMM.beta.fget(self)
-        # return super().beta
 
     @beta.setter
     def beta(self, v):
         GLMM.beta.fset(self, v)
-        # super().beta = v
         self.set_update_approx()
 
     def compute_moments(self, eta, tau, moments):
@@ -101,7 +99,7 @@ class GLMMExpFam(GLMM):
         return dict(QS=self._QS, scale=self.scale, delta=self.delta)
 
     def fix(self, var_name):
-        super().fix(var_name)
+        GLMM.fix(self, var_name)
         self.set_update_approx()
 
     def gradient(self):
@@ -133,7 +131,6 @@ class GLMMExpFam(GLMM):
 
     @logscale.setter
     def logscale(self, v):
-        # super().logscale = v
         GLMM.logscale.fset(self, v)
         self.set_update_approx()
 
@@ -141,11 +138,11 @@ class GLMMExpFam(GLMM):
         self.update_approx = True
 
     def set_variable_bounds(self, var_name, bounds):
-        super().set_variable_bounds(var_name, bounds)
+        GLMM.set_variable_bounds(self, var_name, bounds)
         self.set_update_approx()
 
     def unfix(self, var_name):
-        super().unfix(var_name)
+        GLMM.unfix(self, var_name)
         self.set_update_approx()
 
     def value(self):
