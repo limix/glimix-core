@@ -1,6 +1,4 @@
 language: python
-sudo: required
-dist: trusty
 git:
   depth: 5
 matrix:

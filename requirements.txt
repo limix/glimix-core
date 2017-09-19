@@ -4,6 +4,7 @@ numpy-sugar>=1.1.0
 scipy-sugar
 optimix>=1.2.18
 cachetools
+toolz
 tqdm
 liknorm-py
 ndarray-listener
