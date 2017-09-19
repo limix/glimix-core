@@ -1,7 +1,6 @@
 scipy
-ncephes
 numpy
-numpy-sugar
+numpy-sugar>=1.1.0
 scipy-sugar
 optimix>=1.2.18
 cachetools

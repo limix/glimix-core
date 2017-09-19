@@ -13,21 +13,6 @@ from optimix import check_grad
 ATOL = 1e-6
 RTOL = 1e-6
 
-# def test_glmmnormal():
-#     random = RandomState(0)
-#     X = random.randn(nsamples(), 5)
-#     K = linear_eye_cov().feed().value()
-#     QS = economic_qs(K)
-#
-#     eta = random.randn(nsamples())
-#     tau = 10 * random.rand(nsamples())
-#
-#     glmm = GLMMNormal(eta, tau, X, QS)
-#     glmm.beta = asarray([1.0, 0, 0.5, 0.1, 0.4])
-#     assert_allclose(glmm.feed().value(), -50.69748417680114)
-#
-#     assert_allclose(check_grad(glmm), 0, atol=1e-3, rtol=RTOL)
-
 
 def test_glmm_glmmnormal():
     random = RandomState(0)
@@ -331,7 +316,7 @@ def test_glmm_delta_one():
     assert_allclose(glmm.delta, 9.930610996068862e-08, atol=ATOL, rtol=RTOL)
 
 
-def test_glmm_copy():
+def test_glmmexpfam_copy():
     random = RandomState(0)
     X = random.randn(nsamples(), 5)
     K = linear_eye_cov().feed().value()
@@ -365,3 +350,36 @@ def test_glmm_copy():
     v = -35.227541384298654
     assert_allclose(glmm0.lml(), v)
     assert_allclose(glmm1.lml(), v)
+
+
+# def test_glmmnormal_copy():
+#     random = RandomState(0)
+#     X = random.randn(nsamples(), 5)
+#     K = linear_eye_cov().feed().value()
+#     z = random.multivariate_normal(0.2 * ones(nsamples()), K)
+#     QS = economic_qs(K)
+#
+#     eta = random.randn(10)
+#
+#     ntri = ascontiguousarray(ntri)
+#     glmm0 = GLMMNormal((eta, tau), X, QS)
+#
+#     assert_allclose(glmm0.lml(), -99.33404651904951, atol=ATOL, rtol=RTOL)
+#     glmm0.fit(verbose=False)
+#
+#     v = -35.22754141429125
+#     assert_allclose(glmm0.lml(), v)
+#
+#     glmm1 = glmm0.copy()
+#     assert_allclose(glmm1.lml(), v)
+#
+#     glmm1.scale = 0.92
+#     assert_allclose(glmm0.lml(), -35.227541384298654, atol=ATOL, rtol=RTOL)
+#     assert_allclose(glmm1.lml(), -219.44355209729233, atol=ATOL, rtol=RTOL)
+#
+#     glmm0.fit(verbose=False)
+#     glmm1.fit(verbose=False)
+#
+#     v = -35.227541384298654
+#     assert_allclose(glmm0.lml(), v)
+#     assert_allclose(glmm1.lml(), v)
