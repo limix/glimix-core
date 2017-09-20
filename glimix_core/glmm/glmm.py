@@ -12,7 +12,7 @@ from ..check import check_covariates, check_economic_qs, check_outcome
 
 
 class GLMM(Function):
-    r"""Generalised Gaussian Processes.
+    r"""Generalised Linear Gaussian Processes.
 
     The variances :math:`v_0` and :math:`v_1` are internally replaced by
     the scale and ratio parameters:

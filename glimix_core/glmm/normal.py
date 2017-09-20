@@ -1,6 +1,6 @@
 from __future__ import absolute_import, division, unicode_literals
 
-from copy import copy
+from copy import deepcopy
 
 from liknorm import LikNormMachine
 from numpy import asarray, dot, exp, log, pi, trace, zeros
@@ -43,12 +43,21 @@ class GLMMNormal(GLMM):
     """
 
     def __init__(self, eta, tau, X, QS):
+        self._cache = dict(value=None, grad=None)
         GLMM.__init__(self, (eta, tau), 'normal', X, QS)
+        self.variables().get('beta').listen(self.clear_cache)
+        self.variables().get('logscale').listen(self.clear_cache)
+        self.variables().get('logitdelta').listen(self.clear_cache)
 
     def __copy__(self):
         gef = GLMMNormal(self.eta, self.tau, self._X, self._QS)
         GLMM._copy_to(self, gef)
+        gef.__dict__['_cache'] = deepcopy(self._cache)
         return gef
+
+    def clear_cache(self, _=None):
+        self._cache['value'] = None
+        self._cache['grad'] = None
 
     @property
     def beta(self):
@@ -57,7 +66,7 @@ class GLMMNormal(GLMM):
     @beta.setter
     def beta(self, v):
         GLMM.beta.fset(self, v)
-        self.set_update_approx()
+        self.clear_cache()
 
     @property
     def logitdelta(self):
@@ -66,7 +75,7 @@ class GLMMNormal(GLMM):
     @logitdelta.setter
     def logitdelta(self, v):
         GLMM.logitdelta.fset(self, v)
-        self.set_update_approx()
+        self.clear_cache()
 
     @property
     def logscale(self):
@@ -75,11 +84,11 @@ class GLMMNormal(GLMM):
     @logscale.setter
     def logscale(self, v):
         GLMM.logscale.fset(self, v)
-        self.set_update_approx()
+        self.clear_cache()
 
     def fix(self, var_name):
         GLMM.fix(self, var_name)
-        self.set_update_approx()
+        self.clear_cache()
 
     @property
     def eta(self):
@@ -90,6 +99,9 @@ class GLMMNormal(GLMM):
         return self._y[1]
 
     def gradient(self):
+        if self._cache['grad'] is not None:
+            return self._cache['grad']
+
         scale = exp(self.logscale)
         delta = 1 / (1 + exp(-self.logitdelta))
 
@@ -123,7 +135,6 @@ class GLMMNormal(GLMM):
         g['delta'] += dot(Aim, dot(Kd1, Aim))
         g['delta'] *= 1 / 2
 
-        # g = self._ep.lml_derivatives(self._X)
         ed = exp(-self.logitdelta)
         es = exp(self.logscale)
 
@@ -132,18 +143,17 @@ class GLMMNormal(GLMM):
         grad['logscale'] = g['scale'] * es
         grad['beta'] = g['beta']
 
-        return grad
+        self._cache['grad'] = grad
 
-    def set_update_approx(self, _=None):
-        self.update_approx = True
+        return self._cache['grad']
 
     def set_variable_bounds(self, var_name, bounds):
         GLMM.set_variable_bounds(self, var_name, bounds)
-        self.set_update_approx()
+        self.clear_cache()
 
     def unfix(self, var_name):
         GLMM.unfix(self, var_name)
-        self.set_update_approx()
+        self.clear_cache()
 
     def value(self):
         r"""Log of the marginal likelihood.
@@ -167,6 +177,9 @@ class GLMMNormal(GLMM):
         float
             :math:`\log{p(\tilde{\boldsymbol\mu})}`
         """
+        if self._cache['value'] is not None:
+            return self._cache['value']
+
         scale = exp(self.logscale)
         delta = 1 / (1 + exp(-self.logitdelta))
 
@@ -187,4 +200,6 @@ class GLMMNormal(GLMM):
         v -= slogdet(A)[1]
         v -= dot(m, solve(A, m))
 
-        return v / 2
+        self._cache['value'] = v / 2
+
+        return self._cache['value']

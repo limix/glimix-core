@@ -12,7 +12,7 @@ from .glmm import GLMM
 
 
 class GLMMExpFam(GLMM):
-    r"""Alguma coisa.
+    r"""Generalised Linear Gaussian Processes implementation.
 
     Example
     -------
