@@ -1,4 +1,3 @@
-# pylint: disable=R0201
 from __future__ import division, unicode_literals
 
 import scipy.stats as st

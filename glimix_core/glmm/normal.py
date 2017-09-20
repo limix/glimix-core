@@ -45,38 +45,41 @@ class GLMMNormal(GLMM):
     def __init__(self, eta, tau, X, QS):
         GLMM.__init__(self, (eta, tau), 'normal', X, QS)
 
-    # def __copy__(self):
-    #     gef = GLMMNormal(self._y, self._lik_name, self._X, self._QS)
-    #
-    #     d = gef.variables()
-    #     s = self.variables()
-    #
-    #     d.get('beta').value = asarray(s.get('beta').value, float)
-    #     d.get('beta').bounds = s.get('beta').bounds
-    #
-    #     for v in ['logscale', 'logitdelta']:
-    #         d.get(v).value = float(s.get(v).value)
-    #         d.get(v).bounds = s.get(v).bounds
-    #
-    #     return gef
+    def __copy__(self):
+        gef = GLMMNormal(self.eta, self.tau, self._X, self._QS)
+        GLMM._copy_to(self, gef)
+        return gef
 
-    # @property
-    # def beta(self):
-    #     return asarray(self.variables().get('beta').value, float)
-    #
-    # @beta.setter
-    # def beta(self, v):
-    #     self.variables().get('beta').value = v
-    #     # self.set_update_approx()
+    @property
+    def beta(self):
+        return GLMM.beta.fget(self)
 
-    # def covariance(self):
-    #     scale = exp(self.logscale)
-    #     delta = 1 / (1 + exp(-self.logitdelta))
-    #     return dict(QS=self._QS, scale=scale, delta=delta)
+    @beta.setter
+    def beta(self, v):
+        GLMM.beta.fset(self, v)
+        self.set_update_approx()
 
-    # def fix(self, var_name):
-    #     Function.fix(self, var_name)
-    #     # self.set_update_approx()
+    @property
+    def logitdelta(self):
+        return GLMM.logitdelta.fget(self)
+
+    @logitdelta.setter
+    def logitdelta(self, v):
+        GLMM.logitdelta.fset(self, v)
+        self.set_update_approx()
+
+    @property
+    def logscale(self):
+        return GLMM.logscale.fget(self)
+
+    @logscale.setter
+    def logscale(self, v):
+        GLMM.logscale.fset(self, v)
+        self.set_update_approx()
+
+    def fix(self, var_name):
+        GLMM.fix(self, var_name)
+        self.set_update_approx()
 
     @property
     def eta(self):
@@ -131,32 +134,16 @@ class GLMMNormal(GLMM):
 
         return grad
 
-    # @property
-    # def logitdelta(self):
-    #     return float(self.variables().get('logitdelta').value)
-    #
-    # @logitdelta.setter
-    # def logitdelta(self, v):
-    #     self.variables().get('logitdelta').value = v
-    #     # self.set_update_approx()
-    #
-    # @property
-    # def logscale(self):
-    #     return float(self.variables().get('logscale').value)
-    #
-    # @logscale.setter
-    # def logscale(self, v):
-    #     self.variables().get('logscale').value = v
-    #     # self.set_update_approx()
+    def set_update_approx(self, _=None):
+        self.update_approx = True
 
-    # def mean(self):
-    #     return dot(self._X, self.beta)
+    def set_variable_bounds(self, var_name, bounds):
+        GLMM.set_variable_bounds(self, var_name, bounds)
+        self.set_update_approx()
 
-    # def set_variable_bounds(self, var_name, bounds):
-    #     self.variables().get(var_name).bounds = bounds
-
-    # def unfix(self, var_name):
-    #     Function.unfix(self, var_name)
+    def unfix(self, var_name):
+        GLMM.unfix(self, var_name)
+        self.set_update_approx()
 
     def value(self):
         r"""Log of the marginal likelihood.

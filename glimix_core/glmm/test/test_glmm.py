@@ -2,12 +2,12 @@ import pytest
 from numpy import asarray, ascontiguousarray, dot, ones, sqrt, zeros
 from numpy.random import RandomState
 from numpy.testing import assert_allclose
+from numpy_sugar import epsilon
+from numpy_sugar.linalg import economic_qs, economic_qs_linear
 
 from glimix_core.example import linear_eye_cov, nsamples
 from glimix_core.glmm import GLMMExpFam, GLMMNormal
 from glimix_core.random import bernoulli_sample
-from numpy_sugar import epsilon
-from numpy_sugar.linalg import economic_qs, economic_qs_linear
 from optimix import check_grad
 
 ATOL = 1e-6
@@ -352,34 +352,33 @@ def test_glmmexpfam_copy():
     assert_allclose(glmm1.lml(), v)
 
 
-# def test_glmmnormal_copy():
-#     random = RandomState(0)
-#     X = random.randn(nsamples(), 5)
-#     K = linear_eye_cov().feed().value()
-#     z = random.multivariate_normal(0.2 * ones(nsamples()), K)
-#     QS = economic_qs(K)
-#
-#     eta = random.randn(10)
-#
-#     ntri = ascontiguousarray(ntri)
-#     glmm0 = GLMMNormal((eta, tau), X, QS)
-#
-#     assert_allclose(glmm0.lml(), -99.33404651904951, atol=ATOL, rtol=RTOL)
-#     glmm0.fit(verbose=False)
-#
-#     v = -35.22754141429125
-#     assert_allclose(glmm0.lml(), v)
-#
-#     glmm1 = glmm0.copy()
-#     assert_allclose(glmm1.lml(), v)
-#
-#     glmm1.scale = 0.92
-#     assert_allclose(glmm0.lml(), -35.227541384298654, atol=ATOL, rtol=RTOL)
-#     assert_allclose(glmm1.lml(), -219.44355209729233, atol=ATOL, rtol=RTOL)
-#
-#     glmm0.fit(verbose=False)
-#     glmm1.fit(verbose=False)
-#
-#     v = -35.227541384298654
-#     assert_allclose(glmm0.lml(), v)
-#     assert_allclose(glmm1.lml(), v)
+def test_glmmnormal_copy():
+    random = RandomState(0)
+
+    X = random.randn(nsamples(), 5)
+    QS = economic_qs(linear_eye_cov().feed().value())
+
+    eta = random.randn(nsamples())
+    tau = random.rand(nsamples()) * 10
+
+    glmm0 = GLMMNormal(eta, tau, X, QS)
+
+    assert_allclose(glmm0.lml(), -38.29931140952595, atol=ATOL, rtol=RTOL)
+
+    glmm0.fit(verbose=False)
+
+    v = -13.00173479849569
+    assert_allclose(glmm0.lml(), v)
+
+    glmm1 = glmm0.copy()
+    assert_allclose(glmm1.lml(), v)
+
+    glmm1.scale = 0.92
+    assert_allclose(glmm0.lml(), v, atol=ATOL, rtol=RTOL)
+    assert_allclose(glmm1.lml(), -33.17274486229496, atol=ATOL, rtol=RTOL)
+
+    glmm0.fit(verbose=False)
+    glmm1.fit(verbose=False)
+
+    assert_allclose(glmm0.lml(), v, atol=ATOL, rtol=RTOL)
+    assert_allclose(glmm1.lml(), v, atol=ATOL, rtol=RTOL)
