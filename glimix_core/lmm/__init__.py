@@ -24,8 +24,8 @@ The outcome-vector is thus distributed according to
                               \sigma_g^2 \mathrm G \mathrm G^{\intercal}
                               + \sigma_e^2\mathrm I)
 
-We refer to :math:`\mathrm G \mathrm G^{\intercal}` simply as :math:`\mathrm K`,
-if not otherwise mentioned.
+We refer to :math:`\mathrm G \mathrm G^{\intercal}` simply as
+:math:`\mathrm K`, if not otherwise mentioned.
 This module provides :class:`.LMM`, a FastLMM :cite:`lippert2011fast`
 implementation to perform inference over the variance parameters
 :math:`\sigma_g^2` and :math:`\sigma_e2` and over the vector

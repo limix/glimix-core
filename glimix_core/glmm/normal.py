@@ -5,8 +5,8 @@ from copy import copy
 from liknorm import LikNormMachine
 from numpy import asarray, dot, exp, log, pi, trace, zeros
 from numpy.linalg import slogdet, solve
-
 from numpy_sugar.linalg import ddot, sum2diag
+
 from optimix import Function, Scalar, Vector
 
 from .glmm import GLMM
@@ -27,8 +27,8 @@ class GLMMNormal(GLMM):
     to :class:`glimix_core.glmm.expfam.GLMMExpFam`).
     Note that :math:`\tilde{\Sigma}` is a diagonal matrix with non-negative
     values.
-    Those EP parameters are given to this class via their natural forms: ``eta``
-    and ``tau``.
+    Those EP parameters are given to this class via their natural forms:
+    ``eta`` and ``tau``.
 
     Parameters
     ----------
