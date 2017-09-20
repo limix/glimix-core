@@ -26,7 +26,7 @@ class GLMM(Function):
     .. math::
 
         \mathrm Q \mathrm E \mathrm Q^{\intercal}
-        \mathrm K = \mathrm G\mathrm G^{\intercal}
+        = \mathrm K = \mathrm G\mathrm G^{\intercal}
 
     be the eigen decomposition of the random effect's covariance.
     It turns out that the covariance of the prior can be described as
@@ -37,7 +37,7 @@ class GLMM(Function):
         + \delta\mathrm I) \mathrm Q^{\intercal}.
 
     This means that :math:`\mathrm Q` does not change during inference, and
-    this fact is used here to speed-up EP inference for GLMM.
+    this fact is used in the implementation to speed-up inference.
 
     Parameters
     ----------

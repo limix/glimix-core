@@ -24,7 +24,7 @@ The second part connects the latent variable to the observed one:
     y_i ~|~ z_i \sim \text{ExpFam}(\mu_i = g(z_i)),
 
 where :math:`g(\cdot)` is a link function and :math:`\text{ExpFam}(\cdot)` is
-an exponential-family distribution.
+an exponential-family distribution with mean :math:`\mu_i`.
 The marginal likelihood is thus given by
 
 .. math::
@@ -41,13 +41,16 @@ We use :math:`\mathrm K` for refering to
 This module implements two algorithms for parameter fitting via Maximum
 Likelihood :cite:`wiki_mle`.
 Expectation Propagation approximation :cite:`minka2001` when the likelihood is
-not normally distributed;
-a closed-form solution otherwise.
+not normally distributed (refer to :class:`glimix_core.glmm.GLMMExpFam`);
+a closed-form solution otherwise (refer to
+:class:`glimix_core.glmm.GLMMNormal`).
+The class :class:`glimix_core.glmm.GLMM` is a base classe for those two
+implementations, providing common methods to query the model.
 
 GLMM class
 ^^^^^^^^^^
 
-.. autoclass:: glimix_core.GLMM
+.. autoclass:: glimix_core.glmm.GLMM
     :members:
 
 GLMMExpFam class

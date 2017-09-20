@@ -38,7 +38,7 @@ else:
 extensions = [
     'sphinx.ext.autodoc', 'sphinx.ext.doctest', 'sphinx.ext.intersphinx',
     'sphinx.ext.coverage', 'sphinx.ext.viewcode', 'sphinx.ext.napoleon',
-    'sphinx.ext.mathjax'
+    'sphinx.ext.mathjax', 'sphinxcontrib.bibtex'
 ]
 napoleon_google_docstring = True
 master_doc = 'index'

@@ -14,6 +14,23 @@ from .glmm import GLMM
 class GLMMExpFam(GLMM):
     r"""Generalised Linear Gaussian Processes implementation.
 
+    It implements inference over the GLMM explained in Section BLA via
+    the Expectation Propagation :cite:`minka2001` algorithm.
+    It currently supports the `Bernoulli`, `Binomial`, and `Poisson`
+    likelihoods. (For heterogeneous Normal likelihood, please refer to
+    :class:`glimix_core.glmm.GLMMNormal` for a closed-form inference.)
+
+    Parameters
+    ----------
+    y : array_like
+        Outcome variable.
+    lik_name : str
+        Likelihood name. It supports `Bernoulli`, `Binomial`, and `Poisson`.
+    X : array_like
+        Covariates.
+    QS : tuple
+        Economic eigen decomposition.
+
     Example
     -------
 
