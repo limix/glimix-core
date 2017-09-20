@@ -84,13 +84,6 @@ class GLMM(Function):
             d.get(v).value = float(s.get(v).value)
             d.get(v).bounds = s.get(v).bounds
 
-    # def __copy__(self):
-    #     cls = self.__class__
-    #     glmm = cls.__new__(cls)
-    #     glmm.__dict__['_func'] = copy(self.function)
-    #     glmm.__dict__['_QS'] = self._QS
-    #     return glmm
-
     @property
     def beta(self):
         r"""Fixed-effect sizes.
