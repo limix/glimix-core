@@ -155,7 +155,7 @@ class LMM(LMMCore, Function):
         return clip(x, 1e-5, 1 - 1e-5)
 
     def get_fast_scanner(self):
-        r"""Return :class:`.glimix_core.lmm.FastScanner` for the current
+        r"""Return :class:`glimix_core.lmm.FastScanner` for the current
         delta."""
         return FastScanner(self._y, self.X, self._QS, self.delta)
 

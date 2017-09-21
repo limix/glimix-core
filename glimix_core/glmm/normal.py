@@ -6,9 +6,9 @@ from liknorm import LikNormMachine
 from numpy import asarray, dot, exp, log, pi, trace, zeros
 from numpy.linalg import slogdet, solve
 from numpy_sugar.linalg import ddot, sum2diag
-
 from optimix import Function, Scalar, Vector
 
+from ..lmm import FastScanner
 from .glmm import GLMM
 
 
@@ -97,6 +97,18 @@ class GLMMNormal(GLMM):
     @property
     def tau(self):
         return self._y[1]
+
+    # def get_fast_scanner(self):
+    #     r"""Return :class:`glimix_core.lmm.FastScanner` for the current
+    #     delta."""
+    #     y = self.eta / self.tau
+    #
+    #     Q0 = self._QS[0][0]
+    #     S0 = self._QS[1]
+    #     K = dot(ddot(Q0, self.v0 * S0), Q0.T)
+    #     sum2diag(sum2diag(K, self.v1), 1 / self.tau)
+    #
+    #     return FastScanner(y, self.X, self._QS, self.delta)
 
     def gradient(self):
         if self._cache['grad'] is not None:
