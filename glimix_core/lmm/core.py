@@ -49,6 +49,25 @@ class LMMCore(object):
 
     @property
     def beta(self):
+        r"""Fixed-effect sizes.
+
+        The optimal fixed-effect sizes is given by any solution to equation
+
+        .. math::
+
+            (\mathrm Q^{\intercal}\mathrm X)^{\intercal}
+                \mathrm D^{-1}
+                (\mathrm Q^{\intercal}\mathrm X)
+                \boldsymbol\beta =
+                (\mathrm Q^{\intercal}\mathrm X)^{\intercal}
+                \mathrm D^{-1}
+                (\mathrm Q^{\intercal}\mathbf y).
+
+        Returns
+        -------
+        array_like
+            Optimal fixed-effect sizes.
+        """
         SVs = ddot(self._svd[0], sqrt(self._svd[1]), left=False)
         z = rsolve(SVs, self.m)
         VsD = ddot(sqrt(self._svd[1]), self._svd[2], left=True)
@@ -60,6 +79,30 @@ class LMMCore(object):
 
     @property
     def scale(self):
+        r"""Scaling factor.
+
+        The optimal scaling factor is given by
+
+        .. math::
+
+            s = \frac{1}{n}
+              (\mathrm Q^{\intercal}\mathbf y)^{\intercal}
+                \mathrm D^{-1}
+              (\mathrm Q^{\intercal}\mathbf y)
+              -\frac{2}{n}
+              (\mathrm Q^{\intercal}\mathbf y)^{\intercal}
+                \mathrm D^{-1}
+              (\mathrm Q^{\intercal}\mathrm X\boldsymbol\beta)
+              +\frac{1}{n}
+              (\mathrm Q^{\intercal}\mathrm X\boldsymbol\beta)^{\intercal}
+                \mathrm D^{-1}
+              (\mathrm Q^{\intercal}\mathrm X\boldsymbol\beta).
+
+        Returns
+        -------
+        float
+            Optimal scaling factor.
+        """
         a = [self._a(i) for i in [0, 1]]
         b = [self._b(i) for i in [0, 1]]
         c = [self._c(i) for i in [0, 1]]

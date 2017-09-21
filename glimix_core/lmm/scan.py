@@ -61,11 +61,37 @@ class FastScanner(object):
 
         \mathcal N\left(\mathrm Q^{\intercal} \mathbf y ~|~
                    \mathrm Q^{\intercal} \mathbf m,~
-                   \left(
+                   s \left(
                        \begin{array}{cc}
                            \mathrm S_0 + v\mathrm I_0 & \mathbf 0\\
                            \mathbf 0 & v\mathrm I_1
                        \end{array}\right)\right).
+
+    Expanding it gives us
+
+    .. math::
+
+        -\frac{n}{2} \log 2\pi - \frac{1}{2}n \log s
+            - \frac{1}{2}\log|\mathrm D|\\
+            - \frac{1}{2} (\mathrm Q^{\intercal}\mathbf y)^{\intercal} s^{-1}
+            \mathrm D^{-1}(\mathrm Q^{\intercal} \mathbf y)\\
+            + (\mathrm Q^{\intercal}\mathbf y)^{\intercal}
+            s^{-1} \mathrm D^{-1}
+            (\mathrm Q^{\intercal} \mathrm X\boldsymbol\beta)\\
+            - \frac{1}{2} (\mathrm Q^{\intercal}
+            \mathrm X\boldsymbol\beta)^{\intercal} s^{-1} \mathrm D^{-1}
+            (\mathrm Q^{\intercal} \mathrm X\boldsymbol\beta),
+
+    where
+
+    .. math::
+
+        \mathrm D = \left(
+            \begin{array}{cc}
+              \mathrm S_0 + v\mathrm I_0 & \mathbf 0\\
+              \mathbf 0 & v\mathrm I_1
+            \end{array}
+            \right)
 
     Parameters
     ----------
@@ -77,10 +103,6 @@ class FastScanner(object):
         Economic eigen decomposition ``((Q0, Q1), S0)``.
     v : float
         Variance due to iid effect.
-
-
-
-
     """
 
     def __init__(self, y, X, QS, v):

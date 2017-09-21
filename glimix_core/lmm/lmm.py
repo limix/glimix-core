@@ -112,8 +112,15 @@ class LMM(LMMCore, Function):
             self._fix[var_name] = False
 
     @property
+    def beta(self):
+        return LMMCore.beta.fget(self)
+
+    @beta.setter
+    def beta(self, beta):
+        LMMCore.beta.fset(self, beta)
+
+    @property
     def scale(self):
-        r"""Overall variance :math:`s`."""
         if self._fix['scale']:
             return self._scale
         return LMMCore.scale.fget(self)

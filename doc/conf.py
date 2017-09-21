@@ -7,6 +7,7 @@ from os.path import dirname, join, realpath
 from time import strftime
 
 import sphinx_rtd_theme
+
 from setuptools import find_packages
 
 
@@ -38,7 +39,7 @@ else:
 extensions = [
     'sphinx.ext.autodoc', 'sphinx.ext.doctest', 'sphinx.ext.intersphinx',
     'sphinx.ext.coverage', 'sphinx.ext.viewcode', 'sphinx.ext.napoleon',
-    'sphinx.ext.mathjax', 'sphinxcontrib.bibtex'
+    'sphinx.ext.mathjax'
 ]
 napoleon_google_docstring = True
 master_doc = 'index'
