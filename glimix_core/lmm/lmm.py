@@ -2,7 +2,6 @@ from __future__ import division
 
 from numpy import clip, exp, log
 from numpy_sugar import epsilon, is_all_finite
-
 from optimix import Function, Scalar, maximize_scalar
 
 from .core import LMMCore
@@ -157,7 +156,8 @@ class LMM(LMMCore, Function):
     def get_fast_scanner(self):
         r"""Return :class:`glimix_core.lmm.FastScanner` for the current
         delta."""
-        return FastScanner(self._y, self.X, self._QS, self.delta)
+        QS = (self._QS[0], (1 - self.delta) * self._QS[1])
+        return FastScanner(self._y, self.X, QS, self.delta)
 
     @property
     def heritability(self):

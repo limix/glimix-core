@@ -50,14 +50,14 @@ class FastScanner(object):
         Matrix of covariates.
     QS : tuple
         Economic eigen decomposition ``((Q0, Q1), S0)``.
-    delta : float
-        Ratio of total variance between ``K`` and ``I``.
+    iid_variance : float
+        Variance due to iid effect..
     """
 
-    def __init__(self, y, X, QS, delta):
+    def __init__(self, y, X, QS, iid_variance):
 
         self._QS = QS
-        self._diags = [(1 - delta) * QS[1] + delta, delta]
+        self._diags = [QS[1] + iid_variance, iid_variance]
 
         yTQ = [dot(y.T, Q) for Q in QS[0]]
 

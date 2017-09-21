@@ -4,11 +4,11 @@ from numpy.random import RandomState
 from numpy.testing import assert_allclose
 from numpy_sugar import epsilon
 from numpy_sugar.linalg import economic_qs, economic_qs_linear
+from optimix import check_grad
 
 from glimix_core.example import linear_eye_cov, nsamples
 from glimix_core.glmm import GLMMExpFam, GLMMNormal
 from glimix_core.random import bernoulli_sample
-from optimix import check_grad
 
 ATOL = 1e-6
 RTOL = 1e-6
@@ -30,6 +30,30 @@ def test_glmm_glmmnormal():
     assert_allclose(glmm.lml(), -50.69748417680114)
 
     assert_allclose(check_grad(glmm), 0, atol=1e-3, rtol=RTOL)
+
+
+def test_glmm_glmmnormal_get_fast_scanner():
+    random = RandomState(0)
+    X = random.randn(nsamples(), 5)
+    K = linear_eye_cov().feed().value()
+    QS = economic_qs(K)
+
+    eta = random.randn(nsamples())
+    tau = 10 * random.rand(nsamples())
+
+    glmm = GLMMNormal(eta, tau, X, QS)
+    glmm.fit(verbose=False)
+
+    scanner = glmm.get_fast_scanner()
+    lmls, effect_sizes = scanner.fast_scan(X)
+    assert_allclose(lmls, [
+        -4.3406703345673563, -4.3406703345673563, -4.3406703345673563,
+        -4.3406703345673563, -4.3406703345673563
+    ])
+    assert_allclose(effect_sizes, [
+        0.026112053682581519, -0.043977172192972633, -0.01530117244164996,
+        -0.11503215921894279, -0.032162421985046111
+    ])
 
 
 def test_glmmexpfam_precise():
