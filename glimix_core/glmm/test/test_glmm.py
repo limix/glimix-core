@@ -43,8 +43,11 @@ def test_glmm_glmmnormal_get_fast_scanner():
 
     glmm = GLMMNormal(eta, tau, X, QS)
     glmm.fit(verbose=False)
+    print("\nGLMM:", glmm.lml())
 
     scanner = glmm.get_fast_scanner()
+    scanner.set_scale(1.0)
+    print("\nSCAN:", scanner.null_lml())
     lmls, effect_sizes = scanner.fast_scan(X)
     assert_allclose(lmls, [
         -4.3406703345673563, -4.3406703345673563, -4.3406703345673563,

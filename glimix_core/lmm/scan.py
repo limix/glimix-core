@@ -23,24 +23,25 @@ class FastScanner(object):
     :math:`\mathrm M` a samples-by-markers matrix, and
     :math:`\mathbf y` an array of outcome.
     A covariance :math:`\mathrm K` will be provided via its economic eigen
-    decomposition ``((Q0, Q1), S0)`` and ``delta`` will define the ratio of
-    covariation between :math:`\mathrm K` and the identity in the formulae
+    decomposition ``((Q0, Q1), S0)`` and ``v`` will define the variance
+    due to the identity in the formulae
 
     .. math::
 
         \mathbf y \sim \mathcal N\big(~ \mathrm X\boldsymbol\beta
         + \mathrm{M}_i \alpha_i;~
-        s ((1 - \delta) \mathrm K + \delta\mathrm I) ~\big)
+        s (\mathrm K + v \mathrm I) ~\big)
 
 
     Note that :math:`\alpha_i` is a scalar multiplying a column-matrix
     :math:`\mathrm{M}_i`.
-    The variable :math:`s` is a scalar that is jointly adjusted with
-    :math:`\alpha_i` in order the maximize the marginal likelihood, ultimately
-    providing the degree of association between the marker :math:`\mathrm{M}_i`
-    with the outcome :math:`\mathbf y` via an p-value.
-    As mentioned before, the ratio :math:`\delta` is not adjusted for
-    performance reason.
+    The variable :math:`s` is a scaling factor that, if not set, is jointly
+    adjusted with :math:`\alpha_i` in order the maximize the marginal
+    likelihood, ultimately providing the degree of association between the
+    marker :math:`\mathrm{M}_i` with the outcome :math:`\mathbf y` via an
+    p-value.
+    As mentioned before, the ratio between the overall variance of ``K`` to
+    the overall variance of ``I`` is not adjusted performance reason.
 
     Parameters
     ----------
@@ -50,14 +51,15 @@ class FastScanner(object):
         Matrix of covariates.
     QS : tuple
         Economic eigen decomposition ``((Q0, Q1), S0)``.
-    iid_variance : float
-        Variance due to iid effect..
+    v : float
+        Variance due to iid effect.
     """
 
-    def __init__(self, y, X, QS, iid_variance):
+    def __init__(self, y, X, QS, v):
 
+        self._scale = None
         self._QS = QS
-        self._diags = [QS[1] + iid_variance, iid_variance]
+        self._diags = [QS[1] + v, v]
 
         yTQ = [dot(y.T, Q) for Q in QS[0]]
 
@@ -77,63 +79,6 @@ class FastScanner(object):
 
         for i in range(2):
             self._C[i][:-1, :-1] = dot(self._XTQdiag[i], XTQ[i].T)
-
-    def null_lml(self):
-        # TODO
-        # def _diag(self, i):
-        #     if i == 0:
-        #         return self._QS[1] * (1 - self.delta) + self.delta
-        #     return self.delta
-
-        n = len(self._y)
-        p = n - self._QS[1].shape[0]
-        LOG2PI = 1.837877066409345339081937709124758839607238769531250
-        lml = -n * LOG2PI - n - n * log(self.scale)
-        lml += -sum(log(self._diags[0])) - p * log(self._diags[1])
-        lml /= 2
-        return lml
-
-    def fast_scan(self, markers, verbose=True):
-        r"""LMLs of markers by fitting scale and fixed-effect sizes parameters.
-
-        Parameters
-        ----------
-        markers : array_like
-            Matrix of fixed-effects across columns.
-        verbose : bool, optional
-            ``True`` for progress information; ``False`` otherwise.
-            Defaults to ``True``.
-
-        Returns
-        -------
-        array_like : LMLs.
-        array_like : Effect-sizes.
-        """
-
-        if not (markers.ndim == 2):
-            raise ValueError("`markers` array must be bidimensional.")
-        p = markers.shape[1]
-
-        lmls = empty(p)
-        effect_sizes = empty(p)
-
-        if verbose:
-            nchunks = min(p, 30)
-        else:
-            nchunks = min(p, 1)
-
-        chunk_size = (p + nchunks - 1) // nchunks
-
-        for i in tqdm(range(nchunks), desc="Scanning", disable=not verbose):
-            start = i * chunk_size
-            stop = min(start + chunk_size, markers.shape[1])
-
-            l, e = self._fast_scan_chunk(markers[:, start:stop])
-
-            lmls[start:stop] = l
-            effect_sizes[start:stop] = e
-
-        return lmls, effect_sizes
 
     def _static_lml(self):
         n = self._QS[0][0].shape[0]
@@ -254,6 +199,98 @@ class FastScanner(object):
         effect_sizes = beta[1]
 
         return lmls, effect_sizes
+
+    def fast_scan(self, markers, verbose=True):
+        r"""LMLs of markers by fitting scale and fixed-effect sizes parameters.
+
+        Parameters
+        ----------
+        markers : array_like
+            Matrix of fixed-effects across columns.
+        verbose : bool, optional
+            ``True`` for progress information; ``False`` otherwise.
+            Defaults to ``True``.
+
+        Returns
+        -------
+        array_like : LMLs.
+        array_like : Effect-sizes.
+        """
+
+        if not (markers.ndim == 2):
+            raise ValueError("`markers` array must be bidimensional.")
+        p = markers.shape[1]
+
+        lmls = empty(p)
+        effect_sizes = empty(p)
+
+        if verbose:
+            nchunks = min(p, 30)
+        else:
+            nchunks = min(p, 1)
+
+        chunk_size = (p + nchunks - 1) // nchunks
+
+        for i in tqdm(range(nchunks), desc="Scanning", disable=not verbose):
+            start = i * chunk_size
+            stop = min(start + chunk_size, markers.shape[1])
+
+            l, e = self._fast_scan_chunk(markers[:, start:stop])
+
+            lmls[start:stop] = l
+            effect_sizes[start:stop] = e
+
+        return lmls, effect_sizes
+
+    def null_lml(self):
+        r"""Log of the marginal likelihood.
+
+        .. math::
+
+            - \frac{n}{2}\log{2\pi} - \frac{1}{2} \log{\left|
+                \mathrm K + v \mathrm I \right|}
+                    - \frac{1}{2}
+                    \left(\tilde{\boldsymbol\mu} -
+                    \mathrm X\boldsymbol\beta\right)^{\intercal}
+                    \left( \mathrm K + v \mathrm I \right)^{-1}
+                    \left(\tilde{\boldsymbol\mu} -
+                    \mathrm X\boldsymbol\beta\right)
+        """
+        # TODO
+        # def _diag(self, i):
+        #     if i == 0:
+        #         return self._QS[1] * (1 - self.delta) + self.delta
+        #     return self.delta
+
+        n = self._QS[0][0].shape[0]
+        p = n - self._QS[1].shape[0]
+        LOG2PI = 1.837877066409345339081937709124758839607238769531250
+        if self._scale is None:
+            pass
+        else:
+            lml = -n * LOG2PI - n - n * log(self._scale)
+        lml += -sum(log(self._diags[0])) - p * log(self._diags[1])
+        lml /= 2
+        return lml
+
+    def set_scale(self, scale):
+        r"""Set the scaling factor.
+
+        Calling this method disables the automatic scale learning.
+
+        Parameters
+        ----------
+        scale : float
+            Scaling factor.
+        """
+        self._scale = scale
+
+    def unset_scale(self):
+        r"""Unset the scaling factor.
+
+        If called, it enables the scale learning again.
+        """
+        self._scale = None
 
 
 def beta_1covariate(sb, sbm, sC00, sC01, sC11):
