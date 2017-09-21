@@ -29,7 +29,7 @@ class FastScanner(object):
     .. math::
 
         \mathbf y \sim \mathcal N\big(~ \mathrm X\boldsymbol\beta
-        + \mathrm{M}_i \alpha_i;~
+        + \mathrm{M}_i \alpha_i,~
         s (\mathrm K + v \mathrm I) ~\big)
 
 
@@ -43,6 +43,30 @@ class FastScanner(object):
     As mentioned before, the ratio between the overall variance of ``K`` to
     the overall variance of ``I`` is not adjusted performance reason.
 
+    For performance reasons, we make use of the identity
+
+    .. math::
+
+        (\mathrm K + v\mathrm I)^{-1} = \mathrm Q \left(
+            \begin{array}{cc}
+                \mathrm S_0 + v\mathrm I_0 & \mathbf 0\\
+                \mathbf 0 & v\mathrm I_1
+            \end{array}\right)^{-1}
+            \mathrm Q^{\intercal}
+
+    in the implementation.
+    We can thus write the marginal likelihood as
+
+    .. math::
+
+        \mathcal N\left(\mathrm Q^{\intercal} \mathbf y ~|~
+                   \mathrm Q^{\intercal} \mathbf m,~
+                   \left(
+                       \begin{array}{cc}
+                           \mathrm S_0 + v\mathrm I_0 & \mathbf 0\\
+                           \mathbf 0 & v\mathrm I_1
+                       \end{array}\right)\right).
+
     Parameters
     ----------
     y : array_like
@@ -53,6 +77,10 @@ class FastScanner(object):
         Economic eigen decomposition ``((Q0, Q1), S0)``.
     v : float
         Variance due to iid effect.
+
+
+
+
     """
 
     def __init__(self, y, X, QS, v):
