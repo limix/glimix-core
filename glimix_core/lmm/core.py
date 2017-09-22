@@ -4,6 +4,8 @@ from numpy import dot, log, maximum, sqrt, zeros
 from numpy_sugar import epsilon
 from numpy_sugar.linalg import ddot, economic_svd, rsolve, solve
 
+LOG2PI = 1.837877066409345339081937709124758839607238769531250
+
 
 class LMMCore(object):
     def __init__(self, y, X, QS):
@@ -14,7 +16,7 @@ class LMMCore(object):
         self.__tbeta = None
 
         self._svd = None
-        self.X = X
+        self._set_X(X)
 
     def _diag(self, i):
         if i == 0:
@@ -35,6 +37,11 @@ class LMMCore(object):
 
     def _yTQ_2x(self, i):
         return self._yTQ(i)**2
+
+    def _set_X(self, X):
+        self._svd = economic_svd(X)
+        self._tM = ddot(self._svd[0], sqrt(self._svd[1]), left=False)
+        self.__tbeta = zeros(self._tM.shape[1])
 
     def _tMTQ(self, i):
         return self._tM.T.dot(self._QS[0][i])
@@ -70,9 +77,7 @@ class LMMCore(object):
 
     @X.setter
     def X(self, X):
-        self._svd = economic_svd(X)
-        self._tM = ddot(self._svd[0], sqrt(self._svd[1]), left=False)
-        self.__tbeta = zeros(self._tM.shape[1])
+        self._set_X(X)
 
     @property
     def mean(self):
@@ -147,11 +152,10 @@ class LMMCore(object):
         float
             Log of the marginal likelihood.
         """
-        self.update()
+        self._update()
 
         n = len(self._y)
         p = n - self._QS[1].shape[0]
-        LOG2PI = 1.837877066409345339081937709124758839607238769531250
         lml = -n * LOG2PI - n - n * log(self.scale)
         lml += -sum(log(self._diag(0))) - p * log(self._diag(1))
         lml /= 2

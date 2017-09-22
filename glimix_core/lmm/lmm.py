@@ -87,7 +87,7 @@ class LMM(LMMCore, Function):
         >>> covariates = array([[1], [1]])
         >>> y = array([-1, 2], float)
         >>> lmm = LMM(y, covariates, QS)
-        >>> lmm.learn(verbose=False)
+        >>> lmm.fit(verbose=False)
         >>> print('%.3f' % lmm.lml())
         -3.649
 
@@ -108,17 +108,13 @@ class LMM(LMMCore, Function):
         >>> lmm.fix('scale')
         >>> lmm.delta = 0.5
         >>> lmm.scale = 1
-        >>> lmm.learn(verbose=False)
+        >>> lmm.fit(verbose=False)
         >>> print('%.3f' % lmm.lml())
         -4.232
-        >>> print('%.1f' % lmm.heritability)
-        0.5
         >>> lmm.unfix('delta')
-        >>> lmm.learn(verbose=False)
+        >>> lmm.fit(verbose=False)
         >>> print('%.3f' % lmm.lml())
         -2.838
-        >>> print('%.1f' % lmm.heritability)
-        0.0
     """
 
     def __init__(self, y, X, QS):
@@ -261,7 +257,7 @@ class LMM(LMMCore, Function):
     @property
     def mean(self):
         r"""Estimated mean :math:`\mathrm X\boldsymbol\beta`."""
-        return super(LMM, self).mean.fget()
+        return LMMCore.mean.fget(self)
 
     @property
     def scale(self):
@@ -293,4 +289,8 @@ class LMM(LMMCore, Function):
 
     @property
     def X(self):
-        return super(LMM, self).X.fget()
+        return LMMCore.X.fget(self)
+
+    @X.setter
+    def X(self, X):
+        LMMCore.X.fset(self, X)

@@ -45,20 +45,20 @@ def test_fastlmm_fast_scan():  # pylint: disable=R0914
 
     lmm = LMM(y, ones((N, 1)), QS)
 
-    lmm.learn(verbose=False)
+    lmm.fit(verbose=False)
 
     markers = random.randn(N, 2)
 
     lmm_ = lmm.copy()
     lmm_.X = concatenate([lmm.X, markers[:, 0][:, newaxis]], axis=1)
     lmm_.fix('delta')
-    lmm_.learn(verbose=False)
+    lmm_.fit(verbose=False)
     lml0 = lmm_.lml()
 
     lmm_ = lmm.copy()
     lmm_.X = concatenate([lmm.X, markers[:, 1][:, newaxis]], axis=1)
     lmm_.fix('delta')
-    lmm_.learn(verbose=False)
+    lmm_.fit(verbose=False)
     lml1 = lmm_.lml()
 
     fast_scanner = lmm.get_fast_scanner()
@@ -99,11 +99,11 @@ def test_fastlmm_fast_scan_redundant():  # pylint: disable=R0914
     M = ones((N, 5))
     lmm = LMM(y, M, QS)
 
-    lmm.learn(verbose=False)
+    lmm.fit(verbose=False)
 
     markers = M.copy()
 
-    lmm.learn(verbose=False)
+    lmm.fit(verbose=False)
     fast_scanner = lmm.get_fast_scanner()
 
     lmls = fast_scanner.fast_scan(markers, verbose=False)[0]
@@ -146,11 +146,11 @@ def test_lmm_learn():
 
     lmm = LMM(y, ones((N, 1)), QS)
 
-    lmm.learn(verbose=False)
+    lmm.fit(verbose=False)
 
     assert_allclose(lmm.beta[0], 0.8997652129631661, rtol=1e-5)
-    assert_allclose(lmm.genetic_variance, 1.7303981309775553, rtol=1e-5)
-    assert_allclose(lmm.environmental_variance, 1.2950028351268132, rtol=1e-5)
+    assert_allclose(lmm.v0, 1.7303981309775553, rtol=1e-5)
+    assert_allclose(lmm.v1, 1.2950028351268132, rtol=1e-5)
 
     lmm.beta = [-0.5]
     assert_allclose(lmm.beta[0], [-0.5])
@@ -193,29 +193,29 @@ def test_fastlmm_learn_fix():
     lmm.scale = 1.0
     lmm.delta = 0.5
 
-    lmm.learn(verbose=False)
+    lmm.fit(verbose=False)
 
     assert_allclose(lmm.beta[0], 0.899765212963)
     assert_allclose(lmm.scale, 1.0)
     assert_allclose(lmm.delta, 0.5)
-    assert_allclose(lmm.genetic_variance, 0.5)
-    assert_allclose(lmm.environmental_variance, 0.5)
+    assert_allclose(lmm.v0, 0.5)
+    assert_allclose(lmm.v1, 0.5)
     assert_allclose(lmm.lml(), -681.381571238)
 
     lmm.unfix('scale')
-    lmm.learn(verbose=False)
+    lmm.fit(verbose=False)
 
     assert_allclose(lmm.beta[0], 0.899765212963)
-    assert_allclose(lmm.genetic_variance, 1.4614562029852856)
-    assert_allclose(lmm.environmental_variance, 1.4614562029852856)
+    assert_allclose(lmm.v0, 1.4614562029852856)
+    assert_allclose(lmm.v1, 1.4614562029852856)
     assert_allclose(lmm.lml(), -949.526700867)
 
     lmm.unfix('delta')
-    lmm.learn(verbose=False)
+    lmm.fit(verbose=False)
 
     assert_allclose(lmm.beta[0], 0.899765212963)
-    assert_allclose(lmm.genetic_variance, 1.73039821903)
-    assert_allclose(lmm.environmental_variance, 1.29500280131)
+    assert_allclose(lmm.v0, 1.73039821903)
+    assert_allclose(lmm.v1, 1.29500280131)
     assert_allclose(lmm.lml(), -948.798268063)
 
 
@@ -231,11 +231,11 @@ def test_lmm_unique_outcome():
 
     lmm = LMM(zeros(N), ones((N, 1)), QS)
 
-    lmm.learn(verbose=False)
+    lmm.fit(verbose=False)
 
     assert_allclose(lmm.beta[0], 0, atol=1e-7)
-    assert_allclose(lmm.genetic_variance, 0, atol=1e-7)
-    assert_allclose(lmm.environmental_variance, 0, atol=1e-7)
+    assert_allclose(lmm.v0, 0, atol=1e-7)
+    assert_allclose(lmm.v1, 0, atol=1e-7)
 
 
 def test_lmm_nonfinite_phenotype():
