@@ -15,7 +15,7 @@ class LMM(LMMCore, Function):
     but with a different variance parameterization:
 
     .. math::
-        :label: lmm2
+        :label: lmm3
 
         \mathbf y \sim \mathcal N\Big(~ \mathrm X\boldsymbol\beta;~
           s \big(
@@ -41,21 +41,7 @@ class LMM(LMMCore, Function):
                 (1-\delta)\mathrm S_0 + \delta\mathrm I_0 & \mathbf 0\\
                 \mathbf 0 & \delta\mathrm I_1
             \end{array}\right)^{-1}
-            \mathrm Q^{\intercal},
-
-    as it allows use to write the marginal likelihood as
-
-    .. math::
-
-        \mathcal N\left(\mathrm Q^{\intercal} \mathbf y ~|~
-                   \mathrm Q^{\intercal} \mathbf m,~
-                   s^{-1} \left(
-                       \begin{array}{cc}
-                           (1-\delta)\mathrm S_0 + \delta\mathrm I_0 &
-                                \mathbf 0\\
-                           \mathbf 0 & \delta\mathrm I_1
-                       \end{array}\right)\right).
-
+            \mathrm Q^{\intercal}.
 
     Let us define
 
@@ -68,7 +54,13 @@ class LMM(LMMCore, Function):
             \end{array}
             \right),
 
-    used later on in this page.
+    a diagonal matrix used in the marginal likelihood
+
+    .. math::
+
+        \mathcal N\left(\mathrm Q^{\intercal} \mathbf y ~|~
+                   \mathrm Q^{\intercal} \mathbf m,~
+                   s D \right).
 
 
     Parameters
@@ -155,7 +147,17 @@ class LMM(LMMCore, Function):
         LMMCore.beta.fset(self, beta)
 
     def copy(self):
-        r"""Return a copy of this object."""
+        r"""Return a copy of this object.
+
+        This is useful for performing new inference based on the results
+        of the copied object, as the new LMM object will start its inference
+        from the initial solution found in the copied object.
+
+        Returns
+        -------
+        :class:`.LMM`
+            Copy of this object.
+        """
         o = LMM.__new__(LMM)
 
         LMMCore.__init__(o, self._y, self.X, self._QS)
@@ -207,7 +209,7 @@ class LMM(LMMCore, Function):
 
         Parameters
         ----------
-        verbose : bool
+        verbose : bool, optional
             ``True`` for progress output; ``False`` otherwise.
             Defaults to ``True``.
         """
@@ -230,14 +232,25 @@ class LMM(LMMCore, Function):
 
     @property
     def fixed_effects_variance(self):
-        return self.m.var()
+        r"""Variance of the fixed-effects.
 
-    @property
-    def genetic_variance(self):
-        return self.scale * (1 - self.delta)
+        It is defined as the empirical variance of the prior mean.
+
+        Returns
+        -------
+        array_like
+            Estimated variance of the fixed-effects.
+        """
+        return self.mean.var()
 
     def get_fast_scanner(self):
-        r"""Return :class:`.FastScanner` for the current delta."""
+        r"""Return :class:`.FastScanner` for fast scan.
+
+        Returns
+        -------
+        :class:`.FastScanner`
+            Class initially designed to perform very fast genome-wide scan.
+        """
         QS = (self._QS[0], (1 - self.delta) * self._QS[1])
         return FastScanner(self._y, self.X, QS, self.delta)
 
@@ -246,12 +259,9 @@ class LMM(LMMCore, Function):
         return LMMCore.lml(self)
 
     @property
-    def m(self):
-        return super(LMM, self).m.fget()
-
     def mean(self):
         r"""Estimated mean :math:`\mathrm X\boldsymbol\beta`."""
-        return self.m
+        return super(LMM, self).mean.fget()
 
     @property
     def scale(self):
@@ -277,6 +287,7 @@ class LMM(LMMCore, Function):
             self._fix[var_name] = False
 
     def value(self):
+        r"""This is used for internal purposes only."""
         self.delta = self._get_delta()
         return self.lml()
 

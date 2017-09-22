@@ -19,7 +19,7 @@ LOG2PI = 1.837877066409345339081937709124758839607238769531250
 class FastScanner(object):
     r"""Approximated fast inference over several covariates.
 
-    Let :math:`\mathrm X` a samples-by-covariates matrix,
+    Let :math:`\mathrm X` be a samples-by-covariates matrix,
     :math:`\mathrm M` a samples-by-markers matrix, and
     :math:`\mathbf y` an array of outcome.
     A covariance :math:`\mathrm K` will be provided via its economic eigen
@@ -32,16 +32,13 @@ class FastScanner(object):
         + \mathrm{M}_i \alpha_i,~
         s (\mathrm K + v \mathrm I) ~\big)
 
-
     Note that :math:`\alpha_i` is a scalar multiplying a column-matrix
     :math:`\mathrm{M}_i`.
     The variable :math:`s` is a scaling factor that, if not set, is jointly
-    adjusted with :math:`\alpha_i` in order the maximize the marginal
+    adjusted with :math:`\alpha_i` in order the maximise the marginal
     likelihood, ultimately providing the degree of association between the
     marker :math:`\mathrm{M}_i` with the outcome :math:`\mathbf y` via an
     p-value.
-    As mentioned before, the ratio between the overall variance of ``K`` to
-    the overall variance of ``I`` is not adjusted performance reason.
 
     For performance reasons, we make use of the identity
 
@@ -251,7 +248,11 @@ class FastScanner(object):
         return lmls, effect_sizes
 
     def fast_scan(self, markers, verbose=True):
-        r"""LMLs of markers by fitting scale and fixed-effect sizes parameters.
+        r"""LML and fixed-effect sizes of each marker.
+
+        If the scaling factor ``s`` is not set by the user via method
+        :method:`FastScanner.set_scale`, its optimal value will be found and
+        used in the calculation.
 
         Parameters
         ----------
@@ -263,8 +264,10 @@ class FastScanner(object):
 
         Returns
         -------
-        array_like : LMLs.
-        array_like : Effect-sizes.
+        array_like
+            Log of the marginal likelihoods.
+        array_like
+            Fixed-effect sizes.
         """
 
         if not (markers.ndim == 2):
@@ -297,13 +300,14 @@ class FastScanner(object):
 
         .. math::
 
-            - \frac{n}{2}\log{2\pi} - \frac{1}{2} \log{\left|
-                \mathrm K + v \mathrm I \right|}
+            - \frac{n}{2}\log{2\pi}
+                - \frac{1}{2} n \log{s}
+                - \frac{1}{2} \log{\left|\mathrm K + v \mathrm I \right|}
                     - \frac{1}{2}
-                    \left(\tilde{\boldsymbol\mu} -
+                    \left(\mathbf y -
                     \mathrm X\boldsymbol\beta\right)^{\intercal}
-                    \left( \mathrm K + v \mathrm I \right)^{-1}
-                    \left(\tilde{\boldsymbol\mu} -
+                    s^{-1}\left(\mathrm K + v \mathrm I \right)^{-1}
+                    \left(\mathbf y -
                     \mathrm X\boldsymbol\beta\right)
         """
         # TODO
@@ -314,7 +318,6 @@ class FastScanner(object):
 
         n = self._QS[0][0].shape[0]
         p = n - self._QS[1].shape[0]
-        LOG2PI = 1.837877066409345339081937709124758839607238769531250
         if self._scale is None:
             pass
         else:

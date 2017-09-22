@@ -57,7 +57,9 @@ class LMMCore(object):
 
     @property
     def X(self):
-        r"""Covariates.
+        r"""Covariates set by the user.
+
+        It has to be a matrix of number-of-samples by number-of-covariates.
 
         Returns
         -------
@@ -73,14 +75,10 @@ class LMMCore(object):
         self.__tbeta = zeros(self._tM.shape[1])
 
     @property
-    def m(self):
+    def mean(self):
         r"""Mean of the prior.
 
-        Formally,
-
-        .. math::
-
-            \mathbf m = \mathrm X \boldsymbol\beta.
+        Formally, :math:`\mathbf m = \mathrm X \boldsymbol\beta`.
 
         Returns
         -------
@@ -111,7 +109,7 @@ class LMMCore(object):
             Optimal fixed-effect sizes.
         """
         SVs = ddot(self._svd[0], sqrt(self._svd[1]), left=False)
-        z = rsolve(SVs, self.m)
+        z = rsolve(SVs, self.mean)
         VsD = ddot(sqrt(self._svd[1]), self._svd[2], left=True)
         return rsolve(VsD, z)
 
