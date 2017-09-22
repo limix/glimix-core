@@ -37,9 +37,8 @@ else:
     author = get_init_metadata('author')
 
 extensions = [
-    'sphinx.ext.autodoc', 'sphinx.ext.doctest', 'sphinx.ext.intersphinx',
-    'sphinx.ext.coverage', 'sphinx.ext.viewcode', 'sphinx.ext.napoleon',
-    'sphinx.ext.mathjax'
+    'sphinx.ext.autodoc', 'sphinx.ext.doctest', 'sphinx.ext.coverage',
+    'sphinx.ext.viewcode', 'sphinx.ext.napoleon', 'sphinx.ext.mathjax'
 ]
 napoleon_google_docstring = True
 master_doc = 'index'
@@ -50,8 +49,3 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 'conf.py']
 pygments_style = 'sphinx'
 html_theme = 'sphinx_rtd_theme'
 html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
-intersphinx_mapping = {
-    'python': ('http://docs.python.org/', None),
-    'numpy': ('http://docs.scipy.org/doc/numpy/', None),
-    'pandas': ('http://pandas.pydata.org/pandas-docs/stable/', None)
-}

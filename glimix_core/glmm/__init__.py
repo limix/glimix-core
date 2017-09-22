@@ -39,8 +39,8 @@ The marginal likelihood is thus given by
 We use :math:`\mathrm K` for refering to
 :math:`\mathrm G\mathrm G^{\intercal}` when appropriate.
 This module implements two algorithms for parameter fitting via Maximum
-Likelihood :cite:`wiki_mle`.
-Expectation Propagation approximation :cite:`minka2001` when the likelihood is
+Likelihood [ME17]_.
+Expectation Propagation approximation [Min01]_ when the likelihood is
 not normally distributed (refer to :class:`glimix_core.glmm.GLMMExpFam`);
 a closed-form solution otherwise (refer to
 :class:`glimix_core.glmm.GLMMNormal`).

@@ -4,7 +4,6 @@ from copy import copy
 
 from liknorm import LikNormMachine
 from numpy import exp
-
 from optimix import Function
 
 from ..ep import EPLinearKernel
@@ -15,7 +14,7 @@ class GLMMExpFam(GLMM):
     r"""Generalised Linear Gaussian Processes implementation.
 
     It implements inference over the GLMM explained in Section BLA via
-    the Expectation Propagation :cite:`minka2001` algorithm.
+    the Expectation Propagation [Min01]_ algorithm.
     It currently supports the `Bernoulli`, `Binomial`, and `Poisson`
     likelihoods. (For heterogeneous Normal likelihood, please refer to
     :class:`glimix_core.glmm.GLMMNormal` for a closed-form inference.)
