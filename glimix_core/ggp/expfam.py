@@ -5,7 +5,6 @@ import logging
 from liknorm import LikNormMachine
 from numpy import sign
 from numpy.linalg import LinAlgError
-
 from numpy_sugar import epsilon
 from numpy_sugar.linalg import economic_qs
 from optimix import FunctionReduce
@@ -51,10 +50,10 @@ class ExpFamGP(FunctionReduce):
         >>>
         >>> ggp = ExpFamGP(y, 'bernoulli', mean, cov)
         >>> print('Before: %.4f' % ggp.feed().value())
-        Before: -18.9215
+        Before: -6.9802
         >>> ggp.feed().maximize(verbose=False)
         >>> print('After: %.4f' % ggp.feed().value())
-        After: -17.5326
+        After: -6.5489
     """
 
     def __init__(self, y, lik_name, mean, cov):
@@ -84,15 +83,20 @@ class ExpFamGP(FunctionReduce):
     def compute_moments(self, eta, tau, moments):
         self._machine.moments(self._y, eta, tau, moments)
 
-    def value_reduce(self, values):  # pylint: disable=R0201
+    def value_reduce(self, values):
         r"""Log of the marginal likelihood.
 
-        Args:
-            mean (array_like): realised mean.
-            cov (array_like): realised covariance.
+        Parameters
+        ----------
+        mean : array_like
+            Realised mean.
+        cov : array_like
+            Realised covariance.
 
-        Returns:
-            float: log of the marginal likelihood.
+        Returns
+        -------
+        float
+            Log of the marginal likelihood.
         """
         mean = values['ExpFamGP[0]']
         cov = values['ExpFamGP[1]']
@@ -107,14 +111,21 @@ class ExpFamGP(FunctionReduce):
     def gradient_reduce(self, values, gradients):
         r"""Gradient of the log of the marginal likelihood.
 
-        Args:
-            mean (array_like): realised mean.
-            cov (array_like): realised cov.
-            gmean (array_like): realised mean derivative.
-            gcov (array_like): realised covariance derivative.
+        Parameters
+        ----------
+        mean : array_like
+            Realised mean.
+        cov : array_like
+            Realised cov.
+        gmean : array_like
+            Realised mean derivative.
+        gcov : array_like
+            Realised covariance derivative.
 
-        Returns:
-            list: derivatives.
+        Returns
+        -------
+        list
+            Derivatives.
         """
 
         mean = values['ExpFamGP[0]']

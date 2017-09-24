@@ -6,7 +6,7 @@ from glimix_core.mean import OffsetMean
 
 
 def nsamples():
-    return 30
+    return 10
 
 
 def offset_mean():

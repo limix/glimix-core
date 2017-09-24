@@ -40,7 +40,7 @@ class GPSampler(object):  # pylint: disable=R0903
         >>>
         >>> y = GPSampler(mean, cov).sample(random)
         >>> print(y[:5])
-        [-1.93062099  0.99759953  1.14927833 -1.635114    0.77987918]
+        [-2.42181498  0.50720447 -1.01053967  0.736624    1.64019063]
     """
 
     def __init__(self, mean, cov):

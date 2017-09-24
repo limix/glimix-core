@@ -2,7 +2,6 @@ import pytest
 from numpy import asarray, ascontiguousarray, dot, ones, sqrt, zeros
 from numpy.random import RandomState
 from numpy.testing import assert_allclose
-from numpy_sugar import epsilon
 from numpy_sugar.linalg import economic_qs, economic_qs_linear
 from optimix import check_grad
 
@@ -26,8 +25,7 @@ def test_glmm_glmmnormal():
     glmm = GLMMNormal(eta, tau, X, QS)
     glmm.beta = asarray([1.0, 0, 0.5, 0.1, 0.4])
 
-    assert_allclose(glmm.value(), -50.69748417680114)
-    assert_allclose(glmm.lml(), -50.69748417680114)
+    assert_allclose(glmm.lml(), -18.950752841710603)
 
     assert_allclose(check_grad(glmm), 0, atol=1e-3, rtol=RTOL)
 
@@ -43,19 +41,18 @@ def test_glmm_glmmnormal_get_fast_scanner():
 
     glmm = GLMMNormal(eta, tau, X, QS)
     glmm.fit(verbose=False)
-    print("\nGLMM:", glmm.lml())
 
     scanner = glmm.get_fast_scanner()
     scanner.set_scale(1.0)
-    print("\nSCAN:", scanner.null_lml())
     lmls, effect_sizes = scanner.fast_scan(X)
+
     assert_allclose(lmls, [
-        -4.3406703345673563, -4.3406703345673563, -4.3406703345673563,
-        -4.3406703345673563, -4.3406703345673563
+        0.65993260598994397, 3.6666642592705188, 3.6666642592705188,
+        3.4687842095112131, 3.6666642592705188
     ])
     assert_allclose(effect_sizes, [
-        0.026112053682581519, -0.043977172192972633, -0.01530117244164996,
-        -0.11503215921894279, -0.032162421985046111
+        -831173461326518.12, -0.0015024987823475178, 0.085827590202214823,
+        42866244922529.086, 0.024047703652107007
     ])
 
 
@@ -72,19 +69,19 @@ def test_glmmexpfam_precise():
     glmm.beta = asarray([1.0, 0, 0.5, 0.1, 0.4])
 
     glmm.scale = 1.0
-    assert_allclose(glmm.lml(), -83.60701102862096, atol=ATOL, rtol=RTOL)
+    assert_allclose(glmm.lml(), -44.74191041468836, atol=ATOL, rtol=RTOL)
     glmm.scale = 2.0
-    assert_allclose(glmm.lml(), -80.27206896319716, atol=ATOL, rtol=RTOL)
+    assert_allclose(glmm.lml(), -36.19907331929086, atol=ATOL, rtol=RTOL)
     glmm.scale = 3.0
-    assert_allclose(glmm.lml(), -80.258491082353, atol=ATOL, rtol=RTOL)
+    assert_allclose(glmm.lml(), -33.02139830387104, atol=ATOL, rtol=RTOL)
     glmm.scale = 4.0
-    assert_allclose(glmm.lml(), -80.98308047220573, atol=ATOL, rtol=RTOL)
+    assert_allclose(glmm.lml(), -31.42553401678996, atol=ATOL, rtol=RTOL)
     glmm.scale = 5.0
-    assert_allclose(glmm.lml(), -81.90719565722284, atol=ATOL, rtol=RTOL)
+    assert_allclose(glmm.lml(), -30.507029479473243, atol=ATOL, rtol=RTOL)
     glmm.scale = 6.0
-    assert_allclose(glmm.lml(), -82.86902861753809, atol=ATOL, rtol=RTOL)
+    assert_allclose(glmm.lml(), -29.937569702301232, atol=ATOL, rtol=RTOL)
     glmm.delta = 0.1
-    assert_allclose(glmm.lml(), -84.33056430633508, atol=ATOL, rtol=RTOL)
+    assert_allclose(glmm.lml(), -30.09977907145003, atol=ATOL, rtol=RTOL)
 
     assert_allclose(check_grad(glmm), 0, atol=1e-3, rtol=RTOL)
 
@@ -103,7 +100,7 @@ def test_glmm_delta0():
 
     glmm.delta = 0
 
-    assert_allclose(glmm.lml(), -82.56509596644209, atol=ATOL, rtol=RTOL)
+    assert_allclose(glmm.lml(), -27.441700236574512, atol=ATOL, rtol=RTOL)
     assert_allclose(check_grad(glmm, step=2e-5), 0, atol=1e-2)
 
 
@@ -121,7 +118,7 @@ def test_glmm_delta1():
 
     glmm.delta = 1
 
-    assert_allclose(glmm.lml(), -90.22937890822317, atol=ATOL, rtol=RTOL)
+    assert_allclose(glmm.lml(), -33.67996838167506, atol=ATOL, rtol=RTOL)
     assert_allclose(check_grad(glmm), 0, atol=1e-4)
 
 
@@ -153,20 +150,20 @@ def test_glmm_optimize():
     ntri = ascontiguousarray(ntri)
     glmm = GLMMExpFam((nsuc, ntri), 'binomial', X, QS)
 
-    assert_allclose(glmm.lml(), -99.33404651904951, atol=ATOL, rtol=RTOL)
+    assert_allclose(glmm.lml(), -29.102168129099287, atol=ATOL, rtol=RTOL)
     glmm.fix('beta')
     glmm.fix('scale')
 
     glmm.fit(verbose=False)
 
-    assert_allclose(glmm.lml(), -89.42929673951151, atol=ATOL, rtol=RTOL)
+    assert_allclose(glmm.lml(), -27.635788105778012, atol=ATOL, rtol=RTOL)
 
     glmm.unfix('beta')
     glmm.unfix('scale')
 
     glmm.fit(verbose=False)
 
-    assert_allclose(glmm.lml(), -35.22754172936816, atol=ATOL, rtol=RTOL)
+    assert_allclose(glmm.lml(), -19.68486269551159, atol=ATOL, rtol=RTOL)
 
 
 def test_glmm_optimize_low_rank():
@@ -184,14 +181,14 @@ def test_glmm_optimize_low_rank():
     ntri = ascontiguousarray(ntri)
     glmm = GLMMExpFam((nsuc, ntri), 'binomial', X, QS)
 
-    assert_allclose(glmm.lml(), -54.05478637740203, atol=ATOL, rtol=RTOL)
+    assert_allclose(glmm.lml(), -18.60476792256323, atol=ATOL, rtol=RTOL)
     glmm.fit(verbose=False)
-    assert_allclose(glmm.lml(), -37.82906612336332, atol=ATOL, rtol=RTOL)
+    assert_allclose(glmm.lml(), -7.800621320491801, atol=ATOL, rtol=RTOL)
 
 
 def test_glmm_bernoulli_problematic():
     random = RandomState(1)
-    N = 500
+    N = 30
     G = random.randn(N, N + 50)
     y = bernoulli_sample(0.0, G, random_state=random)
     y = (y, )
@@ -209,10 +206,10 @@ def test_glmm_bernoulli_problematic():
     model.delta = 0
     model.fix('delta')
     model.fit(verbose=False)
-    assert_allclose(model.lml(), -344.86474884323525, atol=ATOL, rtol=RTOL)
+    assert_allclose(model.lml(), -20.727007958026853, atol=ATOL, rtol=RTOL)
     assert_allclose(model.delta, 0, atol=1e-3)
-    assert_allclose(model.scale, 0.6026005889095781, atol=ATOL, rtol=RTOL)
-    assert_allclose(model.beta, [-0.01806123661347892], atol=ATOL, rtol=RTOL)
+    assert_allclose(model.scale, 0.879915823030081, atol=ATOL, rtol=RTOL)
+    assert_allclose(model.beta, [-0.00247856564728], atol=ATOL, rtol=RTOL)
 
 
 def _stdnorm(X, axis=None, out=None):
@@ -237,10 +234,10 @@ def _stdnorm(X, axis=None, out=None):
 
 def test_glmm_binomial_pheno_list():
     random = RandomState(0)
-    nsamples = 50
+    nsamples = 10
 
-    X = random.randn(50, 2)
-    G = random.randn(50, 100)
+    X = random.randn(nsamples, 2)
+    G = random.randn(nsamples, 100)
     K = dot(G, G.T)
     ntrials = random.randint(1, 100, nsamples)
     z = dot(G, random.randn(100)) / sqrt(100)
@@ -256,7 +253,7 @@ def test_glmm_binomial_pheno_list():
     glmm = GLMMExpFam(y, 'binomial', X, QS)
     glmm.fit(verbose=False)
 
-    assert_allclose(glmm.lml(), -64.8433300480514)
+    assert_allclose(glmm.lml(), -11.43920790567486)
 
 
 def test_glmm_scale_very_low():
@@ -272,7 +269,7 @@ def test_glmm_scale_very_low():
     glmm.beta = asarray([1.0, 0, 0.5, 0.1, 0.4])
 
     glmm.scale = 1e-3
-    assert_allclose(glmm.lml(), -151.19262511895698, atol=ATOL, rtol=RTOL)
+    assert_allclose(glmm.lml(), -145.01170823743104, atol=ATOL, rtol=RTOL)
 
     assert_allclose(check_grad(glmm), 0, atol=1e-2)
 
@@ -290,7 +287,7 @@ def test_glmm_scale_very_high():
     glmm.beta = asarray([1.0, 0, 0.5, 0.1, 0.4])
 
     glmm.scale = 30.
-    assert_allclose(glmm.lml(), -96.75175059098383, atol=ATOL, rtol=RTOL)
+    assert_allclose(glmm.lml(), -29.632791380478736, atol=ATOL, rtol=RTOL)
 
     assert_allclose(check_grad(glmm), 0, atol=1e-3)
 
@@ -308,12 +305,12 @@ def test_glmm_delta_zero():
     glmm.beta = asarray([1.0, 0, 0.5, 0.1, 0.4])
 
     glmm.delta = 0
-    assert_allclose(glmm.lml(), -82.3831297143636)
+    assert_allclose(glmm.lml(), -43.154282363439364)
     assert_allclose(check_grad(glmm, step=1e-4), 0, atol=1e-2)
 
     glmm.fit(verbose=False)
-    assert_allclose(glmm.lml(), -76.20092968002656, atol=ATOL, rtol=RTOL)
-    assert_allclose(glmm.delta, 0.00012207624715307688, atol=ATOL, rtol=RTOL)
+    assert_allclose(glmm.lml(), -23.55477374056832, atol=ATOL, rtol=RTOL)
+    assert_allclose(glmm.delta, 0.9999999996205406, atol=ATOL, rtol=RTOL)
 
 
 def test_glmm_delta_one():
@@ -336,12 +333,12 @@ def test_glmm_delta_one():
     glmm = GLMMExpFam((nsuc, ntri), 'binomial', ones((nsamples(), 1)), QS)
 
     glmm.delta = 1
-    assert_allclose(glmm.lml(), -126.71338343726902, atol=ATOL, rtol=RTOL)
+    assert_allclose(glmm.lml(), -39.86006066093746, atol=ATOL, rtol=RTOL)
     assert_allclose(check_grad(glmm, step=1e-4), 0, atol=1e-2)
 
     glmm.fit(verbose=False)
-    assert_allclose(glmm.lml(), -9.308984106518762, atol=ATOL, rtol=RTOL)
-    assert_allclose(glmm.delta, 9.930610996068862e-08, atol=ATOL, rtol=RTOL)
+    assert_allclose(glmm.lml(), -5.851337541533554, atol=ATOL, rtol=RTOL)
+    assert_allclose(glmm.delta, 0.001599583006485038, atol=ATOL, rtol=RTOL)
 
 
 def test_glmmexpfam_copy():
@@ -359,23 +356,23 @@ def test_glmmexpfam_copy():
     ntri = ascontiguousarray(ntri)
     glmm0 = GLMMExpFam((nsuc, ntri), 'binomial', X, QS)
 
-    assert_allclose(glmm0.lml(), -99.33404651904951, atol=ATOL, rtol=RTOL)
+    assert_allclose(glmm0.lml(), -29.10216812909928, atol=ATOL, rtol=RTOL)
     glmm0.fit(verbose=False)
 
-    v = -35.22754141429125
+    v = -19.575736562427252
     assert_allclose(glmm0.lml(), v)
 
     glmm1 = glmm0.copy()
     assert_allclose(glmm1.lml(), v)
 
     glmm1.scale = 0.92
-    assert_allclose(glmm0.lml(), -35.227541384298654, atol=ATOL, rtol=RTOL)
-    assert_allclose(glmm1.lml(), -219.44355209729233, atol=ATOL, rtol=RTOL)
+    assert_allclose(glmm0.lml(), v, atol=ATOL, rtol=RTOL)
+    assert_allclose(glmm1.lml(), -30.832831740038056, atol=ATOL, rtol=RTOL)
 
     glmm0.fit(verbose=False)
     glmm1.fit(verbose=False)
 
-    v = -35.227541384298654
+    v = -19.575736562378573
     assert_allclose(glmm0.lml(), v)
     assert_allclose(glmm1.lml(), v)
 
@@ -391,11 +388,11 @@ def test_glmmnormal_copy():
 
     glmm0 = GLMMNormal(eta, tau, X, QS)
 
-    assert_allclose(glmm0.lml(), -38.29931140952595, atol=ATOL, rtol=RTOL)
+    assert_allclose(glmm0.lml(), -12.646439806030257, atol=ATOL, rtol=RTOL)
 
     glmm0.fit(verbose=False)
 
-    v = -13.00173479849569
+    v = -4.758450057194982
     assert_allclose(glmm0.lml(), v)
 
     glmm1 = glmm0.copy()
@@ -403,7 +400,7 @@ def test_glmmnormal_copy():
 
     glmm1.scale = 0.92
     assert_allclose(glmm0.lml(), v, atol=ATOL, rtol=RTOL)
-    assert_allclose(glmm1.lml(), -33.17274486229496, atol=ATOL, rtol=RTOL)
+    assert_allclose(glmm1.lml(), -10.986014936977927, atol=ATOL, rtol=RTOL)
 
     glmm0.fit(verbose=False)
     glmm1.fit(verbose=False)

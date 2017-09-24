@@ -5,7 +5,6 @@ from math import fsum
 
 from numpy import dot, empty, inf, isfinite, log, maximum, sqrt, zeros
 from numpy.linalg import norm
-
 from numpy_sugar import epsilon
 from numpy_sugar.linalg import cho_solve, ddot, dotd
 
@@ -13,7 +12,7 @@ from .posterior import Posterior
 from .site import Site
 
 MAX_ITERS = 100
-RTOL = epsilon.small * 10
+RTOL = epsilon.small * 1000
 ATOL = epsilon.small
 
 

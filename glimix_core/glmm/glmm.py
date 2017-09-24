@@ -2,10 +2,9 @@ from __future__ import absolute_import, division, unicode_literals
 
 from copy import copy
 
-from numpy import asarray, clip, dot, exp, inf, log, zeros
+from numpy import asarray, clip, dot, exp, finfo, inf, log, zeros
 from numpy_sugar import epsilon
 from numpy_sugar.linalg import ddot, sum2diag
-
 from optimix import Function, Scalar, Vector
 
 from ..check import check_covariates, check_economic_qs, check_outcome
@@ -69,7 +68,8 @@ class GLMM(Function):
         self._factr = 1e5
         self._pgtol = 1e-6
         self.set_variable_bounds('logscale', (log(1e-3), 7.))
-        self.set_variable_bounds('logitdelta', (-inf, +inf))
+        logmax = log(finfo(float).max)
+        self.set_variable_bounds('logitdelta', (-logmax, +logmax))
 
         self.set_nodata()
 
