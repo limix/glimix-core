@@ -14,7 +14,7 @@ from glimix_core.mean import OffsetMean
 from glimix_core.random import GGPSampler
 
 
-def test_fastlmm_fast_scan():  # pylint: disable=R0914
+def test_fastlmm_fast_scan():
     random = RandomState(9458)
     N = 500
     X = random.randn(N, N + 1)
@@ -63,11 +63,11 @@ def test_fastlmm_fast_scan():  # pylint: disable=R0914
 
     fast_scanner = lmm.get_fast_scanner()
 
-    lmls = fast_scanner.fast_scan(markers)[0]
+    lmls = fast_scanner.fast_scan(markers, verbose=False)[0]
     assert_allclose(lmls, [lml0, lml1])
 
 
-def test_fastlmm_fast_scan_redundant():  # pylint: disable=R0914
+def test_fastlmm_fast_scan_redundant():
     random = RandomState(9458)
     N = 500
     X = random.randn(N, N + 1)

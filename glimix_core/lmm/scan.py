@@ -90,39 +90,46 @@ class FastScanner(object):
             \end{array}
             \right)
 
+    For convenience, we define
+
+    .. math::
+
+        \mathrm B_i = \mathrm Q_i\mathrm D_i^{-1}\mathrm Q_i^{\intercal}
+
+    and
+
+    .. math::
+
+        \mathrm E_j = [\mathrm X ~ \mathrm M_j].
+
     Attributes
     ----------
-    _yTQDiQTy : tuple
-        Store the arrays
-
-        .. math::
-
-            (\mathrm Q_i^{\intercal} \mathbf y)^{\intercal}
-            \mathrm D_i^{-1}
-            (\mathrm Q_i^{\intercal} \mathbf y),
-
-        for :math:`i = \{0, 1\}`.
-
-    _yTQDiQTX : tuple
-        Store the arrays
-
-        .. math::
-
-            (\mathrm Q_i^{\intercal} \mathbf y)^{\intercal}
-            \mathrm D_i^{-1}
-            (\mathrm Q_i^{\intercal} \mathrm X),
-
-        for :math:`i = \{0, 1\}`.
-
     _yTQDi : tuple
-        Store the arrays
-        :math:`(\mathrm Q_i^{\intercal} \mathbf y)^{\intercal}\mathrm D_i^{-1}`
-        , for :math:`i = \{0, 1\}`.
+        :math:`\mathbf y^{\intercal}\mathrm Q_i\mathrm D_i^{-1}`
+
+    _yTBy : tuple
+        :math:`\mathbf y^{\intercal}\mathrm B_i\mathbf y`
+
+    _yTBX : tuple
+        :math:`\mathbf y^{\intercal}\mathrm X`
 
     _XTQDi : tuple
-        Store the arrays
-        :math:`(\mathrm Q_i^{\intercal} \mathrm X)^{\intercal}\mathrm D_i^{-1}`
-        , for :math:`i = \{0, 1\}`.
+        :math:`\mathrm X^{\intercal}\mathrm Q_i\mathrm D_i^{-1}`.
+
+    _ETBE : tuple
+        :math:`\mathrm E_i^{\intercal}\mathrm Q_i\mathrm D_i^{-1} \mathrm E_i`.
+
+    _XTBX : tuple
+        :math:`\mathrm X^{\intercal}\mathrm Q_i\mathrm D_i^{-1} \mathrm X`.
+
+    _XTBM : tuple
+        :math:`\mathrm X^{\intercal}\mathrm Q_i\mathrm D_i^{-1} \mathrm M_j`.
+
+    _MTBM : tuple
+        :math:`\mathrm M_j^{\intercal}\mathrm Q_i\mathrm D_i^{-1} \mathrm X`.
+
+    _MTBM : tuple
+        :math:`\mathrm M_j^{\intercal}\mathrm Q_i\mathrm D_i^{-1} \mathrm M_j`.
 
     Parameters
     ----------
@@ -143,25 +150,27 @@ class FastScanner(object):
         self._D = [QS[1] + v, v]
 
         yTQ = [dot(y.T, Q) for Q in QS[0]]
-
         XTQ = [dot(X.T, Q) for Q in QS[0]]
 
         self._yTQDi = [l / r for (l, r) in zip(yTQ, self._D)]
 
-        self._yTQDiQTy = [(i**2 / j).sum() for (i, j) in zip(yTQ, self._D)]
+        self._yTBy = [(i**2 / j).sum() for (i, j) in zip(yTQ, self._D)]
 
-        self._yTQDiQTX = [dot(i, j.T) for (i, j) in zip(self._yTQDi, XTQ)]
+        self._yTBX = [dot(i, j.T) for (i, j) in zip(self._yTQDi, XTQ)]
 
         self._XTQDi = [i / j for (i, j) in zip(XTQ, self._D)]
 
         nc = X.shape[1]
 
-        self._C = [empty((nc + 1, nc + 1)), empty((nc + 1, nc + 1))]
+        self._ETBE = [empty((nc + 1, nc + 1)), empty((nc + 1, nc + 1))]
 
         for i in range(2):
-            self._C[i][:-1, :-1] = dot(self._XTQDi[i], XTQ[i].T)
+            self._ETBE[i][:-1, :-1] = dot(self._XTQDi[i], XTQ[i].T)
 
-        self._XTQDiQTX = [self._C[i][:-1, :-1] for i in range(2)]
+        self._XTBX = [self._ETBE[i][:-1, :-1] for i in range(2)]
+        self._XTBM = [self._ETBE[i][:-1, -1] for i in range(2)]
+        self._MTBX = [self._ETBE[i][-1, :-1] for i in range(2)]
+        self._MTBM = [self._ETBE[i][-1:, -1:] for i in range(2)]
 
     def _static_lml(self):
         n = self._QS[0][0].shape[0]
@@ -180,11 +189,11 @@ class FastScanner(object):
         if not npall(isfinite(markers)):
             raise ValueError("One or more variants have non-finite value.")
 
-        mTQ = [dot(markers.T, Q) for Q in self._QS[0]]
-        yTQDiQTm = [dot(i, j.T) for (i, j) in zip(self._yTQDi, mTQ)]
+        MTQ = [dot(markers.T, Q) for Q in self._QS[0]]
+        yTBM = [dot(i, j.T) for (i, j) in zip(self._yTQDi, MTQ)]
 
-        XTQDiQTm = [dot(i, j.T) for (i, j) in zip(self._XTQDi, mTQ)]
-        mTQDiQTm = [npsum((i / j) * i, axis=1) for (i, j) in zip(mTQ, self._D)]
+        XTBM = [dot(i, j.T) for (i, j) in zip(self._XTQDi, MTQ)]
+        MTBM = [npsum((i / j) * i, axis=1) for (i, j) in zip(MTQ, self._D)]
 
         nsamples = markers.shape[0]
         nmarkers = markers.shape[1]
@@ -194,58 +203,57 @@ class FastScanner(object):
 
         if self._XTQDi[0].shape[0] == 1:
             return self._fast_scan_chunk_1covariate_loop(
-                lmls, effect_sizes, yTQDiQTm, XTQDiQTm, mTQDiQTm, nsamples)
+                lmls, effect_sizes, yTBM, XTBM, MTBM, nsamples)
         else:
             return self._fast_scan_chunk_multicovariate_loop(
-                lmls, effect_sizes, yTQDiQTm, XTQDiQTm, mTQDiQTm, nsamples,
-                nmarkers)
+                lmls, effect_sizes, yTBM, XTBM, MTBM, nsamples, nmarkers)
 
-    def _fast_scan_chunk_multicovariate_loop(self, lmls, effect_sizes,
-                                             yTQDiQTm, XTQDiQTm, mTQDiQTm,
-                                             nsamples, nmarkers):
-        b00m = empty(len(self._yTQDiQTX[0]) + 1)
-        b00m[:-1] = self._yTQDiQTX[0]
+    def _fast_scan_chunk_multicovariate_loop(self, lmls, effect_sizes, yTBM,
+                                             XTBM, MTBM, nsamples, nmarkers):
+        yTBE = [empty(len(self._yTBX[0]) + 1), empty(len(self._yTBX[1]) + 1)]
 
-        b11m = empty(len(self._yTQDiQTX[1]) + 1)
-        b11m[:-1] = self._yTQDiQTX[1]
+        yTBE[0][:-1] = self._yTBX[0]
+        yTBE[1][:-1] = self._yTBX[1]
 
         for i in range(nmarkers):
 
-            b00m[-1] = yTQDiQTm[0][i]
-            b11m[-1] = yTQDiQTm[1][i]
+            yTBE[0][-1] = yTBM[0][i]
+            yTBE[1][-1] = yTBM[1][i]
 
-            self._C[0][:-1, -1] = XTQDiQTm[0][:, i]
-            self._C[1][:-1, -1] = XTQDiQTm[1][:, i]
+            self._XTBM[0][:] = XTBM[0][:, i]
+            self._XTBM[1][:] = XTBM[1][:, i]
 
-            self._C[0][-1, :-1] = self._C[0][:-1, -1]
-            self._C[1][-1, :-1] = self._C[1][:-1, -1]
+            self._MTBX[0][:] = self._XTBM[0][:]
+            self._MTBX[1][:] = self._XTBM[1][:]
 
-            self._C[0][-1, -1] = mTQDiQTm[0][i]
-            self._C[1][-1, -1] = mTQDiQTm[1][i]
+            self._MTBM[0][:] = MTBM[0][i]
+            self._MTBM[1][:] = MTBM[1][i]
 
             try:
-                beta = solve(self._C[1] - self._C[0], b11m - b00m)
+                beta = solve(self._ETBE[1] - self._ETBE[0], yTBE[1] - yTBE[0])
             except LinAlgError:
                 try:
-                    beta = rsolve(self._C[1] - self._C[0], b11m - b00m)
+                    beta = rsolve(self._ETBE[1] - self._ETBE[0],
+                                  yTBE[1] - yTBE[0])
                 except LinAlgError:
                     msg = "Could not converge to the optimal"
                     msg += " effect-size of one of the candidates."
                     msg += " Setting its effect-size to zero."
                     logging.getLogger(__name__).warning(msg)
-                    beta = zeros(self._C[1].shape[0])
+                    beta = zeros(self._ETBE[1].shape[0])
 
             effect_sizes[i] = beta[-1]
 
             if self._scale is None:
-                # _compute_scale(nsamples, beta, self._yTQDiQTy, self._yTQDiQTX, )
-                # (nsamples, beta, yTQDiQTy, yTQDiQTX, yTQDiQTm, XTQDiQTX,
-                #                    XTQDiQTm, mTQDiQTm)
+                # _compute_scale(nsamples, beta, self._yTBy,
+                # self._yTBX, )
+                # (nsamples, beta, yTBy, yTBX, yTBM, XTBX,
+                #                    XTBM, MTBM)
 
-                p0 = self._yTQDiQTy[0] - 2 * b00m.dot(beta) + beta.dot(
-                    self._C[0]).dot(beta)
-                p1 = self._yTQDiQTy[1] - 2 * b11m.dot(beta) + beta.dot(
-                    self._C[1].dot(beta))
+                p0 = self._yTBy[0] - 2 * yTBE[0].dot(beta) + beta.dot(
+                    self._ETBE[0]).dot(beta)
+                p1 = self._yTBy[1] - 2 * yTBE[1].dot(beta) + beta.dot(
+                    self._ETBE[1].dot(beta))
 
                 scale = (p0 + p1) / nsamples
             else:
@@ -256,23 +264,18 @@ class FastScanner(object):
         lmls /= 2
         return lmls, effect_sizes
 
-    def _fast_scan_chunk_1covariate_loop(self, lmls, effect_sizes, yTQDiQTm,
-                                         XTQDiQTm, mTQDiQTm, nsamples):
+    def _fast_scan_chunk_1covariate_loop(self, lmls, effect_sizes, yTBM, XTBM,
+                                         MTBM, nsamples):
 
-        C00 = [C[0, 0] for C in self._C]
-        C01 = [c[0, :] for c in XTQDiQTm]
+        sC00 = self._XTBX[1][0, 0] - self._XTBX[0][0, 0]
+        sC01 = XTBM[1][0, :] - XTBM[0][0, :]
+        sC11 = MTBM[1] - MTBM[0]
 
-        b = [bi[0] for bi in self._yTQDiQTX]
-
-        sC00 = C00[1] - C00[0]
-        sC01 = C01[1] - C01[0]
-        sC11 = mTQDiQTm[1] - mTQDiQTm[0]
-
-        sb = b[1] - b[0]
-        sbm = yTQDiQTm[1] - yTQDiQTm[0]
+        sb = self._yTBX[1][0] - self._yTBX[0][0]
+        sbm = yTBM[1] - yTBM[0]
 
         with errstate(divide='ignore'):
-            beta = beta_1covariate(sb, sbm, sC00, sC01, sC11)
+            beta = _beta_1covariate(sb, sbm, sC00, sC01, sC11)
 
         beta = [nan_to_num(bet) for bet in beta]
 
@@ -280,10 +283,12 @@ class FastScanner(object):
 
         if self._scale is None:
             for i in range(2):
-                scale += self._yTQDiQTy[i] - 2 * (
-                    b[i] * beta[0] + yTQDiQTm[i] * beta[1])
-                scale += beta[0] * (C00[i] * beta[0] + C01[i] * beta[1])
-                scale += beta[1] * (C01[i] * beta[0] + mTQDiQTm[i] * beta[1])
+                scale += self._yTBy[i] - 2 * (
+                    self._yTBX[i][0] * beta[0] + yTBM[i] * beta[1])
+                scale += beta[0] * (
+                    self._XTBX[i][0, 0] * beta[0] + XTBM[i][0, :] * beta[1])
+                scale += beta[1] * (
+                    XTBM[i][0, :] * beta[0] + MTBM[i] * beta[1])
             scale /= nsamples
         else:
             scale = self._scale
@@ -385,7 +390,7 @@ class FastScanner(object):
         self._scale = None
 
 
-def beta_1covariate(sb, sbm, sC00, sC01, sC11):
+def _beta_1covariate(sb, sbm, sC00, sC01, sC11):
     d0 = sb / sC00
     d1 = sb / sC01
 
@@ -398,16 +403,15 @@ def beta_1covariate(sb, sbm, sC00, sC01, sC11):
     return [(d1 - d4) / (d5 - 1 / d6), (-d0 + d3) / (d6 - 1 / d5)]
 
 
-def _compute_scale(nsamples, beta, yTQDiQTy, yTQDiQTX, yTQDiQTm, XTQDiQTX,
-                   XTQDiQTm, mTQDiQTm):
+def _compute_scale(nsamples, beta, yTBy, yTBX, yTBM, XTBX, XTBM, MTBM):
 
-    scale = npsum(yTQDiQTy[i] for i in range(2))
-    scale -= npsum(2 * yTQDiQTX[i] * beta[0] for i in range(2))
-    scale -= npsum(2 * yTQDiQTm[i] * beta[1] for i in range(2))
+    scale = npsum(yTBy[i] for i in range(2))
+    scale -= npsum(2 * yTBX[i] * beta[0] for i in range(2))
+    scale -= npsum(2 * yTBM[i] * beta[1] for i in range(2))
 
-    scale += npsum(beta[0] * XTQDiQTX[i] * beta[0] for i in range(2))
-    scale += npsum(beta[0] * XTQDiQTm[i] * beta[1] for i in range(2))
-    scale += npsum(beta[1] * XTQDiQTm[i] * beta[0] for i in range(2))
-    scale += npsum(beta[1] * mTQDiQTm[i] * beta[1] for i in range(2))
+    scale += npsum(beta[0] * XTBX[i] * beta[0] for i in range(2))
+    scale += npsum(beta[0] * XTBM[i] * beta[1] for i in range(2))
+    scale += npsum(beta[1] * XTBM[i] * beta[0] for i in range(2))
+    scale += npsum(beta[1] * MTBM[i] * beta[1] for i in range(2))
 
     return scale / nsamples
