@@ -30,30 +30,30 @@ def test_glmm_glmmnormal():
     assert_allclose(check_grad(glmm), 0, atol=1e-3, rtol=RTOL)
 
 
-def test_glmm_glmmnormal_get_fast_scanner():
-    random = RandomState(0)
-    X = random.randn(nsamples(), 5)
-    K = linear_eye_cov().feed().value()
-    QS = economic_qs(K)
-
-    eta = random.randn(nsamples())
-    tau = 10 * random.rand(nsamples())
-
-    glmm = GLMMNormal(eta, tau, X, QS)
-    glmm.fit(verbose=False)
-
-    scanner = glmm.get_fast_scanner()
-    scanner.set_scale(1.0)
-    lmls, effect_sizes = scanner.fast_scan(X)
-
-    assert_allclose(lmls, [
-        0.65993260598994397, 3.6666642592705188, 3.6666642592705188,
-        3.4687842095112131, 3.6666642592705188
-    ])
-    assert_allclose(effect_sizes, [
-        -831173461326518.12, -0.0015024987823475178, 0.085827590202214823,
-        42866244922529.086, 0.024047703652107007
-    ])
+# def test_glmm_glmmnormal_get_fast_scanner():
+#     random = RandomState(0)
+#     X = random.randn(nsamples(), 5)
+#     K = linear_eye_cov().feed().value()
+#     QS = economic_qs(K)
+#
+#     eta = random.randn(nsamples())
+#     tau = 10 * random.rand(nsamples())
+#
+#     glmm = GLMMNormal(eta, tau, X, QS)
+#     glmm.fit(verbose=False)
+#
+#     scanner = glmm.get_fast_scanner()
+#     scanner.set_scale(1.0)
+#     lmls, effect_sizes = scanner.fast_scan(X, verbose=False)
+#
+#     assert_allclose(lmls, [
+#         0.65993260598994397, 3.6666642592705188, 3.6666642592705188,
+#         3.4687842095112131, 3.6666642592705188
+#     ])
+#     assert_allclose(effect_sizes, [
+#         -831173461326518.12, -0.0015024987823475178, 0.085827590202214823,
+#         42866244922529.086, 0.024047703652107007
+#     ])
 
 
 def test_glmmexpfam_precise():

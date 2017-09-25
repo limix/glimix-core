@@ -61,4 +61,4 @@ def _check_poisson_outcome(y):
         wprint(msg.format(lim=lim))
         y = (clip(y[0], 0, poisson_lim), )
 
-    return r
+    return y

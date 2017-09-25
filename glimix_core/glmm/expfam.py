@@ -157,6 +157,10 @@ class GLMMExpFam(GLMM):
         GLMM.set_variable_bounds(self, var_name, bounds)
         self.set_update_approx()
 
+    @property
+    def site(self):
+        return self._ep.site
+
     def unfix(self, var_name):
         GLMM.unfix(self, var_name)
         self.set_update_approx()
