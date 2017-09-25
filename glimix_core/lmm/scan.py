@@ -13,8 +13,6 @@ from numpy_sugar import epsilon
 from numpy_sugar.linalg import rsolve, solve
 from tqdm import tqdm
 
-LOG2PI = 1.837877066409345339081937709124758839607238769531250
-
 
 class FastScanner(object):
     r"""Approximated fast inference over several covariates.
@@ -90,6 +88,40 @@ class FastScanner(object):
             \end{array}
             \right)
 
+    Attributes
+    ----------
+    _a : tuple
+        Store the arrays
+
+        .. math::
+
+            (\mathrm Q_i^{\intercal} \mathbf y)^{\intercal}
+            \mathrm D_i^{-1}
+            (\mathrm Q_i^{\intercal} \mathbf y),
+
+        for :math:`i = \{0, 1\}`.
+
+    _b : tuple
+        Store the arrays
+
+        .. math::
+
+            (\mathrm Q_i^{\intercal} \mathbf y)^{\intercal}
+            \mathrm D_i^{-1}
+            (\mathrm Q_i^{\intercal} \mathrm X),
+
+        for :math:`i = \{0, 1\}`.
+
+    _yTQdiag : tuple
+        Store the arrays
+        :math:`(\mathrm Q_i^{\intercal} \mathbf y)^{\intercal}\mathrm D_i^{-1}`
+        , for :math:`i = \{0, 1\}`.
+
+    _XTQdiag : tuple
+        Store the arrays
+        :math:`(\mathrm Q_i^{\intercal} \mathrm X)^{\intercal}\mathrm D_i^{-1}`
+        , for :math:`i = \{0, 1\}`.
+
     Parameters
     ----------
     y : array_like
@@ -106,19 +138,19 @@ class FastScanner(object):
 
         self._scale = None
         self._QS = QS
-        self._diags = [QS[1] + v, v]
+        self._D = [QS[1] + v, v]
 
         yTQ = [dot(y.T, Q) for Q in QS[0]]
 
         XTQ = [dot(X.T, Q) for Q in QS[0]]
 
-        self._yTQdiag = [l / r for (l, r) in zip(yTQ, self._diags)]
+        self._yTQdiag = [l / r for (l, r) in zip(yTQ, self._D)]
 
-        self._a = [(i**2 / j).sum() for (i, j) in zip(yTQ, self._diags)]
+        self._a = [(i**2 / j).sum() for (i, j) in zip(yTQ, self._D)]
 
         self._b = [dot(i, j.T) for (i, j) in zip(self._yTQdiag, XTQ)]
 
-        self._XTQdiag = [i / j for (i, j) in zip(XTQ, self._diags)]
+        self._XTQdiag = [i / j for (i, j) in zip(XTQ, self._D)]
 
         nc = X.shape[1]
 
@@ -128,11 +160,12 @@ class FastScanner(object):
             self._C[i][:-1, :-1] = dot(self._XTQdiag[i], XTQ[i].T)
 
     def _static_lml(self):
+        LOG2PI = 1.837877066409345339081937709124758839607238769531250
         n = self._QS[0][0].shape[0]
-        p = len(self._diags[0])
+        p = len(self._D[0])
         static_lml = -n * LOG2PI - n
-        static_lml -= npsum(log(self._diags[0]))
-        static_lml -= (n - p) * log(self._diags[1])
+        static_lml -= npsum(log(self._D[0]))
+        static_lml -= (n - p) * log(self._D[1])
         return static_lml
 
     def _fast_scan_chunk(self, markers):
@@ -148,7 +181,7 @@ class FastScanner(object):
         bm = [dot(i, j.T) for (i, j) in zip(self._yTQdiag, mTQ)]
 
         c_01 = [dot(i, j.T) for (i, j) in zip(self._XTQdiag, mTQ)]
-        c_11 = [npsum((i / j) * i, axis=1) for (i, j) in zip(mTQ, self._diags)]
+        c_11 = [npsum((i / j) * i, axis=1) for (i, j) in zip(mTQ, self._D)]
 
         nsamples = markers.shape[0]
         nmarkers = markers.shape[1]
@@ -199,12 +232,15 @@ class FastScanner(object):
 
             effect_sizes[i] = beta[-1]
 
-            p0 = self._a[0] - 2 * b00m.dot(beta) + beta.dot(
-                self._C[0]).dot(beta)
-            p1 = self._a[1] - 2 * b11m.dot(beta) + beta.dot(
-                self._C[1].dot(beta))
+            if self._scale is None:
+                p0 = self._a[0] - 2 * b00m.dot(beta) + beta.dot(
+                    self._C[0]).dot(beta)
+                p1 = self._a[1] - 2 * b11m.dot(beta) + beta.dot(
+                    self._C[1].dot(beta))
 
-            scale = (p0 + p1) / nsamples
+                scale = (p0 + p1) / nsamples
+            else:
+                scale = self._scale
 
             lmls[i] -= nsamples * log(max(scale, epsilon.super_tiny))
 
@@ -233,12 +269,14 @@ class FastScanner(object):
 
         scale = zeros(len(lmls))
 
-        for i in range(2):
-            scale += self._a[i] - 2 * (b[i] * beta[0] + bm[i] * beta[1])
-            scale += beta[0] * (C00[i] * beta[0] + C01[i] * beta[1])
-            scale += beta[1] * (C01[i] * beta[0] + C11[i] * beta[1])
-
-        scale /= nsamples
+        if self._scale is None:
+            for i in range(2):
+                scale += self._a[i] - 2 * (b[i] * beta[0] + bm[i] * beta[1])
+                scale += beta[0] * (C00[i] * beta[0] + C01[i] * beta[1])
+                scale += beta[1] * (C01[i] * beta[0] + C11[i] * beta[1])
+            scale /= nsamples
+        else:
+            scale = self._scale
 
         lmls -= nsamples * log(clip(scale, epsilon.super_tiny, inf))
         lmls /= 2
@@ -251,7 +289,7 @@ class FastScanner(object):
         r"""LML and fixed-effect sizes of each marker.
 
         If the scaling factor ``s`` is not set by the user via method
-        :method:`FastScanner.set_scale`, its optimal value will be found and
+        :func:`set_scale`, its optimal value will be found and
         used in the calculation.
 
         Parameters
@@ -315,14 +353,14 @@ class FastScanner(object):
         #     if i == 0:
         #         return self._QS[1] * (1 - self.delta) + self.delta
         #     return self.delta
-
+        LOG2PI = 1.837877066409345339081937709124758839607238769531250
         n = self._QS[0][0].shape[0]
         p = n - self._QS[1].shape[0]
         if self._scale is None:
             pass
         else:
             lml = -n * LOG2PI - n - n * log(self._scale)
-        lml += -sum(log(self._diags[0])) - p * log(self._diags[1])
+        lml += -sum(log(self._D[0])) - p * log(self._D[1])
         lml /= 2
         return lml
 
