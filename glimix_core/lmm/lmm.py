@@ -11,57 +11,7 @@ from .scan import FastScanner
 class LMM(LMMCore, Function):
     r"""Fast Linear Mixed Models inference via maximum likelihood.
 
-    It perform inference on the exactly the same model given at :eq:`lmm1`
-    but with a different variance parameterization:
-
-    .. math::
-        :label: lmm3
-
-        \mathbf y \sim \mathcal N\Big(~ \mathrm X\boldsymbol\beta;~
-          s \big(
-            (1-\delta)
-              \mathrm K +
-            \delta \mathrm I
-          \big)
-        ~\Big)
-
-
-    for which ``K`` is the covariance matrix represented internally as an
-    economic eigen decomposition.
-    Naturally, we have :math:`v_0 = s (1 - \delta)` and
-    :math:`v_1 = s \delta`.
-
-    Implementation wise, we make use of the identity
-
-    .. math::
-
-        s^{-1}((1-\delta)\mathrm K + \delta\mathrm I)^{-1} = s^{-1}
-            \mathrm Q \left(
-            \begin{array}{cc}
-                (1-\delta)\mathrm S_0 + \delta\mathrm I_0 & \mathbf 0\\
-                \mathbf 0 & \delta\mathrm I_1
-            \end{array}\right)^{-1}
-            \mathrm Q^{\intercal}.
-
-    Let us define
-
-    .. math::
-
-        \mathrm D = \left(
-            \begin{array}{cc}
-              (1-\delta)\mathrm S_0 + \delta\mathrm I_0 & \mathbf 0\\
-              \mathbf 0 & \delta\mathrm I_1
-            \end{array}
-            \right),
-
-    a diagonal matrix used in the marginal likelihood
-
-    .. math::
-
-        \mathcal N\left(\mathrm Q^{\intercal} \mathbf y ~|~
-                   \mathrm Q^{\intercal} \mathbf m,~
-                   s D \right).
-
+    It perform inference on the exactly the same model given at :eq:`lmm1`.
 
     Parameters
     ----------
