@@ -1,7 +1,5 @@
 from __future__ import division
 
-import logging
-
 from numpy import all as npall
 from numpy import sum as npsum
 from numpy import (
@@ -13,6 +11,7 @@ from numpy_sugar import epsilon
 from numpy_sugar.linalg import rsolve, solve
 from tqdm import tqdm
 
+from ..io import wprint
 from ..util import log2pi
 
 
@@ -28,108 +27,117 @@ class FastScanner(object):
 
     .. math::
 
-        \mathbf y \sim \mathcal N\big(~ \mathrm X\boldsymbol\beta
-        + \mathrm{M}_i \alpha_i,~
+        \mathbf y \sim \mathcal N\big(~ \mathrm X\mathbf b
+        + \mathbf{m}_j \alpha_j,~
         s (\mathrm K + v \mathrm I) ~\big)
 
-    Note that :math:`\alpha_i` is a scalar multiplying a column-matrix
-    :math:`\mathrm{M}_i`.
+    Note that :math:`\alpha_j` is a scalar multiplying a column-matrix
+    :math:`\mathbf{m}_j`.
     The variable :math:`s` is a scaling factor that, if not set, is jointly
-    adjusted with :math:`\alpha_i` in order the maximise the marginal
-    likelihood, ultimately providing the degree of association between the
-    marker :math:`\mathrm{M}_i` with the outcome :math:`\mathbf y` via an
+    adjusted with :math:`\alpha_j` in order to maximise the marginal
+    likelihood;
+    ultimately providing the degree of association between the
+    marker :math:`\mathbf{m}_j` with the outcome :math:`\mathbf y` via an
     p-value.
 
-    For performance reasons, we make use of the identity
-
-    .. math::
-
-        (\mathrm K + v\mathrm I)^{-1} = \mathrm Q \left(
-            \begin{array}{cc}
-                \mathrm S_0 + v\mathrm I_0 & \mathbf 0\\
-                \mathbf 0 & v\mathrm I_1
-            \end{array}\right)^{-1}
-            \mathrm Q^{\intercal}
-
-    in the implementation.
-    We can thus write the marginal likelihood as
-
-    .. math::
-
-        \mathcal N\left(\mathrm Q^{\intercal} \mathbf y ~|~
-                   \mathrm Q^{\intercal} \mathbf m,~
-                   s \left(
-                       \begin{array}{cc}
-                           \mathrm S_0 + v\mathrm I_0 & \mathbf 0\\
-                           \mathbf 0 & v\mathrm I_1
-                       \end{array}\right)\right).
-
-    Expanding it gives us
-
-    .. math::
-
-        -\frac{n}{2} \log 2\pi - \frac{1}{2}n \log s
-            - \frac{1}{2}\log|\mathrm D|\\
-            - \frac{1}{2} (\mathrm Q^{\intercal}\mathbf y)^{\intercal} s^{-1}
-            \mathrm D^{-1}(\mathrm Q^{\intercal} \mathbf y)\\
-            + (\mathrm Q^{\intercal}\mathbf y)^{\intercal}
-            s^{-1} \mathrm D^{-1}
-            (\mathrm Q^{\intercal} \mathrm X\boldsymbol\beta)\\
-            - \frac{1}{2} (\mathrm Q^{\intercal}
-            \mathrm X\boldsymbol\beta)^{\intercal} s^{-1} \mathrm D^{-1}
-            (\mathrm Q^{\intercal} \mathrm X\boldsymbol\beta),
-
-    where
+    Let :math:`\mathrm E_j = [\mathrm X; \quad \mathbf{m}_j]`
+    be the concatenated matrix of covariates :math:`\mathrm X` and the
+    candidate for association :math:`\mathbf{m}_j`.
+    Let
 
     .. math::
 
         \mathrm D = \left(
             \begin{array}{cc}
-              \mathrm S_0 + v\mathrm I_0 & \mathbf 0\\
-              \mathbf 0 & v\mathrm I_1
-            \end{array}
-            \right)
+                \mathrm S_0 + v\mathrm I_0 & \mathbf 0\\
+                \mathbf 0 & v\mathrm I_1
+            \end{array}\right)
 
-    For convenience, we define
+    be a diagonal matrix with the eigenvalues of the covariance matrix
+    when :math:`s=1`, and also :math:`D_0 = \mathrm S_0 + v\mathrm I_0` and
+    :math:`D_1 = v\mathrm I_1`
 
-    .. math::
-
-        \mathrm B_i = \mathrm Q_i\mathrm D_i^{-1}\mathrm Q_i^{\intercal}
-
-    and
+    We make use of the identity
 
     .. math::
 
-        \mathrm E_j = [\mathrm X ~ \mathrm M_j].
+        (\mathrm K + v\mathrm I)^{-1}=\mathrm Q\mathrm D^{-1}\mathrm Q^{\intercal}
 
-    Attributes
-    ----------
-    _yTQDi : tuple
-        :math:`\mathbf y^{\intercal}\mathrm Q_i\mathrm D_i^{-1}`
+    in the implementation for performance reasons.
+    We can thus write the marginal likelihood as
 
-    _yTBy : tuple
-        :math:`\mathbf y^{\intercal}\mathrm B_i\mathbf y`
+    .. math::
 
-    _yTBX : tuple
-        :math:`\mathbf y^{\intercal}\mathrm X`
+        \mathcal N\left(\mathrm Q^{\intercal} \mathbf y ~|~
+                   \mathrm Q^{\intercal} \mathrm E_j \boldsymbol\beta_j,~
+                   s_j \mathrm D\right),
 
-    _XTQDi : tuple
-        :math:`\mathrm X^{\intercal}\mathrm Q_i\mathrm D_i^{-1}`.
+    where the covariance is now given by a diagonal matrix.
+    Taking the logarithm and expanding it gives us
 
-    _ETBE : tuple
-        :math:`\mathrm E_i^{\intercal}\mathrm Q_i\mathrm D_i^{-1} \mathrm E_i`.
+    .. math::
 
-    _XTBX : tuple
-        :math:`\mathrm X^{\intercal}\mathrm Q_i\mathrm D_i^{-1} \mathrm X`.
+        \log p(\mathbf y)_j &=
+            -\frac{n}{2} \log 2\pi - \frac{1}{2}n \log s_j
+                - \frac{1}{2}\log|\mathrm D|\\
+            &- \frac{1}{2} (\mathrm Q^{\intercal}\mathbf y)^{\intercal} s_j^{-1}
+                \mathrm D^{-1}(\mathrm Q^{\intercal} \mathbf y)\\
+            &+ (\mathrm Q^{\intercal}\mathbf y)^{\intercal}
+                s_j^{-1} \mathrm D^{-1}
+                (\mathrm Q^{\intercal} \mathrm E_j \boldsymbol\beta_j)\\
+            &- \frac{1}{2} (\mathrm Q^{\intercal}
+                \mathrm E_j \boldsymbol\beta_j)^{\intercal} s_j^{-1} \mathrm D^{-1}
+                (\mathrm Q^{\intercal} \mathrm E_j \boldsymbol\beta_j).
 
-    _XTBM : tuple
-        :math:`\mathrm X^{\intercal}\mathrm Q_i\mathrm D_i^{-1} \mathrm M_j`.
+    Setting the derivative of :math:`\log p(\mathbf y)_j` over effect sizes equal
+    to zero leads to the solutions :math:`\boldsymbol\beta_j^*` for equation
 
-    _MTBM : tuple
-        :math:`\mathrm M_j^{\intercal}\mathrm Q_i\mathrm D_i^{-1} \mathrm X`.
+    .. math::
 
-    _MTBM : tuple
-        :math:`\mathrm M_j^{\intercal}\mathrm Q_i\mathrm D_i^{-1} \mathrm M_j`.
+        (\mathrm Q^{\intercal}\mathrm E_j \boldsymbol\beta_j^*)^{\intercal}
+            \mathrm D^{-1} (\mathrm Q^{\intercal} \mathrm E_j) =
+            (\mathrm Q^{\intercal}\mathbf y)^{\intercal}\mathrm D^{-1}
+            (\mathrm Q^{\intercal}\mathrm E_j).
+
+    Replacing it back to the log of the marginal likelihood gives us the simpler
+    formulae
+
+    .. math::
+
+        \log p(\mathbf y)_j &=
+            -\frac{n}{2} \log 2\pi - \frac{1}{2}n \log s_j
+                - \frac{1}{2}\log|\mathrm D|\\
+            &  \frac{1}{2} (\mathrm Q^{\intercal}\mathbf y)^{\intercal} s_j^{-1}
+                \mathrm D^{-1}\mathrm Q^{\intercal}
+                (\mathrm E_j\boldsymbol\beta_j^* - \mathbf y).
+
+    In the extreme case where :math:`\boldsymbol\beta_j^*` is such that
+    :math:`\mathbf y = \mathrm E_j\boldsymbol\beta_j^*`, the maximum is attained
+    as :math:`s \rightarrow 0`.
+
+    Setting the derivative of :math:`\log p(\mathbf y)_j` over scale equal to
+    zero leads to the maximum
+
+    .. math::
+
+        s_j^* &= n^{-1}
+            (\mathrm Q^{\intercal}\mathbf y)^{\intercal}
+                \mathrm D^{-1}\mathrm Q^{\intercal}
+                (\mathbf y - \mathrm E_j\boldsymbol\beta_j^*).
+
+    This class offers the possibility to use either :math:`s_j^*` found via the
+    above equation or a scale defined by the user.
+    In the first case we have a further simplification of the log of the marginal
+    likelihood:
+
+    .. math::
+
+        \log p(\mathbf y)_j &=
+            -\frac{n}{2} \log 2\pi - \frac{n}{2} \log s_j^*
+                - \frac{1}{2}\log|\mathrm D| - \frac{n}{2}\\
+                &= \log \mathcal N(\text{Diag}(\sqrt{s_j^*\mathrm D})
+                    \quad|\quad \mathbf 0, s_j^*\mathrm D).
+
 
     Parameters
     ----------
@@ -141,6 +149,35 @@ class FastScanner(object):
         Economic eigen decomposition ``((Q0, Q1), S0)``.
     v : float
         Variance due to iid effect.
+
+    Attributes
+    ----------
+    _yTQDi : tuple
+        :math:`\mathbf y^{\intercal}\mathrm Q_i\mathrm D_i^{-1}`
+
+    _yTBy : tuple
+        :math:`\mathbf y^{\intercal}\mathrm B_i\mathbf y`
+
+    _yTBX : tuple
+        :math:`\mathbf y^{\intercal}\mathrm B_i\mathrm X`
+
+    _XTQDi : tuple
+        :math:`\mathrm X^{\intercal}\mathrm Q_i\mathrm D_i^{-1}`.
+
+    _ETBE : tuple
+        :math:`\mathrm E_i^{\intercal}\mathrm B_i^{-1}\mathrm E_i`.
+
+    _XTBX : tuple
+        :math:`\mathrm X^{\intercal}\mathrm B_i\mathrm X`.
+
+    _XTBM : tuple
+        :math:`\mathrm X^{\intercal}\mathrm B_i\mathrm M_j`.
+
+    _MTBX : tuple
+        :math:`\mathrm M_j^{\intercal}\mathrm B_i\mathrm X`.
+
+    _MTBM : tuple
+        :math:`\mathrm M_j^{\intercal}\mathrm B_i\mathrm M_j`.
     """
 
     def __init__(self, y, X, QS, v):
@@ -160,20 +197,14 @@ class FastScanner(object):
 
         self._XTQDi = [i / j for (i, j) in zip(XTQ, self._D)]
 
-        nc = X.shape[1]
+        self._ETBE = ETBE(self._XTQDi, XTQ)
 
-        self._ETBE = [empty((nc + 1, nc + 1)), empty((nc + 1, nc + 1))]
-
-        for i in range(2):
-            self._ETBE[i][:-1, :-1] = dot(self._XTQDi[i], XTQ[i].T)
-
-        self._XTBX = [self._ETBE[i][:-1, :-1] for i in range(2)]
-        self._XTBM = [self._ETBE[i][:-1, -1] for i in range(2)]
-        self._MTBX = [self._ETBE[i][-1, :-1] for i in range(2)]
-        self._MTBM = [self._ETBE[i][-1:, -1:] for i in range(2)]
+    @property
+    def _nsamples(self):
+        return self._QS[0][0].shape[0]
 
     def _static_lml(self):
-        n = self._QS[0][0].shape[0]
+        n = self._nsamples
         p = len(self._D[0])
         static_lml = -n * log2pi - n
         static_lml -= npsum(log(self._D[0]))
@@ -190,8 +221,8 @@ class FastScanner(object):
             raise ValueError("One or more variants have non-finite value.")
 
         MTQ = [dot(markers.T, Q) for Q in self._QS[0]]
-        yTBM = [dot(i, j.T) for (i, j) in zip(self._yTQDi, MTQ)]
 
+        yTBM = [dot(i, j.T) for (i, j) in zip(self._yTQDi, MTQ)]
         XTBM = [dot(i, j.T) for (i, j) in zip(self._XTQDi, MTQ)]
         MTBM = [npsum((i / j) * i, axis=1) for (i, j) in zip(MTQ, self._D)]
 
@@ -201,7 +232,7 @@ class FastScanner(object):
         lmls = full(nmarkers, self._static_lml())
         effect_sizes = empty(nmarkers)
 
-        if self._XTQDi[0].shape[0] == 1:
+        if self._ETBE.ncovariates == 1:
             return self._fast_scan_chunk_1covariate_loop(
                 lmls, effect_sizes, yTBM, XTBM, MTBM, nsamples)
         else:
@@ -220,27 +251,17 @@ class FastScanner(object):
             yTBE[0][-1] = yTBM[0][i]
             yTBE[1][-1] = yTBM[1][i]
 
-            self._XTBM[0][:] = XTBM[0][:, i]
-            self._XTBM[1][:] = XTBM[1][:, i]
+            self._ETBE.XTBM(0)[:] = XTBM[0][:, i]
+            self._ETBE.XTBM(1)[:] = XTBM[1][:, i]
 
-            self._MTBX[0][:] = self._XTBM[0][:]
-            self._MTBX[1][:] = self._XTBM[1][:]
+            self._ETBE.MTBX(0)[:] = self._ETBE.XTBM(0)[:]
+            self._ETBE.MTBX(1)[:] = self._ETBE.XTBM(1)[:]
 
-            self._MTBM[0][:] = MTBM[0][i]
-            self._MTBM[1][:] = MTBM[1][i]
+            self._ETBE.MTBM(0)[:] = MTBM[0][i]
+            self._ETBE.MTBM(1)[:] = MTBM[1][i]
 
-            try:
-                beta = solve(self._ETBE[1] - self._ETBE[0], yTBE[1] - yTBE[0])
-            except LinAlgError:
-                try:
-                    beta = rsolve(self._ETBE[1] - self._ETBE[0],
-                                  yTBE[1] - yTBE[0])
-                except LinAlgError:
-                    msg = "Could not converge to the optimal"
-                    msg += " effect-size of one of the candidates."
-                    msg += " Setting its effect-size to zero."
-                    logging.getLogger(__name__).warning(msg)
-                    beta = zeros(self._ETBE[1].shape[0])
+            beta = _try_solve(self._ETBE.value[1] - self._ETBE.value[0],
+                              yTBE[1] - yTBE[0])
 
             effect_sizes[i] = beta[-1]
 
@@ -251,9 +272,9 @@ class FastScanner(object):
                 #                    XTBM, MTBM)
 
                 p0 = self._yTBy[0] - 2 * yTBE[0].dot(beta) + beta.dot(
-                    self._ETBE[0]).dot(beta)
+                    self._ETBE.value[0]).dot(beta)
                 p1 = self._yTBy[1] - 2 * yTBE[1].dot(beta) + beta.dot(
-                    self._ETBE[1].dot(beta))
+                    self._ETBE.value[1].dot(beta))
 
                 scale = (p0 + p1) / nsamples
             else:
@@ -267,7 +288,7 @@ class FastScanner(object):
     def _fast_scan_chunk_1covariate_loop(self, lmls, effect_sizes, yTBM, XTBM,
                                          MTBM, nsamples):
 
-        sC00 = self._XTBX[1][0, 0] - self._XTBX[0][0, 0]
+        sC00 = self._ETBE.XTBX(1)[0, 0] - self._ETBE.XTBX(0)[0, 0]
         sC01 = XTBM[1][0, :] - XTBM[0][0, :]
         sC11 = MTBM[1] - MTBM[0]
 
@@ -285,8 +306,8 @@ class FastScanner(object):
             for i in range(2):
                 scale += self._yTBy[i] - 2 * (
                     self._yTBX[i][0] * beta[0] + yTBM[i] * beta[1])
-                scale += beta[0] * (
-                    self._XTBX[i][0, 0] * beta[0] + XTBM[i][0, :] * beta[1])
+                scale += beta[0] * (self._ETBE.XTBX(i)[0, 0] * beta[0] +
+                                    XTBM[i][0, :] * beta[1])
                 scale += beta[1] * (
                     XTBM[i][0, :] * beta[0] + MTBM[i] * beta[1])
             scale /= nsamples
@@ -390,6 +411,44 @@ class FastScanner(object):
         self._scale = None
 
 
+class ETBE(object):
+    def __init__(self, XTQDi, XTQ):
+        n = XTQDi[0].shape[0] + 1
+
+        self._data = [empty((n, n)), empty((n, n))]
+
+        for i in range(2):
+            self._data[i][:-1, :-1] = dot(XTQDi[i], XTQ[i].T)
+
+    @property
+    def ncovariates(self):
+        return self.XTBX(0).shape[0]
+
+    @property
+    def value(self):
+        return self._data
+
+    def XTBX(self, i):
+        return self._data[i][:-1, :-1]
+
+    def XTBM(self, i):
+        return self._data[i][:-1, -1]
+
+    def MTBX(self, i):
+        return self._data[i][-1, :-1]
+
+    def MTBM(self, i):
+        return self._data[i][-1:, -1:]
+
+    # def set_markers(self, markers):
+    #     markers
+    #     MTQ = [dot(markers.T, Q) for Q in self._QS[0]]
+    #
+    #     yTBM = [dot(i, j.T) for (i, j) in zip(self._yTQDi, MTQ)]
+    #     XTBM = [dot(i, j.T) for (i, j) in zip(self._XTQDi, MTQ)]
+    #     MTBM = [npsum((i / j) * i, axis=1) for (i, j) in zip(MTQ, self._D)]
+
+
 def _beta_1covariate(sb, sbm, sC00, sC01, sC11):
     d0 = sb / sC00
     d1 = sb / sC01
@@ -415,3 +474,20 @@ def _compute_scale(nsamples, beta, yTBy, yTBX, yTBM, XTBX, XTBM, MTBM):
     scale += npsum(beta[1] * MTBM[i] * beta[1] for i in range(2))
 
     return scale / nsamples
+
+
+def _try_solve(A, y):
+
+    try:
+        beta = solve(A, y)
+    except LinAlgError:
+        try:
+            beta = rsolve(A, y)
+        except LinAlgError:
+            msg = "Could not converge to the optimal"
+            msg += " effect-size of one of the candidates."
+            msg += " Setting its effect-size to zero."
+            wprint(msg)
+            beta = zeros(A.shape[0])
+
+    return beta
