@@ -133,20 +133,6 @@ class LMMCore(object):
     def lml(self):
         r"""Log of the marginal likelihood.
 
-        Formally,
-
-        .. math::
-
-            - \frac{n}{2}\log{2\pi} - \frac{1}{2} \log{\left|
-                v_0 \mathrm K + v_1 \mathrm I\right|}
-                    - \frac{1}{2}
-                    \left(\mathbf y -
-                    \mathrm X\boldsymbol\beta\right)^{\intercal}
-                    \left( v_0 \mathrm K + v_1 \mathrm I
-                    \right)^{-1}
-                    \left(\mathbf y -
-                    \mathrm X\boldsymbol\beta\right)
-
         Returns
         -------
         float
