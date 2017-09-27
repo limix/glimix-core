@@ -165,23 +165,6 @@ class LMMCore(object):
     def scale(self):
         r"""Scaling factor.
 
-        The optimal scaling factor is given by
-
-        .. math::
-
-            s = \frac{1}{n}
-              (\mathrm Q^{\intercal}\mathbf y)^{\intercal}
-                \mathrm D^{-1}
-              (\mathrm Q^{\intercal}\mathbf y)
-              -\frac{2}{n}
-              (\mathrm Q^{\intercal}\mathbf y)^{\intercal}
-                \mathrm D^{-1}
-              (\mathrm Q^{\intercal}\mathrm X\boldsymbol\beta)
-              +\frac{1}{n}
-              (\mathrm Q^{\intercal}\mathrm X\boldsymbol\beta)^{\intercal}
-                \mathrm D^{-1}
-              (\mathrm Q^{\intercal}\mathrm X\boldsymbol\beta).
-
         Returns
         -------
         float

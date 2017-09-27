@@ -11,7 +11,8 @@ from .scan import FastScanner
 class LMM(LMMCore, Function):
     r"""Fast Linear Mixed Models inference via maximum likelihood.
 
-    It perform inference on the exactly the same model given at :eq:`lmm1`.
+    It perform inference on the model :eq:`lmm1`, explained in the
+    :ref:`lmm-intro` section.
 
     Parameters
     ----------
@@ -20,7 +21,7 @@ class LMM(LMMCore, Function):
     X : array_like
         Covariates as a two-dimensional array.
     QS : tuple
-        Economic eigen decompositon in form of ``((Q0, Q1), S0)`` of a
+        Economic eigendecompositon in form of ``((Q0, Q1), S0)`` of a
         covariance matrix ``K``.
 
     Examples

@@ -21,7 +21,6 @@ with zero-mean and variance :math:`v_1` each.
 The outcome-vector is thus distributed according to
 
 .. math::
-    :label: lmm2
 
     \mathbf y \sim \mathcal N(\mathrm X\boldsymbol\beta,
                               v_0 \mathrm G \mathrm G^{\intercal}
@@ -123,10 +122,9 @@ For example:
 Implementation
 ^^^^^^^^^^^^^^
 
-The LMM model :ref:`lmm1` can be equivalently written as
+The LMM model :eq:`lmm1` can be equivalently written as
 
 .. math::
-    :label: lmm3
 
     \mathbf y \sim \mathcal N\Big(~ \mathrm X\boldsymbol\beta;~
       s \big(
@@ -135,6 +133,7 @@ The LMM model :ref:`lmm1` can be equivalently written as
         \delta \mathrm I
       \big)
     ~\Big),
+
 and we thus have :math:`v_0 = s (1 - \delta)` and :math:`v_1 = s \delta`.
 
 Consider the economic eigendecomposition of ``K``:
@@ -220,8 +219,8 @@ In the extreme case where :math:`\boldsymbol\beta^*` is such that
 :math:`\mathbf y = \mathrm X\boldsymbol\beta^*`, the maximum is attained
 as :math:`s \rightarrow 0`.
 
-Setting the derivative of :math:`\log p(\mathbf y)` over scale equal to
-zero leads to the maximum
+Setting the derivative of :math:`\log p(\mathbf y; \boldsymbol\beta^*)` over
+scale equal to zero leads to the maximum
 
 .. math::
 
@@ -230,7 +229,8 @@ zero leads to the maximum
            \mathrm D^{-1}\mathrm Q^{\intercal}
            (\mathbf y - \mathrm X\boldsymbol\beta^*).
 
-This class offers the possibility to use either :math:`s^*` found via the
+
+We offer the possibility to use either :math:`s^*` found via the
 above equation or a scale defined by the user.
 In the first case we have a further simplification of the log of the marginal
 likelihood:
@@ -241,13 +241,10 @@ likelihood:
        -\frac{n}{2} \log 2\pi - \frac{n}{2} \log s^*
            - \frac{1}{2}\log|\mathrm D| - \frac{n}{2}\\
            &= \log \mathcal N(\text{Diag}(\sqrt{s^*\mathrm D})
-               \quad|\quad \mathbf 0, s^*\mathrm D).
+               ~|~ \mathbf 0, s^*\mathrm D).
 
 LMM class
 ^^^^^^^^^
-
-This is the class that the user will be using to perform LMM inference.
-The base model was already described in the :ref:`lmm-intro`.
 
 .. autoclass:: glimix_core.lmm.LMM
   :members:

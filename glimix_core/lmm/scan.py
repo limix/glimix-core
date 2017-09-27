@@ -18,6 +18,38 @@ from ..util import log2pi
 class FastScanner(object):
     r"""Approximated fast inference over several covariates.
 
+    Specifically, it computes the log of the marginal likelihood
+
+    .. math::
+
+        \log p(\mathbf y)_j = \log \mathcal N\big(~ \mathrm X\mathbf b_j^*
+            + \mathbf{m}_j \alpha_j^*,~
+            s_j^* (\mathrm K + v \mathrm I) ~\big),
+
+    for optimal :math:`\mathbf b_j`, :math:`\alpha_j`, and :math:`s_j^*`
+    values.
+    Vector :math:`\mathbf{m}_j` is the candidate defined by the i-th column
+    of matrix ``M`` provided to method
+    :func:`glimix_core.lmm.FastScanner.fast_scan`.
+    Variance :math:`v` is not optimised for performance reasons.
+    The method assumes the user has provided a reasonable value for it.
+
+    Notes
+    -----
+    The implementation requires further explanation as it is somehow obscure.
+    Let :math:`\mathrm B_i=\mathrm Q_i\mathrm D_i^{-1}\mathrm Q_i^{\intercal}`
+    for :math:`i \in \{0, 1\}` and
+    :math:`\mathrm E_j = [\mathrm X;~ \mathbf m_j]`.
+    The matrix resulted from
+    :math:`\mathrm E_j^{\intercal}\mathrm B_i\mathrm E_j`
+    is represented by the attribute ``_ETBE``, and
+    four views of such a matrix are given by the attributes ``_XTBX``,
+    ``_XTBM``, ``_MTBX``, and ``_MTBM``.
+    Those views represent
+    :math:`\mathrm X^{\intercal}\mathrm B_i\mathrm X`,
+    :math:`\mathrm X^{\intercal}\mathrm B_i\mathbf m_j`,
+    :math:`\mathbf m_j^{\intercal}\mathrm B_i\mathrm X`, and
+    :math:`\mathbf m_j^{\intercal}\mathrm B_i\mathbf m_j`, respectively.
 
     Parameters
     ----------
@@ -26,38 +58,9 @@ class FastScanner(object):
     X : array_like
         Matrix of covariates.
     QS : tuple
-        Economic eigen decomposition ``((Q0, Q1), S0)``.
+        Economic eigendecomposition ``((Q0, Q1), S0)`` of ``K``.
     v : float
         Variance due to iid effect.
-
-    Attributes
-    ----------
-    _yTQDi : tuple
-        :math:`\mathbf y^{\intercal}\mathrm Q_i\mathrm D_i^{-1}`
-
-    _yTBy : tuple
-        :math:`\mathbf y^{\intercal}\mathrm B_i\mathbf y`
-
-    _yTBX : tuple
-        :math:`\mathbf y^{\intercal}\mathrm B_i\mathrm X`
-
-    _XTQDi : tuple
-        :math:`\mathrm X^{\intercal}\mathrm Q_i\mathrm D_i^{-1}`.
-
-    _ETBE : tuple
-        :math:`\mathrm E_i^{\intercal}\mathrm B_i^{-1}\mathrm E_i`.
-
-    _XTBX : tuple
-        :math:`\mathrm X^{\intercal}\mathrm B_i\mathrm X`.
-
-    _XTBM : tuple
-        :math:`\mathrm X^{\intercal}\mathrm B_i\mathrm M_j`.
-
-    _MTBX : tuple
-        :math:`\mathrm M_j^{\intercal}\mathrm B_i\mathrm X`.
-
-    _MTBM : tuple
-        :math:`\mathrm M_j^{\intercal}\mathrm B_i\mathrm M_j`.
     """
 
     def __init__(self, y, X, QS, v):
@@ -91,23 +94,23 @@ class FastScanner(object):
         static_lml -= (n - p) * log(self._D[1])
         return static_lml
 
-    def _fast_scan_chunk(self, markers):
-        markers = asarray(markers, float)
+    def _fast_scan_chunk(self, M):
+        M = asarray(M, float)
 
-        if not markers.ndim == 2:
-            raise ValueError("`markers` array must be bidimensional.")
+        if not M.ndim == 2:
+            raise ValueError("`M` array must be bidimensional.")
 
-        if not npall(isfinite(markers)):
+        if not npall(isfinite(M)):
             raise ValueError("One or more variants have non-finite value.")
 
-        MTQ = [dot(markers.T, Q) for Q in self._QS[0]]
+        MTQ = [dot(M.T, Q) for Q in self._QS[0]]
 
         yTBM = [dot(i, j.T) for (i, j) in zip(self._yTQDi, MTQ)]
         XTBM = [dot(i, j.T) for (i, j) in zip(self._XTQDi, MTQ)]
         MTBM = [npsum((i / j) * i, axis=1) for (i, j) in zip(MTQ, self._D)]
 
-        nsamples = markers.shape[0]
-        nmarkers = markers.shape[1]
+        nsamples = M.shape[0]
+        nmarkers = M.shape[1]
 
         lmls = full(nmarkers, self._static_lml())
         effect_sizes = empty(nmarkers)
@@ -201,7 +204,7 @@ class FastScanner(object):
 
         return lmls, effect_sizes
 
-    def fast_scan(self, markers, verbose=True):
+    def fast_scan(self, M, verbose=True):
         r"""LML and fixed-effect sizes of each marker.
 
         If the scaling factor ``s`` is not set by the user via method
@@ -210,7 +213,7 @@ class FastScanner(object):
 
         Parameters
         ----------
-        markers : array_like
+        M : array_like
             Matrix of fixed-effects across columns.
         verbose : bool, optional
             ``True`` for progress information; ``False`` otherwise.
@@ -224,9 +227,9 @@ class FastScanner(object):
             Fixed-effect sizes.
         """
 
-        if not (markers.ndim == 2):
-            raise ValueError("`markers` array must be bidimensional.")
-        p = markers.shape[1]
+        if not (M.ndim == 2):
+            raise ValueError("`M` array must be bidimensional.")
+        p = M.shape[1]
 
         lmls = empty(p)
         effect_sizes = empty(p)
@@ -240,9 +243,9 @@ class FastScanner(object):
 
         for i in tqdm(range(nchunks), desc="Scanning", disable=not verbose):
             start = i * chunk_size
-            stop = min(start + chunk_size, markers.shape[1])
+            stop = min(start + chunk_size, M.shape[1])
 
-            l, e = self._fast_scan_chunk(markers[:, start:stop])
+            l, e = self._fast_scan_chunk(M[:, start:stop])
 
             lmls[start:stop] = l
             effect_sizes[start:stop] = e
@@ -251,19 +254,7 @@ class FastScanner(object):
 
     def null_lml(self):
         r"""Log of the marginal likelihood.
-
-        .. math::
-
-            - \frac{n}{2}\log{2\pi}
-                - \frac{1}{2} n \log{s}
-                - \frac{1}{2} \log{\left|\mathrm D\right|}
-                    - \frac{1}{2}
-                \left(\mathrm Q^{\intercal}\mathbf y -
-              \mathrm Q^{\intercal}\mathrm X\boldsymbol\beta\right)^{\intercal}
-                    s^{-1}\mathrm D^{-1}
-                \left(\mathrm Q^{\intercal}\mathbf y -
-                \mathrm Q^{\intercal}\mathrm X\boldsymbol\beta\right)
-        """
+        TODO: implement"""
         n = self._QS[0][0].shape[0]
         p = len(self._D[0])
         static_lml = -n * log2pi - n
