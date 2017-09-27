@@ -3,7 +3,7 @@ from __future__ import division
 import pytest
 from numpy import arange, concatenate, inf, nan, newaxis, ones, sqrt, zeros
 from numpy.random import RandomState
-from numpy.testing import assert_allclose
+from numpy.testing import assert_, assert_allclose
 from numpy_sugar.linalg import economic_qs_linear
 
 from glimix_core.cov import EyeCov, LinearCov, SumCov
@@ -65,6 +65,10 @@ def test_fastlmm_fast_scan():
 
     lmls = fast_scanner.fast_scan(markers, verbose=False)[0]
     assert_allclose(lmls, [lml0, lml1])
+
+    lmm.fix('scale')
+    assert_(lmm.isfixed('scale'))
+    # lmm.scale = 0.45
 
 
 def test_fastlmm_fast_scan_redundant():
@@ -152,9 +156,6 @@ def test_lmm_learn():
     assert_allclose(lmm.v0, 1.7303981309775553, rtol=1e-5)
     assert_allclose(lmm.v1, 1.2950028351268132, rtol=1e-5)
 
-    lmm.beta = [-0.5]
-    assert_allclose(lmm.beta[0], [-0.5])
-
 
 def test_fastlmm_learn_fix():
     random = RandomState(9458)
@@ -200,7 +201,7 @@ def test_fastlmm_learn_fix():
     assert_allclose(lmm.delta, 0.5)
     assert_allclose(lmm.v0, 0.5)
     assert_allclose(lmm.v1, 0.5)
-    assert_allclose(lmm.lml(), -681.381571238)
+    assert_allclose(lmm.lml(), -1405.4142416957006)
 
     lmm.unfix('scale')
     lmm.fit(verbose=False)

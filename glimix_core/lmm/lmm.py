@@ -61,11 +61,11 @@ class LMM(LMMCore, Function):
         >>> lmm.scale = 1
         >>> lmm.fit(verbose=False)
         >>> print('%.3f' % lmm.lml())
-        -4.232
+        -14.732
         >>> lmm.unfix('delta')
         >>> lmm.fit(verbose=False)
         >>> print('%.3f' % lmm.lml())
-        -2.838
+        -4.088
     """
 
     def __init__(self, y, X, QS):
@@ -75,9 +75,9 @@ class LMM(LMMCore, Function):
         if not is_all_finite(y):
             raise ValueError("There are non-finite values in the phenotype.")
 
-        self._fix = dict(beta=False, scale=False)
-        self._delta = 0.5
-        self._scale = LMMCore.scale.fget(self)
+        # self._fix_scale = False
+        # self._delta = 0.5
+        # self._scale = LMMCore.scale.fget(self)
         self.set_nodata()
 
     def _get_delta(self):
@@ -89,9 +89,9 @@ class LMM(LMMCore, Function):
     def beta(self):
         return LMMCore.beta.fget(self)
 
-    @beta.setter
-    def beta(self, beta):
-        LMMCore.beta.fset(self, beta)
+    # @beta.setter
+    # def beta(self, beta):
+    #     LMMCore.beta.fset(self, beta)
 
     def copy(self):
         r"""Return a copy of this object.
@@ -111,7 +111,7 @@ class LMM(LMMCore, Function):
         Function.__init__(
             o, logistic=Scalar(self.variables().get('logistic').value))
 
-        o._fix = self._fix.copy()
+        o._fix_scale = self._fix_scale
         o._delta = self._delta
         o._scale = self._scale
 
@@ -128,6 +128,25 @@ class LMM(LMMCore, Function):
         delta = clip(delta, epsilon.tiny, 1 - epsilon.tiny)
         self._delta = delta
         self.variables().set(dict(logistic=log(delta / (1 - delta))))
+
+    def isfixed(self, var_name):
+        r"""Return whether a variable it is fixed or not.
+
+        Parameters
+        ----------
+        var_name : str
+            Possible values are `delta` and `scale`.
+
+        Returns
+        -------
+        bool
+            ``True`` if fixed; ``False`` otherwise.
+        """
+        if var_name not in ['delta', 'scale']:
+            raise ValueError("Possible values are 'delta' and 'scale'.")
+        if var_name == 'delta':
+            return super(LMM, self).isfixed(self, 'logistic')
+        return self._fix_scale
 
     @property
     def v0(self):
@@ -170,12 +189,15 @@ class LMM(LMMCore, Function):
         Parameters
         ----------
         var_name : str
-            Possible values are `delta`, and TODO.
+            Possible values are `delta` and `scale`.
         """
+        if var_name not in ['delta', 'scale']:
+            raise ValueError("Possible values are 'delta' and 'scale'.")
+
         if var_name == 'delta':
             super(LMM, self).fix('logistic')
         else:
-            self._fix[var_name] = True
+            self._fix_scale = True
 
     @property
     def fixed_effects_variance(self):
@@ -212,7 +234,7 @@ class LMM(LMMCore, Function):
 
     @property
     def scale(self):
-        if self._fix['scale']:
+        if self._fix_scale:
             return self._scale
         return LMMCore.scale.fget(self)
 
@@ -226,12 +248,14 @@ class LMM(LMMCore, Function):
         Parameters
         ----------
         var_name : str
-            Possible values are `delta`, and TODO.
+            Possible values are `delta` and `scale`.
         """
+        if var_name not in ['delta', 'scale']:
+            raise ValueError("Possible values are 'delta' and 'scale'.")
         if var_name == 'delta':
             super(LMM, self).unfix('logistic')
         else:
-            self._fix[var_name] = False
+            self._fix_scale = False
 
     def value(self):
         r"""This is used for internal purposes only."""
