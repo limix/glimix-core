@@ -1,11 +1,11 @@
 scipy
 numpy
-numpy-sugar>=1.1.0
-scipy-sugar
-optimix>=1.2.18
+numpy-sugar>=1.1.2
+scipy-sugar>=1.0.2
+optimix>=1.2.20
 cachetools
 toolz
 tqdm
-liknorm-py
-ndarray-listener
-brent-search
+liknorm-py>=1.0.6
+ndarray-listener>=1.0.26
+brent-search>=1.0.29

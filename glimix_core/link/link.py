@@ -1,7 +1,6 @@
 from __future__ import division
 
 from numpy import asarray, exp, log, pi
-from numpy_sugar.special import normal_cdf, normal_icdf
 
 
 class Link(object):
@@ -30,10 +29,10 @@ class LogitLink(Link):
 
 class ProbitLink(Link):
     def value(self, x):
-        return normal_icdf(asarray(x, float))
+        return _normal_icdf(asarray(x, float))
 
     def inv(self, x):
-        return normal_cdf(asarray(x, float))
+        return _normal_cdf(asarray(x, float))
 
     @property
     def latent_variance(self):
@@ -50,3 +49,13 @@ class LogLink(Link):
     @property
     def latent_variance(self):
         raise NotImplementedError
+
+
+def _normal_cdf(x):
+    import scipy.stats as st
+    return st.norm.cdf(x)
+
+
+def _normal_icdf(x):
+    import scipy.stats as st
+    return st.norm.isf(1 - x)
