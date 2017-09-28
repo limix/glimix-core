@@ -145,7 +145,7 @@ class LMM(LMMCore, Function):
         if var_name not in ['delta', 'scale']:
             raise ValueError("Possible values are 'delta' and 'scale'.")
         if var_name == 'delta':
-            return super(LMM, self).isfixed(self, 'logistic')
+            return Function.isfixed(self, 'logistic')
         return self._fix_scale
 
     @property
@@ -213,7 +213,7 @@ class LMM(LMMCore, Function):
         return self.mean.var()
 
     def get_fast_scanner(self):
-        r"""Return :class:`.FastScanner` for fast scan.
+        r"""Return :class:`.FastScanner` for association scan.
 
         Returns
         -------
@@ -229,7 +229,13 @@ class LMM(LMMCore, Function):
 
     @property
     def mean(self):
-        r"""Estimated mean :math:`\mathrm X\boldsymbol\beta`."""
+        r"""Estimated mean :math:`\mathrm X\boldsymbol\beta`.
+
+        Returns
+        -------
+        array_like
+            Mean of the prior.
+        """
         return LMMCore.mean.fget(self)
 
     @property
@@ -258,7 +264,6 @@ class LMM(LMMCore, Function):
             self._fix_scale = False
 
     def value(self):
-        r"""This is used for internal purposes only."""
         self.delta = self._get_delta()
         return self.lml()
 

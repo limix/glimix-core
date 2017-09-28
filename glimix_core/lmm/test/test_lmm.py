@@ -3,7 +3,7 @@ from __future__ import division
 import pytest
 from numpy import arange, inf, nan, ones, sqrt, zeros
 from numpy.random import RandomState
-from numpy.testing import assert_allclose
+from numpy.testing import assert_, assert_allclose
 from numpy_sugar.linalg import economic_qs_linear
 
 from glimix_core.cov import EyeCov, LinearCov, SumCov
@@ -27,8 +27,16 @@ def test_lmm_fix_unfix():
 
     lmm = LMM(y, ones((n, 1)), QS)
 
+    import pdb
+    pdb.set_trace()
+
+    assert_(not lmm.isfixed('delta'))
     lmm.fix('delta')
+    assert_(lmm.isfixed('delta'))
+
+    assert_(not lmm.isfixed('scale'))
     lmm.fix('scale')
+    assert_(lmm.isfixed('scale'))
 
     lmm.scale = 1.0
     lmm.delta = 0.5

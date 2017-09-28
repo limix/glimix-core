@@ -77,8 +77,8 @@ Association scan
 ^^^^^^^^^^^^^^^^
 
 Let :math:`\mathrm X` be a samples-by-covariates matrix,
-:math:`\mathrm M` a samples-by-markers matrix, and
-:math:`\mathbf y` an array of outcome.
+:math:`\mathrm M` a samples-by-candidates matrix, and
+:math:`\mathbf y` an array of outcome:
 
 .. math::
 
@@ -92,7 +92,7 @@ The variable :math:`s` is a scaling factor that, if not set, is jointly
 adjusted with :math:`\alpha_j` in order to maximise the marginal
 likelihood.
 The variable :math:`v` is held fixed and that is the reason why this inference
-can be performed quickly over millions of markers.
+can be performed quickly over millions of candidates.
 
 The user provides the outcome ``y``, the covariates ``X``, the covariance ``K``
 via its eigendecomposition, and the variance ``v`` to create an instance of
@@ -169,13 +169,14 @@ where
         \end{array}
         \right).
 
-The marginal likelihood can thus be written as
+A diagonal covariance-matrix can then be used to define an equivalent
+marginal likelihood:
 
 .. math::
 
     \mathcal N\left(\mathrm Q^{\intercal} \mathbf y ~|~
                \mathrm Q^{\intercal} \mathrm X\boldsymbol\beta,~
-               s D \right).
+               s \mathrm D \right).
 
 Taking the logarithm and expanding it gives us
 
@@ -194,7 +195,7 @@ Taking the logarithm and expanding it gives us
            (\mathrm Q^{\intercal} \mathrm X \boldsymbol\beta).
 
 Setting the derivative of :math:`\log p(\mathbf y)` over effect sizes equal
-to zero leads to the solutions :math:`\boldsymbol\beta^*` for equation
+to zero leads to solutions :math:`\boldsymbol\beta^*` from equation
 
 .. math::
 
