@@ -3,6 +3,7 @@ from __future__ import division
 from numpy import arange, sqrt
 from numpy.random import RandomState
 from numpy.testing import assert_allclose
+from optimix import check_grad
 
 from glimix_core.cov import EyeCov, LinearCov, SumCov
 from glimix_core.ggp import ExpFamGP
@@ -10,12 +11,11 @@ from glimix_core.lik import BernoulliProdLik
 from glimix_core.link import LogitLink
 from glimix_core.mean import OffsetMean
 from glimix_core.random import GGPSampler
-from optimix import check_grad
 
 
 def _get_data():
-    random = RandomState(458)
-    N = 100
+    random = RandomState(0)
+    N = 10
     X = random.randn(N, N + 1)
     X -= X.mean(0)
     X /= X.std(0)
@@ -55,7 +55,7 @@ def _get_data():
 def test_expfam_ep():
     data = _get_data()
     ep = ExpFamGP((data['y'], ), 'bernoulli', data['mean'], data['cov'])
-    assert_allclose(ep.feed().value(), -60.84029280372346)
+    assert_allclose(ep.feed().value(), -5.031838893222976)
 
 
 def test_expfam_ep_function():
@@ -70,5 +70,5 @@ def test_expfam_ep_optimize():
     ep = ExpFamGP((data['y'], ), 'bernoulli', data['mean'], data['cov'])
     data['cov_left'].fix('logscale')
     ep.feed().maximize(verbose=False)
-    assert_allclose(data['cov_right'].scale, 4.165356667004733e-06, atol=1e-5)
-    assert_allclose(data['mean'].offset, 1.0326586372863882, rtol=1e-6)
+    assert_allclose(data['cov_right'].scale, 0.3815125853009603, atol=1e-5)
+    assert_allclose(data['mean'].offset, 2.8339582691250604, rtol=1e-6)
