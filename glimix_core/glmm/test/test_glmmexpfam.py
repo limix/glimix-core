@@ -9,7 +9,7 @@ from glimix_core.example import linear_eye_cov, nsamples
 from glimix_core.glmm import GLMMExpFam
 from glimix_core.random import bernoulli_sample
 
-ATOL = 1e-6
+ATOL = 1e-5
 RTOL = 1e-5
 
 
@@ -348,7 +348,7 @@ def test_glmmexpfam_delta_one_zero():
     assert_allclose(glmm.delta, 0.00012363396798507502, atol=ATOL, rtol=RTOL)
 
     glmm.delta = 1
-    assert_allclose(glmm.lml(), -4.579130225512129)
+    assert_allclose(glmm.lml(), -4.579130225512129, atol=ATOL, rtol=RTOL)
     assert_allclose(check_grad(glmm, step=1e-4), 0, atol=1e-1)
 
     glmm.fit(verbose=False)
