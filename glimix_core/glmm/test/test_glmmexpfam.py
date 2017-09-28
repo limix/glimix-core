@@ -125,7 +125,7 @@ def test_glmmexpfam_delta0():
     K = linear_eye_cov().feed().value()
     QS = economic_qs(K)
 
-    ntri = random.randint(1, 30, 100)
+    ntri = random.randint(1, 30, nsamples())
     nsuc = [random.randint(0, i) for i in ntri]
 
     glmm = GLMMExpFam((nsuc, ntri), 'binomial', X, QS)
@@ -133,7 +133,7 @@ def test_glmmexpfam_delta0():
 
     glmm.delta = 0
 
-    assert_allclose(glmm.lml(), -27.441700236574512, atol=ATOL, rtol=RTOL)
+    assert_allclose(glmm.lml(), -43.154282363439364, atol=ATOL, rtol=RTOL)
     assert_allclose(check_grad(glmm, step=2e-5), 0, atol=1e-2)
 
 
@@ -143,7 +143,7 @@ def test_glmmexpfam_delta1():
     K = linear_eye_cov().feed().value()
     QS = economic_qs(K)
 
-    ntri = random.randint(1, 30, 100)
+    ntri = random.randint(1, 30, nsamples())
     nsuc = [random.randint(0, i) for i in ntri]
 
     glmm = GLMMExpFam((nsuc, ntri), 'binomial', X, QS)
@@ -151,8 +151,8 @@ def test_glmmexpfam_delta1():
 
     glmm.delta = 1
 
-    assert_allclose(glmm.lml(), -33.67996838167506, atol=ATOL, rtol=RTOL)
-    assert_allclose(check_grad(glmm), 0, atol=1e-4)
+    assert_allclose(glmm.lml(), -47.09677870648636, atol=ATOL, rtol=RTOL)
+    assert_allclose(check_grad(glmm), 0.0007071791692959544, atol=1e-4)
 
 
 def test_glmmexpfam_wrong_qs():

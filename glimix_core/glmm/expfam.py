@@ -45,25 +45,26 @@ class GLMMExpFam(GLMM):
         >>> random = RandomState(0)
         >>> nsamples = 10
         >>>
-        >>> X = random.randn(50, 2)
-        >>> G = random.randn(50, 100)
+        >>> X = random.randn(nsamples, 2)
+        >>> G = random.randn(nsamples, 100)
         >>> K = dot(G, G.T)
         >>> ntrials = random.randint(1, 100, nsamples)
         >>> z = dot(G, random.randn(100)) / sqrt(100)
         >>>
         >>> successes = zeros(len(ntrials), int)
         >>> for i in range(len(ntrials)):
-        ...     successes[i] = sum(z[i] + 0.2 * random.randn(ntrials[i]) > 0)
+        ...    successes[i] = sum(z[i] + 0.2 * random.randn(ntrials[i]) > 0)
         >>>
         >>> y = (successes, ntrials)
         >>>
         >>> QS = economic_qs(K)
+        >>>
         >>> glmm = GLMMExpFam(y, 'binomial', X, QS)
         >>> print('Before: %.2f' % glmm.lml())
-        Before: -95.19
+        Before: -16.40
         >>> glmm.fit(verbose=False)
         >>> print('After: %.2f' % glmm.lml())
-        After: -92.24
+        After: -13.43
     """
 
     def __init__(self, y, lik_name, X, QS):
