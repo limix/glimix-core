@@ -10,7 +10,7 @@ from glimix_core.glmm import GLMMExpFam
 from glimix_core.random import bernoulli_sample
 
 ATOL = 1e-5
-RTOL = 1e-5
+RTOL = 1e-4
 
 
 def test_glmmexpfam_layout():
