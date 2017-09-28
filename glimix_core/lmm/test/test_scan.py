@@ -2,7 +2,7 @@ from __future__ import division
 
 from numpy import arange, concatenate, newaxis, ones, sqrt
 from numpy.random import RandomState
-from numpy.testing import assert_, assert_allclose
+from numpy.testing import assert_allclose
 from numpy_sugar.linalg import economic_qs_linear
 
 from glimix_core.cov import EyeCov, LinearCov, SumCov
@@ -10,6 +10,44 @@ from glimix_core.lik import DeltaProdLik
 from glimix_core.lmm import LMM
 from glimix_core.mean import OffsetMean
 from glimix_core.random import GGPSampler
+
+
+def test_scan_fix_unfix():
+    random = RandomState(12)
+    n = 100
+    X = _covariates_sample(random, n, n + 1)
+    offset = 0.1
+
+    y = _outcome_sample(random, offset, X)
+    QS = economic_qs_linear(X)
+    lmm = LMM(y, ones((n, 1)), QS)
+
+    lmm.fit(verbose=False)
+
+    lml0 = lmm.lml()
+    assert_allclose(lml0, -193.88684605236722)
+    lmm.fix('scale')
+    lml1 = lmm.lml()
+
+    assert_allclose(lml0, lml1)
+    # lmm.fit(verbose=False)
+    #
+    # delta1 = lmm.delta
+    # assert_allclose(delta0, delta1)
+    # print("\n--------------------")
+    #
+    # print('lml', lmm.lml())
+    # print(lmm.scale, lmm.delta, lmm.beta)
+    #
+    # # import pdb
+    # # pdb.set_trace()
+    #
+    # print("\n--------------------")
+    # fast_scanner = lmm.get_fast_scanner()
+    # # fast_scanner.set_scale(0.8342)
+    # fast_scanner.set_scale(1)
+    #
+    # print('lml', fast_scanner.null_lml())
 
 
 def test_scan_fast_scan():
@@ -44,10 +82,6 @@ def test_scan_fast_scan():
 
     lmls = fast_scanner.fast_scan(markers, verbose=False)[0]
     assert_allclose(lmls, [lml0, lml1])
-
-    lmm.fix('scale')
-    assert_(lmm.isfixed('scale'))
-    # lmm.scale = 0.45
 
 
 def test_scan_fastlmm_redundant_candidates():

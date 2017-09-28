@@ -65,9 +65,12 @@ class FastScanner(object):
 
     def __init__(self, y, X, QS, v):
 
+        self._y = y
+        self._X = X
         self._scale = None
         self._QS = QS
         self._D = [QS[1] + v, v]
+        self._v = v
 
         yTQ = [dot(y.T, Q) for Q in QS[0]]
         XTQ = [dot(X.T, Q) for Q in QS[0]]
@@ -252,15 +255,46 @@ class FastScanner(object):
 
         return lmls, effect_sizes
 
+    def _null_lml_optimal_scale(self):
+        n = len(self._QS[0][0].shape[0])
+        lml = -n * log2pi - n - n * log(self._null_optimal_scale())
+        lml -= npsum(log(self._D[0]))
+        if n > self._QS[1].shape[0]:
+            lml -= (n - self._QS[1].shape[0]) * log(self._D[1])
+
+        return lml / 2
+
+    def _null_lml_arbitrary_scale(self):
+        pass
+
+    # def _null_optimal_scale(self):
+    #     yTQDiQTy = self._yTQDiQTy
+    #     yTQDiQTm = self._yTQDiQTm
+    #     b = self._tbeta
+    #     p0 = sum(i - 2 * dot(j, b) for (i, j) in zip(yTQDiQTy, yTQDiQTm))
+    #     p1 = sum(dot(dot(b, i), b) for i in self._mTQDiQTm)
+    #     return maximum((p0 + p1) / len(self._y), epsilon.tiny)
+
     def null_lml(self):
         r"""Log of the marginal likelihood.
         TODO: implement"""
-        n = self._QS[0][0].shape[0]
-        p = len(self._D[0])
-        static_lml = -n * log2pi - n
-        static_lml -= npsum(log(self._D[0]))
-        static_lml -= (n - p) * log(self._D[1])
-        return static_lml
+        from .lmm import LMM
+
+        if self._scale is None:
+            lmm = LMM(self._y, self._X, self._QS)
+            lmm.delta = self._v / (self._v + 1)
+            lmm.fix('delta')
+            lmm.fit(verbose=False)
+            return lmm.lml()
+
+        lmm = LMM(self._y, self._X, self._QS)
+        lmm.delta = 0.5
+        lmm.fix('delta')
+        lmm.scale = 2 * self._scale
+        lmm.fix('scale')
+        lmm.fit(verbose=False)
+        print(lmm.scale, lmm.delta, lmm.beta)
+        return lmm.lml()
 
     def set_scale(self, scale):
         r"""Set the scaling factor.

@@ -1,6 +1,6 @@
 from __future__ import division
 
-from numpy import clip, exp, log
+from numpy import clip, errstate, exp, log
 from numpy_sugar import epsilon, is_all_finite
 from optimix import Function, Scalar, maximize_scalar
 
@@ -61,11 +61,11 @@ class LMM(LMMCore, Function):
         >>> lmm.scale = 1
         >>> lmm.fit(verbose=False)
         >>> print('%.3f' % lmm.lml())
-        -14.732
+        -3.832
         >>> lmm.unfix('delta')
         >>> lmm.fit(verbose=False)
         >>> print('%.3f' % lmm.lml())
-        -4.088
+        -3.713
     """
 
     def __init__(self, y, X, QS):
@@ -112,7 +112,7 @@ class LMM(LMMCore, Function):
             o, logistic=Scalar(self.variables().get('logistic').value))
 
         o._fix_scale = self._fix_scale
-        o._delta = self._delta
+        # o._delta = self._delta
         o._scale = self._scale
 
         o.set_nodata()
@@ -121,12 +121,16 @@ class LMM(LMMCore, Function):
     @property
     def delta(self):
         r"""Variance ratio between ``K`` and ``I``."""
-        return self._delta
+        # return self._delta
+        v = float(self.variables().get('logistic').value)
+        with errstate(over='ignore', under='ignore'):
+            v = 1 / (1 + exp(-v))
+        return clip(v, epsilon.tiny, 1 - epsilon.tiny)
 
     @delta.setter
     def delta(self, delta):
         delta = clip(delta, epsilon.tiny, 1 - epsilon.tiny)
-        self._delta = delta
+        # self._delta = delta
         self.variables().set(dict(logistic=log(delta / (1 - delta))))
 
     def isfixed(self, var_name):
@@ -197,6 +201,8 @@ class LMM(LMMCore, Function):
         if var_name == 'delta':
             super(LMM, self).fix('logistic')
         else:
+            if not self._fix_scale:
+                self._scale = self.scale
             self._fix_scale = True
 
     @property
@@ -220,8 +226,10 @@ class LMM(LMMCore, Function):
         :class:`.FastScanner`
             Class initially designed to perform very fast genome-wide scan.
         """
-        QS = (self._QS[0], (1 - self.delta) * self._QS[1])
-        return FastScanner(self._y, self.X, QS, self.delta)
+        v0 = self.v0
+        v1 = self.v1
+        QS = (self._QS[0], v0 * self._QS[1])
+        return FastScanner(self._y, self.X, QS, v1)
 
     def lml(self):
         self.delta = self._get_delta()

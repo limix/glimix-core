@@ -27,9 +27,6 @@ def test_lmm_fix_unfix():
 
     lmm = LMM(y, ones((n, 1)), QS)
 
-    import pdb
-    pdb.set_trace()
-
     assert_(not lmm.isfixed('delta'))
     lmm.fix('delta')
     assert_(lmm.isfixed('delta'))
@@ -48,7 +45,7 @@ def test_lmm_fix_unfix():
     assert_allclose(lmm.delta, 0.5)
     assert_allclose(lmm.v0, 0.5)
     assert_allclose(lmm.v1, 0.5)
-    assert_allclose(lmm.lml(), -57.82824603785211)
+    assert_allclose(lmm.lml(), -57.56642490856645)
 
     lmm.unfix('scale')
     lmm.fit(verbose=False)

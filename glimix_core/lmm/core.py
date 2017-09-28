@@ -55,16 +55,18 @@ class LMMCore(object):
             Log of the marginal likelihood.
         """
         self._update()
+        s = self.scale
 
         n = len(self._y)
-        lml = -n * log2pi - n * log(self.scale)
+        lml = -n * log2pi - n * log(s)
 
         lml -= npsum(log(self._D[0]))
         if n > self._QS[1].shape[0]:
             lml -= (n - self._QS[1].shape[0]) * log(self._D[1])
 
         d = (mTQ - yTQ for (mTQ, yTQ) in zip(self._mTQ, self._yTQ))
-        lml += sum(dot(i * j, l) for (i, j, l) in zip(self._D, d, self._yTQ))
+        lml += sum(dot(j / i, l)
+                   for (i, j, l) in zip(self._D, d, self._yTQ)) / s
 
         return lml / 2
 
