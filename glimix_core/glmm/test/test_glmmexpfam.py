@@ -10,7 +10,7 @@ from glimix_core.glmm import GLMMExpFam
 from glimix_core.random import bernoulli_sample
 
 ATOL = 1e-6
-RTOL = 1e-6
+RTOL = 1e-5
 
 
 def test_glmmexpfam_layout():
@@ -325,50 +325,32 @@ def test_glmmexpfam_scale_very_high():
     assert_allclose(check_grad(glmm), 0, atol=1e-3)
 
 
-def test_glmmexpfam_delta_zero():
-    random = RandomState(0)
-    X = random.randn(nsamples(), 5)
-    K = linear_eye_cov().feed().value()
+def test_glmmexpfam_delta_one_zero():
+    random = RandomState(1)
+    n = 5
+    X = random.randn(n, 6)
+    K = dot(X, X.T)
+    K /= K.diagonal().mean()
     QS = economic_qs(K)
 
-    ntri = random.randint(1, 30, nsamples())
+    ntri = random.randint(1, 30, n)
     nsuc = [random.randint(0, i) for i in ntri]
 
     glmm = GLMMExpFam((nsuc, ntri), 'binomial', X, QS)
-    glmm.beta = asarray([1.0, 0, 0.5, 0.1, 0.4])
+    glmm.beta = asarray([1.0, 0, 0.5, 0.1, 0.4, -0.2])
 
     glmm.delta = 0
-    assert_allclose(glmm.lml(), -43.154282363439364)
+    assert_allclose(glmm.lml(), -27.77624935475116)
     assert_allclose(check_grad(glmm, step=1e-4), 0, atol=1e-2)
 
     glmm.fit(verbose=False)
-    assert_allclose(glmm.lml(), -23.55477374056832, atol=ATOL, rtol=RTOL)
-    assert_allclose(glmm.delta, 0.9999999996205406, atol=ATOL, rtol=RTOL)
-
-
-def test_glmmexpfam_delta_one():
-    random = RandomState(0)
-    X = random.randn(nsamples(), 5)
-    X -= X.mean(0)
-    X /= X.std(0)
-    X /= sqrt(X.shape[1])
-    K = dot(X, X.T)
-
-    z = dot(X, random.randn(5))
-
-    QS = economic_qs(K)
-
-    ntri = random.randint(1, 30, nsamples())
-    nsuc = zeros(nsamples())
-    for i in range(nsamples()):
-        nsuc[i] = sum(z[i] + 0.001 * random.randn(ntri[i]) > 0)
-
-    glmm = GLMMExpFam((nsuc, ntri), 'binomial', ones((nsamples(), 1)), QS)
+    assert_allclose(glmm.lml(), -4.578485988493605, atol=ATOL, rtol=RTOL)
+    assert_allclose(glmm.delta, 0.00012363396798507502, atol=ATOL, rtol=RTOL)
 
     glmm.delta = 1
-    assert_allclose(glmm.lml(), -39.86006066093746, atol=ATOL, rtol=RTOL)
-    assert_allclose(check_grad(glmm, step=1e-4), 0, atol=1e-2)
+    assert_allclose(glmm.lml(), -4.579130225512129)
+    assert_allclose(check_grad(glmm, step=1e-4), 0, atol=1e-1)
 
     glmm.fit(verbose=False)
-    assert_allclose(glmm.lml(), -5.851337541533554, atol=ATOL, rtol=RTOL)
-    assert_allclose(glmm.delta, 0.001599583006485038, atol=ATOL, rtol=RTOL)
+    assert_allclose(glmm.lml(), -4.579130225664007, atol=ATOL, rtol=RTOL)
+    assert_allclose(glmm.delta, 0.9998779296875, atol=ATOL, rtol=RTOL)
