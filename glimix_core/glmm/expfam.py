@@ -43,7 +43,7 @@ class GLMMExpFam(GLMM):
         >>> from glimix_core.glmm import GLMMExpFam
         >>>
         >>> random = RandomState(0)
-        >>> nsamples = 50
+        >>> nsamples = 10
         >>>
         >>> X = random.randn(50, 2)
         >>> G = random.randn(50, 100)

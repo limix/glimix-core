@@ -1,9 +1,9 @@
 from __future__ import division
 
 import pytest
-from numpy import arange, concatenate, inf, nan, newaxis, ones, sqrt, zeros
+from numpy import arange, inf, nan, ones, sqrt, zeros
 from numpy.random import RandomState
-from numpy.testing import assert_, assert_allclose
+from numpy.testing import assert_allclose
 from numpy_sugar.linalg import economic_qs_linear
 
 from glimix_core.cov import EyeCov, LinearCov, SumCov
@@ -14,179 +14,18 @@ from glimix_core.mean import OffsetMean
 from glimix_core.random import GGPSampler
 
 
-def test_fastlmm_fast_scan():
+def test_lmm_fix_unfix():
     random = RandomState(9458)
-    N = 500
-    X = random.randn(N, N + 1)
-    X -= X.mean(0)
-    X /= X.std(0)
-    X /= sqrt(X.shape[1])
+    n = 30
+    X = _covariates_sample(random, n, n + 1)
+
     offset = 1.0
 
-    mean = OffsetMean()
-    mean.offset = offset
-    mean.set_data(arange(N), purpose='sample')
-
-    cov_left = LinearCov()
-    cov_left.scale = 1.5
-    cov_left.set_data((X, X), purpose='sample')
-
-    cov_right = EyeCov()
-    cov_right.scale = 1.5
-    cov_right.set_data((arange(N), arange(N)), purpose='sample')
-
-    cov = SumCov([cov_left, cov_right])
-
-    lik = DeltaProdLik()
-
-    y = GGPSampler(lik, mean, cov).sample(random)
+    y = _outcome_sample(random, offset, X)
 
     QS = economic_qs_linear(X)
 
-    lmm = LMM(y, ones((N, 1)), QS)
-
-    lmm.fit(verbose=False)
-
-    markers = random.randn(N, 2)
-
-    lmm_ = lmm.copy()
-    lmm_.X = concatenate([lmm.X, markers[:, 0][:, newaxis]], axis=1)
-    lmm_.fix('delta')
-    lmm_.fit(verbose=False)
-    lml0 = lmm_.lml()
-
-    lmm_ = lmm.copy()
-    lmm_.X = concatenate([lmm.X, markers[:, 1][:, newaxis]], axis=1)
-    lmm_.fix('delta')
-    lmm_.fit(verbose=False)
-    lml1 = lmm_.lml()
-
-    fast_scanner = lmm.get_fast_scanner()
-
-    lmls = fast_scanner.fast_scan(markers, verbose=False)[0]
-    assert_allclose(lmls, [lml0, lml1])
-
-    lmm.fix('scale')
-    assert_(lmm.isfixed('scale'))
-    # lmm.scale = 0.45
-
-
-def test_fastlmm_fast_scan_redundant():
-    random = RandomState(9458)
-    N = 500
-    X = random.randn(N, N + 1)
-    X -= X.mean(0)
-    X /= X.std(0)
-    X /= sqrt(X.shape[1])
-    offset = 1.0
-
-    mean = OffsetMean()
-    mean.offset = offset
-    mean.set_data(arange(N), purpose='sample')
-
-    cov_left = LinearCov()
-    cov_left.scale = 1.5
-    cov_left.set_data((X, X), purpose='sample')
-
-    cov_right = EyeCov()
-    cov_right.scale = 1.5
-    cov_right.set_data((arange(N), arange(N)), purpose='sample')
-
-    cov = SumCov([cov_left, cov_right])
-
-    lik = DeltaProdLik()
-
-    y = GGPSampler(lik, mean, cov).sample(random)
-
-    QS = economic_qs_linear(X)
-
-    M = ones((N, 5))
-    lmm = LMM(y, M, QS)
-
-    lmm.fit(verbose=False)
-
-    markers = M.copy()
-
-    lmm.fit(verbose=False)
-    fast_scanner = lmm.get_fast_scanner()
-
-    lmls = fast_scanner.fast_scan(markers, verbose=False)[0]
-    assert_allclose(
-        lmls, [
-            -948.79826806, -948.79826806, -948.79826806, -948.79826806,
-            -948.79826806
-        ],
-        rtol=1e-5)
-
-
-def test_lmm_learn():
-    random = RandomState(9458)
-    N = 500
-    X = random.randn(N, N + 1)
-    X -= X.mean(0)
-    X /= X.std(0)
-    X /= sqrt(X.shape[1])
-    offset = 1.0
-
-    mean = OffsetMean()
-    mean.offset = offset
-    mean.set_data(arange(N), purpose='sample')
-
-    cov_left = LinearCov()
-    cov_left.scale = 1.5
-    cov_left.set_data((X, X), purpose='sample')
-
-    cov_right = EyeCov()
-    cov_right.scale = 1.5
-    cov_right.set_data((arange(N), arange(N)), purpose='sample')
-
-    cov = SumCov([cov_left, cov_right])
-
-    lik = DeltaProdLik()
-
-    y = GGPSampler(lik, mean, cov).sample(random)
-
-    QS = economic_qs_linear(X)
-
-    lmm = LMM(y, ones((N, 1)), QS)
-
-    lmm.fit(verbose=False)
-
-    assert_allclose(lmm.beta[0], 0.8997652129631661, rtol=1e-5)
-    assert_allclose(lmm.v0, 1.7303981309775553, rtol=1e-5)
-    assert_allclose(lmm.v1, 1.2950028351268132, rtol=1e-5)
-
-
-def test_fastlmm_learn_fix():
-    random = RandomState(9458)
-    N = 500
-    X = random.randn(N, N + 1)
-    X -= X.mean(0)
-    X /= X.std(0)
-    X /= sqrt(X.shape[1])
-    offset = 1.0
-
-    mean = OffsetMean()
-    mean.offset = offset
-    mean.set_data(arange(N), purpose='sample')
-
-    cov_left = LinearCov()
-    cov_left.scale = 1.5
-    cov_left.set_data((X, X), purpose='sample')
-
-    cov_right = EyeCov()
-    cov_right.scale = 1.5
-    cov_right.set_data((arange(N), arange(N)), purpose='sample')
-
-    cov = SumCov([cov_left, cov_right])
-
-    lik = DeltaProdLik()
-
-    y = GGPSampler(lik, mean, cov).sample(random)
-
-    QS = economic_qs_linear(X)
-
-    lmm = LMM(y, ones((N, 1)), QS)
+    lmm = LMM(y, ones((n, 1)), QS)
 
     lmm.fix('delta')
     lmm.fix('scale')
@@ -196,33 +35,33 @@ def test_fastlmm_learn_fix():
 
     lmm.fit(verbose=False)
 
-    assert_allclose(lmm.beta[0], 0.899765212963)
+    assert_allclose(lmm.beta[0], 0.7065598068496923)
     assert_allclose(lmm.scale, 1.0)
     assert_allclose(lmm.delta, 0.5)
     assert_allclose(lmm.v0, 0.5)
     assert_allclose(lmm.v1, 0.5)
-    assert_allclose(lmm.lml(), -1405.4142416957006)
+    assert_allclose(lmm.lml(), -57.82824603785211)
 
     lmm.unfix('scale')
     lmm.fit(verbose=False)
 
-    assert_allclose(lmm.beta[0], 0.899765212963)
-    assert_allclose(lmm.v0, 1.4614562029852856)
-    assert_allclose(lmm.v1, 1.4614562029852856)
-    assert_allclose(lmm.lml(), -949.526700867)
+    assert_allclose(lmm.beta[0], 0.7065598068496923)
+    assert_allclose(lmm.v0, 1.060029052117017)
+    assert_allclose(lmm.v1, 1.060029052117017)
+    assert_allclose(lmm.lml(), -52.037205784544476)
 
     lmm.unfix('delta')
     lmm.fit(verbose=False)
 
-    assert_allclose(lmm.beta[0], 0.899765212963)
-    assert_allclose(lmm.v0, 1.73039821903)
-    assert_allclose(lmm.v1, 1.29500280131)
-    assert_allclose(lmm.lml(), -948.798268063)
+    assert_allclose(lmm.beta[0], 0.7065598068496922)
+    assert_allclose(lmm.v0, 0.5667112269084563)
+    assert_allclose(lmm.v1, 1.3679269553495002)
+    assert_allclose(lmm.lml(), -51.84396136865774)
 
 
 def test_lmm_unique_outcome():
     random = RandomState(9458)
-    N = 50
+    N = 5
     X = random.randn(N, N + 1)
     X -= X.mean(0)
     X /= X.std(0)
@@ -234,14 +73,14 @@ def test_lmm_unique_outcome():
 
     lmm.fit(verbose=False)
 
-    assert_allclose(lmm.beta[0], 0, atol=1e-7)
-    assert_allclose(lmm.v0, 0, atol=1e-7)
-    assert_allclose(lmm.v1, 0, atol=1e-7)
+    assert_allclose(lmm.beta[0], 0, atol=1e-5)
+    assert_allclose(lmm.v0, 0, atol=1e-5)
+    assert_allclose(lmm.v1, 0, atol=1e-5)
 
 
-def test_lmm_nonfinite_phenotype():
+def test_lmm_nonfinite_outcome():
     random = RandomState(9458)
-    N = 50
+    N = 5
     QS = economic_qs_linear(random.randn(N, N + 1))
     y = zeros(N)
 
@@ -258,9 +97,9 @@ def test_lmm_nonfinite_phenotype():
         LMM(y, ones((N, 1)), QS)
 
 
-def test_lmmcore_interface():
+def test_lmm_lmmcore_interface():
     random = RandomState(9458)
-    N = 50
+    N = 5
     QS = economic_qs_linear(random.randn(N, N + 1))
     y = zeros(N)
 
@@ -270,3 +109,32 @@ def test_lmmcore_interface():
 
     with pytest.raises(NotImplementedError):
         lmmc.delta = 1
+
+
+def _outcome_sample(random, offset, X):
+    n = X.shape[0]
+    mean = OffsetMean()
+    mean.offset = offset
+    mean.set_data(arange(n), purpose='sample')
+
+    cov_left = LinearCov()
+    cov_left.scale = 1.5
+    cov_left.set_data((X, X), purpose='sample')
+
+    cov_right = EyeCov()
+    cov_right.scale = 1.5
+    cov_right.set_data((arange(n), arange(n)), purpose='sample')
+
+    cov = SumCov([cov_left, cov_right])
+
+    lik = DeltaProdLik()
+
+    return GGPSampler(lik, mean, cov).sample(random)
+
+
+def _covariates_sample(random, n, p):
+    X = random.randn(n, p)
+    X -= X.mean(0)
+    X /= X.std(0)
+    X /= sqrt(X.shape[1])
+    return X

@@ -65,6 +65,14 @@ class GLMM(Function):
         self._X = check_covariates(X)
         self._QS = check_economic_qs(QS)
 
+        if len(self._y[0]) != self._X.shape[0]:
+            raise ValueError("Number of samples in " +
+                             "outcome and covariates differ.")
+
+        if len(self._y[0]) != self._QS[0][0].shape[0]:
+            raise ValueError("Number of samples in " +
+                             "outcome and covariance differ.")
+
         self._factr = 1e5
         self._pgtol = 1e-6
         self.set_variable_bounds('logscale', (log(1e-3), 7.))

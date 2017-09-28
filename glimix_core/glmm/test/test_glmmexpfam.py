@@ -6,54 +6,61 @@ from numpy_sugar.linalg import economic_qs, economic_qs_linear
 from optimix import check_grad
 
 from glimix_core.example import linear_eye_cov, nsamples
-from glimix_core.glmm import GLMMExpFam, GLMMNormal
+from glimix_core.glmm import GLMMExpFam
 from glimix_core.random import bernoulli_sample
 
 ATOL = 1e-6
 RTOL = 1e-6
 
 
-def test_glmm_glmmnormal():
+def test_glmmexpfam_layout():
+    y = asarray([1.0, 0.5])
+    X = asarray([[0.5, 1.0]])
+    K = asarray([[1.0, 0.0], [0.0, 1.0]])
+    QS = economic_qs(K)
+
+    with pytest.raises(ValueError):
+        GLMMExpFam(y, 'poisson', X, QS=QS)
+
+    y = asarray([1.0])
+    with pytest.raises(ValueError):
+        GLMMExpFam(y, 'poisson', X, QS=QS)
+
+
+def test_glmmexpfam_copy():
     random = RandomState(0)
     X = random.randn(nsamples(), 5)
     K = linear_eye_cov().feed().value()
+    z = random.multivariate_normal(0.2 * ones(nsamples()), K)
     QS = economic_qs(K)
 
-    eta = random.randn(nsamples())
-    tau = 10 * random.rand(nsamples())
+    ntri = random.randint(1, 30, nsamples())
+    nsuc = zeros(nsamples(), dtype=int)
+    for (i, ni) in enumerate(ntri):
+        nsuc[i] += sum(z[i] + 0.2 * random.randn(ni) > 0)
 
-    glmm = GLMMNormal(eta, tau, X, QS)
-    glmm.beta = asarray([1.0, 0, 0.5, 0.1, 0.4])
+    ntri = ascontiguousarray(ntri)
+    glmm0 = GLMMExpFam((nsuc, ntri), 'binomial', X, QS)
 
-    assert_allclose(glmm.lml(), -18.950752841710603)
+    assert_allclose(glmm0.lml(), -29.10216812909928, atol=ATOL, rtol=RTOL)
+    glmm0.fit(verbose=False)
 
-    assert_allclose(check_grad(glmm), 0, atol=1e-3, rtol=RTOL)
+    v = -19.575736562427252
+    assert_allclose(glmm0.lml(), v)
 
+    glmm1 = glmm0.copy()
+    assert_allclose(glmm1.lml(), v)
 
-# def test_glmm_glmmnormal_get_fast_scanner():
-#     random = RandomState(0)
-#     X = random.randn(nsamples(), 5)
-#     K = linear_eye_cov().feed().value()
-#     QS = economic_qs(K)
-#
-#     eta = random.randn(nsamples())
-#     tau = 10 * random.rand(nsamples())
-#
-#     glmm = GLMMNormal(eta, tau, X, QS)
-#     glmm.fit(verbose=False)
-#
-#     scanner = glmm.get_fast_scanner()
-#     scanner.set_scale(1.0)
-#     lmls, effect_sizes = scanner.fast_scan(X, verbose=False)
-#
-#     assert_allclose(lmls, [
-#         0.65993260598994397, 3.6666642592705188, 3.6666642592705188,
-#         3.4687842095112131, 3.6666642592705188
-#     ])
-#     assert_allclose(effect_sizes, [
-#         -831173461326518.12, -0.0015024987823475178, 0.085827590202214823,
-#         42866244922529.086, 0.024047703652107007
-#     ])
+    glmm1.scale = 0.92
+    assert_allclose(glmm0.lml(), v, atol=ATOL, rtol=RTOL)
+    assert_allclose(glmm1.lml(), -30.832831740038056, atol=ATOL, rtol=RTOL)
+
+    glmm0.fit(verbose=False)
+    glmm1.fit(verbose=False)
+
+    v = -19.575736562378573
+    assert_allclose(glmm0.lml(), v)
+    assert_allclose(glmm1.lml(), v)
 
 
 def test_glmmexpfam_precise():
@@ -86,7 +93,33 @@ def test_glmmexpfam_precise():
     assert_allclose(check_grad(glmm), 0, atol=1e-3, rtol=RTOL)
 
 
-def test_glmm_delta0():
+# def test_glmmexpfam_glmmnormal_get_fast_scanner():
+#     random = RandomState(0)
+#     X = random.randn(nsamples(), 5)
+#     K = linear_eye_cov().feed().value()
+#     QS = economic_qs(K)
+#
+#     eta = random.randn(nsamples())
+#     tau = 10 * random.rand(nsamples())
+#
+#     glmm = GLMMNormal(eta, tau, X, QS)
+#     glmm.fit(verbose=False)
+#
+#     scanner = glmm.get_fast_scanner()
+#     scanner.set_scale(1.0)
+#     lmls, effect_sizes = scanner.fast_scan(X, verbose=False)
+#
+#     assert_allclose(lmls, [
+#         0.65993260598994397, 3.6666642592705188, 3.6666642592705188,
+#         3.4687842095112131, 3.6666642592705188
+#     ])
+#     assert_allclose(effect_sizes, [
+#         -831173461326518.12, -0.0015024987823475178, 0.085827590202214823,
+#         42866244922529.086, 0.024047703652107007
+#     ])
+
+
+def test_glmmexpfam_delta0():
     random = RandomState(0)
     X = random.randn(nsamples(), 5)
     K = linear_eye_cov().feed().value()
@@ -104,7 +137,7 @@ def test_glmm_delta0():
     assert_allclose(check_grad(glmm, step=2e-5), 0, atol=1e-2)
 
 
-def test_glmm_delta1():
+def test_glmmexpfam_delta1():
     random = RandomState(0)
     X = random.randn(nsamples(), 5)
     K = linear_eye_cov().feed().value()
@@ -122,7 +155,7 @@ def test_glmm_delta1():
     assert_allclose(check_grad(glmm), 0, atol=1e-4)
 
 
-def test_glmm_wrong_qs():
+def test_glmmexpfam_wrong_qs():
     random = RandomState(0)
     X = random.randn(10, 15)
     linear_eye_cov().feed().value()
@@ -135,7 +168,7 @@ def test_glmm_wrong_qs():
         print(GLMMExpFam((nsuc, ntri), 'binomial', X, QS))
 
 
-def test_glmm_optimize():
+def test_glmmexpfam_optimize():
     random = RandomState(0)
     X = random.randn(nsamples(), 5)
     K = linear_eye_cov().feed().value()
@@ -166,7 +199,7 @@ def test_glmm_optimize():
     assert_allclose(glmm.lml(), -19.68486269551159, atol=ATOL, rtol=RTOL)
 
 
-def test_glmm_optimize_low_rank():
+def test_glmmexpfam_optimize_low_rank():
     random = RandomState(0)
     X = random.randn(nsamples(), 5)
     K = dot(X, X.T)
@@ -186,7 +219,7 @@ def test_glmm_optimize_low_rank():
     assert_allclose(glmm.lml(), -7.800621320491801, atol=ATOL, rtol=RTOL)
 
 
-def test_glmm_bernoulli_problematic():
+def test_glmmexpfam_bernoulli_problematic():
     random = RandomState(1)
     N = 30
     G = random.randn(N, N + 50)
@@ -232,7 +265,7 @@ def _stdnorm(X, axis=None, out=None):
     return out
 
 
-def test_glmm_binomial_pheno_list():
+def test_glmmexpfam_binomial_pheno_list():
     random = RandomState(0)
     nsamples = 10
 
@@ -256,7 +289,7 @@ def test_glmm_binomial_pheno_list():
     assert_allclose(glmm.lml(), -11.43920790567486)
 
 
-def test_glmm_scale_very_low():
+def test_glmmexpfam_scale_very_low():
     random = RandomState(0)
     X = random.randn(nsamples(), 5)
     K = linear_eye_cov().feed().value()
@@ -274,7 +307,7 @@ def test_glmm_scale_very_low():
     assert_allclose(check_grad(glmm), 0, atol=1e-2)
 
 
-def test_glmm_scale_very_high():
+def test_glmmexpfam_scale_very_high():
     random = RandomState(0)
     X = random.randn(nsamples(), 5)
     K = linear_eye_cov().feed().value()
@@ -292,7 +325,7 @@ def test_glmm_scale_very_high():
     assert_allclose(check_grad(glmm), 0, atol=1e-3)
 
 
-def test_glmm_delta_zero():
+def test_glmmexpfam_delta_zero():
     random = RandomState(0)
     X = random.randn(nsamples(), 5)
     K = linear_eye_cov().feed().value()
@@ -313,7 +346,7 @@ def test_glmm_delta_zero():
     assert_allclose(glmm.delta, 0.9999999996205406, atol=ATOL, rtol=RTOL)
 
 
-def test_glmm_delta_one():
+def test_glmmexpfam_delta_one():
     random = RandomState(0)
     X = random.randn(nsamples(), 5)
     X -= X.mean(0)
@@ -339,71 +372,3 @@ def test_glmm_delta_one():
     glmm.fit(verbose=False)
     assert_allclose(glmm.lml(), -5.851337541533554, atol=ATOL, rtol=RTOL)
     assert_allclose(glmm.delta, 0.001599583006485038, atol=ATOL, rtol=RTOL)
-
-
-def test_glmmexpfam_copy():
-    random = RandomState(0)
-    X = random.randn(nsamples(), 5)
-    K = linear_eye_cov().feed().value()
-    z = random.multivariate_normal(0.2 * ones(nsamples()), K)
-    QS = economic_qs(K)
-
-    ntri = random.randint(1, 30, nsamples())
-    nsuc = zeros(nsamples(), dtype=int)
-    for (i, ni) in enumerate(ntri):
-        nsuc[i] += sum(z[i] + 0.2 * random.randn(ni) > 0)
-
-    ntri = ascontiguousarray(ntri)
-    glmm0 = GLMMExpFam((nsuc, ntri), 'binomial', X, QS)
-
-    assert_allclose(glmm0.lml(), -29.10216812909928, atol=ATOL, rtol=RTOL)
-    glmm0.fit(verbose=False)
-
-    v = -19.575736562427252
-    assert_allclose(glmm0.lml(), v)
-
-    glmm1 = glmm0.copy()
-    assert_allclose(glmm1.lml(), v)
-
-    glmm1.scale = 0.92
-    assert_allclose(glmm0.lml(), v, atol=ATOL, rtol=RTOL)
-    assert_allclose(glmm1.lml(), -30.832831740038056, atol=ATOL, rtol=RTOL)
-
-    glmm0.fit(verbose=False)
-    glmm1.fit(verbose=False)
-
-    v = -19.575736562378573
-    assert_allclose(glmm0.lml(), v)
-    assert_allclose(glmm1.lml(), v)
-
-
-def test_glmmnormal_copy():
-    random = RandomState(0)
-
-    X = random.randn(nsamples(), 5)
-    QS = economic_qs(linear_eye_cov().feed().value())
-
-    eta = random.randn(nsamples())
-    tau = random.rand(nsamples()) * 10
-
-    glmm0 = GLMMNormal(eta, tau, X, QS)
-
-    assert_allclose(glmm0.lml(), -12.646439806030257, atol=ATOL, rtol=RTOL)
-
-    glmm0.fit(verbose=False)
-
-    v = -4.758450057194982
-    assert_allclose(glmm0.lml(), v)
-
-    glmm1 = glmm0.copy()
-    assert_allclose(glmm1.lml(), v)
-
-    glmm1.scale = 0.92
-    assert_allclose(glmm0.lml(), v, atol=ATOL, rtol=RTOL)
-    assert_allclose(glmm1.lml(), -10.986014936977927, atol=ATOL, rtol=RTOL)
-
-    glmm0.fit(verbose=False)
-    glmm1.fit(verbose=False)
-
-    assert_allclose(glmm0.lml(), v, atol=ATOL, rtol=RTOL)
-    assert_allclose(glmm1.lml(), v, atol=ATOL, rtol=RTOL)
