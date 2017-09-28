@@ -10,7 +10,7 @@ Fast inference for Generalised Linear Mixed Models.
 from __future__ import absolute_import as _
 
 from . import cov, ggp, glmm, gp, lik, link, lmm, mean, random, util
-from ._test import test
+from .testit import test
 
 __name__ = "glimix-core"
 __version__ = "1.2.24"
