@@ -327,7 +327,7 @@ def test_glmmexpfam_scale_very_high():
 
 def test_glmmexpfam_delta_one_zero():
     random = RandomState(1)
-    n = 5
+    n = 30
     X = random.randn(n, 6)
     K = dot(X, X.T)
     K /= K.diagonal().mean()
@@ -340,17 +340,17 @@ def test_glmmexpfam_delta_one_zero():
     glmm.beta = asarray([1.0, 0, 0.5, 0.1, 0.4, -0.2])
 
     glmm.delta = 0
-    assert_allclose(glmm.lml(), -27.77624935475116)
+    assert_allclose(glmm.lml(), -113.22468572634763)
     assert_allclose(check_grad(glmm, step=1e-4), 0, atol=1e-2)
 
     glmm.fit(verbose=False)
-    assert_allclose(glmm.lml(), -4.578485988493605, atol=ATOL, rtol=RTOL)
+    assert_allclose(glmm.lml(), -98.21142075640205, atol=ATOL, rtol=RTOL)
     assert_allclose(glmm.delta, 0.00012363396798507502, atol=ATOL, rtol=RTOL)
 
     glmm.delta = 1
-    assert_allclose(glmm.lml(), -4.579130225512129, atol=ATOL, rtol=RTOL)
+    assert_allclose(glmm.lml(), -98.00060746015443, atol=ATOL, rtol=RTOL)
     assert_allclose(check_grad(glmm, step=1e-4), 0, atol=1e-1)
 
     glmm.fit(verbose=False)
-    assert_allclose(glmm.lml(), -4.579130225664007, atol=ATOL, rtol=RTOL)
-    assert_allclose(glmm.delta, 0.9998779296875, atol=ATOL, rtol=RTOL)
+    assert_allclose(glmm.lml(), -72.82680932955623, atol=ATOL, rtol=RTOL)
+    assert_allclose(glmm.delta, 0.9999999998430158, atol=ATOL, rtol=RTOL)
