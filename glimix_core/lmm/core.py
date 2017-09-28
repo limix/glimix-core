@@ -21,29 +21,40 @@ class LMMCore(object):
         self._svd = None
         self._set_X(X)
 
-    def _diag(self, i):
-        if i == 0:
-            return self._QS[1] * (1 - self.delta) + self.delta
-        return self.delta
+    # def _diag(self, i):
+    #     if i == 0:
+    #         return self._QS[1] * (1 - self.delta) + self.delta
+    #     return self.delta
 
     @property
     def _D(self):
-        return (self._QS[1] * (1 - self.delta) + self.delta, self.delta)
+        D = [self._QS[1] * (1 - self.delta) + self.delta]
+        if self._QS[0][1].size > 0:
+            D += [self.delta]
+        return D
 
-    def _a(self, i):
-        return sum(self._yTQ_2x(i) / self._diag(i))
+    @property
+    def _a(self):
+        return (npsum(i / j) for (i, j) in zip(self._yTQ_2x, self._D))
 
-    def _b(self, i):
-        return (self._yTQ(i) / self._diag(i)).dot(self._tMTQ(i).T)
+    @property
+    def _b(self):
+        yTQ = self._yTQ
+        D = self._D
+        tMTQ = self._tMTQ
+        return (dot(i / j, l.T) for (i, j, l) in zip(yTQ, D, tMTQ))
 
-    def _c(self, i):
-        return (self._tMTQ(i) / self._diag(i)).dot(self._tMTQ(i).T)
+    @property
+    def _c(self):
+        return (dot(i / j, i.T) for (i, j) in zip(self._tMTQ, self._D))
 
-    def _yTQ(self, i):
-        return dot(self._y.T, self._QS[0][i])
+    @property
+    def _yTQ(self):
+        return (dot(self._y.T, Q) for Q in self._QS[0] if Q.size > 0)
 
-    def _yTQ_2x(self, i):
-        return self._yTQ(i)**2
+    @property
+    def _yTQ_2x(self):
+        return (yTQ**2 for yTQ in self._yTQ)
 
     def _lml_optimal_scale(self):
         r"""Log of the marginal likelihood.
@@ -56,11 +67,12 @@ class LMMCore(object):
         self._update()
 
         n = len(self._y)
-        p = n - self._QS[1].shape[0]
         lml = -n * log2pi - n - n * log(self.scale)
-        lml += -sum(log(self._diag(0))) - p * log(self._diag(1))
-        lml /= 2
-        return lml
+        lml -= npsum(log(self._D[0]))
+        if n > self._QS[1].shape[0]:
+            lml -= (n - self._QS[1].shape[0]) * log(self._D[1])
+
+        return lml / 2
 
     def _lml_arbitrary_scale(self):
         r"""Log of the marginal likelihood.
@@ -73,17 +85,20 @@ class LMMCore(object):
         self._update()
 
         n = len(self._y)
-        p = n - self._QS[1].shape[0]
-
         lml = -n * log2pi
         lml -= n * log(self.scale)
-        lml -= npsum(log(self._diag(0))) + p * log(self._diag(1))
+
+        lml -= npsum(log(self._D[0]))
+        if n > self._QS[1].shape[0]:
+            lml -= (n - self._QS[1].shape[0]) * log(self._D[1])
+
         m = self.mean - self._y
         m = [dot(m, Q) for Q in self._QS[0] if Q.size > 0]
         D = self._D
-        lml += npsum(
-            dot(D[i] * m[i], self._yTQ(i)) for i in range(2)
-            if self._yTQ(i).size > 0)
+        lml += npsum(dot(i * j, l) for (i, j, l) in zip(D, m, self._yTQ))
+        # lml += npsum(
+        #     dot(D[i] * m[i], self._yTQ(i)) for i in range(2)
+        #     if self._yTQ(i).size > 0)
 
         return lml / 2
 
@@ -92,23 +107,34 @@ class LMMCore(object):
         self._tM = ddot(self._svd[0], sqrt(self._svd[1]), left=False)
         self.__tbeta = zeros(self._tM.shape[1])
 
-    def _tMTQ(self, i):
-        return self._tM.T.dot(self._QS[0][i])
+    @property
+    def _tMTQ(self):
+        return (self._tM.T.dot(Q) for Q in self._QS[0] if Q.size > 0)
 
     def _update_fixed_effects(self):
-        nominator = self._b(1) - self._b(0)
-        denominator = self._c(1) - self._c(0)
+        b = list(self._b)
+        c = list(self._c)
+        nominator = -b[0]
+        denominator = -c[0]
+
+        if len(b) > 1:
+            nominator += b[1]
+            denominator += c[1]
+
         self._tbeta = solve(denominator, nominator)
 
     def _update(self):
         self._update_fixed_effects()
 
     def _optimal_scale(self):
-        a = [self._a(i) for i in [0, 1]]
-        b = [self._b(i) for i in [0, 1]]
-        c = [self._c(i) for i in [0, 1]]
+        a = list(self._a)
+        b = list(self._b)
+        c = list(self._c)
         be = self.__tbeta
-        p = [a[i] - 2 * b[i].dot(be) + be.dot(c[i]).dot(be) for i in [0, 1]]
+        p = [
+            a[i] - 2 * b[i].dot(be) + be.dot(c[i]).dot(be)
+            for i in range(len(a))
+        ]
         return maximum(sum(p) / len(self._y), epsilon.tiny)
 
     @property
