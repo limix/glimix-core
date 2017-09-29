@@ -7,7 +7,7 @@ glimix-core
 
 
 
-Fast inference for Generalized Linear Mixed Models.
+Fast inference for Generalised Linear Mixed Models.
 
 Install
 -------

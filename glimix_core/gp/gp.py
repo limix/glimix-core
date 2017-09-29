@@ -3,7 +3,6 @@ from __future__ import division
 from numpy import log, pi
 from numpy.linalg import slogdet, solve
 from numpy_sugar import is_all_finite
-
 from optimix import FunctionReduce
 
 
@@ -38,10 +37,10 @@ class GP(FunctionReduce):
         >>>
         >>> gp = GP(y, mean, cov)
         >>> print('Before: %.4f' % gp.feed().value())
-        Before: -49.4450
+        Before: -15.5582
         >>> gp.feed().maximize(verbose=False)
         >>> print('After: %.4f' % gp.feed().value())
-        After: -49.2888
+        After: -13.4791
     """
 
     def __init__(self, y, mean, cov):

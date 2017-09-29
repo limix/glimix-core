@@ -20,6 +20,7 @@ def test_delta_prod_lik():
     assert_allclose(lik.outcome, [1, 0, 1])
 
     assert_(lik.sample_size == 3)
+
     assert_allclose(lik.mean([-1, 0, 0.5]), [-1, 0, 0.5])
     assert_allclose(lik.sample([-10, 0, 0.5], random), [-10, 0, 0.5])
 

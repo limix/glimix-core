@@ -3,17 +3,17 @@
 glimix_core package
 *******************
 
-Fast inference for Generalized Linear Mixed Models.
+Fast inference for Generalised Linear Mixed Models.
 
 """
 
 from __future__ import absolute_import as _
 
 from . import cov, ggp, glmm, gp, lik, link, lmm, mean, random, util
-from ._test import test
+from .testit import test
 
 __name__ = "glimix-core"
-__version__ = "1.2.24"
+__version__ = "1.3.0"
 __author__ = "Danilo Horta"
 __author_email__ = "horta@ebi.ac.uk"
 

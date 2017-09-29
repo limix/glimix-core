@@ -1,88 +1,238 @@
 from __future__ import division
 
-import logging
-
 from numpy import all as npall
 from numpy import sum as npsum
 from numpy import (
-    asarray, clip, dot, empty, errstate, full, inf, isfinite, log,
-    nan_to_num, zeros
+    asarray, clip, dot, empty, errstate, full, inf, isfinite, log, nan_to_num,
+    zeros
 )
 from numpy.linalg import LinAlgError
 from numpy_sugar import epsilon
 from numpy_sugar.linalg import rsolve, solve
 from tqdm import tqdm
 
-LOG2PI = 1.837877066409345339081937709124758839607238769531250
+from ..io import wprint
+from ..util import log2pi
 
 
-class FastScanner(object):  # pylint: disable=R0903
-    r"""Fast inference over multiple covariates.
+class FastScanner(object):
+    r"""Approximated fast inference over several covariates.
 
-    Let :math:`\tilde{\mathrm M}_i` be a column-matrix of fixed-effect
-    :math:`i`.
-    It fits :math:`\alpha_i` and refits :math:`\boldsymbol\beta` and :math:`s`
-    for each fixed-effect :math:`i` in order to compute LMLs:
+    Specifically, it computes the log of the marginal likelihood
 
     .. math::
 
-        \mathbf y \sim \mathcal N\big(~ \mathrm M\boldsymbol\beta
-        + \tilde{\mathrm M}_i \alpha_i;~ s \mathrm K ~\big)
+        \log p(\mathbf y)_j = \log \mathcal N\big(~ \mathrm X\mathbf b_j^*
+            + \mathbf{m}_j \alpha_j^*,~
+            s_j^* (\mathrm K + v \mathrm I) ~\big),
 
-    Args:
+    for optimal :math:`\mathbf b_j`, :math:`\alpha_j`, and :math:`s_j^*`
+    values.
+    Vector :math:`\mathbf{m}_j` is the candidate defined by the i-th column
+    of matrix ``M`` provided to method
+    :func:`glimix_core.lmm.FastScanner.fast_scan`.
+    Variance :math:`v` is not optimised for performance reasons.
+    The method assumes the user has provided a reasonable value for it.
 
-        y (array_like): real-valued outcome.
-        M (array_like): matrix of covariates.
-        QS (tuple): economic eigen decomposition ``((Q0, Q1), S0)``.
+    Notes
+    -----
+    The implementation requires further explanation as it is somehow obscure.
+    Let :math:`\mathrm B_i=\mathrm Q_i\mathrm D_i^{-1}\mathrm Q_i^{\intercal}`
+    for :math:`i \in \{0, 1\}` and
+    :math:`\mathrm E_j = [\mathrm X;~ \mathbf m_j]`.
+    The matrix resulted from
+    :math:`\mathrm E_j^{\intercal}\mathrm B_i\mathrm E_j`
+    is represented by the attribute ``_ETBE``, and
+    four views of such a matrix are given by the attributes ``_XTBX``,
+    ``_XTBM``, ``_MTBX``, and ``_MTBM``.
+    Those views represent
+    :math:`\mathrm X^{\intercal}\mathrm B_i\mathrm X`,
+    :math:`\mathrm X^{\intercal}\mathrm B_i\mathbf m_j`,
+    :math:`\mathbf m_j^{\intercal}\mathrm B_i\mathrm X`, and
+    :math:`\mathbf m_j^{\intercal}\mathrm B_i\mathbf m_j`, respectively.
+
+    Parameters
+    ----------
+    y : array_like
+        Real-valued outcome.
+    X : array_like
+        Matrix of covariates.
+    QS : tuple
+        Economic eigendecomposition ``((Q0, Q1), S0)`` of ``K``.
+    v : float
+        Variance due to iid effect.
     """
 
-    def __init__(self, y, M, QS, delta):
+    def __init__(self, y, X, QS, v):
 
+        self._y = y
+        self._X = X
+        self._scale = None
         self._QS = QS
-        self._diags = [(1 - delta) * QS[1] + delta, delta]
+        self._D = [QS[1] + v, v]
+        self._v = v
 
         yTQ = [dot(y.T, Q) for Q in QS[0]]
+        XTQ = [dot(X.T, Q) for Q in QS[0]]
 
-        MTQ = [dot(M.T, Q) for Q in QS[0]]
+        self._yTQDi = [l / r for (l, r) in zip(yTQ, self._D)]
 
-        self._yTQdiag = [l / r for (l, r) in zip(yTQ, self._diags)]
+        self._yTBy = [(i**2 / j).sum() for (i, j) in zip(yTQ, self._D)]
 
-        self._a = [(i**2 / j).sum() for (i, j) in zip(yTQ, self._diags)]
+        self._yTBX = [dot(i, j.T) for (i, j) in zip(self._yTQDi, XTQ)]
 
-        self._b = [dot(i, j.T) for (i, j) in zip(self._yTQdiag, MTQ)]
+        self._XTQDi = [i / j for (i, j) in zip(XTQ, self._D)]
 
-        self._MTQdiag = [i / j for (i, j) in zip(MTQ, self._diags)]
+        self._ETBE = ETBE(self._XTQDi, XTQ)
 
-        nc = M.shape[1]
-
-        self._C = [empty((nc + 1, nc + 1)), empty((nc + 1, nc + 1))]
-
-        for i in range(2):
-            self._C[i][:-1, :-1] = dot(self._MTQdiag[i], MTQ[i].T)
+    @property
+    def _nsamples(self):
+        return self._QS[0][0].shape[0]
 
     def _static_lml(self):
-        n = self._QS[0][0].shape[0]
-        p = len(self._diags[0])
-        static_lml = -n * LOG2PI - n
-        static_lml -= npsum(log(self._diags[0]))
-        static_lml -= (n - p) * log(self._diags[1])
+        n = self._nsamples
+        p = len(self._D[0])
+        static_lml = -n * log2pi - n
+        static_lml -= npsum(log(self._D[0]))
+        static_lml -= (n - p) * log(self._D[1])
         return static_lml
 
-    def fast_scan(self, markers, verbose=True):
-        r"""LMLs of markers by fitting scale and fixed-effect sizes parameters.
+    def _fast_scan_chunk(self, M):
+        M = asarray(M, float)
 
-        Args:
+        if not M.ndim == 2:
+            raise ValueError("`M` array must be bidimensional.")
 
-            markers (array_like): matrix of fixed-effects across columns.
+        if not npall(isfinite(M)):
+            raise ValueError("One or more variants have non-finite value.")
 
-        Returns:
-            tuple: LMLs and effect-sizes, respectively.
+        MTQ = [dot(M.T, Q) for Q in self._QS[0]]
+
+        yTBM = [dot(i, j.T) for (i, j) in zip(self._yTQDi, MTQ)]
+        XTBM = [dot(i, j.T) for (i, j) in zip(self._XTQDi, MTQ)]
+        MTBM = [npsum((i / j) * i, axis=1) for (i, j) in zip(MTQ, self._D)]
+
+        nsamples = M.shape[0]
+        nmarkers = M.shape[1]
+
+        lmls = full(nmarkers, self._static_lml())
+        effect_sizes = empty(nmarkers)
+
+        if self._ETBE.ncovariates == 1:
+            return self._fast_scan_chunk_1covariate_loop(
+                lmls, effect_sizes, yTBM, XTBM, MTBM, nsamples)
+        else:
+            return self._fast_scan_chunk_multicovariate_loop(
+                lmls, effect_sizes, yTBM, XTBM, MTBM, nsamples, nmarkers)
+
+    def _fast_scan_chunk_multicovariate_loop(self, lmls, effect_sizes, yTBM,
+                                             XTBM, MTBM, nsamples, nmarkers):
+        yTBE = [empty(len(self._yTBX[0]) + 1), empty(len(self._yTBX[1]) + 1)]
+
+        yTBE[0][:-1] = self._yTBX[0]
+        yTBE[1][:-1] = self._yTBX[1]
+
+        for i in range(nmarkers):
+
+            yTBE[0][-1] = yTBM[0][i]
+            yTBE[1][-1] = yTBM[1][i]
+
+            self._ETBE.XTBM(0)[:] = XTBM[0][:, i]
+            self._ETBE.XTBM(1)[:] = XTBM[1][:, i]
+
+            self._ETBE.MTBX(0)[:] = self._ETBE.XTBM(0)[:]
+            self._ETBE.MTBX(1)[:] = self._ETBE.XTBM(1)[:]
+
+            self._ETBE.MTBM(0)[:] = MTBM[0][i]
+            self._ETBE.MTBM(1)[:] = MTBM[1][i]
+
+            beta = _try_solve(self._ETBE.value[1] - self._ETBE.value[0],
+                              yTBE[1] - yTBE[0])
+
+            effect_sizes[i] = beta[-1]
+
+            if self._scale is None:
+                # _compute_scale(nsamples, beta, self._yTBy,
+                # self._yTBX, )
+                # (nsamples, beta, yTBy, yTBX, yTBM, XTBX,
+                #                    XTBM, MTBM)
+
+                p0 = self._yTBy[0] - 2 * yTBE[0].dot(beta) + beta.dot(
+                    self._ETBE.value[0]).dot(beta)
+                p1 = self._yTBy[1] - 2 * yTBE[1].dot(beta) + beta.dot(
+                    self._ETBE.value[1].dot(beta))
+
+                scale = (p0 + p1) / nsamples
+            else:
+                scale = self._scale
+
+            lmls[i] -= nsamples * log(max(scale, epsilon.super_tiny))
+
+        lmls /= 2
+        return lmls, effect_sizes
+
+    def _fast_scan_chunk_1covariate_loop(self, lmls, effect_sizes, yTBM, XTBM,
+                                         MTBM, nsamples):
+
+        sC00 = self._ETBE.XTBX(1)[0, 0] - self._ETBE.XTBX(0)[0, 0]
+        sC01 = XTBM[1][0, :] - XTBM[0][0, :]
+        sC11 = MTBM[1] - MTBM[0]
+
+        sb = self._yTBX[1][0] - self._yTBX[0][0]
+        sbm = yTBM[1] - yTBM[0]
+
+        with errstate(divide='ignore'):
+            beta = _beta_1covariate(sb, sbm, sC00, sC01, sC11)
+
+        beta = [nan_to_num(bet) for bet in beta]
+
+        scale = zeros(len(lmls))
+
+        if self._scale is None:
+            for i in range(2):
+                scale += self._yTBy[i] - 2 * (
+                    self._yTBX[i][0] * beta[0] + yTBM[i] * beta[1])
+                scale += beta[0] * (self._ETBE.XTBX(i)[0, 0] * beta[0] +
+                                    XTBM[i][0, :] * beta[1])
+                scale += beta[1] * (
+                    XTBM[i][0, :] * beta[0] + MTBM[i] * beta[1])
+            scale /= nsamples
+        else:
+            scale = self._scale
+
+        lmls -= nsamples * log(clip(scale, epsilon.super_tiny, inf))
+        lmls /= 2
+
+        effect_sizes = beta[1]
+
+        return lmls, effect_sizes
+
+    def fast_scan(self, M, verbose=True):
+        r"""LML and fixed-effect sizes of each marker.
+
+        If the scaling factor ``s`` is not set by the user via method
+        :func:`set_scale`, its optimal value will be found and
+        used in the calculation.
+
+        Parameters
+        ----------
+        M : array_like
+            Matrix of fixed-effects across columns.
+        verbose : bool, optional
+            ``True`` for progress information; ``False`` otherwise.
+            Defaults to ``True``.
+
+        Returns
+        -------
+        array_like
+            Log of the marginal likelihoods.
+        array_like
+            Fixed-effect sizes.
         """
 
-        if not (markers.ndim == 2):
-            raise NotImplementedError(
-                "This does not work for that number of variants.")
-        p = markers.shape[1]
+        if not (M.ndim == 2):
+            raise ValueError("`M` array must be bidimensional.")
+        p = M.shape[1]
 
         lmls = empty(p)
         effect_sizes = empty(p)
@@ -94,134 +244,117 @@ class FastScanner(object):  # pylint: disable=R0903
 
         chunk_size = (p + nchunks - 1) // nchunks
 
-        for i in tqdm(
-                range(nchunks), desc="Scanning",
-                disable=not verbose):  # TODO: OPTIMISE
+        for i in tqdm(range(nchunks), desc="Scanning", disable=not verbose):
             start = i * chunk_size
-            stop = min(start + chunk_size, markers.shape[1])
+            stop = min(start + chunk_size, M.shape[1])
 
-            l, e = self._fast_scan_chunk(markers[:, start:stop])
+            l, e = self._fast_scan_chunk(M[:, start:stop])
 
             lmls[start:stop] = l
             effect_sizes[start:stop] = e
 
         return lmls, effect_sizes
 
-    def _fast_scan_chunk(self, markers):
-        markers = asarray(markers, float)
+    def _null_lml_optimal_scale(self):
+        n = len(self._QS[0][0].shape[0])
+        lml = -n * log2pi - n - n * log(self._null_optimal_scale())
+        lml -= npsum(log(self._D[0]))
+        if n > self._QS[1].shape[0]:
+            lml -= (n - self._QS[1].shape[0]) * log(self._D[1])
 
-        if not markers.ndim == 2:
-            raise NotImplementedError(
-                "This does not work for that number of variants.")
+        return lml / 2
 
-        if not npall(isfinite(markers)):
-            raise ValueError("One or more variants have non-finite value.")
+    def _null_lml_arbitrary_scale(self):
+        pass
 
-        mTQ = [dot(markers.T, Q) for Q in self._QS[0]]
-        bm = [dot(i, j.T) for (i, j) in zip(self._yTQdiag, mTQ)]
+    # def _null_optimal_scale(self):
+    #     yTQDiQTy = self._yTQDiQTy
+    #     yTQDiQTm = self._yTQDiQTm
+    #     b = self._tbeta
+    #     p0 = sum(i - 2 * dot(j, b) for (i, j) in zip(yTQDiQTy, yTQDiQTm))
+    #     p1 = sum(dot(dot(b, i), b) for i in self._mTQDiQTm)
+    #     return maximum((p0 + p1) / len(self._y), epsilon.tiny)
 
-        c_01 = [dot(i, j.T) for (i, j) in zip(self._MTQdiag, mTQ)]
-        c_11 = [npsum((i / j) * i, axis=1) for (i, j) in zip(mTQ, self._diags)]
+    def null_lml(self):
+        r"""Log of the marginal likelihood.
+        TODO: implement"""
+        from .lmm import LMM
 
-        nsamples = markers.shape[0]
-        nmarkers = markers.shape[1]
+        if self._scale is None:
+            lmm = LMM(self._y, self._X, self._QS)
+            lmm.delta = self._v / (self._v + 1)
+            lmm.fix('delta')
+            lmm.fit(verbose=False)
+            return lmm.lml()
 
-        lmls = full(nmarkers, self._static_lml())
-        effect_sizes = empty(nmarkers)
+        lmm = LMM(self._y, self._X, self._QS)
+        lmm.delta = 0.5
+        lmm.fix('delta')
+        lmm.scale = 2 * self._scale
+        lmm.fix('scale')
+        lmm.fit(verbose=False)
+        print(lmm.scale, lmm.delta, lmm.beta)
+        return lmm.lml()
 
-        if self._MTQdiag[0].shape[0] == 1:
-            return self._fast_scan_chunk_1covariate_loop(
-                lmls, effect_sizes, bm, c_01, c_11, nsamples)
-        else:
-            return self._fast_scan_chunk_multicovariate_loop(
-                lmls, effect_sizes, bm, c_01, c_11, nsamples, nmarkers)
+    def set_scale(self, scale):
+        r"""Set the scaling factor.
 
-    def _fast_scan_chunk_multicovariate_loop(self, lmls, effect_sizes, bm,
-                                             c_01, c_11, nsamples, nmarkers):
-        b00m = empty(len(self._b[0]) + 1)
-        b00m[:-1] = self._b[0]
+        Calling this method disables the automatic scale learning.
 
-        b11m = empty(len(self._b[1]) + 1)
-        b11m[:-1] = self._b[1]
+        Parameters
+        ----------
+        scale : float
+            Scaling factor.
+        """
+        self._scale = scale
 
-        for i in range(nmarkers):
+    def unset_scale(self):
+        r"""Unset the scaling factor.
 
-            b00m[-1] = bm[0][i]
-            b11m[-1] = bm[1][i]
+        If called, it enables the scale learning again.
+        """
+        self._scale = None
 
-            self._C[0][:-1, -1] = c_01[0][:, i]
-            self._C[1][:-1, -1] = c_01[1][:, i]
 
-            self._C[0][-1, :-1] = self._C[0][:-1, -1]
-            self._C[1][-1, :-1] = self._C[1][:-1, -1]
+class ETBE(object):
+    def __init__(self, XTQDi, XTQ):
+        n = XTQDi[0].shape[0] + 1
 
-            self._C[0][-1, -1] = c_11[0][i]
-            self._C[1][-1, -1] = c_11[1][i]
-
-            try:
-                beta = solve(self._C[1] - self._C[0], b11m - b00m)
-            except LinAlgError:
-                try:
-                    beta = rsolve(self._C[1] - self._C[0], b11m - b00m)
-                except LinAlgError:
-                    msg = "Could not converge to the optimal"
-                    msg += " effect-size of one of the candidates."
-                    msg += " Setting its effect-size to zero."
-                    logging.getLogger(__name__).warning(msg)
-                    beta = zeros(self._C[1].shape[0])
-
-            effect_sizes[i] = beta[-1]
-
-            p0 = self._a[0] - 2 * b00m.dot(beta) + beta.dot(
-                self._C[0]).dot(beta)
-            p1 = self._a[1] - 2 * b11m.dot(beta) + beta.dot(
-                self._C[1].dot(beta))
-
-            scale = (p0 + p1) / nsamples
-
-            lmls[i] -= nsamples * log(max(scale, epsilon.super_tiny))
-
-        lmls /= 2
-        return lmls, effect_sizes
-
-    def _fast_scan_chunk_1covariate_loop(self, lmls, effect_sizes, bm, c_01,
-                                         C11, nsamples):
-
-        C00 = [C[0, 0] for C in self._C]
-        C01 = [c[0, :] for c in c_01]
-
-        b = [bi[0] for bi in self._b]
-
-        sC00 = C00[1] - C00[0]
-        sC01 = C01[1] - C01[0]
-        sC11 = C11[1] - C11[0]
-
-        sb = b[1] - b[0]
-        sbm = bm[1] - bm[0]
-
-        with errstate(divide='ignore'):
-            beta = beta_1covariate(sb, sbm, sC00, sC01, sC11)
-
-        beta = [nan_to_num(bet) for bet in beta]
-
-        scale = zeros(len(lmls))
+        self._data = [empty((n, n)), empty((n, n))]
 
         for i in range(2):
-            scale += self._a[i] - 2 * (b[i] * beta[0] + bm[i] * beta[1])
-            scale += beta[0] * (C00[i] * beta[0] + C01[i] * beta[1])
-            scale += beta[1] * (C01[i] * beta[0] + C11[i] * beta[1])
+            self._data[i][:-1, :-1] = dot(XTQDi[i], XTQ[i].T)
 
-        scale /= nsamples
+    @property
+    def ncovariates(self):
+        return self.XTBX(0).shape[0]
 
-        lmls -= nsamples * log(clip(scale, epsilon.super_tiny, inf))
-        lmls /= 2
+    @property
+    def value(self):
+        return self._data
 
-        effect_sizes = beta[1]
+    def XTBX(self, i):
+        return self._data[i][:-1, :-1]
 
-        return lmls, effect_sizes
+    def XTBM(self, i):
+        return self._data[i][:-1, -1]
+
+    def MTBX(self, i):
+        return self._data[i][-1, :-1]
+
+    def MTBM(self, i):
+        return self._data[i][-1:, -1:]
+
+    # def set_markers(self, markers):
+    #     markers
+    #     MTQ = [dot(markers.T, Q) for Q in self._QS[0]]
+    #
+    #     yTBM = [dot(i, j.T) for (i, j) in zip(self._yTQDi, MTQ)]
+    #     XTBM = [dot(i, j.T) for (i, j) in zip(self._XTQDi, MTQ)]
+    #     MTBM = [npsum((i / j) * i, axis=1) for (i, j) in zip(MTQ, self._D)]
 
 
-def beta_1covariate(sb, sbm, sC00, sC01, sC11):
+def _beta_1covariate(sb, sbm, sC00, sC01, sC11):
     d0 = sb / sC00
     d1 = sb / sC01
 
@@ -232,3 +365,34 @@ def beta_1covariate(sb, sbm, sC00, sC01, sC11):
     d6 = sC11 / sC01
 
     return [(d1 - d4) / (d5 - 1 / d6), (-d0 + d3) / (d6 - 1 / d5)]
+
+
+def _compute_scale(nsamples, beta, yTBy, yTBX, yTBM, XTBX, XTBM, MTBM):
+
+    scale = npsum(yTBy[i] for i in range(2))
+    scale -= npsum(2 * yTBX[i] * beta[0] for i in range(2))
+    scale -= npsum(2 * yTBM[i] * beta[1] for i in range(2))
+
+    scale += npsum(beta[0] * XTBX[i] * beta[0] for i in range(2))
+    scale += npsum(beta[0] * XTBM[i] * beta[1] for i in range(2))
+    scale += npsum(beta[1] * XTBM[i] * beta[0] for i in range(2))
+    scale += npsum(beta[1] * MTBM[i] * beta[1] for i in range(2))
+
+    return scale / nsamples
+
+
+def _try_solve(A, y):
+
+    try:
+        beta = solve(A, y)
+    except LinAlgError:
+        try:
+            beta = rsolve(A, y)
+        except LinAlgError:
+            msg = "Could not converge to the optimal"
+            msg += " effect-size of one of the candidates."
+            msg += " Setting its effect-size to zero."
+            wprint(msg)
+            beta = zeros(A.shape[0])
+
+    return beta

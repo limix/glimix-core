@@ -1,15 +1,14 @@
 from __future__ import division
 
 import pytest
-
 from numpy import arange, inf, nan, zeros
 from numpy.random import RandomState
 from numpy.testing import assert_allclose
+from optimix import check_grad
 
 from glimix_core.cov import LinearCov
 from glimix_core.gp import GP
 from glimix_core.mean import LinearMean, OffsetMean
-from optimix import check_grad
 
 
 def test_gp_value_1():

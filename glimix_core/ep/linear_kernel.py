@@ -3,6 +3,7 @@ from __future__ import absolute_import, division, unicode_literals
 from math import fsum
 
 from numpy import dot, isfinite, log, sqrt
+
 from numpy_sugar.linalg import cho_solve, ddot, dotd
 
 from .ep import EP
@@ -21,11 +22,11 @@ class EPLinearKernel(EP):
     def __init__(self, nsites):
         super(EPLinearKernel, self).__init__(nsites, PosteriorLinearKernel)
 
-    def _lml(self):
+    def lml(self):
         if self._cache['lml'] is not None:
             return self._cache['lml']
 
-        self._params_update()
+        self._update()
 
         L = self._posterior.L()
         cov = self._posterior.cov
@@ -71,8 +72,8 @@ class EPLinearKernel(EP):
 
         return lml
 
-    def _lml_derivatives(self, dm):
-        self._params_update()
+    def lml_derivatives(self, dm):
+        self._update()
 
         L = self._posterior.L()
         ttau = self._site.tau

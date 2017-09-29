@@ -15,6 +15,6 @@ Private interface
 """
 
 from .ep import EP
-from .ep_linear_kernel import EPLinearKernel
+from .linear_kernel import EPLinearKernel
 
 __all__ = ['EP', 'EPLinearKernel']
