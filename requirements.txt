@@ -1,6 +1,6 @@
 brent-search>=1.0.29
 cachetools
-liknorm-py>=1.0.6
+liknorm>=1.0.6
 ndarray-listener>=1.0.26
 numpy
 numpy-sugar>=1.1.2
