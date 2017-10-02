@@ -13,7 +13,7 @@ from . import cov, ggp, glmm, gp, lik, link, lmm, mean, random, util
 from .testit import test
 
 __name__ = "glimix-core"
-__version__ = "1.3.0"
+__version__ = "1.3.1"
 __author__ = "Danilo Horta"
 __author_email__ = "horta@ebi.ac.uk"
 
