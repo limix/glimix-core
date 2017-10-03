@@ -15,6 +15,11 @@ matrix:
     env: PYENV=py36
 before_install:
 - travis_retry bash <(curl -s https://raw.githubusercontent.com/limix/travis-tools/master/get-travis-tools.sh)
+- which pip
+- which python
+- echo $PYTHONPATH
+- pip install liknorm
+- find /home/travis/virtualenv/python2.7.13/lib/python2.7/site-packages
 - travis_retry travis/before-install.sh
 install:
 - travis_retry travis/install.sh
