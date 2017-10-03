@@ -40,3 +40,4 @@ dependencies:
   - termcolor==1.1.0
   - toolz==0.8.2
   - tqdm==4.18.0
+  - liknorm==1.0.11
