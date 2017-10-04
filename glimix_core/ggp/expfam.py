@@ -5,6 +5,7 @@ import logging
 from liknorm import LikNormMachine
 from numpy import sign
 from numpy.linalg import LinAlgError
+
 from numpy_sugar import epsilon
 from numpy_sugar.linalg import economic_qs
 from optimix import FunctionReduce
@@ -52,8 +53,8 @@ class ExpFamGP(FunctionReduce):
         >>> print('Before: %.4f' % ggp.feed().value())
         Before: -6.9802
         >>> ggp.feed().maximize(verbose=False)
-        >>> print('After: %.4f' % ggp.feed().value())
-        After: -6.5489
+        >>> print('After: %.2f' % ggp.feed().value())
+        After: -6.55
     """
 
     def __init__(self, y, lik_name, mean, cov):
