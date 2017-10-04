@@ -4,7 +4,6 @@ import pytest
 from numpy import arange, inf, nan, ones, sqrt, zeros
 from numpy.random import RandomState
 from numpy.testing import assert_, assert_allclose
-from numpy_sugar.linalg import economic_qs_linear
 
 from glimix_core.cov import EyeCov, LinearCov, SumCov
 from glimix_core.lik import DeltaProdLik
@@ -12,6 +11,7 @@ from glimix_core.lmm import LMM
 from glimix_core.lmm.core import LMMCore
 from glimix_core.mean import OffsetMean
 from glimix_core.random import GGPSampler
+from numpy_sugar.linalg import economic_qs_linear
 
 
 def test_lmm_fix_unfix():
@@ -58,10 +58,10 @@ def test_lmm_fix_unfix():
     lmm.unfix('delta')
     lmm.fit(verbose=False)
 
-    assert_allclose(lmm.beta[0], 0.7065598068496922)
-    assert_allclose(lmm.v0, 0.5667112269084563)
-    assert_allclose(lmm.v1, 1.3679269553495002)
-    assert_allclose(lmm.lml(), -51.84396136865774)
+    assert_allclose(lmm.beta[0], 0.7065598068496922, rtol=1e-5)
+    assert_allclose(lmm.v0, 0.5667112269084563, rtol=1e-5)
+    assert_allclose(lmm.v1, 1.3679269553495002, rtol=1e-5)
+    assert_allclose(lmm.lml(), -51.84396136865774, rtol=1e-5)
 
 
 def test_lmm_unique_outcome():
