@@ -1,7 +1,7 @@
 from numpy import all as npall
-from numpy import isfinite
+from numpy import isfinite, clip
 
-from .io import wprint
+from ..io import wprint
 
 
 def check_economic_qs(QS):
@@ -58,7 +58,7 @@ def _check_poisson_outcome(y):
     if y[0].max() > poisson_lim:
         msg = "Output values of Poisson likelihood greater"
         msg += " than {lim} is set to {lim} before applying GLMM."
-        wprint(msg.format(lim=lim))
+        wprint(msg.format(lim=poisson_lim))
         y = (clip(y[0], 0, poisson_lim), )
 
     return y
