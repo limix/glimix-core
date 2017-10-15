@@ -16,14 +16,6 @@ RTOL = epsilon.small * 1000
 ATOL = epsilon.small
 
 
-def ldot(A, B):
-    return ddot(A, B, left=True)
-
-
-def dotr(A, B):
-    return ddot(A, B, left=False)
-
-
 class EP(object):
     r"""Expectation Propagation algorithm.
 

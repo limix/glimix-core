@@ -63,3 +63,13 @@ def test_util_check_outcome():
 
     with pytest.raises(ValueError):
         check_outcome((y, ), 'normal')
+
+
+def test_util_check_poisson_outcome():
+    y = ones(5)
+    y[0] = 25000 + 1
+    want = (array([
+        2.50000000e+04, 1.00000000e+00, 1.00000000e+00, 1.00000000e+00,
+        1.00000000e+00
+    ]), )
+    assert_allclose(check_outcome((y, ), 'poisson'), want)
