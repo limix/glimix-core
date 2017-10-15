@@ -63,6 +63,12 @@ def test_lmm_fix_unfix():
     assert_allclose(lmm.v1, 1.3679269553495002, rtol=1e-5)
     assert_allclose(lmm.lml(), -51.84396136865774, rtol=1e-5)
 
+    with pytest.raises(ValueError):
+        lmm.fix('deltaa')
+
+    with pytest.raises(ValueError):
+        lmm.isfixed('deltaa')
+
 
 def test_lmm_unique_outcome():
     random = RandomState(9458)
