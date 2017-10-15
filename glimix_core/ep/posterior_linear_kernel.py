@@ -29,29 +29,6 @@ class PosteriorLinearKernel(Posterior):
         d = self._cov['delta']
         return 1 / (s * d * self._site.tau + 1)
 
-    def initialize(self):
-        r"""Initialize the mean and covariance of the posterior.
-
-        Given that :math:`\tilde{\mathrm T}` is a matrix of zeros right before
-        the first EP iteration, we have
-
-        .. math::
-
-            \boldsymbol\mu = \mathrm K^{-1} \mathbf m ~\text{ and }~
-            \Sigma = \mathrm K
-
-        as the initial posterior mean and covariance.
-        """
-        s = self._cov['scale']
-        d = self._cov['delta']
-        Q = self._cov['QS'][0][0]
-        S = self._cov['QS'][1]
-        self.tau[:] = s * (1 - d) * npsum((Q * sqrt(S))**2, axis=1)
-        self.tau += s * d
-        self.tau **= -1
-        self.eta[:] = self._mean
-        self.eta[:] *= self.tau
-
     def L(self):
         r"""Cholesky decomposition of :math:`\mathrm B`.
 
