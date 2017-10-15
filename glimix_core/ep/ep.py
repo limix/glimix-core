@@ -117,11 +117,6 @@ class EP(object):
             raise ValueError(msg)
 
         self._need_update = False
-        # self._logger.debug('EP loop has performed %d iterations.', i)
-
-    @property
-    def cache(self):
-        return self._cache
 
     @property
     def cav(self):

@@ -13,7 +13,3 @@ class Site(object):  # pylint: disable=R0903
     def update(self, mean, variance, cav):
         self.tau[:] = maximum(1.0 / variance - cav['tau'], 0)
         self.eta[:] = mean / variance - cav['eta']
-
-    def copy_to(self, to):
-        to.tau[:] = self.tau
-        to.eta[:] = self.eta
