@@ -13,7 +13,7 @@ from numpy_sugar import epsilon
 from numpy_sugar.linalg import rsolve, solve
 from tqdm import tqdm
 
-from ..io import wprint
+from ..util import wprint
 from ..util import log2pi
 
 

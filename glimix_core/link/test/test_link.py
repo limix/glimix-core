@@ -21,17 +21,17 @@ def test_loglink_link():
     link = LogLink()
     assert_allclose(link.value(link.inv(3.2)), 3.2)
     with pytest.raises(NotImplementedError):
-        print(link.latent_variance)
+        link.latent_variance
 
 
 def test_link_interface():
     link = Link()
 
     with pytest.raises(NotImplementedError):
-        print(link.value(None))
+        link.value(None)
 
     with pytest.raises(NotImplementedError):
-        print(link.inv(None))
+        link.inv(None)
 
     with pytest.raises(NotImplementedError):
-        print(link.latent_variance)
+        link.latent_variance

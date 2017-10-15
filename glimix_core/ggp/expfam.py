@@ -1,7 +1,5 @@
 from __future__ import absolute_import, division, unicode_literals
 
-import logging
-
 from liknorm import LikNormMachine
 from numpy import sign
 from numpy.linalg import LinAlgError
@@ -11,6 +9,7 @@ from numpy_sugar.linalg import economic_qs
 from optimix import FunctionReduce
 
 from ..ep import EP
+from ..util import wprint
 
 
 class ExpFamGP(FunctionReduce):
@@ -64,8 +63,6 @@ class ExpFamGP(FunctionReduce):
             n = len(y)
         FunctionReduce.__init__(self, [mean, cov], name='ExpFamGP')
 
-        self._logger = logging.getLogger(__name__)
-
         self._y = y
         self._mean = mean
         self._cov = cov
@@ -105,7 +102,7 @@ class ExpFamGP(FunctionReduce):
             self._ep.set_prior(mean, dict(QS=economic_qs(cov)))
             lml = self._ep.lml()
         except (ValueError, LinAlgError) as e:
-            self._logger.info(str(e))
+            wprint(str(e))
             lml = -1 / epsilon.small
         return lml
 
@@ -148,6 +145,6 @@ class ExpFamGP(FunctionReduce):
 
             return grad
         except (ValueError, LinAlgError) as e:
-            self._logger.info(str(e))
+            wprint(str(e))
             v = self.variables().select(fixed=False)
             return {i: -sign(v.get(i).value) / epsilon.small for i in v}

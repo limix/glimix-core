@@ -165,7 +165,7 @@ def test_glmmexpfam_wrong_qs():
     nsuc = [random.randint(0, i) for i in ntri]
 
     with pytest.raises(ValueError):
-        print(GLMMExpFam((nsuc, ntri), 'binomial', X, QS))
+        GLMMExpFam((nsuc, ntri), 'binomial', X, QS)
 
 
 def test_glmmexpfam_optimize():

@@ -1,7 +1,7 @@
 from numpy import all as npall
 from numpy import isfinite, clip
 
-from ..io import wprint
+from .io import wprint
 
 
 def check_economic_qs(QS):
