@@ -111,12 +111,10 @@ For example:
     >>> M = array([[1, 3, 2], [0, -5, 1]])
     >>> lmls, effect_sizes = scanner.fast_scan(M, verbose=False)
     >>>
-    >>> from numpy import array2string
-    >>>
-    >>> print(array2string(lmls, precision=4, separator=','))
-    [  33.0476, 703.321 ,  33.0476]
-    >>> print(array2string(effect_sizes, precision=4, separator=','))
-    [-3.   ,-0.375,-3.   ]
+    >>> lmls
+    array([ 703.32095577,   34.17290973,  703.32095577])
+    >>> effect_sizes
+    array([-3.   , -0.375, -3.   ])
 
 
 Implementation

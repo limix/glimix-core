@@ -1,11 +1,13 @@
 from __future__ import division
 
+import numpy as np
+import numpy.linalg
+import scipy as sp
+import scipy.stats
 from numpy import all as npall
 from numpy import sum as npsum
-from numpy import (
-    asarray, clip, dot, empty, errstate, full, inf, isfinite, log, nan_to_num,
-    zeros
-)
+from numpy import (asarray, clip, dot, empty, errstate, full, inf, isfinite,
+                   log, nan_to_num, zeros, pi)
 from numpy.linalg import LinAlgError
 from numpy_sugar import epsilon
 from numpy_sugar.linalg import rsolve, solve
@@ -23,8 +25,8 @@ class FastScanner(object):
     .. math::
 
         \log p(\mathbf y)_j = \log \mathcal N\big(~ \mathrm X\mathbf b_j^*
-            + \mathbf{m}_j \alpha_j^*,~
-            s_j^* (\mathrm K + v \mathrm I) ~\big),
+        + \mathbf{m}_j \alpha_j^*,~
+        s_j^* (\mathrm K + v \mathrm I) ~\big),
 
     for optimal :math:`\mathbf b_j`, :math:`\alpha_j`, and :math:`s_j^*`
     values.
@@ -54,13 +56,13 @@ class FastScanner(object):
     Parameters
     ----------
     y : array_like
-        Real-valued outcome.
+    Real-valued outcome.
     X : array_like
-        Matrix of covariates.
+    Matrix of covariates.
     QS : tuple
-        Economic eigendecomposition ``((Q0, Q1), S0)`` of ``K``.
+    Economic eigendecomposition ``((Q0, Q1), S0)`` of ``K``.
     v : float
-        Variance due to iid effect.
+    Variance due to iid effect.
     """
 
     def __init__(self, y, X, QS, v):
@@ -120,7 +122,7 @@ class FastScanner(object):
 
         if self._ETBE.ncovariates == 1:
             return self._fast_scan_chunk_1covariate_loop(
-                lmls, effect_sizes, yTBM, XTBM, MTBM, nsamples)
+                lmls, effect_sizes, yTBM, XTBM, MTBM, nsamples, M)
         else:
             return self._fast_scan_chunk_multicovariate_loop(
                 lmls, effect_sizes, yTBM, XTBM, MTBM, nsamples, nmarkers)
@@ -172,7 +174,14 @@ class FastScanner(object):
         return lmls, effect_sizes
 
     def _fast_scan_chunk_1covariate_loop(self, lmls, effect_sizes, yTBM, XTBM,
-                                         MTBM, nsamples):
+                                         MTBM, nsamples, M):
+
+        for i in range(len(lmls)):
+            X = np.concatenate((self._X, M[:, i][:, np.newaxis]), axis=1)
+            lmls[i], effect_sizes[i] = _lml_this(self._y, X, self._QS, self._D,
+                                                 self._scale)
+
+        return lmls, effect_sizes
 
         sC00 = self._ETBE.XTBX(1)[0, 0] - self._ETBE.XTBX(0)[0, 0]
         sC01 = XTBM[1][0, :] - XTBM[0][0, :]
@@ -196,7 +205,7 @@ class FastScanner(object):
                                     XTBM[i][0, :] * beta[1])
                 scale += beta[1] * (
                     XTBM[i][0, :] * beta[0] + MTBM[i] * beta[1])
-            scale /= nsamples
+                scale /= nsamples
         else:
             scale = self._scale
 
@@ -217,17 +226,17 @@ class FastScanner(object):
         Parameters
         ----------
         M : array_like
-            Matrix of fixed-effects across columns.
+        Matrix of fixed-effects across columns.
         verbose : bool, optional
-            ``True`` for progress information; ``False`` otherwise.
-            Defaults to ``True``.
+        ``True`` for progress information; ``False`` otherwise.
+        Defaults to ``True``.
 
         Returns
         -------
         array_like
-            Log of the marginal likelihoods.
+        Log of the marginal likelihoods.
         array_like
-            Fixed-effect sizes.
+        Fixed-effect sizes.
         """
 
         if not (M.ndim == 2):
@@ -276,25 +285,63 @@ class FastScanner(object):
     #     return maximum((p0 + p1) / len(self._y), epsilon.tiny)
 
     def null_lml(self):
-        r"""Log of the marginal likelihood.
-        TODO: implement"""
-        from .lmm import LMM
+
+        y = self._y
+        X = self._X
+        QS = self._QS
+        n = len(y)
+
+        D = np.zeros((n, n))
+        Di = np.zeros((n, n))
+
+        p = QS[0][0].shape[1] - QS[0][0].shape[0]
+        d = np.concatenate((self._D[0], [self._D[1]] * p))
+        D[np.diag_indices_from(D)] = d
+        Di[np.diag_indices_from(D)] = 1 / d
+
+        Q = np.concatenate(self._QS[0], axis=1)
+        beta = np.linalg.solve(
+            X.T.dot(Q).dot(Di).dot(Q.T).dot(X),
+            y.T.dot(Q).dot(Di).dot(Q.T).dot(X))
 
         if self._scale is None:
-            lmm = LMM(self._y, self._X, self._QS)
-            lmm.delta = self._v / (self._v + 1)
-            lmm.fix('delta')
-            lmm.fit(verbose=False)
-            return lmm.lml()
+            scale = y.T.dot(Q).dot(Di).dot(Q.T).dot(y - X.dot(beta)) / n
+            return (-n / 2) * (
+                log(2 * pi) + log(scale) + 1) - log(D.diagonal()).sum() / 2
 
-        lmm = LMM(self._y, self._X, self._QS)
-        lmm.delta = 0.5
-        lmm.fix('delta')
-        lmm.scale = 2 * self._scale
-        lmm.fix('scale')
-        lmm.fit(verbose=False)
-        print(lmm.scale, lmm.delta, lmm.beta)
-        return lmm.lml()
+        scale = self._scale
+
+        return (-n / 2) * (log(2 * pi) + log(scale)) - log(D.diagonal()).sum(
+        ) / 2 + y.T.dot(Q).dot(Di).dot(Q.T).dot(X.dot(beta) - y) / (2 * scale)
+
+        # return sp.stats.multivariate_normal(X.dot(beta), scale * K).logpdf(y)
+
+
+#    def null_lml(self):
+#        r"""Log of the marginal likelihood.
+#        TODO: implement"""
+#        from .lmm import LMM
+#
+#        if self._scale is None:
+#            lmm = LMM(self._y, self._X, self._QS)
+#            lmm.delta = self._v / (self._v + 1)
+#            lmm.fix('delta')
+#            lmm.fit(verbose=False)
+#            return lmm.lml()
+#
+#        from numpy import sqrt
+#        y = self._y / sqrt(self._v)
+#        X = self._X / sqrt(self._v)
+#        QS = (self._QS[0], self._QS[1] / self._v)
+#        lmm = LMM(y, X, QS)
+#        lmm.delta = 0.5
+#        lmm.fix('delta')
+#        #lmm.scale = 2 * self._scale
+#        lmm.fix('scale')
+#        lmm.scale = 2.
+#        lmm.fit(verbose=False)
+#        print(lmm.scale, lmm.delta, lmm.beta)
+#        return lmm.lml()
 
     def set_scale(self, scale):
         r"""Set the scaling factor.
@@ -304,7 +351,7 @@ class FastScanner(object):
         Parameters
         ----------
         scale : float
-            Scaling factor.
+        Scaling factor.
         """
         self._scale = scale
 
@@ -396,3 +443,30 @@ def _try_solve(A, y):
             beta = zeros(A.shape[0])
 
     return beta
+
+
+def _lml_this(y, X, QS, _D, scale):
+    n = len(y)
+
+    D = np.zeros((n, n))
+    Di = np.zeros((n, n))
+
+    p = QS[0][0].shape[0] - QS[0][0].shape[1]
+    d = np.concatenate((_D[0], [_D[1]] * p))
+    D[np.diag_indices_from(D)] = d
+    Di[np.diag_indices_from(D)] = 1 / d
+
+    Q = np.concatenate(QS[0], axis=1)
+    beta = np.linalg.solve(
+        X.T.dot(Q).dot(Di).dot(Q.T).dot(X), y.T.dot(Q).dot(Di).dot(Q.T).dot(X))
+
+    if scale is None:
+        scale = y.T.dot(Q).dot(Di).dot(Q.T).dot(y - X.dot(beta)) / n
+        scale = clip(scale, epsilon.super_tiny, inf)
+        lml = (-n / 2) * (
+            log(2 * pi) + log(scale) + 1) - log(D.diagonal()).sum() / 2
+    else:
+        lml = (-n / 2) * (log(2 * pi) + log(scale)) - log(D.diagonal()).sum(
+        ) / 2 + y.T.dot(Q).dot(Di).dot(Q.T).dot(X.dot(beta) - y) / (2 * scale)
+
+    return lml, beta[-1]
