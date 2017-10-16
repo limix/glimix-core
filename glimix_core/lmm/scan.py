@@ -131,12 +131,12 @@ class FastScanner(object):
                                              XTBM, MTBM, nsamples, nmarkers,
                                              M):
 
-        for i in range(len(lmls)):
-            X = np.concatenate((self._X, M[:, i][:, np.newaxis]), axis=1)
-            lmls[i], effect_sizes[i], oi = _lml_this(self._y, X, self._QS, self._D,
-                                                     self._scale)
-
-        return lmls, effect_sizes
+        # for i in range(len(lmls)):
+        #     X = np.concatenate((self._X, M[:, i][:, np.newaxis]), axis=1)
+        #     lmls[i], effect_sizes[i], oi = _lml_this(self._y, X, self._QS, self._D,
+        #                                              self._scale)
+        #
+        # return lmls, effect_sizes
 
         yTBE = [empty(len(self._yTBX[0]) + 1), empty(len(self._yTBX[1]) + 1)]
 
@@ -157,8 +157,8 @@ class FastScanner(object):
             self._ETBE.MTBM(0)[:] = MTBM[0][i]
             self._ETBE.MTBM(1)[:] = MTBM[1][i]
 
-            beta = _try_solve(self._ETBE.value[1] - self._ETBE.value[0],
-                              yTBE[1] - yTBE[0])
+            beta = _try_solve(self._ETBE.value[1] + self._ETBE.value[0],
+                              yTBE[1] + yTBE[0])
 
             effect_sizes[i] = beta[-1]
 
@@ -176,6 +176,14 @@ class FastScanner(object):
                 scale = (p0 + p1) / nsamples
             else:
                 scale = self._scale
+                lmls[i] = lmls[i] + nsamples
+
+                p0 = self._yTBy[0] - 2 * yTBE[0].dot(beta) + beta.dot(
+                    self._ETBE.value[0]).dot(beta)
+                p1 = self._yTBy[1] - 2 * yTBE[1].dot(beta) + beta.dot(
+                    self._ETBE.value[1].dot(beta))
+
+                lmls[i] = lmls[i] - (p0 + p1) / scale
 
             lmls[i] -= nsamples * log(max(scale, epsilon.super_tiny))
 

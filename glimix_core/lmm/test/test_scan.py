@@ -214,18 +214,20 @@ def test_scan_fastlmm_set_scale_multicovariates():
 
     assert_allclose(
         lmls, [-21.906944123587948, -21.906944123587948, -21.906944123587948])
+
     assert_allclose(
         effsizes,
-        [-0.016199083532862601, -0.13468405305329331, -0.24996061939828515])
+        [-0.54393628378, -12.0444021706, -0.75])
 
     fast_scanner.unset_scale()
     lmls, effsizes = fast_scanner.fast_scan(markers, verbose=False)
 
     assert_allclose(
         lmls, [-19.533512354470659, -19.533512354470659, -19.533512354470659])
+
     assert_allclose(
         effsizes,
-        [-0.016199083532862601, -0.13468405305329331, -0.24996061939828515])
+        [-0.54393628378, -12.0444021706, -0.75])
 
 
 def _outcome_sample(random, offset, X):
