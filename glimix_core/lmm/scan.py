@@ -282,20 +282,7 @@ class FastScanner(object):
 
         return lml / 2
 
-    def _null_lml_arbitrary_scale(self):
-        pass
-
-    # def _null_optimal_scale(self):
-    #     yTQDiQTy = self._yTQDiQTy
-    #     yTQDiQTm = self._yTQDiQTm
-    #     b = self._tbeta
-    #     p0 = sum(i - 2 * dot(j, b) for (i, j) in zip(yTQDiQTy, yTQDiQTm))
-    #     p1 = sum(dot(dot(b, i), b) for i in self._mTQDiQTm)
-    #     return maximum((p0 + p1) / len(self._y), epsilon.tiny)
-
     def null_lml(self):
-
-        return _lml_this(self._y, self._X, self._QS, self._D, self._scale)[0]
 
         y = self._y
         X = self._X
@@ -324,35 +311,6 @@ class FastScanner(object):
 
         return (-n / 2) * (log(2 * pi) + log(scale)) - log(D.diagonal()).sum(
         ) / 2 + y.T.dot(Q).dot(Di).dot(Q.T).dot(X.dot(beta) - y) / (2 * scale)
-
-        # return sp.stats.multivariate_normal(X.dot(beta), scale * K).logpdf(y)
-
-
-#    def null_lml(self):
-#        r"""Log of the marginal likelihood.
-#        TODO: implement"""
-#        from .lmm import LMM
-#
-#        if self._scale is None:
-#            lmm = LMM(self._y, self._X, self._QS)
-#            lmm.delta = self._v / (self._v + 1)
-#            lmm.fix('delta')
-#            lmm.fit(verbose=False)
-#            return lmm.lml()
-#
-#        from numpy import sqrt
-#        y = self._y / sqrt(self._v)
-#        X = self._X / sqrt(self._v)
-#        QS = (self._QS[0], self._QS[1] / self._v)
-#        lmm = LMM(y, X, QS)
-#        lmm.delta = 0.5
-#        lmm.fix('delta')
-#        #lmm.scale = 2 * self._scale
-#        lmm.fix('scale')
-#        lmm.scale = 2.
-#        lmm.fit(verbose=False)
-#        print(lmm.scale, lmm.delta, lmm.beta)
-#        return lmm.lml()
 
     def set_scale(self, scale):
         r"""Set the scaling factor.
