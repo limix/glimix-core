@@ -268,6 +268,12 @@ class FastScanner(object):
 
     def null_lml(self):
 
+        # lml = self._static_lml()
+        # beta = _solve(ETBE.value[1] + ETBE.value[0], yTBE[1] + yTBE[0])
+        # XTBX = self._ETBE.XTBX.value(0) + self._ETBE.XTBX.value(1)
+        # yTBX = self._yTBX[0] + self._yTBX[1]
+        # beta = _solve(XTBX, yTBX)
+
         y = self._y
         X = self._X
         QS = self._QS
