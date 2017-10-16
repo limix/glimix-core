@@ -247,15 +247,6 @@ class FastScanner(object):
 
         return lmls, effect_sizes
 
-    def _null_lml_optimal_scale(self):
-        n = len(self._QS[0][0].shape[0])
-        lml = -n * log2pi - n - n * log(self._null_optimal_scale())
-        lml -= npsum(log(self._D[0]))
-        if n > self._QS[1].shape[0]:
-            lml -= (n - self._QS[1].shape[0]) * log(self._D[1])
-
-        return lml / 2
-
     def fast_scan(self, M, verbose=True):
         r"""LML and fixed-effect sizes of each marker.
 
@@ -383,14 +374,6 @@ class ETBE(object):
     def MTBM(self, i):
         return self._data[i][-1:, -1:]
 
-    # def set_markers(self, markers):
-    #     markers
-    #     MTQ = [dot(markers.T, Q) for Q in self._QS[0]]
-    #
-    #     yTBM = [dot(i, j.T) for (i, j) in zip(self._yTQDi, MTQ)]
-    #     XTBM = [dot(i, j.T) for (i, j) in zip(self._XTQDi, MTQ)]
-    #     MTBM = [npsum((i / j) * i, axis=1) for (i, j) in zip(MTQ, self._D)]
-
 
 def _beta_1covariate(sb, sbm, sC00, sC01, sC11):
     d0 = sb / sC00
@@ -443,28 +426,28 @@ def _try_solve(A, y):
     return beta
 
 
-def _lml_this(y, X, QS, _D, scale):
-    n = len(y)
-
-    D = np.zeros((n, n))
-    Di = np.zeros((n, n))
-
-    p = QS[0][0].shape[0] - QS[0][0].shape[1]
-    d = np.concatenate((_D[0], [_D[1]] * p))
-    D[np.diag_indices_from(D)] = d
-    Di[np.diag_indices_from(D)] = 1 / d
-
-    Q = np.concatenate(QS[0], axis=1)
-    beta = _try_solve(
-        X.T.dot(Q).dot(Di).dot(Q.T).dot(X), y.T.dot(Q).dot(Di).dot(Q.T).dot(X))
-
-    if scale is None:
-        scale = y.T.dot(Q).dot(Di).dot(Q.T).dot(y - X.dot(beta)) / n
-        scale = clip(scale, epsilon.super_tiny, inf)
-        lml = (-n / 2) * (
-            log(2 * pi) + log(scale) + 1) - log(D.diagonal()).sum() / 2
-    else:
-        lml = (-n / 2) * (log(2 * pi) + log(scale)) - log(D.diagonal()).sum(
-        ) / 2 + y.T.dot(Q).dot(Di).dot(Q.T).dot(X.dot(beta) - y) / (2 * scale)
-
-    return lml, beta[-1], beta
+# def _lml_this(y, X, QS, _D, scale):
+#     n = len(y)
+#
+#     D = np.zeros((n, n))
+#     Di = np.zeros((n, n))
+#
+#     p = QS[0][0].shape[0] - QS[0][0].shape[1]
+#     d = np.concatenate((_D[0], [_D[1]] * p))
+#     D[np.diag_indices_from(D)] = d
+#     Di[np.diag_indices_from(D)] = 1 / d
+#
+#     Q = np.concatenate(QS[0], axis=1)
+#     beta = _try_solve(
+#         X.T.dot(Q).dot(Di).dot(Q.T).dot(X), y.T.dot(Q).dot(Di).dot(Q.T).dot(X))
+#
+#     if scale is None:
+#         scale = y.T.dot(Q).dot(Di).dot(Q.T).dot(y - X.dot(beta)) / n
+#         scale = clip(scale, epsilon.super_tiny, inf)
+#         lml = (-n / 2) * (
+#             log(2 * pi) + log(scale) + 1) - log(D.diagonal()).sum() / 2
+#     else:
+#         lml = (-n / 2) * (log(2 * pi) + log(scale)) - log(D.diagonal()).sum(
+#         ) / 2 + y.T.dot(Q).dot(Di).dot(Q.T).dot(X.dot(beta) - y) / (2 * scale)
+#
+#     return lml, beta[-1], beta
