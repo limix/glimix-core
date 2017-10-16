@@ -111,3 +111,9 @@ def test_glmmnormal():
     assert_allclose(lmls, [9.64605678059, 9.17041834, 9.56927990771])
     assert_allclose(effsizes, [-0.0758297759308, 0.0509863368859,
                                0.0876858800519])
+
+    assert_allclose(flmm.null_lml(), 8.89275310307)
+    flmm.set_scale(1.5)
+    assert_allclose(flmm.null_lml(), -13.5839989949)
+    flmm.set_scale(0.5)
+    assert_allclose(flmm.null_lml(), -8.13216534935)

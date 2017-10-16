@@ -169,7 +169,6 @@ def test_scan_fastlmm_set_scale_multicovariates():
     fast_scanner.set_scale(1.0)
 
     lmls, effsizes = fast_scanner.fast_scan(markers, verbose=False)
-    lmls0 = lmls.copy()
 
     assert_allclose(
         lmls, [-21.906944123587948, -21.906944123587948, -21.906944123587948])
@@ -185,7 +184,6 @@ def test_scan_fastlmm_set_scale_multicovariates():
     assert_allclose(
         effsizes,
         [-0.016199083532862601, -0.13468405305329331, -0.24996061939828515])
-    print(lmls0 < lmls)
 
 
 def _outcome_sample(random, offset, X):

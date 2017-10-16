@@ -295,6 +295,8 @@ class FastScanner(object):
 
     def null_lml(self):
 
+        return _lml_this(self._y, self._X, self._QS, self._D, self._scale)[0]
+
         y = self._y
         X = self._X
         QS = self._QS
