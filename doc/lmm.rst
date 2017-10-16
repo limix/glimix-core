@@ -108,13 +108,13 @@ For example:
     >>> from glimix_core.lmm import FastScanner
     >>>
     >>> scanner = FastScanner(y, X, QS, lmm.v1)
-    >>> M = array([[1, 3, 2], [0, -5, 1]])
+    >>> M = array([[1, 3, -1.5], [0, -2, 4]])
     >>> lmls, effect_sizes = scanner.fast_scan(M, verbose=False)
     >>>
     >>> lmls
-    array([ 703.32095577,   31.55539132,  703.32095577])
+    array([  33.04763217,  703.32095577,   32.35448499])
     >>> effect_sizes
-    array([-3.   , -0.375, -3.   ])
+    array([-3.        , -0.6       ,  0.54545455])
 
 
 Implementation

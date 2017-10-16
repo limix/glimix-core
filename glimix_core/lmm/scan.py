@@ -191,19 +191,15 @@ class FastScanner(object):
             _X = np.concatenate((self._X, M[:, i][:, np.newaxis]), axis=1)
             like_lmls[i], like_effect_sizes[i], beta_ = _lml_this(self._y, _X, self._QS, self._D,
                                                                   self._scale)
-            lmls[i] = like_lmls[i]
-            effect_sizes[i] = like_effect_sizes[i]
+            # lmls[i] = like_lmls[i]
+            # effect_sizes[i] = like_effect_sizes[i]
 
-        return lmls, effect_sizes
+        sC00 = self._ETBE.XTBX(1)[0, 0] + self._ETBE.XTBX(0)[0, 0]
+        sC01 = XTBM[1][0, :] + XTBM[0][0, :]
+        sC11 = MTBM[1] + MTBM[0]
 
-        sC00 = self._ETBE.XTBX(1)[0, 0] - self._ETBE.XTBX(0)[0, 0]
-        sC01 = XTBM[1][0, :] - XTBM[0][0, :]
-        sC11 = MTBM[1] - MTBM[0]
-
-        sb = self._yTBX[1][0] - self._yTBX[0][0]
-        sbm = yTBM[1] - yTBM[0]
-        import pdb
-        pdb.set_trace()
+        sb = self._yTBX[1][0] + self._yTBX[0][0]
+        sbm = yTBM[1] + yTBM[0]
 
         with errstate(divide='ignore'):
             beta = _beta_1covariate(sb, sbm, sC00, sC01, sC11)
@@ -233,8 +229,6 @@ class FastScanner(object):
                 bla += beta[1] * (
                     XTBM[i][0, :] * beta[0] + MTBM[i] * beta[1])
 
-            import pdb
-            pdb.set_trace()
             lmls -= bla / scale
 
         lmls -= nsamples * log(clip(scale, epsilon.super_tiny, inf))

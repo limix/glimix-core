@@ -129,7 +129,6 @@ def test_scan_fastlmm_set_scale_1covariate():
     QS = economic_qs_linear(X)
 
     M = random.randn(n, 1)
-    # M[:] = 1.01
     lmm = LMM(y, M, QS)
 
     lmm.fit(verbose=False)
