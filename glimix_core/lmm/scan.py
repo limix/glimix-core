@@ -185,14 +185,16 @@ class FastScanner(object):
     def _fast_scan_chunk_1covariate_loop(self, lmls, effect_sizes, yTBM, XTBM,
                                          MTBM, nsamples, M):
 
-        like_lmls = lmls.copy()
-        like_effect_sizes = effect_sizes.copy()
-        for i in range(len(lmls)):
-            _X = np.concatenate((self._X, M[:, i][:, np.newaxis]), axis=1)
-            like_lmls[i], like_effect_sizes[i], beta_ = _lml_this(self._y, _X, self._QS, self._D,
-                                                                  self._scale)
-            # lmls[i] = like_lmls[i]
-            # effect_sizes[i] = like_effect_sizes[i]
+        # like_lmls = lmls.copy()
+        # like_effect_sizes = effect_sizes.copy()
+        # for i in range(len(lmls)):
+        #     _X = np.concatenate((self._X, M[:, i][:, np.newaxis]), axis=1)
+        #     like_lmls[i], like_effect_sizes[i], beta_ = _lml_this(self._y, _X, self._QS, self._D,
+        #                                                           self._scale)
+        #     lmls[i] = like_lmls[i]
+        #     effect_sizes[i] = like_effect_sizes[i]
+        #
+        # return lmls, effect_sizes
 
         sC00 = self._ETBE.XTBX(1)[0, 0] + self._ETBE.XTBX(0)[0, 0]
         sC01 = XTBM[1][0, :] + XTBM[0][0, :]
@@ -201,8 +203,7 @@ class FastScanner(object):
         sb = self._yTBX[1][0] + self._yTBX[0][0]
         sbm = yTBM[1] + yTBM[0]
 
-        with errstate(divide='ignore'):
-            beta = _beta_1covariate(sb, sbm, sC00, sC01, sC11)
+        beta = _beta_1covariate(sb, sbm, sC00, sC01, sC11)
 
         beta = [nan_to_num(bet) for bet in beta]
 
@@ -393,7 +394,14 @@ def _beta_1covariate(sb, sbm, sC00, sC01, sC11):
     d5 = sC00 / sC01
     d6 = sC11 / sC01
 
-    return [(d1 - d4) / (d5 - 1 / d6), (-d0 + d3) / (d6 - 1 / d5)]
+    with errstate(divide='ignore'):
+        a = (d1 - d4) / (d5 - 1 / d6)
+        a[abs(d5 - 1 / d6) <= epsilon.tiny] = 0
+
+        b = (-d0 + d3) / (d6 - 1 / d5)
+        b[abs(d6 - 1 / d5) <= epsilon.tiny] = 0
+
+    return [a, b]
 
 
 def _compute_scale(nsamples, beta, yTBy, yTBX, yTBM, XTBX, XTBM, MTBM):
