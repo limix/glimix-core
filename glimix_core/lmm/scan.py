@@ -133,8 +133,8 @@ class FastScanner(object):
 
         for i in range(len(lmls)):
             X = np.concatenate((self._X, M[:, i][:, np.newaxis]), axis=1)
-            lmls[i], effect_sizes[i] = _lml_this(self._y, X, self._QS, self._D,
-                                                 self._scale)
+            lmls[i], effect_sizes[i], oi = _lml_this(self._y, X, self._QS, self._D,
+                                                     self._scale)
 
         return lmls, effect_sizes
 
@@ -185,10 +185,14 @@ class FastScanner(object):
     def _fast_scan_chunk_1covariate_loop(self, lmls, effect_sizes, yTBM, XTBM,
                                          MTBM, nsamples, M):
 
+        like_lmls = lmls.copy()
+        like_effect_sizes = effect_sizes.copy()
         for i in range(len(lmls)):
-            X = np.concatenate((self._X, M[:, i][:, np.newaxis]), axis=1)
-            lmls[i], effect_sizes[i] = _lml_this(self._y, X, self._QS, self._D,
-                                                 self._scale)
+            _X = np.concatenate((self._X, M[:, i][:, np.newaxis]), axis=1)
+            like_lmls[i], like_effect_sizes[i], beta_ = _lml_this(self._y, _X, self._QS, self._D,
+                                                                  self._scale)
+            lmls[i] = like_lmls[i]
+            effect_sizes[i] = like_effect_sizes[i]
 
         return lmls, effect_sizes
 
@@ -198,6 +202,8 @@ class FastScanner(object):
 
         sb = self._yTBX[1][0] - self._yTBX[0][0]
         sbm = yTBM[1] - yTBM[0]
+        import pdb
+        pdb.set_trace()
 
         with errstate(divide='ignore'):
             beta = _beta_1covariate(sb, sbm, sC00, sC01, sC11)
@@ -214,9 +220,22 @@ class FastScanner(object):
                                     XTBM[i][0, :] * beta[1])
                 scale += beta[1] * (
                     XTBM[i][0, :] * beta[0] + MTBM[i] * beta[1])
-                scale /= nsamples
+            scale /= nsamples
         else:
-            scale = self._scale
+            scale[:] = self._scale
+            lmls += nsamples
+            bla = zeros(len(lmls))
+            for i in range(2):
+                bla += self._yTBy[i] - 2 * (
+                    self._yTBX[i][0] * beta[0] + yTBM[i] * beta[1])
+                bla += beta[0] * (self._ETBE.XTBX(i)[0, 0] * beta[0] +
+                                  XTBM[i][0, :] * beta[1])
+                bla += beta[1] * (
+                    XTBM[i][0, :] * beta[0] + MTBM[i] * beta[1])
+
+            import pdb
+            pdb.set_trace()
+            lmls -= bla / scale
 
         lmls -= nsamples * log(clip(scale, epsilon.super_tiny, inf))
         lmls /= 2
@@ -224,6 +243,15 @@ class FastScanner(object):
         effect_sizes = beta[1]
 
         return lmls, effect_sizes
+
+    def _null_lml_optimal_scale(self):
+        n = len(self._QS[0][0].shape[0])
+        lml = -n * log2pi - n - n * log(self._null_optimal_scale())
+        lml -= npsum(log(self._D[0]))
+        if n > self._QS[1].shape[0]:
+            lml -= (n - self._QS[1].shape[0]) * log(self._D[1])
+
+        return lml / 2
 
     def fast_scan(self, M, verbose=True):
         r"""LML and fixed-effect sizes of each marker.
@@ -272,15 +300,6 @@ class FastScanner(object):
             effect_sizes[start:stop] = e
 
         return lmls, effect_sizes
-
-    def _null_lml_optimal_scale(self):
-        n = len(self._QS[0][0].shape[0])
-        lml = -n * log2pi - n - n * log(self._null_optimal_scale())
-        lml -= npsum(log(self._D[0]))
-        if n > self._QS[1].shape[0]:
-            lml -= (n - self._QS[1].shape[0]) * log(self._D[1])
-
-        return lml / 2
 
     def null_lml(self):
 
@@ -438,4 +457,4 @@ def _lml_this(y, X, QS, _D, scale):
         lml = (-n / 2) * (log(2 * pi) + log(scale)) - log(D.diagonal()).sum(
         ) / 2 + y.T.dot(Q).dot(Di).dot(Q.T).dot(X.dot(beta) - y) / (2 * scale)
 
-    return lml, beta[-1]
+    return lml, beta[-1], beta
