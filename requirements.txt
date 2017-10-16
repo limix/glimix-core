@@ -3,7 +3,7 @@ cachetools
 liknorm>=1.0.12
 ndarray-listener>=1.0.26
 numpy>=1.10
-numpy-sugar>=1.1.2
+numpy-sugar>=1.2.0
 optimix>=1.2.21
 scipy
 scipy-sugar>=1.0.2

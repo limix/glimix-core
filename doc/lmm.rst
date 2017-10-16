@@ -112,7 +112,7 @@ For example:
     >>> lmls, effect_sizes = scanner.fast_scan(M, verbose=False)
     >>>
     >>> lmls
-    array([ 703.32095577,   34.17290973,  703.32095577])
+    array([ 703.32095577,   31.55539132,  703.32095577])
     >>> effect_sizes
     array([-3.   , -0.375, -3.   ])
 

@@ -84,13 +84,14 @@ def test_glmmnormal_copy():
         2.49220839e-12, 1.00000000e-03
     ]])
 
-    assert_allclose(glmm0.covariance(), K)
-    assert_allclose(glmm1.covariance(), K)
+    assert_allclose(glmm0.covariance(), K, atol=1e-10)
+    assert_allclose(glmm1.covariance(), K, atol=1e-10)
 
 
 def test_glmmnormal():
     random = RandomState(0)
     X = random.randn(nsamples(), 5)
+    M = random.randn(nsamples(), 3)
     K = linear_eye_cov().feed().value()
     QS = economic_qs(K)
 
@@ -100,15 +101,13 @@ def test_glmmnormal():
     glmm = GLMMNormal(eta, tau, X, QS)
     glmm.beta = asarray([1.0, 0, 0.5, 0.1, 0.4])
 
-    assert_allclose(glmm.lml(), -18.950752841710603)
+    assert_allclose(glmm.lml(), -19.284378946701814)
 
     assert_allclose(check_grad(glmm), 0, atol=1e-3, rtol=RTOL)
 
     flmm = glmm.get_fast_scanner()
-    lmls, effsizes = flmm.fast_scan(X)
-    assert_allclose(lmls,
-                    [2.1526877, 1.39835884, 2.1526877, 2.1526877, 2.1526877])
-    assert_allclose(effsizes, [
-        8.45026105e-03, -3.13832423e+14, 1.23219003e-01, -3.12500000e-02,
-        7.81250000e-03
-    ])
+    lmls, effsizes = flmm.fast_scan(M)
+
+    assert_allclose(lmls, [9.64605678059, 9.17041834, 9.56927990771])
+    assert_allclose(effsizes, [-0.0758297759308, 0.0509863368859,
+                               0.0876858800519])

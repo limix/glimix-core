@@ -35,6 +35,7 @@ class LMMCore(object):
         -------
         float
             Log of the marginal likelihood.
+
         """
         self._update()
 
@@ -65,8 +66,8 @@ class LMMCore(object):
             lml -= (n - self._QS[1].shape[0]) * log(self._D[1])
 
         d = (mTQ - yTQ for (mTQ, yTQ) in zip(self._mTQ, self._yTQ))
-        lml += sum(dot(j / i, l)
-                   for (i, j, l) in zip(self._D, d, self._yTQ)) / s
+        lml += sum(
+            dot(j / i, l) for (i, j, l) in zip(self._D, d, self._yTQ)) / s
 
         return lml / 2
 

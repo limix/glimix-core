@@ -30,24 +30,33 @@ def test_scan_fix_unfix():
     lml1 = lmm.lml()
 
     assert_allclose(lml0, lml1)
-    # lmm.fit(verbose=False)
-    #
-    # delta1 = lmm.delta
-    # assert_allclose(delta0, delta1)
-    # print("\n--------------------")
-    #
-    # print('lml', lmm.lml())
-    # print(lmm.scale, lmm.delta, lmm.beta)
-    #
-    # # import pdb
-    # # pdb.set_trace()
-    #
-    # print("\n--------------------")
-    # fast_scanner = lmm.get_fast_scanner()
-    # # fast_scanner.set_scale(0.8342)
-    # fast_scanner.set_scale(1)
-    #
-    # print('lml', fast_scanner.null_lml())
+
+    scale = lmm.scale
+    lmm.fit(verbose=False)
+    assert_allclose(scale, lmm.scale)
+
+    assert_allclose(lmm.delta, 0.546799614073)
+    lmm.delta = 0.5
+    assert_allclose(lmm.delta, 0.5)
+
+    assert_allclose(lmm.lml(), -193.947028697)
+
+    assert_allclose(lmm.scale, 3.10605443333)
+
+    lmm.scale = 0.5
+
+    lmm.fit(verbose=False)
+
+    assert_allclose(lmm.scale, 0.5)
+    assert_allclose(lmm.delta, 0.775021320328)
+    assert_allclose(lmm.lml(), -351.381863666)
+
+    lmm.fix('delta')
+    lmm.delta = 0.1
+
+    assert_allclose(lmm.scale, 0.5)
+    assert_allclose(lmm.delta, 0.1)
+    assert_allclose(lmm.lml(), -615.1757214529657)
 
 
 def test_scan_fast_scan():
@@ -101,13 +110,82 @@ def test_scan_fastlmm_redundant_candidates():
 
     markers = M.copy()
 
-    lmm.fit(verbose=False)
     fast_scanner = lmm.get_fast_scanner()
 
     lmls = fast_scanner.fast_scan(markers, verbose=False)[0]
     assert_allclose(
         lmls, [-13.897468, -13.897468, -13.897468, -13.897468, -13.897468],
         rtol=1e-5)
+
+
+def test_scan_fastlmm_set_scale_1covariate():
+    random = RandomState(9458)
+    n = 10
+    X = _covariates_sample(random, n, n + 1)
+    offset = 1.0
+
+    y = _outcome_sample(random, offset, X)
+
+    QS = economic_qs_linear(X)
+
+    M = random.randn(n, 1)
+    lmm = LMM(y, M, QS)
+
+    lmm.fit(verbose=False)
+
+    markers = M.copy()
+
+    fast_scanner = lmm.get_fast_scanner()
+
+    fast_scanner.set_scale(1.0)
+
+    lmls, effsizes = fast_scanner.fast_scan(markers, verbose=False)
+    assert_allclose(lmls, [-22.3630065826])
+    assert_allclose(effsizes, [0.0274590587252])
+
+    fast_scanner.unset_scale()
+    lmls, effsizes = fast_scanner.fast_scan(markers, verbose=False)
+
+
+def test_scan_fastlmm_set_scale_multicovariates():
+    random = RandomState(9458)
+    n = 10
+    X = _covariates_sample(random, n, n + 1)
+    offset = 1.0
+
+    y = _outcome_sample(random, offset, X)
+
+    QS = economic_qs_linear(X)
+
+    M = random.randn(n, 3)
+    lmm = LMM(y, M, QS)
+
+    lmm.fit(verbose=False)
+
+    markers = M.copy()
+
+    fast_scanner = lmm.get_fast_scanner()
+
+    fast_scanner.set_scale(1.0)
+
+    lmls, effsizes = fast_scanner.fast_scan(markers, verbose=False)
+    lmls0 = lmls.copy()
+
+    assert_allclose(
+        lmls, [-21.906944123587948, -21.906944123587948, -21.906944123587948])
+    assert_allclose(
+        effsizes,
+        [-0.016199083532862601, -0.13468405305329331, -0.24996061939828515])
+
+    fast_scanner.unset_scale()
+    lmls, effsizes = fast_scanner.fast_scan(markers, verbose=False)
+
+    assert_allclose(
+        lmls, [-19.533512354470659, -19.533512354470659, -19.533512354470659])
+    assert_allclose(
+        effsizes,
+        [-0.016199083532862601, -0.13468405305329331, -0.24996061939828515])
+    print(lmls0 < lmls)
 
 
 def _outcome_sample(random, offset, X):

@@ -125,10 +125,19 @@ class FastScanner(object):
                 lmls, effect_sizes, yTBM, XTBM, MTBM, nsamples, M)
         else:
             return self._fast_scan_chunk_multicovariate_loop(
-                lmls, effect_sizes, yTBM, XTBM, MTBM, nsamples, nmarkers)
+                lmls, effect_sizes, yTBM, XTBM, MTBM, nsamples, nmarkers, M)
 
     def _fast_scan_chunk_multicovariate_loop(self, lmls, effect_sizes, yTBM,
-                                             XTBM, MTBM, nsamples, nmarkers):
+                                             XTBM, MTBM, nsamples, nmarkers,
+                                             M):
+
+        for i in range(len(lmls)):
+            X = np.concatenate((self._X, M[:, i][:, np.newaxis]), axis=1)
+            lmls[i], effect_sizes[i] = _lml_this(self._y, X, self._QS, self._D,
+                                                 self._scale)
+
+        return lmls, effect_sizes
+
         yTBE = [empty(len(self._yTBX[0]) + 1), empty(len(self._yTBX[1]) + 1)]
 
         yTBE[0][:-1] = self._yTBX[0]
@@ -300,7 +309,7 @@ class FastScanner(object):
         Di[np.diag_indices_from(D)] = 1 / d
 
         Q = np.concatenate(self._QS[0], axis=1)
-        beta = np.linalg.solve(
+        beta = _try_solve(
             X.T.dot(Q).dot(Di).dot(Q.T).dot(X),
             y.T.dot(Q).dot(Di).dot(Q.T).dot(X))
 
@@ -457,7 +466,7 @@ def _lml_this(y, X, QS, _D, scale):
     Di[np.diag_indices_from(D)] = 1 / d
 
     Q = np.concatenate(QS[0], axis=1)
-    beta = np.linalg.solve(
+    beta = _try_solve(
         X.T.dot(Q).dot(Di).dot(Q.T).dot(X), y.T.dot(Q).dot(Di).dot(Q.T).dot(X))
 
     if scale is None:
