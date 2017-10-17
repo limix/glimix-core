@@ -77,13 +77,14 @@ class FastScanner(object):
         yTQ = [dot(y.T, Q) for Q in QS[0]]
         XTQ = [dot(X.T, Q) for Q in QS[0]]
 
-        self._yTQDi = [l / r for (l, r) in zip(yTQ, self._D)]
+        self._yTQDi = [l / r for (l, r) in zip(yTQ, self._D) if np.min(r) > 0]
 
-        self._yTBy = [(i**2 / j).sum() for (i, j) in zip(yTQ, self._D)]
+        self._yTBy = [(i**2 / j).sum() for (i, j) in zip(yTQ, self._D)
+                      if np.min(j) > 0]
 
         self._yTBX = [dot(i, j.T) for (i, j) in zip(self._yTQDi, XTQ)]
 
-        self._XTQDi = [i / j for (i, j) in zip(XTQ, self._D)]
+        self._XTQDi = [i / j for (i, j) in zip(XTQ, self._D) if np.min(j) > 0]
 
         self._ETBE = ETBE(self._XTQDi, XTQ)
 
@@ -95,8 +96,12 @@ class FastScanner(object):
         n = self._nsamples
         p = len(self._D[0])
         static_lml = -n * log2pi - n
-        static_lml -= npsum(log(self._D[0]))
-        static_lml -= (n - p) * log(self._D[1])
+
+        D0 = clip(self._D[0], epsilon.super_tiny, inf)
+        static_lml -= npsum(log(D0))
+
+        D1 = clip(self._D[1], epsilon.super_tiny, inf)
+        static_lml -= (n - p) * log(D1)
         return static_lml
 
     def _fast_scan_chunk(self, M):
@@ -112,7 +117,10 @@ class FastScanner(object):
 
         yTBM = [dot(i, j.T) for (i, j) in zip(self._yTQDi, MTQ)]
         XTBM = [dot(i, j.T) for (i, j) in zip(self._XTQDi, MTQ)]
-        MTBM = [npsum((i / j) * i, axis=1) for (i, j) in zip(MTQ, self._D)]
+        MTBM = [
+            npsum((i / j) * i, axis=1) for (i, j) in zip(MTQ, self._D)
+            if np.min(j) > 0
+        ]
 
         nsamples = M.shape[0]
         nmarkers = M.shape[1]
@@ -132,32 +140,31 @@ class FastScanner(object):
 
         yTBy = self._yTBy
         ETBE = self._ETBE
+        yTBX = self._yTBX
 
-        yTBE = [empty(len(self._yTBX[0]) + 1), empty(len(self._yTBX[1]) + 1)]
+        yTBE = [empty(len(i) + 1) for i in yTBX]
 
-        yTBE[0][:-1] = self._yTBX[0]
-        yTBE[1][:-1] = self._yTBX[1]
+        for i in range(len(yTBE)):
+            yTBE[i][:-1] = yTBX[i]
 
         for i in range(nmarkers):
 
-            yTBE[0][-1] = yTBM[0][i]
-            yTBE[1][-1] = yTBM[1][i]
+            for j in range(len(yTBE)):
+                yTBE[j][-1] = yTBM[j][i]
+                ETBE.XTBM(j)[:] = XTBM[j][:, i]
+                ETBE.MTBX(j)[:] = ETBE.XTBM(j)[:]
+                ETBE.MTBM(j)[:] = MTBM[j][i]
 
-            ETBE.XTBM(0)[:] = XTBM[0][:, i]
-            ETBE.XTBM(1)[:] = XTBM[1][:, i]
+            A = sum(ETBE.value[j] for j in range(len(yTBE)))
+            b = sum(yTBE[j] for j in range(len(yTBE)))
 
-            ETBE.MTBX(0)[:] = ETBE.XTBM(0)[:]
-            ETBE.MTBX(1)[:] = ETBE.XTBM(1)[:]
-
-            ETBE.MTBM(0)[:] = MTBM[0][i]
-            ETBE.MTBM(1)[:] = MTBM[1][i]
-
-            beta = _solve(ETBE.value[1] + ETBE.value[0], yTBE[1] + yTBE[0])
+            # beta = _solve(ETBE.value[1] + ETBE.value[0], yTBE[1] + yTBE[0])
+            beta = _solve(A, b)
 
             effect_sizes[i] = beta[-1]
 
             p = 0
-            for j in range(2):
+            for j in range(len(yTBy)):
                 p += yTBy[j] - 2 * dot(yTBE[j], beta)
                 p += dot(dot(beta, ETBE.value[j]), beta)
 
@@ -176,12 +183,18 @@ class FastScanner(object):
     def _fast_scan_chunk_1covariate_loop(self, lmls, effect_sizes, yTBM, XTBM,
                                          MTBM, nsamples, M):
 
-        sC00 = self._ETBE.XTBX(1)[0, 0] + self._ETBE.XTBX(0)[0, 0]
-        sC01 = XTBM[1][0, :] + XTBM[0][0, :]
-        sC11 = MTBM[1] + MTBM[0]
+        ETBE = self._ETBE
+        sC00 = sum(ETBE.XTBX(i)[0, 0] for i in range(ETBE.size))
+        # sC00 = ETBE.XTBX(1)[0, 0] + ETBE.XTBX(0)[0, 0]
+        # sC01 = XTBM[1][0, :] + XTBM[0][0, :]
+        sC01 = sum(XTBM[i][0, :] for i in range(ETBE.size))
+        # sC11 = MTBM[1] + MTBM[0]
+        sC11 = sum(MTBM[i] for i in range(ETBE.size))
 
-        sb = self._yTBX[1][0] + self._yTBX[0][0]
-        sbm = yTBM[1] + yTBM[0]
+        # sb = self._yTBX[1][0] + self._yTBX[0][0]
+        sb = sum(self._yTBX[i][0] for i in range(ETBE.size))
+        # sbm = yTBM[1] + yTBM[0]
+        sbm = sum(yTBM[i] for i in range(ETBE.size))
 
         beta = _beta_1covariate(sb, sbm, sC00, sC01, sC11)
 
@@ -190,7 +203,7 @@ class FastScanner(object):
         scale = zeros(len(lmls))
 
         if self._scale is None:
-            for i in range(2):
+            for i in range(ETBE.size):
                 scale += self._yTBy[i] - 2 * (
                     self._yTBX[i][0] * beta[0] + yTBM[i] * beta[1])
                 scale += beta[0] * (self._ETBE.XTBX(i)[0, 0] * beta[0] +
@@ -202,7 +215,7 @@ class FastScanner(object):
             scale[:] = self._scale
             lmls += nsamples
             bla = zeros(len(lmls))
-            for i in range(2):
+            for i in range(ETBE.size):
                 bla += self._yTBy[i] - 2 * (
                     self._yTBX[i][0] * beta[0] + yTBM[i] * beta[1])
                 bla += beta[0] * (self._ETBE.XTBX(i)[0, 0] * beta[0] +
@@ -328,8 +341,15 @@ class ETBE(object):
 
         self._data = [empty((n, n)), empty((n, n))]
 
-        for i in range(2):
-            self._data[i][:-1, :-1] = dot(XTQDi[i], XTQ[i].T)
+        self._data = []
+        for i in range(len(XTQDi)):
+            data = empty((n, n))
+            data[:-1, :-1] = dot(XTQDi[i], XTQ[i].T)
+            self._data.append(data)
+
+    @property
+    def size(self):
+        return len(self._data)
 
     @property
     def ncovariates(self):
@@ -353,23 +373,24 @@ class ETBE(object):
 
 
 def _beta_1covariate(sb, sbm, sC00, sC01, sC11):
-    d0 = sb / sC00
-    d1 = sb / sC01
 
-    d3 = sbm / sC01
-    d4 = sbm / sC11
+    with errstate(all='ignore'):
+        d0 = nan_to_num(sb / sC00)
+        d1 = nan_to_num(sb / sC01)
 
-    d5 = sC00 / sC01
-    d6 = sC11 / sC01
+        d3 = nan_to_num(sbm / sC01)
+        d4 = nan_to_num(sbm / sC11)
 
-    with errstate(divide='ignore'):
+        d5 = nan_to_num(sC00 / sC01)
+        d6 = nan_to_num(sC11 / sC01)
+
         a = (d1 - d4) / (d5 - 1 / d6)
-        a[abs(d5 - 1 / d6) <= epsilon.tiny] = 0
+        # a[abs(d5 - 1 / d6) <= epsilon.tiny] = 0
 
         b = (-d0 + d3) / (d6 - 1 / d5)
-        b[abs(d6 - 1 / d5) <= epsilon.tiny] = 0
+        # b[abs(d6 - 1 / d5) <= epsilon.tiny] = 0
 
-    return [a, b]
+    return nan_to_num([a, b])
 
 
 def _compute_scale(nsamples, beta, yTBy, yTBX, yTBM, XTBX, XTBM, MTBM):

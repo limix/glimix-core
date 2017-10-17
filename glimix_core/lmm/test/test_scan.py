@@ -1,15 +1,16 @@
 from __future__ import division
 
-from numpy import arange, concatenate, newaxis, ones, sqrt
+from numpy import arange, concatenate, newaxis, ones, sqrt, array
 from numpy.random import RandomState
 from numpy.testing import assert_allclose
-from numpy_sugar.linalg import economic_qs_linear
+from numpy_sugar.linalg import economic_qs_linear, economic_qs
 
 from glimix_core.cov import EyeCov, LinearCov, SumCov
 from glimix_core.lik import DeltaProdLik
 from glimix_core.lmm import LMM
 from glimix_core.mean import OffsetMean
 from glimix_core.random import GGPSampler
+from glimix_core.lmm.scan import FastScanner
 
 
 def test_scan_fix_unfix():
@@ -215,9 +216,7 @@ def test_scan_fastlmm_set_scale_multicovariates():
     assert_allclose(
         lmls, [-21.906944123587948, -21.906944123587948, -21.906944123587948])
 
-    assert_allclose(
-        effsizes,
-        [-0.54393628378, -12.0444021706, -0.75])
+    assert_allclose(effsizes, [-0.54393628378, -12.0444021706, -0.75])
 
     fast_scanner.unset_scale()
     lmls, effsizes = fast_scanner.fast_scan(markers, verbose=False)
@@ -225,9 +224,131 @@ def test_scan_fastlmm_set_scale_multicovariates():
     assert_allclose(
         lmls, [-19.533512354470659, -19.533512354470659, -19.533512354470659])
 
-    assert_allclose(
-        effsizes,
-        [-0.54393628378, -12.0444021706, -0.75])
+    assert_allclose(effsizes, [-0.54393628378, -12.0444021706, -0.75])
+
+
+def test_scan_difficult_settings_offset():
+    y = array([-1.0449132, 1.15229426, 0.79595129])
+    low_rank_K = array([[5., 14., 23.], [14., 50., 86.], [23., 86., 149.]])
+    full_rank_K = array([[6., 14., 23.], [14., 51., 86.], [23., 86., 150.]])
+    low_rank_QS = economic_qs(low_rank_K)
+    full_rank_QS = economic_qs(full_rank_K)
+    X = ones((3, 1))
+
+    M = array([[0.88766985, -1.80940339], [0.00822629, -0.4488265],
+               [0.55807272, -2.00868376]])
+    scanner = FastScanner(y, X, low_rank_QS, 0)
+    lmls, effsizes = scanner.fast_scan(M, verbose=False)
+    assert_allclose(lmls, [401.11650199229757, 1409.645649707018])
+    assert_allclose(effsizes, [-5.5851957509459353, -9.2375605785935715])
+
+    X = ones((3, 1))
+    M = array([[0.88766985, -1.80940339], [0.00822629, -0.4488265],
+               [0.55807272, -2.00868376]])
+    scanner = FastScanner(y, X, low_rank_QS, 0.75)
+    lmls, effsizes = scanner.fast_scan(M, verbose=False)
+    assert_allclose(lmls, [0.823505300549, -0.607251148058])
+    assert_allclose(effsizes, [-1.79486991632, 0.872439001906])
+
+    M = array([[0.0, -1.80940339], [0.0, -0.4488265], [0.0, -2.00868376]])
+    scanner = FastScanner(y, X, low_rank_QS, 0)
+    lmls, effsizes = scanner.fast_scan(M, verbose=False)
+    assert_allclose(lmls, [349.86295749, 1409.64564971])
+    assert_allclose(effsizes[1], -9.23756057859)
+
+    M = array([[0.0, -1.80940339], [0.0, -0.4488265], [0.0, -2.00868376]])
+    scanner = FastScanner(y, X, low_rank_QS, 0.75)
+    lmls, effsizes = scanner.fast_scan(M, verbose=False)
+    assert_allclose(lmls, [-6.40108661588, -0.607251148058])
+    assert_allclose(effsizes[1], 0.872439001906)
+
+    M = array([[0.88766985, -1.80940339], [0.00822629, -0.4488265],
+               [0.55807272, -2.00868376]])
+    scanner = FastScanner(y, X, full_rank_QS, 0)
+    lmls, effsizes = scanner.fast_scan(M, verbose=False)
+    assert_allclose(lmls, [0.636421389625, -0.795311239268])
+    assert_allclose(effsizes, [-1.79757295968, 0.871806031702])
+
+    M = array([[0.88766985, -1.80940339], [0.00822629, -0.4488265],
+               [0.55807272, -2.00868376]])
+    scanner = FastScanner(y, X, full_rank_QS, 0.75)
+    lmls, effsizes = scanner.fast_scan(M, verbose=False)
+    assert_allclose(lmls, [0.251547678451, -1.18305656511])
+    assert_allclose(effsizes, [-1.80551427016, 0.86994164292])
+
+    M = array([[0.0, -1.80940339], [0.0, -0.4488265], [0.0, -2.00868376]])
+    scanner = FastScanner(y, X, full_rank_QS, 0)
+    lmls, effsizes = scanner.fast_scan(M, verbose=False)
+    assert_allclose(lmls, [-6.21920242113, -0.795311239268])
+    assert_allclose(effsizes[1], 0.871806031702)
+
+    M = array([[0.0, -1.80940339], [0.0, -0.4488265], [0.0, -2.00868376]])
+    scanner = FastScanner(y, X, full_rank_QS, 0.75)
+    lmls, effsizes = scanner.fast_scan(M, verbose=False)
+    assert_allclose(lmls, [-5.89837796719, -1.18305656511])
+    assert_allclose(effsizes[1], 0.86994164292)
+
+
+def test_scan_difficult_settings_multicovariates():
+    y = array([-1.0449132, 1.15229426, 0.79595129])
+    low_rank_K = array([[5., 14., 23.], [14., 50., 86.], [23., 86., 149.]])
+    full_rank_K = array([[6., 14., 23.], [14., 51., 86.], [23., 86., 150.]])
+    low_rank_QS = economic_qs(low_rank_K)
+    full_rank_QS = economic_qs(full_rank_K)
+    X = array([[-0.40592765, 1.04348945], [0.92275415, -0.32394197],
+               [-0.98197991, 1.22912219]])
+
+    M = array([[0.88766985, -1.80940339], [0.00822629, -0.4488265],
+               [0.55807272, -2.00868376]])
+    scanner = FastScanner(y, X, low_rank_QS, 0)
+    lmls, effsizes = scanner.fast_scan(M, verbose=False)
+    assert_allclose(lmls, [1409.64564971, 403.195943534])
+    assert_allclose(effsizes, [-3.62953948465, -0.267605654385])
+
+    X = ones((3, 1))
+    M = array([[0.88766985, -1.80940339], [0.00822629, -0.4488265],
+               [0.55807272, -2.00868376]])
+    scanner = FastScanner(y, X, low_rank_QS, 0.75)
+    lmls, effsizes = scanner.fast_scan(M, verbose=False)
+    assert_allclose(lmls, [0.823505300549, -0.607251148058])
+    assert_allclose(effsizes, [-1.79486991632, 0.872439001906])
+
+    M = array([[0.0, -1.80940339], [0.0, -0.4488265], [0.0, -2.00868376]])
+    scanner = FastScanner(y, X, low_rank_QS, 0)
+    lmls, effsizes = scanner.fast_scan(M, verbose=False)
+    assert_allclose(lmls, [349.862957487, 1409.64564971])
+    assert_allclose(effsizes[1], -9.23756057859)
+
+    M = array([[0.0, -1.80940339], [0.0, -0.4488265], [0.0, -2.00868376]])
+    scanner = FastScanner(y, X, low_rank_QS, 0.75)
+    lmls, effsizes = scanner.fast_scan(M, verbose=False)
+    assert_allclose(lmls, [-6.40108661588, -0.607251148058])
+    assert_allclose(effsizes[1], 0.872439001906)
+
+    M = array([[0.88766985, -1.80940339], [0.00822629, -0.4488265],
+               [0.55807272, -2.00868376]])
+    scanner = FastScanner(y, X, full_rank_QS, 0)
+    lmls, effsizes = scanner.fast_scan(M, verbose=False)
+    assert_allclose(lmls, [0.636421389625, -0.795311239268])
+    assert_allclose(effsizes, [-1.79757295968, 0.871806031702])
+
+    M = array([[0.88766985, -1.80940339], [0.00822629, -0.4488265],
+               [0.55807272, -2.00868376]])
+    scanner = FastScanner(y, X, full_rank_QS, 0.75)
+    lmls, effsizes = scanner.fast_scan(M, verbose=False)
+    assert_allclose(lmls, [0.251547678451, -1.18305656511])
+    assert_allclose(effsizes, [-1.80551427016, 0.86994164292])
+
+    M = array([[0.0, -1.80940339], [0.0, -0.4488265], [0.0, -2.00868376]])
+    scanner = FastScanner(y, X, full_rank_QS, 0)
+    lmls, effsizes = scanner.fast_scan(M, verbose=False)
+    assert_allclose(lmls, [-6.21920242113, -0.795311239268])
+    assert_allclose(effsizes[1], 0.871806031702)
+
+    M = array([[0.0, -1.80940339], [0.0, -0.4488265], [0.0, -2.00868376]])
+    scanner = FastScanner(y, X, full_rank_QS, 0.75)
+    lmls, effsizes = scanner.fast_scan(M, verbose=False)
+    assert_allclose(lmls, [-5.89837796719, -1.18305656511])
 
 
 def _outcome_sample(random, offset, X):
