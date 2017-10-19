@@ -181,7 +181,7 @@ class FastScanner(object):
                 lmls[i] = lmls[i] + self._nsamples
                 lmls[i] = lmls[i] - p / scale
 
-            lmls[i] -= self._nsamples * log(max(scale, epsilon.super_tiny))
+            lmls[i] -= self._nsamples * log(max(scale, epsilon.tiny))
 
         lmls /= 2
 
@@ -209,7 +209,7 @@ class FastScanner(object):
             lmls += self._nsamples
             lmls -= bstar / scale
 
-        lmls -= self._nsamples * log(clip(scale, epsilon.super_tiny, inf))
+        lmls -= self._nsamples * log(clip(scale, epsilon.tiny, inf))
         lmls /= 2
 
         effsizes[:] = beta[1]
