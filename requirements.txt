@@ -2,10 +2,10 @@ brent-search>=1.0.29
 cachetools
 liknorm>=1.0.12
 ndarray-listener>=1.0.26
-numpy>=1.10
+numpy>=1.13.3
 numpy-sugar>=1.2.0
 optimix>=1.2.21
-scipy
+scipy>=0.19.1
 scipy-sugar>=1.0.2
 toolz
 tqdm

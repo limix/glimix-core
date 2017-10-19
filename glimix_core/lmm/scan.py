@@ -102,10 +102,10 @@ class FastScanner(object):
         p = len(self._D[0])
         static_lml = -n * log2pi - n
 
-        D0 = clip(self._D[0], epsilon.super_tiny, inf)
+        D0 = clip(self._D[0], epsilon.tiny, inf)
         static_lml -= _sum(log(D0))
 
-        D1 = clip(self._D[1], epsilon.super_tiny, inf)
+        D1 = clip(self._D[1], epsilon.tiny, inf)
         static_lml -= (n - p) * log(D1)
         return static_lml
 
