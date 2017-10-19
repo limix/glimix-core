@@ -104,16 +104,18 @@ def test_glmmexpfam_glmmnormal_get_fast_scanner():
 
     glmm = GLMMNormal(eta, tau, X, QS)
     glmm.fit(verbose=False)
+    want = [-0.08228058, -0.03910674, 0.04226152, -0.05893827, 0.01718722]
+    assert_allclose(glmm.beta, want, atol=1e-6, rtol=1e-6)
+    assert_allclose(0.001, glmm.scale, atol=1e-6, rtol=1e-6)
+    assert_allclose(0.999999994119, glmm.delta, atol=1e-6, rtol=1e-6)
 
     scanner = glmm.get_fast_scanner()
     scanner.set_scale(1.0)
     lmls, effect_sizes = scanner.fast_scan(X, verbose=False)
-
-    want = [-4.75845, -62.786112, -4.656082, -4.75845, -4.75845]
+    want = [-4.75845, -4.75845, -4.75845, -4.75845, -4.75845]
     assert_allclose(lmls, want, atol=1e-6, rtol=1e-6)
 
-    want = [7.869849e-03, -9.806270e+15, 2.586260e+15, -0.000000e+00,
-            2.561790e+00]
+    want = [-0.04114, -0.019553, 0.021131, -0.029469, 0.008593]
     assert_allclose(effect_sizes, want, atol=1e-6, rtol=1e-6)
 
 

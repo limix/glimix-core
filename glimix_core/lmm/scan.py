@@ -8,7 +8,7 @@ from numpy import all as npall
 from numpy import sum as _sum
 from numpy import min as _min
 from numpy import (asarray, clip, dot, empty, errstate, full, inf, isfinite,
-                   log, nan_to_num, zeros, pi)
+                   log, nan_to_num, zeros, pi, newaxis)
 from numpy.linalg import LinAlgError
 from numpy_sugar import epsilon
 from numpy_sugar.linalg import rsolve, solve
@@ -80,7 +80,8 @@ class FastScanner(object):
 
         self._yTBy = yTBy
         self._yTBX = yTBX
-        self._ETBE = ETBE(XTQDi, XTQ)
+        self._ETBE = [ETBE(i, j) for (i, j) in zip(XTQDi, XTQ)]
+        self._yTBE = [empty(len(i) + 1) for i in yTBX]
         self._XTQ = XTQ
         self._yTQDi = yTQDi
         self._XTQDi = XTQDi
@@ -91,6 +92,10 @@ class FastScanner(object):
     @property
     def _nsamples(self):
         return self._QS[0][0].shape[0]
+
+    @property
+    def _ncovariates(self):
+        return self._XTQ[0].shape[0]
 
     def _static_lml(self):
         n = self._nsamples
@@ -123,44 +128,51 @@ class FastScanner(object):
         nmarkers = M.shape[1]
 
         lmls = full(nmarkers, self._static_lml())
-        effect_sizes = empty(nmarkers)
+        effsizes = empty(nmarkers)
 
-        if self._ETBE.ncovariates == 1:
-            return self._1covariate_loop(
-                lmls, effect_sizes, yTBM, XTBM, MTBM)
+        if self._ncovariates == 1:
+            self._1covariate_loop(lmls, effsizes, yTBM, XTBM, MTBM)
         else:
-            return self._multicovariate_loop(
-                lmls, effect_sizes, yTBM, XTBM, MTBM, nmarkers)
+            self._multicovariate_loop(lmls, effsizes, yTBM, XTBM, MTBM)
 
-    def _multicovariate_loop(self, lmls, effect_sizes, yTBM, XTBM, MTBM,
-                             nmarkers):
+        return lmls, effsizes
+
+    def _multicovariate_loop(self, lmls, effsizes, yTBM, XTBM, MTBM):
 
         ETBE = self._ETBE
+        yTBE = self._yTBE
+        yTBy = self._yTBy
+        tuple_size = len(self._yTBE)
+        ncovariates = self._ncovariates
 
-        yTBE = [empty(len(i) + 1) for i in self._yTBX]
-
-        for i in range(len(yTBE)):
+        for i in range(tuple_size):
             yTBE[i][:-1] = self._yTBX[i]
 
-        for i in range(nmarkers):
+        for i in range(XTBM[0].shape[1]):
 
-            for j in range(len(yTBE)):
+            for j in range(tuple_size):
                 yTBE[j][-1] = yTBM[j][i]
-                ETBE.XTBM(j)[:] = XTBM[j][:, i]
-                ETBE.MTBX(j)[:] = ETBE.XTBM(j)[:]
-                ETBE.MTBM(j)[:] = MTBM[j][i]
+                # ETBE[j].XTBM[:] = XTBM[j][:, [i]]
+                # ETBE[j].MTBX[:] = XTBM[j][:, [i]].T
+                ETBE[j].XTBM[:] = XTBM[j][:, i]
+                ETBE[j].MTBX[:] = XTBM[j][:, i]
+                ETBE[j].MTBM[:] = MTBM[j][i]
 
-            A = sum(ETBE.value[j] for j in range(len(yTBE)))
-            b = sum(yTBE[j] for j in range(len(yTBE)))
+            beta = _solve(_sum(j.value for j in ETBE), _sum(j for j in yTBE))
 
-            beta = _solve(A, b)
+            effsizes[i] = beta[-1]
 
-            effect_sizes[i] = beta[-1]
-
+            # _yTBX = [j[:-ncovariates] for j in self._yTBE]
+            # _yTBM = [j[ncovariates:] for j in self._yTBE]
+            # _XTBX = [j.XTBX for j in self._ETBE]
+            # _XTBM = [j.XTBM for j in self._ETBE]
+            # _MTBM = [j.MTBM.ravel() for j in self._ETBE]
+            # import ipdb; ipdb.set_trace()
+            # p = _bstar(beta, self._yTBy, _yTBX, _yTBM, _XTBX, _XTBM, _MTBM)
             p = self._yTBy
-            p -= _sum(2 * dot(j, beta) for j in yTBE)
-            for j in range(len(yTBE)):
-                p += dot(dot(beta, ETBE.value[j]), beta)
+            p -= _sum(2 * dot(j, beta) for j in self._yTBE)
+            for j in range(tuple_size):
+                p += dot(dot(beta, ETBE[j].value), beta)
 
             if self._scale is None:
                 scale = p / self._nsamples
@@ -172,53 +184,35 @@ class FastScanner(object):
             lmls[i] -= self._nsamples * log(max(scale, epsilon.super_tiny))
 
         lmls /= 2
-        return lmls, effect_sizes
 
-    def _1covariate_loop(self, lmls, effect_sizes, yTBM, XTBM, MTBM):
-
+    def _1covariate_loop(self, lmls, effsizes, yTBM, XTBM, MTBM):
         ETBE = self._ETBE
-        sC00 = sum(ETBE.XTBX(i)[0, 0] for i in range(ETBE.size))
-        sC01 = sum(XTBM[i][0, :] for i in range(ETBE.size))
-        sC11 = sum(MTBM[i] for i in range(ETBE.size))
+        yTBX = self._yTBX
+        A00 = sum(i.XTBX[0, 0] for i in ETBE)
+        A01 = sum(i[0, :] for i in XTBM)
+        A11 = sum(i for i in MTBM)
 
-        sb = sum(self._yTBX[i][0] for i in range(ETBE.size))
-        sbm = sum(yTBM[i] for i in range(ETBE.size))
-
-        beta = hsolve(sC00, sC01, sC11, sb, sbm)
-        # beta = [nan_to_num(bet) for bet in beta]
+        sb = sum(i[0] for i in yTBX)
+        beta = hsolve(A00, A01, A11, sb, sum(i for i in yTBM))
 
         scale = zeros(len(lmls))
 
+        XTBX = [i.XTBX for i in ETBE]
+        yTBy = self._yTBy
+
+        bstar = _bstar(beta, yTBy, yTBX, yTBM, XTBX, XTBM, MTBM)
+
         if self._scale is None:
-            scale += self._yTBy
-            for i in range(ETBE.size):
-                scale += - 2 * (
-                    self._yTBX[i][0] * beta[0] + yTBM[i] * beta[1])
-                scale += beta[0] * (self._ETBE.XTBX(i)[0, 0] * beta[0] +
-                                    XTBM[i][0, :] * beta[1])
-                scale += beta[1] * (
-                    XTBM[i][0, :] * beta[0] + MTBM[i] * beta[1])
-            scale /= self._nsamples
+            scale = bstar / self._nsamples
         else:
             scale[:] = self._scale
             lmls += self._nsamples
-            bla = zeros(len(lmls))
-            bla += self._yTBy
-            for i in range(ETBE.size):
-                bla += - 2 * (
-                    self._yTBX[i][0] * beta[0] + yTBM[i] * beta[1])
-                bla += beta[0] * (self._ETBE.XTBX(i)[0, 0] * beta[0] +
-                                  XTBM[i][0, :] * beta[1])
-                bla += beta[1] * (XTBM[i][0, :] * beta[0] + MTBM[i] * beta[1])
-
-            lmls -= bla / scale
+            lmls -= bstar / scale
 
         lmls -= self._nsamples * log(clip(scale, epsilon.super_tiny, inf))
         lmls /= 2
 
-        effect_sizes = beta[1]
-
-        return lmls, effect_sizes
+        effsizes[:] = beta[1]
 
     def fast_scan(self, M, verbose=True):
         r"""LML and fixed-effect sizes of each marker.
@@ -281,7 +275,7 @@ class FastScanner(object):
         ETBE = self._ETBE
         yTBX = self._yTBX
 
-        A = _sum(ETBE.XTBX(i) for i in range(ETBE.size))
+        A = _sum(ETBE[i].XTBX for i in range(len(ETBE)))
         b = _sum(yTBX, axis=0)
         c = self._yTBy
         beta = _solve(A, b)
@@ -320,53 +314,54 @@ class FastScanner(object):
 
 class ETBE(object):
     def __init__(self, XTQDi, XTQ):
-        n = XTQDi[0].shape[0] + 1
-
-        self._data = [empty((n, n)), empty((n, n))]
-
-        self._data = []
-        for i in range(len(XTQDi)):
-            data = empty((n, n))
-            data[:-1, :-1] = dot(XTQDi[i], XTQ[i].T)
-            self._data.append(data)
-
-    @property
-    def size(self):
-        return len(self._data)
-
-    @property
-    def ncovariates(self):
-        return self.XTBX(0).shape[0]
+        n = XTQDi.shape[0] + 1
+        self._data = empty((n, n))
+        self._data[:-1, :-1] = dot(XTQDi, XTQ.T)
 
     @property
     def value(self):
         return self._data
 
-    def XTBX(self, i):
-        return self._data[i][:-1, :-1]
+    @property
+    def XTBX(self):
+        return self._data[:-1, :-1]
 
-    def XTBM(self, i):
-        return self._data[i][:-1, -1]
+    @property
+    def XTBM(self):
+        return self._data[:-1, -1]
 
-    def MTBX(self, i):
-        return self._data[i][-1, :-1]
+    # return self._data[:-1, -1][:, newaxis]
 
-    def MTBM(self, i):
-        return self._data[i][-1:, -1:]
+    @property
+    def MTBX(self):
+        return self._data[-1, :-1]
+
+    # return self._data[-1, :-1][:, newaxis].T
+
+    @property
+    def MTBM(self):
+        return self._data[-1:, -1:]
+
+
+def _bstar(beta, yTBy, yTBX, yTBM, XTBX, XTBM, MTBM):
+    r = yTBy
+    r -= 2 * sum(i[0] * beta[0] + j * beta[1] for i, j in zip(yTBX, yTBM))
+    r += sum(beta[0] * (i[0, 0] * beta[0] + j[0, :] * beta[1])
+             for i, j in zip(XTBX, XTBM))
+    r += sum(beta[1] * (i[0, :] * beta[0] + j * beta[1])
+             for i, j in zip(XTBM, MTBM))
+    return r
 
 
 def _solve(A, y):
 
     try:
-        beta = solve(A, y)
+        beta = rsolve(A, y)
     except LinAlgError:
-        try:
-            beta = rsolve(A, y)
-        except LinAlgError:
-            msg = "Could not converge to the optimal"
-            msg += " effect-size of one of the candidates."
-            msg += " Setting its effect-size to zero."
-            wprint(msg)
-            beta = zeros(A.shape[0])
+        msg = "Could not converge to the optimal"
+        msg += " effect-size of one of the candidates."
+        msg += " Setting its effect-size to zero."
+        wprint(msg)
+        beta = zeros(A.shape[0])
 
     return beta
