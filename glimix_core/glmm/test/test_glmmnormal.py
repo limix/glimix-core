@@ -106,7 +106,7 @@ def test_glmmnormal():
     assert_allclose(check_grad(glmm), 0, atol=1e-3, rtol=RTOL)
 
     flmm = glmm.get_fast_scanner()
-    lmls, effsizes = flmm.fast_scan(M)
+    lmls, effsizes = flmm.fast_scan(M, verbose=False)
 
     assert_allclose(lmls, [9.64605678059, 9.17041834, 9.56927990771])
     assert_allclose(effsizes, [-0.0758297759308, 0.0509863368859,

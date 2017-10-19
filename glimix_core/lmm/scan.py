@@ -78,6 +78,8 @@ class FastScanner(object):
         yTQ = [dot(y.T, Q) for Q in QS[0]]
         XTQ = [dot(X.T, Q) for Q in QS[0]]
 
+        self._XTQ = XTQ
+
         self._yTQDi = [l / r for (l, r) in zip(yTQ, self._D) if np.min(r) > 0]
 
         self._yTBy = [(i**2 / j).sum() for (i, j) in zip(yTQ, self._D)
@@ -185,21 +187,14 @@ class FastScanner(object):
 
         ETBE = self._ETBE
         sC00 = sum(ETBE.XTBX(i)[0, 0] for i in range(ETBE.size))
-        # sC00 = ETBE.XTBX(1)[0, 0] + ETBE.XTBX(0)[0, 0]
-        # sC01 = XTBM[1][0, :] + XTBM[0][0, :]
         sC01 = sum(XTBM[i][0, :] for i in range(ETBE.size))
-        # sC11 = MTBM[1] + MTBM[0]
         sC11 = sum(MTBM[i] for i in range(ETBE.size))
 
-        # sb = self._yTBX[1][0] + self._yTBX[0][0]
         sb = sum(self._yTBX[i][0] for i in range(ETBE.size))
-        # sbm = yTBM[1] + yTBM[0]
         sbm = sum(yTBM[i] for i in range(ETBE.size))
 
-        # beta = _beta_1covariate(sb, sbm, sC00, sC01, sC11)
         beta = hsolve(sC00, sC01, sC11, sb, sbm)
-
-        beta = [nan_to_num(bet) for bet in beta]
+        # beta = [nan_to_num(bet) for bet in beta]
 
         scale = zeros(len(lmls))
 
@@ -281,40 +276,35 @@ class FastScanner(object):
         return lmls, effect_sizes
 
     def null_lml(self):
+        r"""Log of the marginal likelihood for the null hypothesis.
 
-        # lml = self._static_lml()
-        # beta = _solve(ETBE.value[1] + ETBE.value[0], yTBE[1] + yTBE[0])
-        # XTBX = self._ETBE.XTBX.value(0) + self._ETBE.XTBX.value(1)
-        # yTBX = self._yTBX[0] + self._yTBX[1]
-        # beta = _solve(XTBX, yTBX)
+        Returns
+        -------
+        float
+        Log of the margina likelihood.
+        """
+        n = len(self._y)
 
-        y = self._y
-        X = self._X
-        QS = self._QS
-        n = len(y)
+        ETBE = self._ETBE
+        yTBX = self._yTBX
+        yTBy = self._yTBy
 
-        D = np.zeros((n, n))
-        Di = np.zeros((n, n))
+        A = npsum(ETBE.XTBX(i) for i in range(ETBE.size))
+        b = npsum(yTBX, axis=0)
+        c = npsum(yTBy, axis=0)
+        beta = _solve(A, b)
+        sqrdot = c - dot(b, beta)
 
-        p = QS[0][0].shape[1] - QS[0][0].shape[0]
-        d = np.concatenate((self._D[0], [self._D[1]] * p))
-        D[np.diag_indices_from(D)] = d
-        Di[np.diag_indices_from(D)] = 1 / d
-
-        Q = np.concatenate(self._QS[0], axis=1)
-        beta = _solve(
-            X.T.dot(Q).dot(Di).dot(Q.T).dot(X),
-            y.T.dot(Q).dot(Di).dot(Q.T).dot(X))
+        lml = self._static_lml()
 
         if self._scale is None:
-            scale = y.T.dot(Q).dot(Di).dot(Q.T).dot(y - X.dot(beta)) / n
-            return (-n / 2) * (
-                log(2 * pi) + log(scale) + 1) - log(D.diagonal()).sum() / 2
+            scale = sqrdot / n
+        else:
+            scale = self._scale
+            lml += n
+            lml -= sqrdot / scale
 
-        scale = self._scale
-
-        return (-n / 2) * (log(2 * pi) + log(scale)) - log(D.diagonal()).sum(
-        ) / 2 + y.T.dot(Q).dot(Di).dot(Q.T).dot(X.dot(beta) - y) / (2 * scale)
+        return (lml - n * log(scale)) / 2
 
     def set_scale(self, scale):
         r"""Set the scaling factor.
@@ -373,29 +363,6 @@ class ETBE(object):
         return self._data[i][-1:, -1:]
 
 
-def _beta_1covariate(sb, sbm, sC00, sC01, sC11):
-
-    # (d1 - d4)
-
-    with errstate(all='ignore'):
-        d0 = nan_to_num(sb / sC00)
-        d1 = nan_to_num(sb / sC01)
-
-        d3 = nan_to_num(sbm / sC01)
-        d4 = nan_to_num(sbm / sC11)
-
-        d5 = nan_to_num(sC00 / sC01)
-        d6 = nan_to_num(sC11 / sC01)
-
-        a = (d1 - d4) / (d5 - 1 / d6)
-        # a[abs(d5 - 1 / d6) <= epsilon.tiny] = 0
-
-        b = (-d0 + d3) / (d6 - 1 / d5)
-        # b[abs(d6 - 1 / d5) <= epsilon.tiny] = 0
-
-    return nan_to_num([a, b])
-
-
 def _compute_scale(nsamples, beta, yTBy, yTBX, yTBM, XTBX, XTBM, MTBM):
 
     scale = npsum(yTBy[i] for i in range(2))
@@ -425,30 +392,3 @@ def _solve(A, y):
             beta = zeros(A.shape[0])
 
     return beta
-
-
-# def _lml_this(y, X, QS, _D, scale):
-#     n = len(y)
-#
-#     D = np.zeros((n, n))
-#     Di = np.zeros((n, n))
-#
-#     p = QS[0][0].shape[0] - QS[0][0].shape[1]
-#     d = np.concatenate((_D[0], [_D[1]] * p))
-#     D[np.diag_indices_from(D)] = d
-#     Di[np.diag_indices_from(D)] = 1 / d
-#
-#     Q = np.concatenate(QS[0], axis=1)
-#     beta = _solve(
-#         X.T.dot(Q).dot(Di).dot(Q.T).dot(X), y.T.dot(Q).dot(Di).dot(Q.T).dot(X))
-#
-#     if scale is None:
-#         scale = y.T.dot(Q).dot(Di).dot(Q.T).dot(y - X.dot(beta)) / n
-#         scale = clip(scale, epsilon.super_tiny, inf)
-#         lml = (-n / 2) * (
-#             log(2 * pi) + log(scale) + 1) - log(D.diagonal()).sum() / 2
-#     else:
-#         lml = (-n / 2) * (log(2 * pi) + log(scale)) - log(D.diagonal()).sum(
-#         ) / 2 + y.T.dot(Q).dot(Di).dot(Q.T).dot(X.dot(beta) - y) / (2 * scale)
-#
-#     return lml, beta[-1], beta
