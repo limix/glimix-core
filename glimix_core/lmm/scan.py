@@ -102,10 +102,10 @@ class FastScanner(object):
         p = len(self._D[0])
         static_lml = -n * log2pi - n
 
-        D0 = clip(self._D[0], epsilon.tiny, inf)
+        D0 = clip(self._D[0], epsilon.small, inf)
         static_lml -= _sum(log(D0))
 
-        D1 = clip(self._D[1], epsilon.tiny, inf)
+        D1 = clip(self._D[1], epsilon.small, inf)
         static_lml -= (n - p) * log(D1)
         return static_lml
 
@@ -181,7 +181,7 @@ class FastScanner(object):
                 lmls[i] = lmls[i] + self._nsamples
                 lmls[i] = lmls[i] - p / scale
 
-            lmls[i] -= self._nsamples * log(max(scale, epsilon.tiny))
+            lmls[i] -= self._nsamples * log(max(scale, epsilon.small))
 
         lmls /= 2
 
@@ -209,7 +209,7 @@ class FastScanner(object):
             lmls += self._nsamples
             lmls -= bstar / scale
 
-        lmls -= self._nsamples * log(clip(scale, epsilon.tiny, inf))
+        lmls -= self._nsamples * log(clip(scale, epsilon.small, inf))
         lmls /= 2
 
         effsizes[:] = beta[1]
