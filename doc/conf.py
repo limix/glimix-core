@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
 
 import re
+import doctest
 from importlib import import_module
 from os import getenv
 from os.path import dirname, join, realpath
@@ -49,3 +50,5 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 'conf.py']
 pygments_style = 'sphinx'
 html_theme = 'sphinx_rtd_theme'
 html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+doctest_default_flags = doctest.NORMALIZE_WHITESPACE
+doctest_global_cleanup = "True"

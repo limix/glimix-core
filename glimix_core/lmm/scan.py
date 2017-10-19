@@ -12,6 +12,7 @@ from numpy.linalg import LinAlgError
 from numpy_sugar import epsilon
 from numpy_sugar.linalg import rsolve, solve
 from tqdm import tqdm
+from ..util import hsolve
 
 from ..util import wprint
 from ..util import log2pi
@@ -118,7 +119,7 @@ class FastScanner(object):
         yTBM = [dot(i, j.T) for (i, j) in zip(self._yTQDi, MTQ)]
         XTBM = [dot(i, j.T) for (i, j) in zip(self._XTQDi, MTQ)]
         MTBM = [
-            npsum((i / j) * i, axis=1) for (i, j) in zip(MTQ, self._D)
+            npsum((i / j) * i, 1) for (i, j) in zip(MTQ, self._D)
             if np.min(j) > 0
         ]
 
@@ -130,13 +131,13 @@ class FastScanner(object):
 
         if self._ETBE.ncovariates == 1:
             return self._fast_scan_chunk_1covariate_loop(
-                lmls, effect_sizes, yTBM, XTBM, MTBM, nsamples, M)
+                lmls, effect_sizes, yTBM, XTBM, MTBM, nsamples)
         else:
             return self._fast_scan_chunk_multicovariate_loop(
-                lmls, effect_sizes, yTBM, XTBM, MTBM, nsamples, nmarkers, M)
+                lmls, effect_sizes, yTBM, XTBM, MTBM, nsamples, nmarkers)
 
-    def _fast_scan_chunk_multicovariate_loop(
-            self, lmls, effect_sizes, yTBM, XTBM, MTBM, nsamples, nmarkers, M):
+    def _fast_scan_chunk_multicovariate_loop(self, lmls, effect_sizes, yTBM,
+                                             XTBM, MTBM, nsamples, nmarkers):
 
         yTBy = self._yTBy
         ETBE = self._ETBE
@@ -158,7 +159,6 @@ class FastScanner(object):
             A = sum(ETBE.value[j] for j in range(len(yTBE)))
             b = sum(yTBE[j] for j in range(len(yTBE)))
 
-            # beta = _solve(ETBE.value[1] + ETBE.value[0], yTBE[1] + yTBE[0])
             beta = _solve(A, b)
 
             effect_sizes[i] = beta[-1]
@@ -181,7 +181,7 @@ class FastScanner(object):
         return lmls, effect_sizes
 
     def _fast_scan_chunk_1covariate_loop(self, lmls, effect_sizes, yTBM, XTBM,
-                                         MTBM, nsamples, M):
+                                         MTBM, nsamples):
 
         ETBE = self._ETBE
         sC00 = sum(ETBE.XTBX(i)[0, 0] for i in range(ETBE.size))
@@ -196,7 +196,8 @@ class FastScanner(object):
         # sbm = yTBM[1] + yTBM[0]
         sbm = sum(yTBM[i] for i in range(ETBE.size))
 
-        beta = _beta_1covariate(sb, sbm, sC00, sC01, sC11)
+        # beta = _beta_1covariate(sb, sbm, sC00, sC01, sC11)
+        beta = hsolve(sC00, sC01, sC11, sb, sbm)
 
         beta = [nan_to_num(bet) for bet in beta]
 
@@ -373,6 +374,8 @@ class ETBE(object):
 
 
 def _beta_1covariate(sb, sbm, sC00, sC01, sC11):
+
+    # (d1 - d4)
 
     with errstate(all='ignore'):
         d0 = nan_to_num(sb / sC00)

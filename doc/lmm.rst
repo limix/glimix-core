@@ -41,18 +41,18 @@ Here is an example:
 
 .. doctest::
 
-    >>> from numpy import array
+    >>> from numpy import array, ones
     >>> from numpy_sugar.linalg import economic_qs_linear
     >>> from glimix_core.lmm import LMM
     >>>
-    >>> X = array([[1, 2], [3, -1]], float)
+    >>> X = array([[1, 2], [3, -1], [1.1, 0.5], [0.5, -0.4]], float)
     >>> QS = economic_qs_linear(X)
-    >>> X = array([[1], [1]])
-    >>> y = array([-1, 2], float)
+    >>> X = ones((4, 1))
+    >>> y = array([-1, 2, 0.3, 0.5])
     >>> lmm = LMM(y, X, QS)
     >>> lmm.fit(verbose=False)
-    >>> print('%.3f' % lmm.lml())
-    -3.649
+    >>> lmm.lml()  # doctest: +NPY_FLEX_NUMS
+    -2.2727396924914833
 
 The method :func:`glimix_core.lmm.LMM.fit` is called to optimise the marginal
 likelihood over the fixed-effect sizes :math:`\boldsymbol\beta` and over the
@@ -61,12 +61,12 @@ The resulting values for the above inference are:
 
 .. doctest::
 
-    >>> print("{:.5f}".format(lmm.beta[0]))
-    0.49996
-    >>> print("{:.5f}".format(lmm.v0))
-    0.00002
-    >>> print("{:.5f}".format(lmm.v1))
-    2.24985
+    >>> lmm.beta  # doctest: +NPY_FLEX_NUMS
+    array([ 0.06466901])
+    >>> lmm.v0  # doctest: +NPY_FLEX_NUMS
+    0.33744719539335433
+    >>> lmm.v1  # doctest: +NPY_FLEX_NUMS
+    0.012502012057504848
 
 This module also provides :class:`.FastScanner`,
 an approximated LMM implementation for performing an even faster
@@ -108,13 +108,13 @@ For example:
     >>> from glimix_core.lmm import FastScanner
     >>>
     >>> scanner = FastScanner(y, X, QS, lmm.v1)
-    >>> M = array([[1, 3, -1.5], [0, -2, 4]])
+    >>> M = array([[1, 3, -1.5], [0, -2, 4], [-2, -2.5, 3], [0.2, +2, 2]])
     >>> lmls, effect_sizes = scanner.fast_scan(M, verbose=False)
     >>>
-    >>> lmls
-    array([  33.04763217,  703.32095577,   32.35448499])
-    >>> effect_sizes
-    array([-3.        , -0.6       ,  0.54545455])
+    >>> lmls  # doctest: +NPY_FLEX_NUMS
+    array([ 0.25447806,  0.4400597 ,  0.86560024])
+    >>> effect_sizes  # doctest: +NPY_FLEX_NUMS
+    array([-0.07463993, -0.04413758,  0.09065001])
 
 
 Implementation

@@ -1,3 +1,9 @@
+import doctest
+from glimix_core.util import npy_doctest
+
+doctest.OutputChecker = npy_doctest.FlexNumOutputChecker
+
+
 def get_pkg_name():
     from setuptools import find_packages
 
@@ -5,5 +11,6 @@ def get_pkg_name():
 
 
 collect_ignore = [
-    "doc/conf.py", "setup.py", "{}/testit.py".format(get_pkg_name())
+    "conftest.py", "doc/conf.py", "setup.py", "{}/testit.py".format(
+        get_pkg_name())
 ]
