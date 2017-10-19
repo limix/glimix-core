@@ -315,7 +315,7 @@ def test_scan_difficult_settings_multicovariates():
     M = array([[0.0, -1.80940339], [0.0, -0.4488265], [0.0, -2.00868376]])
     scanner = FastScanner(y, X, low_rank_QS, 0)
     lmls, effsizes = scanner.fast_scan(M, verbose=False)
-    assert_allclose(lmls, [17.715049,  61.212759])
+    assert_allclose(lmls, [17.715049, 61.212759])
     assert_allclose(effsizes[1], -9.23756057859)
 
     M = array([[0.0, -1.80940339], [0.0, -0.4488265], [0.0, -2.00868376]])
