@@ -6,7 +6,7 @@ from numpy_sugar.linalg import economic_qs, economic_qs_linear
 from optimix import check_grad
 
 from glimix_core.example import linear_eye_cov, nsamples
-from glimix_core.glmm import GLMMExpFam
+from glimix_core.glmm import GLMMExpFam, GLMMNormal
 from glimix_core.random import bernoulli_sample
 
 ATOL = 1e-5
@@ -93,30 +93,28 @@ def test_glmmexpfam_precise():
     assert_allclose(check_grad(glmm), 0, atol=1e-3, rtol=RTOL)
 
 
-# def test_glmmexpfam_glmmnormal_get_fast_scanner():
-#     random = RandomState(0)
-#     X = random.randn(nsamples(), 5)
-#     K = linear_eye_cov().feed().value()
-#     QS = economic_qs(K)
-#
-#     eta = random.randn(nsamples())
-#     tau = 10 * random.rand(nsamples())
-#
-#     glmm = GLMMNormal(eta, tau, X, QS)
-#     glmm.fit(verbose=False)
-#
-#     scanner = glmm.get_fast_scanner()
-#     scanner.set_scale(1.0)
-#     lmls, effect_sizes = scanner.fast_scan(X, verbose=False)
-#
-#     assert_allclose(lmls, [
-#         0.65993260598994397, 3.6666642592705188, 3.6666642592705188,
-#         3.4687842095112131, 3.6666642592705188
-#     ])
-#     assert_allclose(effect_sizes, [
-#         -831173461326518.12, -0.0015024987823475178, 0.085827590202214823,
-#         42866244922529.086, 0.024047703652107007
-#     ])
+def test_glmmexpfam_glmmnormal_get_fast_scanner():
+    random = RandomState(0)
+    X = random.randn(nsamples(), 5)
+    K = linear_eye_cov().feed().value()
+    QS = economic_qs(K)
+
+    eta = random.randn(nsamples())
+    tau = 10 * random.rand(nsamples())
+
+    glmm = GLMMNormal(eta, tau, X, QS)
+    glmm.fit(verbose=False)
+
+    scanner = glmm.get_fast_scanner()
+    scanner.set_scale(1.0)
+    lmls, effect_sizes = scanner.fast_scan(X, verbose=False)
+
+    want = [-4.75845, -62.786112, -4.656082, -4.75845, -4.75845]
+    assert_allclose(lmls, want, atol=1e-6, rtol=1e-6)
+
+    want = [7.869849e-03, -9.806270e+15, 2.586260e+15, -0.000000e+00,
+            2.561790e+00]
+    assert_allclose(effect_sizes, want, atol=1e-6, rtol=1e-6)
 
 
 def test_glmmexpfam_delta0():
