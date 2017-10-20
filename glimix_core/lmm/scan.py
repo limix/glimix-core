@@ -1,17 +1,13 @@
 from __future__ import division
 
-import numpy as np
-import numpy.linalg
-import scipy as sp
-import scipy.stats
 from numpy import all as npall
 from numpy import sum as _sum
 from numpy import min as _min
-from numpy import (asarray, clip, dot, empty, errstate, full, inf, isfinite,
-                   log, nan_to_num, zeros, pi, newaxis)
+from numpy import (asarray, clip, dot, empty, full, inf, isfinite, log, zeros,
+                   newaxis, copyto)
 from numpy.linalg import LinAlgError
 from numpy_sugar import epsilon
-from numpy_sugar.linalg import rsolve, solve
+from numpy_sugar.linalg import rsolve, dotd
 from tqdm import tqdm
 from ..util import hsolve
 
@@ -101,12 +97,8 @@ class FastScanner(object):
         n = self._nsamples
         p = len(self._D[0])
         static_lml = -n * log2pi - n
-
-        D0 = clip(self._D[0], epsilon.small, inf)
-        static_lml -= _sum(log(D0))
-
-        D1 = clip(self._D[1], epsilon.small, inf)
-        static_lml -= (n - p) * log(D1)
+        static_lml -= _sum(_safe_log(self._D[0]))
+        static_lml -= (n - p) * _safe_log(self._D[1])
         return static_lml
 
     def _fast_scan_chunk(self, M):
@@ -119,16 +111,13 @@ class FastScanner(object):
             raise ValueError("One or more variants have non-finite value.")
 
         MTQ = [dot(M.T, Q) for Q in self._QS[0]]
-
         yTBM = [dot(i, j.T) for (i, j) in zip(self._yTQDi, MTQ)]
         XTBM = [dot(i, j.T) for (i, j) in zip(self._XTQDi, MTQ)]
         D = self._D
         MTBM = [_sum(i / j * i, 1) for i, j in zip(MTQ, D) if _min(j) > 0]
 
-        nmarkers = M.shape[1]
-
-        lmls = full(nmarkers, self._static_lml())
-        effsizes = empty(nmarkers)
+        lmls = full(M.shape[1], self._static_lml())
+        effsizes = empty(M.shape[1])
 
         if self._ncovariates == 1:
             self._1covariate_loop(lmls, effsizes, yTBM, XTBM, MTBM)
@@ -141,9 +130,9 @@ class FastScanner(object):
 
         ETBE = self._ETBE
         yTBE = self._yTBE
-        yTBy = self._yTBy
-        tuple_size = len(self._yTBE)
-        ncovariates = self._ncovariates
+        tuple_size = len(yTBE)
+        if self._scale is not None:
+            scale = self._scale
 
         for i in range(tuple_size):
             yTBE[i][:-1] = self._yTBX[i]
@@ -152,66 +141,49 @@ class FastScanner(object):
 
             for j in range(tuple_size):
                 yTBE[j][-1] = yTBM[j][i]
-                # ETBE[j].XTBM[:] = XTBM[j][:, [i]]
-                # ETBE[j].MTBX[:] = XTBM[j][:, [i]].T
-                ETBE[j].XTBM[:] = XTBM[j][:, i]
-                ETBE[j].MTBX[:] = XTBM[j][:, i]
-                ETBE[j].MTBM[:] = MTBM[j][i]
+                ETBE[j].set_XTBM(XTBM[j][:, [i]])
+                ETBE[j].set_MTBM(MTBM[j][i])
 
-            beta = _solve(_sum(j.value for j in ETBE), _sum(j for j in yTBE))
-
-            effsizes[i] = beta[-1]
-
-            # _yTBX = [j[:-ncovariates] for j in self._yTBE]
-            # _yTBM = [j[ncovariates:] for j in self._yTBE]
-            # _XTBX = [j.XTBX for j in self._ETBE]
-            # _XTBM = [j.XTBM for j in self._ETBE]
-            # _MTBM = [j.MTBM.ravel() for j in self._ETBE]
-            # import ipdb; ipdb.set_trace()
-            # p = _bstar(beta, self._yTBy, _yTBX, _yTBM, _XTBX, _XTBM, _MTBM)
-            p = self._yTBy
-            p -= _sum(2 * dot(j, beta) for j in self._yTBE)
-            for j in range(tuple_size):
-                p += dot(dot(beta, ETBE[j].value), beta)
+            beta = _solve(sum(j.value for j in ETBE), sum(j for j in yTBE))
+            beta = (beta[:-1][:, newaxis], beta[-1:])
+            bstar = _bstar_unpack(beta, self._yTBy, yTBE, ETBE)
 
             if self._scale is None:
-                scale = p / self._nsamples
+                scale = bstar / self._nsamples
             else:
-                scale = self._scale
-                lmls[i] = lmls[i] + self._nsamples
-                lmls[i] = lmls[i] - p / scale
+                lmls[i] += self._nsamples - bstar / scale
 
-            lmls[i] -= self._nsamples * log(max(scale, epsilon.small))
+            lmls[i] -= self._nsamples * _safe_log(scale)
+            effsizes[i] = beta[1][0]
 
         lmls /= 2
 
     def _1covariate_loop(self, lmls, effsizes, yTBM, XTBM, MTBM):
         ETBE = self._ETBE
         yTBX = self._yTBX
+        XTBX = [i.XTBX for i in ETBE]
+        yTBy = self._yTBy
+
         A00 = sum(i.XTBX[0, 0] for i in ETBE)
         A01 = sum(i[0, :] for i in XTBM)
         A11 = sum(i for i in MTBM)
 
-        sb = sum(i[0] for i in yTBX)
-        beta = hsolve(A00, A01, A11, sb, sum(i for i in yTBM))
+        b0 = sum(i[0] for i in yTBX)
+        b1 = sum(i for i in yTBM)
 
-        scale = zeros(len(lmls))
-
-        XTBX = [i.XTBX for i in ETBE]
-        yTBy = self._yTBy
+        beta = hsolve(A00, A01, A11, b0, b1)
+        beta = (beta[0][newaxis, :], beta[1])
 
         bstar = _bstar(beta, yTBy, yTBX, yTBM, XTBX, XTBM, MTBM)
 
         if self._scale is None:
             scale = bstar / self._nsamples
         else:
-            scale[:] = self._scale
-            lmls += self._nsamples
-            lmls -= bstar / scale
+            scale = full(len(lmls), self._scale)
+            lmls += self._nsamples - bstar / scale
 
-        lmls -= self._nsamples * log(clip(scale, epsilon.small, inf))
+        lmls -= self._nsamples * _safe_log(scale)
         lmls /= 2
-
         effsizes[:] = beta[1]
 
     def fast_scan(self, M, verbose=True):
@@ -236,8 +208,7 @@ class FastScanner(object):
         array_like
         Fixed-effect sizes.
         """
-
-        if not (M.ndim == 2):
+        if M.ndim != 2:
             raise ValueError("`M` array must be bidimensional.")
         p = M.shape[1]
 
@@ -268,18 +239,17 @@ class FastScanner(object):
         Returns
         -------
         float
-        Log of the margina likelihood.
+        Log of the marginal likelihood.
         """
         n = self._nsamples
 
         ETBE = self._ETBE
         yTBX = self._yTBX
 
-        A = _sum(ETBE[i].XTBX for i in range(len(ETBE)))
-        b = _sum(yTBX, axis=0)
-        c = self._yTBy
+        A = sum(i.XTBX for i in ETBE)
+        b = sum(yTBX)
         beta = _solve(A, b)
-        sqrdot = c - dot(b, beta)
+        sqrdot = self._yTBy - dot(b, beta)
 
         lml = self._static_lml()
 
@@ -328,33 +298,46 @@ class ETBE(object):
 
     @property
     def XTBM(self):
-        return self._data[:-1, -1]
-
-    # return self._data[:-1, -1][:, newaxis]
+        return self._data[:-1, -1:]
 
     @property
     def MTBX(self):
-        return self._data[-1, :-1]
-
-    # return self._data[-1, :-1][:, newaxis].T
+        return self._data[-1:, :-1]
 
     @property
     def MTBM(self):
-        return self._data[-1:, -1:]
+        return self._data[-1:, -1]
+
+    def set_XTBM(self, XTBM):
+        copyto(self.XTBM, XTBM)
+        copyto(self.MTBX, XTBM.T)
+
+    def set_MTBM(self, MTBM):
+        copyto(self.MTBM, MTBM)
 
 
 def _bstar(beta, yTBy, yTBX, yTBM, XTBX, XTBM, MTBM):
-    r = yTBy
-    r -= 2 * sum(i[0] * beta[0] + j * beta[1] for i, j in zip(yTBX, yTBM))
-    r += sum(beta[0] * (i[0, 0] * beta[0] + j[0, :] * beta[1])
-             for i, j in zip(XTBX, XTBM))
-    r += sum(beta[1] * (i[0, :] * beta[0] + j * beta[1])
-             for i, j in zip(XTBM, MTBM))
+    r = full(MTBM[0].shape[0], yTBy)
+    r -= 2 * sum(dot(i, beta[0]) for i in yTBX)
+    r -= 2 * sum(i * beta[1] for i in yTBM)
+    r += sum(dotd(beta[0].T, dot(i, beta[0])) for i in XTBX)
+    r += sum(dotd(beta[0].T, i * beta[1]) for i in XTBM)
+    r += sum(_sum(beta[1] * i * beta[0], axis=0) for i in XTBM)
+    r += sum(beta[1] * i * beta[1] for i in MTBM)
     return r
 
 
-def _solve(A, y):
+def _bstar_unpack(beta, yTBy, yTBE, ETBE):
+    nc = beta[0].shape[0]
+    yTBX = [j[:nc] for j in yTBE]
+    yTBM = [j[nc:] for j in yTBE]
+    XTBX = [j.XTBX for j in ETBE]
+    XTBM = [j.XTBM for j in ETBE]
+    MTBM = [j.MTBM for j in ETBE]
+    return _bstar(beta, yTBy, yTBX, yTBM, XTBX, XTBM, MTBM)
 
+
+def _solve(A, y):
     try:
         beta = rsolve(A, y)
     except LinAlgError:
@@ -365,3 +348,7 @@ def _solve(A, y):
         beta = zeros(A.shape[0])
 
     return beta
+
+
+def _safe_log(x):
+    return log(clip(x, epsilon.small, inf))
