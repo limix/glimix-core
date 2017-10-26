@@ -1,6 +1,6 @@
 from __future__ import division
 
-from numpy import arange, concatenate, newaxis, ones, sqrt, array
+from numpy import arange, concatenate, newaxis, ones, sqrt, array, dot
 from numpy.random import RandomState
 from numpy.testing import assert_allclose
 from numpy_sugar.linalg import economic_qs_linear, economic_qs
@@ -133,9 +133,9 @@ def test_scan_fastlmm_set_scale_1covariate():
     lmm = LMM(y, M, QS)
 
     lmm.fit(verbose=False)
-    assert_allclose(lmm.scale, 5.3420241172305172)
-    assert_allclose(lmm.delta, 0.74276416210589369)
-    assert_allclose(lmm.beta, [-0.23917848433233424])
+    assert_allclose(lmm.scale, 5.282731934070453)
+    assert_allclose(lmm.delta, 0.7029974630034005)
+    assert_allclose(lmm.beta, [0.0599712498212])
 
     markers = M.copy() + random.randn(n, 1)
 
@@ -145,14 +145,14 @@ def test_scan_fastlmm_set_scale_1covariate():
 
     lmls, effsizes = fast_scanner.fast_scan(markers, verbose=False)
 
-    assert_allclose(lmls, [-21.5857229586])
-    assert_allclose(effsizes, [1.42553567113])
+    assert_allclose(lmls, [-21.577703], rtol=1e-6)
+    assert_allclose(effsizes, [1.412239], rtol=1e-6)
 
     fast_scanner.unset_scale()
     lmls, effsizes = fast_scanner.fast_scan(markers, verbose=False)
 
-    assert_allclose(lmls, [-21.5007702134])
-    assert_allclose(effsizes, [1.42553567113])
+    assert_allclose(lmls, [-21.509721], rtol=1e-6)
+    assert_allclose(effsizes, [1.412239], rtol=1e-6)
 
 
 def test_scan_fastlmm_set_scale_1covariate_redundant():
@@ -178,13 +178,13 @@ def test_scan_fastlmm_set_scale_1covariate_redundant():
 
     lmls, effsizes = fast_scanner.fast_scan(markers, verbose=False)
 
-    assert_allclose(lmls, [-22.363007], rtol=1e-6)
-    assert_allclose(effsizes, [0.027459], rtol=1e-6, atol=1e-6)
+    assert_allclose(lmls, [-22.357526], rtol=1e-6)
+    assert_allclose(effsizes, [0.029986], rtol=1e-6, atol=1e-6)
 
     fast_scanner.unset_scale()
     lmls, effsizes = fast_scanner.fast_scan(markers, verbose=False)
-    assert_allclose(lmls[0], -22.362210901180475, rtol=1e-6)
-    assert_allclose(effsizes[0], 0.02745906042786932, rtol=1e-6, atol=1e-6)
+    assert_allclose(lmls[0], -22.357525517597185, rtol=1e-6)
+    assert_allclose(effsizes[0], 0.02998562491058301, rtol=1e-6, atol=1e-6)
 
 
 def test_scan_fastlmm_set_scale_multicovariates():
@@ -210,19 +210,19 @@ def test_scan_fastlmm_set_scale_multicovariates():
 
     lmls, effsizes = fast_scanner.fast_scan(markers, verbose=False)
 
-    want = [-21.906944123587948, -21.906944123587948, -21.906944123587948]
+    want = [-19.318845, -19.318845, -19.318845]
     assert_allclose(lmls, want, rtol=1e-6, atol=1e-6)
 
-    want = [-0.249824, 1.188457, -0.12498]
+    want = [-0.34615, 1.177541, -0.381578]
     assert_allclose(effsizes, want, rtol=1e-6, atol=1e-6)
 
     fast_scanner.unset_scale()
     lmls, effsizes = fast_scanner.fast_scan(markers, verbose=False)
 
-    want = [-19.533512354470659, -19.533512354470659, -19.533512354470659]
+    want = [-19.318845, -19.318845, -19.318845]
     assert_allclose(lmls, want, rtol=1e-6, atol=1e-6)
 
-    want = [-0.249824, 1.188457, -0.12498]
+    want = [-0.34615, 1.177541, -0.381578]
     assert_allclose(effsizes, want, rtol=1e-6, atol=1e-6)
 
 
@@ -350,6 +350,44 @@ def test_scan_difficult_settings_multicovariates():
     assert_allclose(lmls, [-5.509792, -1.183057], atol=1e-6, rtol=1e-6)
 
 
+# def test_lmm_vs_fastlmm_null_lml():
+#     # import limix
+#     # from limix.stats import linear_kinship
+#     # random = RandomState(0)
+#     # nsamples = 50
+#     #
+#     # G = random.randn(nsamples, 100)
+#     # G1 = G[:, 0:80]
+#     # K = linear_kinship(G1)
+#
+#     # K = dot(G1, G1.T)
+#     # import numpy as np
+#     # K = K + np.eye(nsamples) * 0.0001
+#
+#     # y = dot(G, random.randn(100)) / sqrt(100) + 0.2 * random.randn(nsamples)
+#
+#     # M = G[:, :5]
+#     # X = G[:, 68:70]
+#
+#     import numpy as np
+#     # K = np.load('K.npy')
+#     y = np.load('y.npy')
+#     M = np.load('M.npy')
+#     QS00 = np.load('QS00.npy')
+#     QS01 = np.load('QS01.npy')
+#     QS1 = np.load('QS1.npy')
+#     QS = ((QS00, QS01), QS1)
+#
+#     lmm = LMM(y, M, QS)
+#     lmm.fit(verbose=False)
+#     lmm0 = lmm.lml()
+#
+#     flmm = lmm.get_fast_scanner()
+#     lmm1 = flmm.null_lml()
+#     print(lmm0, lmm1, abs(lmm0-lmm1))
+#     # assert(abs(lmm0-lmm1) < 1e-5)
+
+
 def _outcome_sample(random, offset, X):
     n = X.shape[0]
     mean = OffsetMean()
@@ -377,3 +415,24 @@ def _covariates_sample(random, n, p):
     X /= X.std(0)
     X /= sqrt(X.shape[1])
     return X
+
+# if __name__ == '__main__':
+#     import numpy as np
+#     # K = np.load('K.npy')
+#     y = np.load('y.npy')
+#     M = np.load('M.npy')
+#     QS00 = np.load('QS00.npy')
+#     QS01 = np.load('QS01.npy')
+#     QS1 = np.load('QS1.npy')
+#     QS = ((QS00, QS01), QS1)
+#
+#     lmm = LMM(y, M, QS)
+#     lmm.fit(verbose=False)
+#     import ipdb
+#     ipdb.set_trace()
+#     lmm0 = lmm.lml()
+#
+#     flmm = lmm.get_fast_scanner()
+#     lmm1 = flmm.null_lml()
+#     print(lmm0, lmm1, abs(lmm0-lmm1))
+#     # assert(abs(lmm0-lmm1) < 1e-5)

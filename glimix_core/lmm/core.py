@@ -99,8 +99,10 @@ class LMMCore(object):
     def _update_fixed_effects(self):
         yTQDiQTm = list(self._yTQDiQTm)
         mTQDiQTm = list(self._mTQDiQTm)
-        nominator = -yTQDiQTm[0]
-        denominator = -mTQDiQTm[0]
+        # nominator = -yTQDiQTm[0]
+        # denominator = -mTQDiQTm[0]
+        nominator = yTQDiQTm[0]
+        denominator = mTQDiQTm[0]
 
         if len(yTQDiQTm) > 1:
             nominator += yTQDiQTm[1]

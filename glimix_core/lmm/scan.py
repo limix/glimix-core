@@ -84,6 +84,8 @@ class FastScanner(object):
         self._scale = None
         self._QS = QS
         self._D = D
+        self._X = X
+        self._y = y
 
     @property
     def _nsamples(self):

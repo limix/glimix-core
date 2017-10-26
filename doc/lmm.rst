@@ -62,7 +62,7 @@ The resulting values for the above inference are:
 .. doctest::
 
     >>> lmm.beta  # doctest: +NPY_FLEX_NUMS
-    array([ 0.06466901])
+    array([ 0.06646503])
     >>> lmm.v0  # doctest: +NPY_FLEX_NUMS
     0.33744719539335433
     >>> lmm.v1  # doctest: +NPY_FLEX_NUMS
