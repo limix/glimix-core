@@ -1,5 +1,5 @@
 from numpy import all as npall
-from numpy import isfinite, clip
+from numpy import isfinite, clip, asarray
 
 from .io import wprint
 
@@ -33,20 +33,19 @@ def check_covariates(X):
 
 
 def check_outcome(y, lik_name):
+    lik_name = lik_name.lower()
+    y = asarray(y, float)
 
-    if not all(npall(isfinite(yi)) for yi in y):
+    if not npall(isfinite(y)):
         raise ValueError("Outcome must be finite.")
 
-    if lik_name.lower() == 'poisson':
+    if lik_name == 'poisson':
         return _check_poisson_outcome(y)
 
-    if len(set(len(yi) for yi in y)) != 1:
-        raise ValueError("Outcome must be a tuple of arrays of the same size.")
-
-    if lik_name.lower() == 'normal':
-        if len(y) != 2:
-            msg = "Outcome must be a tuple of two arrays"
-            msg += " for normal likelihood."
+    if lik_name == 'binomial' or lik_name == 'normal':
+        if y.ndim != 2 or y.shape[1] != 2:
+            msg = "Outcome must be a matrix of two columns"
+            msg += " for {} likelihood.".format(lik_name)
             raise ValueError(msg)
 
     return y

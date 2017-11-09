@@ -4,7 +4,7 @@ from copy import copy
 
 from liknorm import LikNormMachine
 from numpy import exp
-from optimix import Function
+from numpy import ascontiguousarray
 
 from ..ep import EPLinearKernel
 from .glmm import GLMM
@@ -110,7 +110,9 @@ class GLMMExpFam(GLMM):
         self.set_update_approx()
 
     def compute_moments(self, eta, tau, moments):
-        self._machine.moments(self._y, eta, tau, moments)
+        y = self._y
+        y = tuple(ascontiguousarray(i) for i in y.T)
+        self._machine.moments(y, eta, tau, moments)
 
     def covariance(self):
         return dict(QS=self._QS, scale=self.scale, delta=self.delta)

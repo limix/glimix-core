@@ -92,11 +92,11 @@ class GLMMNormal(GLMM):
 
     @property
     def eta(self):
-        return self._y[0]
+        return self._y[:, 0]
 
     @property
     def tau(self):
-        return self._y[1]
+        return self._y[:, 1]
 
     def get_fast_scanner(self):
         r"""Return :class:`glimix_core.lmm.FastScanner` for the current

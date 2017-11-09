@@ -8,6 +8,7 @@ from numpy_sugar.linalg import ddot, sum2diag
 from optimix import Function, Scalar, Vector
 
 from ..util import check_covariates, check_economic_qs, check_outcome
+from ..util import normalise_outcome
 
 
 class GLMM(Function):
@@ -52,6 +53,7 @@ class GLMM(Function):
     """
 
     def __init__(self, y, lik_name, X, QS):
+        y = normalise_outcome(y)
         X = asarray(X, float)
 
         Function.__init__(
@@ -61,15 +63,15 @@ class GLMM(Function):
             logitdelta=Scalar(0.0))
 
         self._lik_name = lik_name.lower()
-        self._y = check_outcome(_normalise_outcome(y), self._lik_name)
+        self._y = check_outcome(y, self._lik_name)
         self._X = check_covariates(X)
         self._QS = check_economic_qs(QS)
 
-        if len(self._y[0]) != self._X.shape[0]:
+        if self._y.shape[0] != self._X.shape[0]:
             raise ValueError("Number of samples in " +
                              "outcome and covariates differ.")
 
-        if len(self._y[0]) != self._QS[0][0].shape[0]:
+        if self._y.shape[0] != self._QS[0][0].shape[0]:
             raise ValueError("Number of samples in " +
                              "outcome and covariance differ.")
 
@@ -245,14 +247,6 @@ class GLMM(Function):
             :math:`v_1 = s \delta`
         """
         return self.scale * self.delta
-
-
-def _normalise_outcome(y):
-    if isinstance(y, list):
-        y = tuple(y)
-    elif not isinstance(y, tuple):
-        y = (y, )
-    return tuple([asarray(i, float) for i in y])
 
 
 def _to_internal_name(name):

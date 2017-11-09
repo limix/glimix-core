@@ -415,24 +415,3 @@ def _covariates_sample(random, n, p):
     X /= X.std(0)
     X /= sqrt(X.shape[1])
     return X
-
-# if __name__ == '__main__':
-#     import numpy as np
-#     # K = np.load('K.npy')
-#     y = np.load('y.npy')
-#     M = np.load('M.npy')
-#     QS00 = np.load('QS00.npy')
-#     QS01 = np.load('QS01.npy')
-#     QS1 = np.load('QS1.npy')
-#     QS = ((QS00, QS01), QS1)
-#
-#     lmm = LMM(y, M, QS)
-#     lmm.fit(verbose=False)
-#     import ipdb
-#     ipdb.set_trace()
-#     lmm0 = lmm.lml()
-#
-#     flmm = lmm.get_fast_scanner()
-#     lmm1 = flmm.null_lml()
-#     print(lmm0, lmm1, abs(lmm0-lmm1))
-#     # assert(abs(lmm0-lmm1) < 1e-5)
