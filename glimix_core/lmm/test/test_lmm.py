@@ -122,6 +122,60 @@ def test_lmm_lmmcore_interface():
         lmmc.delta = 1
 
 
+def test_lmm_redundant_covariates_fullrank():
+    random = RandomState(9458)
+    n = 30
+    X = _covariates_sample(random, n, n + 1)
+
+    offset = 1.0
+
+    y = _outcome_sample(random, offset, X)
+
+    QS = economic_qs_linear(X)
+
+    lmm = LMM(y, ones((n, 1)), QS)
+    lmm.fit(verbose=False)
+
+    assert_allclose(lmm.scale, 1.93463817155, rtol=1e-5)
+    assert_allclose(lmm.delta, 0.707071227475, rtol=1e-5)
+    assert_allclose(lmm.beta, 0.70655980685, rtol=1e-5)
+
+    M = ones((n, 10))
+    lmm = LMM(y, M, QS)
+    lmm.fit(verbose=False)
+
+    assert_allclose(lmm.scale, 1.93463817155, rtol=1e-5)
+    assert_allclose(lmm.delta, 0.707071227475, rtol=1e-5)
+    assert_allclose(lmm.beta, 0.070655980685, rtol=1e-5)
+
+
+def test_lmm_redundant_covariates_lowrank():
+    random = RandomState(9458)
+    n = 30
+    X = _covariates_sample(random, n, n - 1)
+
+    offset = 1.0
+
+    y = _outcome_sample(random, offset, X)
+
+    QS = economic_qs_linear(X)
+
+    lmm = LMM(y, ones((n, 1)), QS)
+    lmm.fit(verbose=False)
+
+    assert_allclose(lmm.scale, 2.97311575698, rtol=1e-5)
+    assert_allclose(lmm.delta, 0.693584745932, rtol=1e-5)
+    assert_allclose(lmm.beta, 0.932326853301, rtol=1e-5)
+
+    M = ones((n, 10))
+    lmm = LMM(y, M, QS)
+    lmm.fit(verbose=False)
+
+    assert_allclose(lmm.scale, 2.97311575698, rtol=1e-5)
+    assert_allclose(lmm.delta, 0.693584745932, rtol=1e-5)
+    assert_allclose(lmm.beta, 0.0932326853301, rtol=1e-5)
+
+
 def _outcome_sample(random, offset, X):
     n = X.shape[0]
     mean = OffsetMean()
