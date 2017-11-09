@@ -1,6 +1,6 @@
 from __future__ import division
 
-from numpy import arange, concatenate, newaxis, ones, sqrt, array, dot
+from numpy import arange, concatenate, newaxis, ones, sqrt, array
 from numpy.random import RandomState
 from numpy.testing import assert_allclose
 from numpy_sugar.linalg import economic_qs_linear, economic_qs
@@ -348,44 +348,6 @@ def test_scan_difficult_settings_multicovariates():
     scanner = FastScanner(y, X, full_rank_QS, 0.75)
     lmls, effsizes = scanner.fast_scan(M, verbose=False)
     assert_allclose(lmls, [-5.509792, -1.183057], atol=1e-6, rtol=1e-6)
-
-
-# def test_lmm_vs_fastlmm_null_lml():
-#     # import limix
-#     # from limix.stats import linear_kinship
-#     # random = RandomState(0)
-#     # nsamples = 50
-#     #
-#     # G = random.randn(nsamples, 100)
-#     # G1 = G[:, 0:80]
-#     # K = linear_kinship(G1)
-#
-#     # K = dot(G1, G1.T)
-#     # import numpy as np
-#     # K = K + np.eye(nsamples) * 0.0001
-#
-#     # y = dot(G, random.randn(100)) / sqrt(100) + 0.2 * random.randn(nsamples)
-#
-#     # M = G[:, :5]
-#     # X = G[:, 68:70]
-#
-#     import numpy as np
-#     # K = np.load('K.npy')
-#     y = np.load('y.npy')
-#     M = np.load('M.npy')
-#     QS00 = np.load('QS00.npy')
-#     QS01 = np.load('QS01.npy')
-#     QS1 = np.load('QS1.npy')
-#     QS = ((QS00, QS01), QS1)
-#
-#     lmm = LMM(y, M, QS)
-#     lmm.fit(verbose=False)
-#     lmm0 = lmm.lml()
-#
-#     flmm = lmm.get_fast_scanner()
-#     lmm1 = flmm.null_lml()
-#     print(lmm0, lmm1, abs(lmm0-lmm1))
-#     # assert(abs(lmm0-lmm1) < 1e-5)
 
 
 def _outcome_sample(random, offset, X):
