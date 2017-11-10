@@ -3,7 +3,7 @@ from __future__ import division
 from numpy import sum as npsum
 from numpy import dot, log, maximum, sqrt, zeros
 from numpy_sugar import epsilon
-from numpy_sugar.linalg import ddot, economic_svd, rsolve, solve
+from numpy_sugar.linalg import ddot, economic_svd, rsolve
 
 from ..util import log2pi
 
@@ -99,8 +99,6 @@ class LMMCore(object):
     def _update_fixed_effects(self):
         yTQDiQTm = list(self._yTQDiQTm)
         mTQDiQTm = list(self._mTQDiQTm)
-        # nominator = -yTQDiQTm[0]
-        # denominator = -mTQDiQTm[0]
         nominator = yTQDiQTm[0]
         denominator = mTQDiQTm[0]
 
@@ -108,7 +106,7 @@ class LMMCore(object):
             nominator += yTQDiQTm[1]
             denominator += mTQDiQTm[1]
 
-        self._tbeta[:] = solve(denominator, nominator)
+        self._tbeta[:] = rsolve(denominator, nominator)
 
     def _update(self):
         self._update_fixed_effects()
