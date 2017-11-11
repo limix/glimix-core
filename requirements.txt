@@ -1,11 +1,11 @@
 brent-search>=1.0.29
-cachetools>=2.0.0
+cachetools>=2.0.9
 liknorm>=1.0.12
 ndarray-listener>=1.0.26
 numpy>=1.13.3
 numpy-sugar>=1.2.0
 optimix>=1.2.21
-scipy>=0.19.1
+scipy>=1.0.0
 scipy-sugar>=1.0.2
-toolz
+toolz>=0.8.2
 tqdm>=4.19.4
