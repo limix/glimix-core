@@ -1,4 +1,4 @@
-<p align="center"><img width=95% src="https://github.com/limix/glimix-core/blob/develop/logo.png"></p>
+|LOGO|
 
 glimix-core
 ===========
@@ -89,3 +89,5 @@ for details.
 .. _FastScanner: http://glimix-core.readthedocs.io/en/stable/lmm.html#glimix_core.lmm.FastScanner
 
 .. _GLMMExpFam: http://glimix-core.readthedocs.io/en/stable/glmm.html#glmmexpfam-class
+
+.. |LOGO| image:: https://github.com/limix/glimix-core/blob/develop/logo.png
