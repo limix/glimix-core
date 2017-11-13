@@ -91,3 +91,4 @@ for details.
 .. _GLMMExpFam: http://glimix-core.readthedocs.io/en/stable/glmm.html#glmmexpfam-class
 
 .. |LOGO| image:: https://github.com/limix/glimix-core/blob/develop/logo.png
+    :align: center
