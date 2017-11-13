@@ -1,9 +1,12 @@
-|LOGO|
+.. image:: https://github.com/limix/glimix-core/blob/develop/logo.png
+    :align: center
+
+.. class:: center
+
+|PyPI-Status| |Conda-Forge-Status| |Conda-Downloads| |Build-Status| |Codacy-Grade| |License-Badge| |Doc-Status|
 
 glimix-core
 ===========
-
-|PyPI-Status| |Conda-Forge-Status| |Conda-Downloads| |Build-Status| |Codacy-Grade| |License-Badge| |Doc-Status|
 
 Fast inference over mean and covariance parameters for Generalised Linear Mixed Models.
 It implements the mathematical tricks of FaST-LMM_ for the special case of Linear Mixed Models
@@ -89,6 +92,3 @@ for details.
 .. _FastScanner: http://glimix-core.readthedocs.io/en/stable/lmm.html#glimix_core.lmm.FastScanner
 
 .. _GLMMExpFam: http://glimix-core.readthedocs.io/en/stable/glmm.html#glmmexpfam-class
-
-.. |LOGO| image:: https://github.com/limix/glimix-core/blob/develop/logo.png
-    :align: center
