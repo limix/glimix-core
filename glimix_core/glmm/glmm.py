@@ -248,6 +248,12 @@ class GLMM(Function):
         """
         return self.scale * self.delta
 
+    def value(self, *_):
+        raise NotImplementedError
+
+    def gradient(self, *_):
+        raise NotImplementedError
+
 
 def _to_internal_name(name):
     translation = dict(scale='logscale', delta='logitdelta', beta='beta')
