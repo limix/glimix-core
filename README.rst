@@ -1,13 +1,17 @@
+<p align="center"><img width=95% src="https://github.com/limix/glimix-core/blob/develop/logo.png"></p>
+
 glimix-core
 ===========
 
-|PyPI-Status| |Conda-Forge-Status| |Conda-Downloads|
+|PyPI-Status| |Conda-Forge-Status| |Conda-Downloads| |Build-Status| |Codacy-Grade| |License-Badge| |Doc-Status|
 
-|Build-Status| |Codacy-Grade| |License-Badge| |Doc-Status|
-
-
-
-Fast inference for Generalised Linear Mixed Models.
+Fast inference over mean and covariance parameters for Generalised Linear Mixed Models.
+It implements the mathematical tricks of FaST-LMM_ for the special case of Linear Mixed Models
+with a linear covariance matrix and provides an interface to perform inference over millions of
+covariates in seconds. (Refer to FastScanner_ for details.)
+The Generalised Linear Mixed Model inference is implemented via Expectation Propagation and
+also makes use of several mathematical tricks to handle large data sets with thousands of samples
+and millions of covariates. (Refer to GLMMExpFam_ and FastScanner_ for details.)
 
 Install
 -------
@@ -61,13 +65,13 @@ for details.
 .. |Conda-Forge-Status| image:: https://anaconda.org/conda-forge/glimix-core/badges/version.svg
     :target: https://anaconda.org/conda-forge/glimix-core
 
-.. |Conda-Downloads| image:: https://anaconda.org/conda-forge/glimix-core/badges/downloads.svg
+.. |Conda-Downloads| image:: https://anaconda.org/conda-forge/glimix-core/badges/downloads.svg?style=flat
     :target: https://anaconda.org/conda-forge/glimix-core
 
 .. |License-Badge| image:: https://img.shields.io/pypi/l/glimix-core.svg
     :target: https://raw.githubusercontent.com/limix/glimix-core/master/LICENSE.txt
 
-.. |Doc-Status| image:: https://readthedocs.org/projects/glimix-core/badge/?style=flat-square&version=stable
+.. |Doc-Status| image:: https://readthedocs.org/projects/glimix-core/badge/?style=flat&version=stable
     :target: https://glimix-core.readthedocs.io/
 
 .. _License file: https://raw.githubusercontent.com/limix/glimix-core/master/LICENSE.txt
@@ -79,3 +83,9 @@ for details.
 .. _pip: https://pypi.python.org/pypi/pip
 
 .. _pytest: http://docs.pytest.org/en/latest/
+
+.. _FaST-LMM: https://github.com/MicrosoftGenomics/FaST-LMM
+
+.. _FastScanner: http://glimix-core.readthedocs.io/en/stable/lmm.html#glimix_core.lmm.FastScanner
+
+.. _GLMMExpFam: http://glimix-core.readthedocs.io/en/stable/glmm.html#glmmexpfam-class
