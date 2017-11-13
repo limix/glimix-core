@@ -1,7 +1,8 @@
-.. image:: https://github.com/limix/glimix-core/blob/develop/logo.png
 
 glimix-core
 ===========
+
+.. image:: https://github.com/limix/glimix-core/blob/develop/logo.png
 
 |PyPI-Status| |Conda-Forge-Status| |Conda-Downloads| |Build-Status| |Codacy-Grade| |License-Badge| |Doc-Status|
 
