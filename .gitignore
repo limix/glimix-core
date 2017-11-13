@@ -1,3 +1,6 @@
+**/__pycache__/
+.vscode
+.mypy_cache
 .asv/env/
 .asv/html/
 glimix-core/

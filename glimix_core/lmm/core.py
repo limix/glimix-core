@@ -1,15 +1,37 @@
 from __future__ import division
 
 from numpy import sum as npsum
-from numpy import dot, log, maximum, sqrt, zeros
+from numpy import asarray, atleast_2d, dot, log, maximum, sqrt, zeros, isfinite
+from numpy import all as npy_all
+
+from glimix_core.util import log2pi
 from numpy_sugar import epsilon
 from numpy_sugar.linalg import ddot, economic_svd, rsolve
-
-from ..util import log2pi
 
 
 class LMMCore(object):
     def __init__(self, y, X, QS):
+        y = asarray(y, float).ravel()
+        X = atleast_2d(asarray(X, float).T).T
+        if not npy_all(isfinite(X)):
+            raise ValueError("Not all values are finite in the covariates matrix.")
+
+        if not npy_all(isfinite(y)):
+            raise ValueError(
+                "Not all values are finite in the outcome array.")
+
+        if not isinstance(QS, tuple):
+            raise ValueError("I was expecting a tuple for the covariance "
+                             "decomposition")
+
+        if y.shape[0] != X.shape[0]:
+            raise ValueError("Number of samples differs between outcome "
+                             "and covariates.")
+
+        if QS[0][0].shape[0] != y.shape[0]:
+            raise ValueError("Number of samples differs between outcome"
+                             " and covariance decomposition")
+
         self._QS = QS
         self._y = y
         self._scale = 1.0

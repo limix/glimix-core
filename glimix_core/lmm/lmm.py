@@ -75,9 +75,6 @@ class LMM(LMMCore, Function):
         if not is_all_finite(y):
             raise ValueError("There are non-finite values in the phenotype.")
 
-        # self._fix_scale = False
-        # self._delta = 0.5
-        # self._scale = LMMCore.scale.fget(self)
         self.set_nodata()
 
     def _get_delta(self):
@@ -88,10 +85,6 @@ class LMM(LMMCore, Function):
     @property
     def beta(self):
         return LMMCore.beta.fget(self)
-
-    # @beta.setter
-    # def beta(self, beta):
-    #     LMMCore.beta.fset(self, beta)
 
     def copy(self):
         r"""Return a copy of this object.
@@ -111,9 +104,8 @@ class LMM(LMMCore, Function):
         Function.__init__(
             o, logistic=Scalar(self.variables().get('logistic').value))
 
-        o._fix_scale = self._fix_scale
-        # o._delta = self._delta
-        o._scale = self._scale
+        setattr(o, '_fix_scale', self._fix_scale)
+        setattr(o, '_scale', self._scale)
 
         o.set_nodata()
         return o
@@ -271,7 +263,7 @@ class LMM(LMMCore, Function):
         else:
             self._fix_scale = False
 
-    def value(self):
+    def value(self, *_):
         self.delta = self._get_delta()
         return self.lml()
 
@@ -282,3 +274,6 @@ class LMM(LMMCore, Function):
     @X.setter
     def X(self, X):
         LMMCore.X.fset(self, X)
+
+    def gradient(self, *_):
+        raise NotImplementedError

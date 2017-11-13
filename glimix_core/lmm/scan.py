@@ -4,7 +4,7 @@ from numpy import all as npall
 from numpy import sum as _sum
 from numpy import min as _min
 from numpy import (asarray, clip, dot, empty, full, inf, isfinite, log, zeros,
-                   newaxis, copyto)
+                   newaxis, copyto, atleast_2d)
 from numpy.linalg import LinAlgError
 from numpy_sugar import epsilon
 from numpy_sugar.linalg import rsolve, dotd
@@ -64,6 +64,21 @@ class FastScanner(object):
     """
 
     def __init__(self, y, X, QS, v):
+
+        y = asarray(y, float)
+        X = atleast_2d(asarray(X, float).T).T
+
+        if not npall(isfinite(y)):
+            raise ValueError("Not all values are finite in the outcome array.")
+
+        if not npall(isfinite(X)):
+            raise ValueError("Not all values are finite in the `X` matrix.")
+
+        if v < 0:
+            raise ValueError("Variance has to be non-negative.")
+
+        if not isfinite(v):
+            raise ValueError("Variance has to be a finite value..")
 
         D = [QS[1] + v, v]
         yTQ = [dot(y.T, Q) for Q in QS[0]]
