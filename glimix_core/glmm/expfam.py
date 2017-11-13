@@ -6,7 +6,7 @@ from liknorm import LikNormMachine
 from numpy import exp
 from numpy import ascontiguousarray
 
-from ..ep import EPLinearKernel
+from glimix_core.ep import EPLinearKernel
 from .glmm import GLMM
 
 
