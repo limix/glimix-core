@@ -11,6 +11,11 @@ def get_version():
     return glimix_core.__version__
 
 
+def get_name():
+    import glimix_core
+    return glimix_core.__name__
+
+
 extensions = [
     'sphinx.ext.autodoc', 'sphinx.ext.doctest', 'sphinx.ext.viewcode',
     'sphinx.ext.intersphinx', 'sphinx.ext.napoleon', 'sphinx.ext.mathjax'
@@ -22,7 +27,7 @@ source_suffix = '.rst'
 
 master_doc = 'index'
 
-project = 'glimix-core'
+project = get_name()
 copyright = '2018, Danilo Horta'
 author = 'Danilo Horta'
 
@@ -47,10 +52,10 @@ html_sidebars = {
     ]
 }
 
-htmlhelp_basename = 'glimix-coredoc'
+htmlhelp_basename = '{}doc'.format(project)
 
-man_pages = [(master_doc, 'glimix-core', 'glimix-core Documentation', [author],
-              1)]
+man_pages = [(master_doc, get_name(), '{} documentation'.format(project),
+              [author], 1)]
 
 epub_title = project
 epub_author = author
