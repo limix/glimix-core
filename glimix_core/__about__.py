@@ -1,7 +1,0 @@
-__name__ = "glimix-core"
-__version__ = "1.3.7"
-__author__ = "Danilo Horta"
-__author_email__ = "horta@ebi.ac.uk"
-__maintainer__ = "Danilo Horta"
-__maintainer_email__ = "horta@ebi.ac.uk"
-__description__ = "Fast inference for Generalised Linear Mixed Models"
