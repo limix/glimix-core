@@ -51,8 +51,8 @@ Here is an example:
     >>> y = array([-1, 2, 0.3, 0.5])
     >>> lmm = LMM(y, X, QS)
     >>> lmm.fit(verbose=False)
-    >>> lmm.lml()  # doctest: +NPY_FLEX_NUMS
-    -2.2727396924914833
+    >>> lmm.lml()
+    -2.27...
 
 The method :func:`glimix_core.lmm.LMM.fit` is called to optimise the marginal
 likelihood over the fixed-effect sizes :math:`\boldsymbol\beta` and over the
@@ -61,12 +61,12 @@ The resulting values for the above inference are:
 
 .. doctest::
 
-    >>> lmm.beta  # doctest: +NPY_FLEX_NUMS
-    array([ 0.06646503])
-    >>> lmm.v0  # doctest: +NPY_FLEX_NUMS
-    0.33744719539335433
-    >>> lmm.v1  # doctest: +NPY_FLEX_NUMS
-    0.012502012057504848
+    >>> lmm.beta[0]
+    0.066...
+    >>> lmm.v0
+    0.337...
+    >>> lmm.v1
+    0.01...
 
 This module also provides :class:`.FastScanner`,
 an approximated LMM implementation for performing an even faster
@@ -111,10 +111,18 @@ For example:
     >>> M = array([[1, 3, -1.5], [0, -2, 4], [-2, -2.5, 3], [0.2, +2, 2]])
     >>> lmls, effect_sizes = scanner.fast_scan(M, verbose=False)
     >>>
-    >>> lmls  # doctest: +NPY_FLEX_NUMS
-    array([ 0.25447806,  0.4400597 ,  0.86560024])
-    >>> effect_sizes  # doctest: +NPY_FLEX_NUMS
-    array([-0.07463993, -0.04413758,  0.09065001])
+    >>> lmls[0]
+    0.254...
+    >>> lmls[1]
+    0.4...
+    >>> lmls[2]
+    0.865...
+    >>> effect_sizes[0]
+    -0.074...
+    >>> effect_sizes[1]
+    -0.0441...
+    >>> effect_sizes[2]
+    0.090...
 
 
 Implementation

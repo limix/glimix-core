@@ -2,13 +2,13 @@ from numpy import asarray
 from numpy.random import RandomState
 from numpy.testing import assert_allclose
 from numpy_sugar.linalg import economic_qs
-from optimix import check_grad
 
 from glimix_core.example import linear_eye_cov, nsamples
 from glimix_core.glmm import GLMMNormal
+from optimix import check_grad
 
-ATOL = 1e-6
-RTOL = 1e-6
+ATOL = 1e-3
+RTOL = 1e-2
 
 
 def test_glmmnormal_copy():
@@ -27,10 +27,10 @@ def test_glmmnormal_copy():
     glmm0.fit(verbose=False)
 
     v = -4.758450057194982
-    assert_allclose(glmm0.lml(), v)
+    assert_allclose(glmm0.lml(), v, atol=ATOL, rtol=RTOL)
 
     glmm1 = glmm0.copy()
-    assert_allclose(glmm1.lml(), v)
+    assert_allclose(glmm1.lml(), v, atol=ATOL, rtol=RTOL)
 
     glmm1.scale = 0.92
     assert_allclose(glmm0.lml(), v, atol=ATOL, rtol=RTOL)
@@ -84,8 +84,8 @@ def test_glmmnormal_copy():
         2.49220839e-12, 1.00000000e-03
     ]])
 
-    assert_allclose(glmm0.covariance(), K, atol=1e-10)
-    assert_allclose(glmm1.covariance(), K, atol=1e-10)
+    assert_allclose(glmm0.covariance(), K, rtol=1e-5, atol=1e-3)
+    assert_allclose(glmm1.covariance(), K, rtol=1e-5, atol=1e-3)
 
 
 def test_glmmnormal():
@@ -109,8 +109,8 @@ def test_glmmnormal():
     lmls, effsizes = flmm.fast_scan(M, verbose=False)
 
     assert_allclose(lmls, [9.64605678059, 9.17041834, 9.56927990771])
-    assert_allclose(effsizes, [-0.0758297759308, 0.0509863368859,
-                               0.0876858800519])
+    assert_allclose(effsizes,
+                    [-0.0758297759308, 0.0509863368859, 0.0876858800519])
 
     assert_allclose(flmm.null_lml(), 8.89275310307)
     flmm.set_scale(1.5)
