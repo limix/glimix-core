@@ -77,7 +77,7 @@ class GLMM(Function):
 
         self._factr = 1e5
         self._pgtol = 1e-6
-        self.set_variable_bounds('logscale', (log(0.0016), 7.))
+        self.set_variable_bounds('logscale', (log(0.0016), 6.))
         logmax = log(finfo(float).max)
         self.set_variable_bounds('logitdelta', (-logmax, +logmax))
 
