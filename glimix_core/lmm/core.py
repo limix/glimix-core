@@ -14,7 +14,8 @@ class LMMCore(object):
         y = asarray(y, float).ravel()
         X = atleast_2d(asarray(X, float).T).T
         if not npy_all(isfinite(X)):
-            raise ValueError("Not all values are finite in the covariates matrix.")
+            msg = "Not all values are finite in the covariates matrix."
+            raise ValueError(msg)
 
         if not npy_all(isfinite(y)):
             raise ValueError(
