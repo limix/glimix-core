@@ -3,11 +3,11 @@ from numpy import asarray, ascontiguousarray, dot, ones, sqrt, zeros
 from numpy.random import RandomState
 from numpy.testing import assert_allclose
 from numpy_sugar.linalg import economic_qs, economic_qs_linear
+from optimix import check_grad
 
 from glimix_core.example import linear_eye_cov, nsamples
 from glimix_core.glmm import GLMMExpFam, GLMMNormal
 from glimix_core.random import bernoulli_sample
-from optimix import check_grad
 
 ATOL = 1e-3
 RTOL = 1e-3
@@ -344,11 +344,11 @@ def test_glmmexpfam_delta_one_zero():
     assert_allclose(check_grad(glmm, step=1e-4), 0, atol=1e-2)
 
     glmm.fit(verbose=False)
-    assert_allclose(glmm.lml(), -98.21142075640205, atol=ATOL, rtol=RTOL)
-    assert_allclose(glmm.delta, 0.00012363396798507502, atol=ATOL, rtol=RTOL)
+    assert_allclose(glmm.lml(), -72.82680932787409, atol=ATOL, rtol=RTOL)
+    assert_allclose(glmm.delta, 1.0, atol=ATOL, rtol=RTOL)
 
     glmm.delta = 1
-    assert_allclose(glmm.lml(), -98.00060746015443, atol=ATOL, rtol=RTOL)
+    assert_allclose(glmm.lml(), -72.82807619885995, atol=ATOL, rtol=RTOL)
     assert_allclose(check_grad(glmm, step=1e-4), 0, atol=1e-1)
 
     glmm.fit(verbose=False)
