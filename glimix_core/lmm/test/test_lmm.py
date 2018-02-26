@@ -200,7 +200,7 @@ def test_fastlmm_learn_fix():
     assert_allclose(lmm.delta, 0.5)
     assert_allclose(lmm.genetic_variance, 0.5)
     assert_allclose(lmm.environmental_variance, 0.5)
-    assert_allclose(lmm.lml(), -681.381571238)
+    assert_allclose(lmm.lml(), -1162.109672730914)
 
     lmm.unfix('scale')
     lmm.learn(verbose=False)

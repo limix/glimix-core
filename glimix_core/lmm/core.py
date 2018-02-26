@@ -1,41 +1,205 @@
 from __future__ import division
 
-from numpy import dot, log, maximum, sqrt, zeros
-from numpy_sugar import epsilon
-from numpy_sugar.linalg import ddot, economic_svd, rsolve, solve
+from numpy import all as npy_all
+from numpy import asarray, atleast_2d, dot, isfinite, log, maximum, sqrt
+from numpy import sum as npsum
+from numpy import zeros
 
-from .scan import FastScanner
+from numpy_sugar import epsilon
+from numpy_sugar.linalg import ddot, economic_svd, rsolve
+
+log2pi = log2pi = 1.837877066409345339081937709124758839607238769531250
 
 
 class LMMCore(object):
     def __init__(self, y, X, QS):
+        y = asarray(y, float).ravel()
+        X = atleast_2d(asarray(X, float).T).T
+        if not npy_all(isfinite(X)):
+            msg = "Not all values are finite in the covariates matrix."
+            raise ValueError(msg)
+
+        if not npy_all(isfinite(y)):
+            raise ValueError("Not all values are finite in the outcome array.")
+
+        if not isinstance(QS, tuple):
+            raise ValueError("I was expecting a tuple for the covariance "
+                             "decomposition")
+
+        if y.shape[0] != X.shape[0]:
+            raise ValueError("Number of samples differs between outcome "
+                             "and covariates.")
+
+        if QS[0][0].shape[0] != y.shape[0]:
+            raise ValueError("Number of samples differs between outcome"
+                             " and covariance decomposition")
+
         self._QS = QS
         self._y = y
+        self._scale = 1.0
+        self._fix_scale = False
 
         self._tM = None
-        self.__tbeta = None
+        self._tbeta = None
 
         self._svd = None
-        self.X = X
+        self._set_X(X)
 
-    def get_fast_scanner(self):
-        return FastScanner(self._y, self.X, self._QS, self.delta)
+    @property
+    def _D(self):
+        D = [self._QS[1] * (1 - self.delta) + self.delta]
+        if self._QS[0][1].size > 0:
+            D += [self.delta]
+        return D
+
+    def _lml_optimal_scale(self):
+        r"""Log of the marginal likelihood.
+
+        Returns
+        -------
+        float
+            Log of the marginal likelihood.
+
+        """
+        self._update()
+
+        n = len(self._y)
+        lml = -n * log2pi - n - n * log(self.scale)
+        lml -= npsum(log(self._D[0]))
+        if n > self._QS[1].shape[0]:
+            lml -= (n - self._QS[1].shape[0]) * log(self._D[1])
+
+        return lml / 2
+
+    def _lml_arbitrary_scale(self):
+        r"""Log of the marginal likelihood.
+
+        Returns
+        -------
+        float
+            Log of the marginal likelihood.
+        """
+        self._update()
+        s = self.scale
+
+        n = len(self._y)
+        lml = -n * log2pi - n * log(s)
+
+        lml -= npsum(log(self._D[0]))
+        if n > self._QS[1].shape[0]:
+            lml -= (n - self._QS[1].shape[0]) * log(self._D[1])
+
+        d = (mTQ - yTQ for (mTQ, yTQ) in zip(self._mTQ, self._yTQ))
+        lml += sum(
+            dot(j / i, l) for (i, j, l) in zip(self._D, d, self._yTQ)) / s
+
+        return lml / 2
+
+    @property
+    def _mTQDiQTm(self):
+        return (dot(i / j, i.T) for (i, j) in zip(self._tMTQ, self._D))
+
+    @property
+    def _mTQ(self):
+        return (dot(self.mean.T, Q) for Q in self._QS[0] if Q.size > 0)
+
+    def _optimal_scale(self):
+        yTQDiQTy = self._yTQDiQTy
+        yTQDiQTm = self._yTQDiQTm
+        b = self._tbeta
+        p0 = sum(i - 2 * dot(j, b) for (i, j) in zip(yTQDiQTy, yTQDiQTm))
+        p1 = sum(dot(dot(b, i), b) for i in self._mTQDiQTm)
+        return maximum((p0 + p1) / len(self._y), epsilon.tiny)
+
+    def _set_X(self, X):
+        self._svd = economic_svd(X)
+        self._tM = ddot(self._svd[0], sqrt(self._svd[1]), left=False)
+        self._tbeta = zeros(self._tM.shape[1])
+
+    @property
+    def _tMTQ(self):
+        return (self._tM.T.dot(Q) for Q in self._QS[0] if Q.size > 0)
+
+    def _update_fixed_effects(self):
+        yTQDiQTm = list(self._yTQDiQTm)
+        mTQDiQTm = list(self._mTQDiQTm)
+        nominator = yTQDiQTm[0]
+        denominator = mTQDiQTm[0]
+
+        if len(yTQDiQTm) > 1:
+            nominator += yTQDiQTm[1]
+            denominator += mTQDiQTm[1]
+
+        self._tbeta[:] = rsolve(denominator, nominator)
+
+    def _update(self):
+        self._update_fixed_effects()
+
+    @property
+    def _yTQ(self):
+        return (dot(self._y.T, Q) for Q in self._QS[0] if Q.size > 0)
+
+    @property
+    def _yTQQTy(self):
+        return (yTQ**2 for yTQ in self._yTQ)
+
+    @property
+    def _yTQDiQTy(self):
+        return (npsum(i / j) for (i, j) in zip(self._yTQQTy, self._D))
+
+    @property
+    def _yTQDiQTm(self):
+        yTQ = self._yTQ
+        D = self._D
+        tMTQ = self._tMTQ
+        return (dot(i / j, l.T) for (i, j, l) in zip(yTQ, D, tMTQ))
 
     @property
     def X(self):
-        # m = self.m
+        r"""Covariates set by the user.
+
+        It has to be a matrix of number-of-samples by number-of-covariates.
+
+        Returns
+        -------
+        array_like
+            Covariates.
+        """
         return dot(self._svd[0], ddot(self._svd[1], self._svd[2], left=True))
 
     @X.setter
     def X(self, X):
-        self._svd = economic_svd(X)
-        self._tM = ddot(self._svd[0], sqrt(self._svd[1]), left=False)
-        self.__tbeta = zeros(self._tM.shape[1])
+        self._set_X(X)
 
     @property
-    def m(self):
-        r"""Returns :math:`\mathbf m = \mathrm X \boldsymbol\beta`."""
-        return dot(self._tM, self._tbeta)
+    def beta(self):
+        r"""Fixed-effect sizes.
+
+        The optimal fixed-effect sizes is given by any solution to equation
+
+        .. math::
+
+            (\mathrm Q^{\intercal}\mathrm X)^{\intercal}
+                \mathrm D^{-1}
+                (\mathrm Q^{\intercal}\mathrm X)
+                \boldsymbol\beta =
+                (\mathrm Q^{\intercal}\mathrm X)^{\intercal}
+                \mathrm D^{-1}
+                (\mathrm Q^{\intercal}\mathbf y).
+
+        Returns
+        -------
+        array_like
+            Optimal fixed-effect sizes.
+        """
+        SVs = ddot(self._svd[0], sqrt(self._svd[1]), left=False)
+        z = rsolve(SVs, self.mean)
+        VsD = ddot(sqrt(self._svd[1]), self._svd[2], left=True)
+        return rsolve(VsD, z)
+
+    @beta.setter
+    def beta(self, value):
+        self._tbeta = sqrt(self._svd[1]) * dot(self._svd[2].T, value)
 
     @property
     def delta(self):
@@ -45,72 +209,47 @@ class LMMCore(object):
     def delta(self, _):
         raise NotImplementedError
 
+    def isfixed(self, var_name):
+        raise NotImplementedError
+
+    def lml(self):
+        r"""Log of the marginal likelihood.
+
+        Returns
+        -------
+        float
+            Log of the marginal likelihood.
+        """
+        if self.isfixed('scale'):
+            return self._lml_arbitrary_scale()
+        return self._lml_optimal_scale()
+
     @property
-    def _tbeta(self):
-        return self.__tbeta
+    def mean(self):
+        r"""Mean of the prior.
 
-    @_tbeta.setter
-    def _tbeta(self, value):
-        self.__tbeta[:] = value
+        Formally, :math:`\mathbf m = \mathrm X \boldsymbol\beta`.
 
-    @property
-    def beta(self):
-        SVs = ddot(self._svd[0], sqrt(self._svd[1]), left=False)
-        z = rsolve(SVs, self.m)
-        VsD = ddot(sqrt(self._svd[1]), self._svd[2], left=True)
-        return rsolve(VsD, z)
-
-    @beta.setter
-    def beta(self, value):
-        self._tbeta = sqrt(self._svd[1]) * dot(self._svd[2].T, value)
+        Returns
+        -------
+        array_like
+            Mean of the prior.
+        """
+        return dot(self._tM, self._tbeta)
 
     @property
     def scale(self):
-        a = [self._a(i) for i in [0, 1]]
-        b = [self._b(i) for i in [0, 1]]
-        c = [self._c(i) for i in [0, 1]]
-        be = self.__tbeta
-        p = [a[i] - 2 * b[i].dot(be) + be.dot(c[i]).dot(be) for i in [0, 1]]
-        return maximum(sum(p) / len(self._y), epsilon.tiny)
+        r"""Scaling factor.
 
-    def _diag(self, i):
-        if i == 0:
-            return self._QS[1] * (1 - self.delta) + self.delta
-        return self.delta
+        Returns
+        -------
+        float
+            Current scale if fixed; optimal scale otherwise.
+        """
+        if self.isfixed('scale'):
+            return self._scale
+        return self._optimal_scale()
 
-    def _a(self, i):
-        return sum(self._yTQ_2x(i) / self._diag(i))
-
-    def _b(self, i):
-        return (self._yTQ(i) / self._diag(i)).dot(self._tMTQ(i).T)
-
-    def _c(self, i):
-        return (self._tMTQ(i) / self._diag(i)).dot(self._tMTQ(i).T)
-
-    def _yTQ(self, i):
-        return dot(self._y.T, self._QS[0][i])
-
-    def _yTQ_2x(self, i):
-        return self._yTQ(i)**2
-
-    def _tMTQ(self, i):
-        return self._tM.T.dot(self._QS[0][i])
-
-    def _update_fixed_effects(self):
-        nominator = self._b(1) - self._b(0)
-        denominator = self._c(1) - self._c(0)
-        self._tbeta = solve(denominator, nominator)
-
-    def update(self):
-        self._update_fixed_effects()
-
-    def lml(self):
-        self.update()
-
-        n = len(self._y)
-        p = n - self._QS[1].shape[0]
-        LOG2PI = 1.837877066409345339081937709124758839607238769531250
-        lml = -n * LOG2PI - n - n * log(self.scale)
-        lml += -sum(log(self._diag(0))) - p * log(self._diag(1))
-        lml /= 2
-        return lml
+    @scale.setter
+    def scale(self, scale):
+        self._scale = scale
