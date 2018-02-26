@@ -6,6 +6,6 @@ scipy-sugar
 optimix>=1.2.18
 cachetools
 tqdm
-liknorm-py
+liknorm
 ndarray-listener
 brent-search
