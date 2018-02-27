@@ -2,13 +2,13 @@ language: python
 sudo: required
 python: 3.6
 env:
-  - PKG_NAME=glimix_core
+- PKG_NAME=glimix_core
 addons:
   apt:
     packages:
-      - pandoc
-      - libffi-dev
-      - libffi6
+    - pandoc
+    - libffi-dev
+    - libffi6
 install:
 - bash <(curl -fsSL https://raw.githubusercontent.com/limix/hcephes/master/install)
 - bash <(curl -fsSL https://raw.githubusercontent.com/limix/liknorm/master/install)
@@ -17,6 +17,15 @@ script:
 notifications:
   email:
     recipients:
-      - danilo.horta@gmail.com
+    - danilo.horta@gmail.com
     on_success: never
     on_failure: always
+deploy:
+  provider: pypi
+  user: dhorta
+  password:
+    secure: VY2HoRWj8cdWXmdZWwk/OTyld+W9tgpj/JQp+l+CsMudAuaMERk+dBSkAjvh4M96yv08Mn20Rf806bXgYVcAU7xjDTHw0xn8wxsIKFhqo6/sV/nYlOHb6z4yX1gmt/lR7lIlw9TYtXDm5a8g70pc7eyPsACPlhVmXXBmdLi7pCrc6VKLlCsDc5SE//EN1XeBD50Wn/UmL1VgatbZfJzG6b98UbuLaoE7PznNaENl/KwGAliqjCeUiaTgS/HRlNt9Sj14A5cWEI1BF3o7F7RzVWU5QF3aGpDNMzN3h7lJT1S+sTbLukVPxksmH83CZITmNVj5P+2ojSlGACUv5iV9wvRaVJXtJFxwJT70z0COmjFwuscIIAF9xl5Qdy1a16Zh+YWu44DyXYTEbgNP6LGSOodXztGuo6gxZ0HI61CV76UN98U3PzZn3wMS0Ps3oGdaPP1CjZsKPDGzwrg5ObbwYnHnbB2xDn+hxlHWqPVZP8MGmEQJKRYzw8lFCcdemjeXAzzHDsh2A870Xk7zkq1psGljWBRnyvsmWdsdZtaXOkjNhRzSs1/aPW4k3i8+aweu5qUXPD3w8brgNXCzuEcuPb6MPKsGikwAU+G/VbnVxwEJdVvqIgzgMiEVdJjWsTCw3333VxPcTCnSM+5tHHgoBJTe/RaJsVvrGznPaN8ANc4=
+  on:
+    tags: true
+    repo: limix/glimix-core
+    branch: 1.2.x
