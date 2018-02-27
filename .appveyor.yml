@@ -9,6 +9,7 @@ environment:
     ARCH: x64
 
 install:
+    - powershell -Command "[Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls"
     - powershell -Command "(New-Object Net.WebClient).DownloadFile('https://raw.githubusercontent.com/limix/hcephes/master/install.bat', 'install-hcephes.bat')"
     - powershell -Command "(New-Object Net.WebClient).DownloadFile('https://github.com/limix/hcephes/archive/0.3.1.zip', '0.3.1.zip')"
     - install-hcephes.bat
