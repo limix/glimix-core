@@ -9,10 +9,7 @@ environment:
     ARCH: x64
 
 install:
-    - powershell -Command "(New-Object Net.WebClient).DownloadFile('https://raw.githubusercontent.com/limix/hcephes/master/install.bat', 'install-hcephes.bat')"
-    - ps: "[Net.ServicePointManager]::SecurityProtocol = 'Ssl3, Tls, Tls11, Tls12'"
-    - ps: "(New-Object Net.WebClient).DownloadFile('https://github.com/limix/hcephes/archive/0.3.1.zip', '0.3.1.zip')"
-    - install-hcephes.bat
+    - powershell -Command "(New-Object Net.WebClient).DownloadFile('https://raw.githubusercontent.com/limix/hcephes/master/install.bat', 'install-hcephes.bat')" && install-hcephes.bat
     - set PATH=%programfiles%\hcephes\bin;%PATH%
     - set LIBRARY_INC=%programfiles%\hcephes\include;%LIBRARY_INC%
     - set LIBRARY_LIB=%programfiles%\hcephes\lib;%LIBRARY_LIB%
