@@ -37,10 +37,10 @@ class GP(FunctionReduce):
         >>> y = GPSampler(mean, cov).sample(random)
         >>>
         >>> gp = GP(y, mean, cov)
-        >>> print('Before: {}'.format(int(gp.feed().value()))
+        >>> print('Before: {}'.format(int(gp.feed().value())))
         Before: -49
         >>> gp.feed().maximize(verbose=False)
-        >>> print('After: {}'.format(int(gp.feed().value()))
+        >>> print('After: {}'.format(int(gp.feed().value())))
         After: -49
     """
 
