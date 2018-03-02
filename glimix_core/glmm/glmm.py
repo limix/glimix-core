@@ -7,8 +7,8 @@ from numpy_sugar import epsilon
 from numpy_sugar.linalg import ddot, sum2diag
 from optimix import Function, Scalar, Vector
 
-from ..util import check_covariates, check_economic_qs, check_outcome
-from ..util import normalise_outcome
+from ..util import (check_covariates, check_economic_qs, check_outcome,
+                    normalise_outcome)
 
 
 class GLMM(Function):
@@ -151,7 +151,7 @@ class GLMM(Function):
         """
         Function.fix(self, _to_internal_name(var_name))
 
-    def fit(self, verbose=True):
+    def fit(self, verbose=True, factr=1e5, pgtol=1e-7):
         r"""Maximise the marginal likelihood.
 
         Parameters
@@ -160,7 +160,10 @@ class GLMM(Function):
             ``True`` for progress output; ``False`` otherwise.
             Defaults to ``True``.
         """
-        self.feed().maximize(verbose=verbose)
+        f = self.feed()
+        f.factr = factr
+        f.pgtol = pgtol
+        f.maximize(verbose=verbose)
 
     def lml(self):
         r"""Log of the marginal likelihood.
