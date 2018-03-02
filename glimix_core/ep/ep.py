@@ -5,6 +5,7 @@ from math import fsum
 
 from numpy import dot, empty, inf, isfinite, log, maximum, sqrt, zeros
 from numpy.linalg import norm
+
 from numpy_sugar import epsilon
 from numpy_sugar.linalg import cho_solve, ddot, dotd
 
@@ -12,8 +13,6 @@ from .posterior import Posterior
 from .site import Site
 
 MAX_ITERS = 100
-RTOL = epsilon.small * 1000
-ATOL = epsilon.small
 
 
 class EP(object):
@@ -45,10 +44,16 @@ class EP(object):
         _moments (dict): moments for KL moment matching.
     """
 
-    def __init__(self, nsites, posterior_type=Posterior):
+    def __init__(self,
+                 nsites,
+                 posterior_type=Posterior,
+                 rtol=epsilon.small * 1000,
+                 atol=epsilon.small):
 
         self._site = Site(nsites)
         self._psite = Site(nsites)
+        self._rtol = rtol
+        self._atol = atol
 
         self._cav = dict(tau=zeros(nsites), eta=zeros(nsites))
         self._posterior = posterior_type(self._site)
@@ -69,6 +74,10 @@ class EP(object):
 
         ep.__dict__['_site'] = deepcopy(self.site)
         ep.__dict__['_psite'] = deepcopy(self.__dict__['_psite'])
+
+        ep.__dict__['_rtol'] = self._rtol
+        ep.__dict__['_atol'] = self._atol
+
         ep.__dict__['_cav'] = deepcopy(self.cav)
 
         posterior_type = type(self.posterior)
@@ -107,7 +116,7 @@ class EP(object):
 
             n0 = norm(self._psite.tau)
             n1 = norm(self._cav['tau'])
-            tol = RTOL * sqrt(n0 * n1) + ATOL
+            tol = self._rtol * sqrt(n0 * n1) + self._atol
             i += 1
 
         if i == MAX_ITERS:

@@ -2,9 +2,11 @@ from __future__ import absolute_import, division, unicode_literals
 
 from copy import copy
 
-from glimix_core.ep import EPLinearKernel
 from liknorm import LikNormMachine
 from numpy import ascontiguousarray, exp
+
+from glimix_core.ep import EPLinearKernel
+from numpy_sugar import epsilon
 
 from .glmm import GLMM
 
@@ -66,10 +68,17 @@ class GLMMExpFam(GLMM):
         After: -13.43
     """
 
-    def __init__(self, y, lik_name, X, QS, n_int=1000):
+    def __init__(self,
+                 y,
+                 lik_name,
+                 X,
+                 QS,
+                 n_int=1000,
+                 rtol=epsilon.small * 1000,
+                 atol=epsilon.small):
         GLMM.__init__(self, y, lik_name, X, QS)
 
-        self._ep = EPLinearKernel(self._X.shape[0])
+        self._ep = EPLinearKernel(self._X.shape[0], rtol=rtol, atol=atol)
         self._ep.set_compute_moments(self.compute_moments)
         self._machine = LikNormMachine(self._lik_name, n_int)
         self.update_approx = True

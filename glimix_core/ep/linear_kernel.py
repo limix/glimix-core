@@ -4,6 +4,7 @@ from math import fsum
 
 from numpy import dot, isfinite, log, sqrt
 
+from numpy_sugar import epsilon
 from numpy_sugar.linalg import cho_solve, ddot, dotd
 
 from .ep import EP
@@ -19,8 +20,9 @@ def dotr(A, B):
 
 
 class EPLinearKernel(EP):
-    def __init__(self, nsites):
-        super(EPLinearKernel, self).__init__(nsites, PosteriorLinearKernel)
+    def __init__(self, nsites, rtol=epsilon.small * 1000, atol=epsilon.small):
+        super(EPLinearKernel, self).__init__(
+            nsites, PosteriorLinearKernel, rtol=rtol, atol=atol)
 
     def lml(self):
         if self._cache['lml'] is not None:
