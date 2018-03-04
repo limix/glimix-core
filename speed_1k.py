@@ -35,3 +35,5 @@ if __name__ == '__main__':
         rtol=ns.epsilon.small * 1000 * 100,
         atol=ns.epsilon.small * 100)
     glmm.fit(verbose=True, factr=1e6, pgtol=1e-3)
+    print(glmm.lml())
+    # -373.2819316198989
