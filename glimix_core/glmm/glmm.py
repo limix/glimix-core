@@ -166,10 +166,8 @@ class GLMM(Function):
         f.factr = factr
         f.pgtol = pgtol
         self._verbose = verbose
-        self._ep.verbose = verbose
         f.maximize(verbose=verbose)
         self._verbose = False
-        self._ep.verbose = False
 
     def lml(self):
         r"""Log of the marginal likelihood.

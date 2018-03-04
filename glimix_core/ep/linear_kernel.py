@@ -75,6 +75,9 @@ class EPLinearKernel(EP):
         return lml
 
     def lml_derivatives(self, dm):
+        if self._cache['grad'] is not None:
+            return self._cache['grad']
+
         self._update()
 
         L = self._posterior.L()
@@ -123,4 +126,8 @@ class EPLinearKernel(EP):
         dlml_delta -= 0.5 * s * r * (1 - d)
         dlml_delta += 0.5 * s * dotd(TAQ, dotr(LQt, TA)).sum() * (1 - d)
 
-        return dict(mean=dlml_mean, scale=dlml_scale, delta=dlml_delta)
+        g = dict(mean=dlml_mean, scale=dlml_scale, delta=dlml_delta)
+
+        self._cache['grad'] = g
+
+        return g

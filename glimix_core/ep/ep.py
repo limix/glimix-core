@@ -233,5 +233,5 @@ class EP(object):
         self._posterior.mean = mean
         self._posterior.cov = covariance
         self._need_update = True
-        self._cache['lml'] = None
-        self._cache['grad'] = None
+        for k in self._cache.keys():
+            self._cache[k] = None

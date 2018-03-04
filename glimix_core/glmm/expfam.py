@@ -126,6 +126,19 @@ class GLMMExpFam(GLMM):
     def covariance(self):
         return dict(QS=self._QS, scale=self.scale, delta=self.delta)
 
+    def fit(self, verbose=True, factr=1e5, pgtol=1e-7):
+        r"""Maximise the marginal likelihood.
+
+        Parameters
+        ----------
+        verbose : bool
+            ``True`` for progress output; ``False`` otherwise.
+            Defaults to ``True``.
+        """
+        self._ep.verbose = verbose
+        super(GLMMExpFam, self).fit(verbose=verbose, factr=factr, pgtol=pgtol)
+        self._ep.verbose = False
+
     def fix(self, var_name):
         GLMM.fix(self, var_name)
         self.set_update_approx()

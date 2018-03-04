@@ -29,6 +29,7 @@ class Posterior(object):
         self._NxR_data = None
         self._RxN_data = None
         self._RxR_data = None
+        self._L_cache = None
 
     @property
     def _NxR(self):
@@ -77,11 +78,11 @@ class Posterior(object):
 
     @property
     def mean(self):
-        self._initialize()
         return self._mean
 
     @mean.setter
     def mean(self, v):
+        self._initialize()
         self._mean = v
 
     @property
@@ -101,17 +102,23 @@ class Posterior(object):
             \mathrm B = \mathrm Q^{\intercal}\tilde{\mathrm{T}}\mathrm Q
                 + \mathrm{S}^{-1}
         """
+        if self._L_cache is not None:
+            return self._L_cache
+
         Q = self._cov['QS'][0][0]
         S = self._cov['QS'][1]
         B = dot(Q.T, ddot(self._site.tau, Q, left=True))
         sum2diag(B, 1. / S, out=B)
-        return cho_factor(B, lower=True)[0]
+        self._L_cache = cho_factor(B, lower=True)[0]
+        return self._L_cache
 
     def _BiQt(self):
         Q = self._cov['QS'][0][0]
         return cho_solve(self.L(), Q.T)
 
     def update(self):
+        self._L_cache = None
+
         Q = self._cov['QS'][0][0]
         S = self._cov['QS'][1]
 

@@ -42,6 +42,9 @@ class PosteriorLinearKernel(Posterior):
             \mathrm B = \mathrm Q^{\intercal}\tilde{\mathrm{T}}\mathrm Q
                 + \mathrm{S}^{-1}
         """
+        if self._L_cache is not None:
+            return self._L_cache
+
         s = self._cov['scale']
         d = self._cov['delta']
         Q = self._cov['QS'][0][0]
@@ -51,9 +54,12 @@ class PosteriorLinearKernel(Posterior):
         B = dot(Q.T, self._NxR, out=self._RxR)
         B *= 1 - d
         sum2diag(B, 1. / S / s, out=B)
-        return _cho_factor(B)
+        self._L_cache = _cho_factor(B)
+        return self._L_cache
 
     def update(self):
+        self._L_cache = None
+
         s = self._cov['scale']
         d = self._cov['delta']
         Q = self._cov['QS'][0][0]
