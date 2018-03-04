@@ -67,6 +67,7 @@ class EP(object):
         self._need_update = True
         self._compute_moments = None
         self._cache = dict(lml=None, grad=None)
+        self.verbose = False
 
     def __copy__(self):
         cls = self.__class__
@@ -88,6 +89,7 @@ class EP(object):
         ep.__dict__['_need_update'] = self._need_update
         ep.__dict__['_compute_moments'] = None
         ep.__dict__['_cache'] = deepcopy(self._cache)
+        ep.__dict__['verbose'] = deepcopy(self.verbose)
 
         return ep
 
@@ -125,6 +127,8 @@ class EP(object):
                 self._site.tau - self._psite.tau)
             raise ValueError(msg)
 
+        if self.verbose:
+            print("{} EP iterations".format(i))
         self._need_update = False
 
     @property
