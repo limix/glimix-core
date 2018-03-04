@@ -1,9 +1,10 @@
 from __future__ import division
 
+from numpy import dot, empty, empty_like, sqrt
 from numpy import sum as npsum
-from numpy import dot, empty, sqrt
-from numpy_sugar.linalg import cho_solve, ddot, dotd, sum2diag
 from scipy.linalg import cho_factor
+
+from numpy_sugar.linalg import cho_solve, ddot, dotd, sum2diag
 
 
 class Posterior(object):
@@ -25,6 +26,31 @@ class Posterior(object):
         self._site = site
         self._mean = None
         self._cov = None
+        self._NxR_data = None
+        self._RxN_data = None
+        self._RxR_data = None
+
+    @property
+    def _NxR(self):
+        if self._NxR_data is None:
+            Q = self._cov['QS'][0][0]
+            self._NxR_data = empty_like(Q)
+        return self._NxR_data
+
+    @property
+    def _RxN(self):
+        if self._RxN_data is None:
+            Q = self._cov['QS'][0][0]
+            self._RxN_data = empty_like(Q.T)
+        return self._RxN_data
+
+    @property
+    def _RxR(self):
+        if self._RxR_data is None:
+            Q = self._cov['QS'][0][0]
+            r = Q.shape[1]
+            self._RxR_data = empty((r, r))
+        return self._RxR_data
 
     def _initialize(self):
         r"""Initialize the mean and covariance of the posterior.

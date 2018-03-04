@@ -1,11 +1,16 @@
 from __future__ import division
 
-from numpy import dot, sqrt
+from numpy import dot
 from scipy.linalg import cho_factor
 
 from numpy_sugar.linalg import cho_solve, ddot, dotd, sum2diag
 
 from .posterior import Posterior
+
+
+def _cho_factor(B):
+    B = cho_factor(B, overwrite_a=True, lower=True, check_finite=False)[0]
+    return B
 
 
 class PosteriorLinearKernel(Posterior):
@@ -42,10 +47,11 @@ class PosteriorLinearKernel(Posterior):
         Q = self._cov['QS'][0][0]
         S = self._cov['QS'][1]
 
-        tQ = sqrt(1 - d) * Q
-        B = dot(tQ.T, ddot(self._A * self._site.tau, tQ, left=True))
+        ddot(self._A * self._site.tau, Q, left=True, out=self._NxR)
+        B = dot(Q.T, self._NxR, out=self._RxR)
+        B *= 1 - d
         sum2diag(B, 1. / S / s, out=B)
-        return cho_factor(B, lower=True)[0]
+        return _cho_factor(B)
 
     def update(self):
         s = self._cov['scale']
@@ -54,30 +60,28 @@ class PosteriorLinearKernel(Posterior):
         S = self._cov['QS'][1]
 
         A = self._A
+        L = self.L()
 
         t = self._site.tau
         e = self._site.eta
 
-        tQ = sqrt(1 - d) * Q
-        QtA = ddot(Q.T, A, left=False)
+        QA = ddot(Q.T, A, out=self._RxN)
+        QS0 = ddot(Q, S, out=self._NxR)
 
-        tBitQt = cho_solve(self.L(), tQ.T)
+        tBitQt = cho_solve(L, Q.T)
+        tBitQtA = ddot(tBitQt, A)
+        ATtQ = ddot(A * t, Q)
+        QtATtQ = dot(ddot(QA, t), Q)
 
-        tBitQtA = ddot(tBitQt, A, left=False)
-
-        ATtQ = ddot(A * t, tQ, left=True)
-        QtATtQ = dot(ddot(QtA, t, left=False), tQ)
-
-        QS0 = ddot(Q, S, left=False)
-
-        self.tau[:] = s * (1 - d) * dotd(QS0, QtA)
-        self.tau -= s * (1 - d) * dotd(QS0, dot(QtATtQ, tBitQtA))
+        self.tau[:] = s * (1 - d) * dotd(QS0, QA)
+        D = dot(QtATtQ, tBitQtA)
+        self.tau -= s * (1 - d) * dotd(QS0, D) * (1 - d)
         self.tau += s * d * A
-        self.tau -= s * d * dotd(ATtQ, tBitQtA)
+        self.tau -= s * d * dotd(ATtQ, tBitQtA) * (1 - d)
         self.tau **= -1
 
         v = s * (1 - d) * dot(Q, S * dot(Q.T, e)) + s * d * e + self._mean
 
         self.eta[:] = A * v
-        self.eta -= A * dot(tQ, dot(tBitQtA, t * v))
+        self.eta -= A * dot(Q, dot(tBitQtA, t * v)) * (1 - d)
         self.eta *= self.tau
