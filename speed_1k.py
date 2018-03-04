@@ -36,9 +36,6 @@ if __name__ == '__main__':
     #     atol=ns.epsilon.small * 100)
     glmm = GLMMExpFam((nsuc, ntri), 'binomial', np.ones((nsamples, 1)), QS)
     glmm.fit(verbose=True, factr=1e6, pgtol=1e-3)
-    print(glmm.lml())
-    print(glmm.scale)
-    print(glmm.delta)
-    # -2483.923312970759
-    # 4.211424061421387
-    # 0.013175939427293077
+    print(glmm.lml() + 2483.923312970759)
+    print(glmm.scale - 4.211424061421387)
+    print(glmm.delta - 0.013175939427293077)

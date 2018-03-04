@@ -3,9 +3,10 @@ from __future__ import absolute_import, division, unicode_literals
 from copy import copy
 
 from numpy import asarray, clip, dot, exp, finfo, log, zeros
+from optimix import Function, Scalar, Vector
+
 from numpy_sugar import epsilon
 from numpy_sugar.linalg import ddot, sum2diag
-from optimix import Function, Scalar, Vector
 
 from ..util import (check_covariates, check_economic_qs, check_outcome,
                     normalise_outcome)
@@ -77,6 +78,7 @@ class GLMM(Function):
 
         self._factr = 1e5
         self._pgtol = 1e-6
+        self._verbose = False
         self.set_variable_bounds('logscale', (log(0.002), 6.))
         logmax = log(finfo(float).max)
         self.set_variable_bounds('logitdelta', (-logmax, +logmax))
@@ -163,7 +165,9 @@ class GLMM(Function):
         f = self.feed()
         f.factr = factr
         f.pgtol = pgtol
+        self._verbose = verbose
         f.maximize(verbose=verbose)
+        self._verbose = False
 
     def lml(self):
         r"""Log of the marginal likelihood.

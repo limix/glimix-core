@@ -4,6 +4,7 @@ from copy import copy
 
 from liknorm import LikNormMachine
 from numpy import ascontiguousarray, exp
+from numpy.linalg import norm
 
 from glimix_core.ep import EPLinearKernel
 from numpy_sugar import epsilon
@@ -177,5 +178,10 @@ class GLMMExpFam(GLMM):
         self.set_update_approx()
 
     def value(self):
+        if self._verbose:
+            b = norm(self.beta)
+            d = self.delta
+            s = self.scale
+            print("b={: 10.6} d={: 10.6} s={: 10.6}".format(b, d, s))
         self._update_approx()
         return self._ep.lml()
