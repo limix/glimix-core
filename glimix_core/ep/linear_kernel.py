@@ -31,7 +31,7 @@ class EPLinearKernel(EP):
         self._update()
 
         L = self._posterior.L()
-        LQT = self._posterior.LQT()
+        LQt = self._posterior.LQt()
         cov = self._posterior.cov
         Q = cov['QS'][0][0]
         S = cov['QS'][1]
@@ -52,11 +52,11 @@ class EPLinearKernel(EP):
             -0.5 * sum(log(s * S)),
             +0.5 * sum(log(A)),
             # lml += 0.5 * sum(log(ttau)),
-            +0.5 * dot(teta * A, dot(Q, dot(LQT, teta * A))) * (1 - d),
+            +0.5 * dot(teta * A, dot(Q, dot(LQt, teta * A))) * (1 - d),
             -0.5 * dot(teta, teta / TS),
             +dot(m, A * teta) - 0.5 * dot(m, A * ttau * m),
             -0.5 * dot(m * A * ttau,
-                       dot(Q, dot(LQT, 2 * A * teta - A * ttau * m))) *
+                       dot(Q, dot(LQt, 2 * A * teta - A * ttau * m))) *
             (1 - d),
             +sum(self._moments['log_zeroth']),
             +0.5 * sum(log(TS)),
@@ -80,50 +80,50 @@ class EPLinearKernel(EP):
 
         self._update()
 
-        LQT = self._posterior.LQT()
+        LQt = self._posterior.LQt()
+        ATQ = self._posterior.ATQ()
         ttau = self._site.tau
         teta = self._site.eta
         A = self._posterior._A
 
         cov = self._posterior.cov
         Q = cov['QS'][0][0]
-        S = cov['QS'][1]
         s = cov['scale']
         d = cov['delta']
-        QS = dotr(Q, S)
+        QS = self._posterior.QS()
 
         e_m = teta - ttau * self._posterior.mean
         Ae_m = A * e_m
         TA = ttau * A
-        LtQTAe_m = dot(LQT, Ae_m)
+        LtQTAe_m = dot(LQt, Ae_m)
         tQTAe_m = dot(Q.T, Ae_m)
         dKAd_m = dot(QS, tQTAe_m) * (1 - d) + d * Ae_m
         w = TA * dot(Q, LtQTAe_m) * (1 - d)
         QTAe_m = dot(Q.T, Ae_m)
         dKAs_m = -s * dot(QS, QTAe_m) + s * Ae_m
-        TAQ = ldot(TA, Q)
-        # r = dotd(TAQ, dot(dot(LQT, TAQ), QS.T)).sum()
 
         r = (self._posterior.QSQtATQLQtA() * ttau).sum()
 
         dlml_mean = dot(e_m, ldot(
-            A, dm)) - dot(Ae_m, dot(Q, dot(LQT, ldot(TA, dm)))) * (1 - d)
+            A, dm)) - dot(Ae_m, dot(Q, dot(LQt, ldot(TA, dm)))) * (1 - d)
+
+        r1 = (TA * dotd(Q, LQt) * TA).sum()
 
         dlml_scale = 0.5 * dot(Ae_m, dKAd_m)
         dlml_scale -= sum(w * dKAd_m)
         dlml_scale += 0.5 * dot(w, dot(QS, dot(Q.T, w) * (1 - d)) + d * w)
-        dlml_scale -= 0.5 * dotd(TAQ, QS.T).sum() * (1 - d)
+        dlml_scale -= 0.5 * dotd(ATQ, QS.T).sum() * (1 - d)
         dlml_scale -= 0.5 * sum(TA) * d
         dlml_scale += 0.5 * r * (1 - d) * (1 - d)
-        dlml_scale += 0.5 * d * dotd(TAQ, dotr(LQT, TA)).sum() * (1 - d)
+        dlml_scale += 0.5 * d * r1 * (1 - d)
 
         dlml_delta = 0.5 * dot(Ae_m, dKAs_m)
         dlml_delta -= sum(w * dKAs_m)
         dlml_delta += 0.5 * dot(w, -s * dot(QS, dot(Q.T, w)) + s * w)
-        dlml_delta += 0.5 * s * dotd(ldot(TA, Q), QS.T).sum()
+        dlml_delta += 0.5 * s * dotd(ATQ, QS.T).sum()
         dlml_delta -= 0.5 * sum(TA) * s
         dlml_delta -= 0.5 * s * r * (1 - d)
-        dlml_delta += 0.5 * s * dotd(TAQ, dotr(LQT, TA)).sum() * (1 - d)
+        dlml_delta += 0.5 * s * r1 * (1 - d)
 
         g = dict(mean=dlml_mean, scale=dlml_scale, delta=dlml_delta)
 

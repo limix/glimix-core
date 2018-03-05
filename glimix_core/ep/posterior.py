@@ -30,7 +30,10 @@ class Posterior(object):
         self._RxN_data = None
         self._RxR_data = None
         self._L_cache = None
-        self._LQT_cache = None
+        self._LQt_cache = None
+        self._QS_cache = None
+        self._AQ_cache = None
+        self._TAQ_cache = None
         self._QSQtATQLQtA_cache = None
 
     @property
@@ -57,7 +60,10 @@ class Posterior(object):
 
     def _flush_cache(self):
         self._L_cache = None
-        self._LQT_cache = None
+        self._LQt_cache = None
+        self._QS_cache = None
+        self._AQ_cache = None
+        self._TAQ_cache = None
         self._QSQtATQLQtA_cache = None
 
     def _initialize(self):
@@ -119,29 +125,34 @@ class Posterior(object):
         self._L_cache = cho_factor(B, lower=True)[0]
         return self._L_cache
 
-    def LQT(self):
-        if self._LQT_cache is not None:
-            return self._LQT_cache
+    def LQt(self):
+        if self._LQt_cache is not None:
+            return self._LQt_cache
 
         L = self.L()
         Q = self._cov['QS'][0][0]
 
-        self._LQT_cache = cho_solve(L, Q.T)
-        return self._LQT_cache
+        self._LQt_cache = cho_solve(L, Q.T)
+        return self._LQt_cache
 
-    def _BiQt(self):
+    def QS(self):
+        if self._QS_cache is not None:
+            return self._QS_cache
+
         Q = self._cov['QS'][0][0]
-        return cho_solve(self.L(), Q.T)
+        S = self._cov['QS'][1]
+
+        self._QS_cache = ddot(Q, S)
+        return self._QS_cache
 
     def update(self):
         self._flush_cache()
 
         Q = self._cov['QS'][0][0]
-        S = self._cov['QS'][1]
 
-        K = dot(ddot(Q, S, left=False), Q.T)
+        K = dot(self.QS(), Q.T)
 
-        BiQt = self._BiQt()
+        BiQt = self.LQt()
         TK = ddot(self._site.tau, K, left=True)
         BiQtTK = dot(BiQt, TK)
 

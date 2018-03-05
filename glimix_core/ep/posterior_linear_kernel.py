@@ -34,19 +34,35 @@ class PosteriorLinearKernel(Posterior):
         d = self._cov['delta']
         return 1 / (s * d * self._site.tau + 1)
 
+    def AQ(self):
+        if self._AQ_cache is not None:
+            return self._AQ_cache
+
+        Q = self._cov['QS'][0][0]
+        A = self._A
+
+        self._AQ_cache = ddot(A, Q)
+        return self._AQ_cache
+
+    def ATQ(self):
+        if self._TAQ_cache is not None:
+            return self._TAQ_cache
+
+        self._TAQ_cache = ddot(self._site.tau, self.AQ())
+        return self._TAQ_cache
+
     def QSQtATQLQtA(self):
         if self._QSQtATQLQtA_cache is not None:
             return self._QSQtATQLQtA_cache
 
-        LQT = self.LQT()
+        LQt = self.LQt()
         A = self._A
         Q = self._cov['QS'][0][0]
-        LQTA = ddot(LQT, A)
-        QtA = ddot(Q.T, A)
-        S = self._cov['QS'][1]
-        QS = ddot(Q, S)
-        U = self._site.tau
-        self._QSQtATQLQtA_cache = dotd(QS, dot(dot(ddot(QtA, U), Q), LQTA))
+        LQtA = ddot(LQt, A)
+        AQ = self.AQ()
+        QS = self.QS()
+        T = self._site.tau
+        self._QSQtATQLQtA_cache = dotd(QS, dot(dot(ddot(AQ.T, T), Q), LQtA))
         return self._QSQtATQLQtA_cache
 
     def L(self):
@@ -78,29 +94,27 @@ class PosteriorLinearKernel(Posterior):
         s = self._cov['scale']
         d = self._cov['delta']
         Q = self._cov['QS'][0][0]
-        S = self._cov['QS'][1]
 
         A = self._A
-        LQT = self.LQT()
+        LQt = self.LQt()
 
-        U = self._site.tau
-        e = self._site.eta
+        T = self._site.tau
+        E = self._site.eta
 
-        QtA = ddot(Q.T, A, out=self._RxN)
-        QS = ddot(Q, S, out=self._NxR)
+        AQ = self.AQ()
+        QS = self.QS()
 
-        LQTA = ddot(LQT, A)
-        ATQ = ddot(A * U, Q)
-        D = dotd(QS, dot(dot(ddot(QtA, U), Q), LQTA))  # lento
+        LQtA = ddot(LQt, A)
+        D = self.QSQtATQLQtA()
 
-        self.tau[:] = s * (1 - d) * dotd(QS, QtA)
+        self.tau[:] = s * (1 - d) * dotd(QS, AQ.T)
         self.tau -= s * (1 - d) * D * (1 - d)
         self.tau += s * d * A
-        self.tau -= s * d * dotd(ATQ, LQTA) * (1 - d)
+        self.tau -= s * d * dotd(self.ATQ(), LQtA) * (1 - d)
         self.tau **= -1
 
-        v = s * (1 - d) * dot(Q, S * dot(Q.T, e)) + s * d * e + self._mean
+        v = s * (1 - d) * dot(Q, dot(QS.T, E)) + s * d * E + self._mean
 
         self.eta[:] = A * v
-        self.eta -= A * dot(Q, dot(LQTA, U * v)) * (1 - d)
+        self.eta -= dot(AQ, dot(LQtA, T * v)) * (1 - d)
         self.eta *= self.tau
