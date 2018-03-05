@@ -102,7 +102,9 @@ class EPLinearKernel(EP):
         QTAe_m = dot(Q.T, Ae_m)
         dKAs_m = -s * dot(QS, QTAe_m) + s * Ae_m
         TAQ = ldot(TA, Q)
-        r = dotd(TAQ, dot(dot(LQT, TAQ), QS.T)).sum()
+        # r = dotd(TAQ, dot(dot(LQT, TAQ), QS.T)).sum()
+
+        r = (self._posterior.QSQtATQLQtA() * ttau).sum()
 
         dlml_mean = dot(e_m, ldot(
             A, dm)) - dot(Ae_m, dot(Q, dot(LQT, ldot(TA, dm)))) * (1 - d)

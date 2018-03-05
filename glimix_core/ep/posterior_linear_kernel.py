@@ -3,7 +3,7 @@ from __future__ import division
 from numpy import dot
 from scipy.linalg import cho_factor
 
-from numpy_sugar.linalg import cho_solve, ddot, dotd, sum2diag
+from numpy_sugar.linalg import ddot, dotd, sum2diag
 
 from .posterior import Posterior
 
@@ -34,6 +34,21 @@ class PosteriorLinearKernel(Posterior):
         d = self._cov['delta']
         return 1 / (s * d * self._site.tau + 1)
 
+    def QSQtATQLQtA(self):
+        if self._QSQtATQLQtA_cache is not None:
+            return self._QSQtATQLQtA_cache
+
+        LQT = self.LQT()
+        A = self._A
+        Q = self._cov['QS'][0][0]
+        LQTA = ddot(LQT, A)
+        QtA = ddot(Q.T, A)
+        S = self._cov['QS'][1]
+        QS = ddot(Q, S)
+        U = self._site.tau
+        self._QSQtATQLQtA_cache = dotd(QS, dot(dot(ddot(QtA, U), Q), LQTA))
+        return self._QSQtATQLQtA_cache
+
     def L(self):
         r"""Cholesky decomposition of :math:`\mathrm B`.
 
@@ -58,8 +73,7 @@ class PosteriorLinearKernel(Posterior):
         return self._L_cache
 
     def update(self):
-        self._L_cache = None
-        self._LQT_cache = None
+        self._flush_cache()
 
         s = self._cov['scale']
         d = self._cov['delta']
@@ -67,28 +81,26 @@ class PosteriorLinearKernel(Posterior):
         S = self._cov['QS'][1]
 
         A = self._A
-        L = self.L()
+        LQT = self.LQT()
 
-        t = self._site.tau
+        U = self._site.tau
         e = self._site.eta
 
-        QA = ddot(Q.T, A, out=self._RxN)
-        QS0 = ddot(Q, S, out=self._NxR)
+        QtA = ddot(Q.T, A, out=self._RxN)
+        QS = ddot(Q, S, out=self._NxR)
 
-        tBitQt = cho_solve(L, Q.T)
-        tBitQtA = ddot(tBitQt, A)
-        ATtQ = ddot(A * t, Q)
-        QtATtQ = dot(ddot(QA, t), Q)
+        LQTA = ddot(LQT, A)
+        ATQ = ddot(A * U, Q)
+        D = dotd(QS, dot(dot(ddot(QtA, U), Q), LQTA))  # lento
 
-        self.tau[:] = s * (1 - d) * dotd(QS0, QA)
-        D = dot(QtATtQ, tBitQtA)
-        self.tau -= s * (1 - d) * dotd(QS0, D) * (1 - d)
+        self.tau[:] = s * (1 - d) * dotd(QS, QtA)
+        self.tau -= s * (1 - d) * D * (1 - d)
         self.tau += s * d * A
-        self.tau -= s * d * dotd(ATtQ, tBitQtA) * (1 - d)
+        self.tau -= s * d * dotd(ATQ, LQTA) * (1 - d)
         self.tau **= -1
 
         v = s * (1 - d) * dot(Q, S * dot(Q.T, e)) + s * d * e + self._mean
 
         self.eta[:] = A * v
-        self.eta -= A * dot(Q, dot(tBitQtA, t * v)) * (1 - d)
+        self.eta -= A * dot(Q, dot(LQTA, U * v)) * (1 - d)
         self.eta *= self.tau

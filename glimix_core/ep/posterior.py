@@ -31,6 +31,7 @@ class Posterior(object):
         self._RxR_data = None
         self._L_cache = None
         self._LQT_cache = None
+        self._QSQtATQLQtA_cache = None
 
     @property
     def _NxR(self):
@@ -53,6 +54,11 @@ class Posterior(object):
             r = Q.shape[1]
             self._RxR_data = empty((r, r))
         return self._RxR_data
+
+    def _flush_cache(self):
+        self._L_cache = None
+        self._LQT_cache = None
+        self._QSQtATQLQtA_cache = None
 
     def _initialize(self):
         r"""Initialize the mean and covariance of the posterior.
@@ -128,8 +134,7 @@ class Posterior(object):
         return cho_solve(self.L(), Q.T)
 
     def update(self):
-        self._L_cache = None
-        self._LQT_cache = None
+        self._flush_cache()
 
         Q = self._cov['QS'][0][0]
         S = self._cov['QS'][1]
