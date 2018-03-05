@@ -59,6 +59,7 @@ class PosteriorLinearKernel(Posterior):
 
     def update(self):
         self._L_cache = None
+        self._LQT_cache = None
 
         s = self._cov['scale']
         d = self._cov['delta']

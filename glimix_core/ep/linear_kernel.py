@@ -31,6 +31,7 @@ class EPLinearKernel(EP):
         self._update()
 
         L = self._posterior.L()
+        LQT = self._posterior.LQT()
         cov = self._posterior.cov
         Q = cov['QS'][0][0]
         S = cov['QS'][1]
@@ -45,19 +46,18 @@ class EPLinearKernel(EP):
         s = cov['scale']
         d = cov['delta']
         A = self._posterior._A
-        tQ = sqrt(1 - d) * Q
 
         lml = [
             -log(L.diagonal()).sum(),
             -0.5 * sum(log(s * S)),
             +0.5 * sum(log(A)),
             # lml += 0.5 * sum(log(ttau)),
-            +0.5 * dot(teta * A, dot(tQ, cho_solve(L, dot(tQ.T, teta * A)))),
+            +0.5 * dot(teta * A, dot(Q, dot(LQT, teta * A))) * (1 - d),
             -0.5 * dot(teta, teta / TS),
             +dot(m, A * teta) - 0.5 * dot(m, A * ttau * m),
-            -0.5 * dot(
-                m * A * ttau,
-                dot(tQ, cho_solve(L, dot(tQ.T, 2 * A * teta - A * ttau * m)))),
+            -0.5 * dot(m * A * ttau,
+                       dot(Q, dot(LQT, 2 * A * teta - A * ttau * m))) *
+            (1 - d),
             +sum(self._moments['log_zeroth']),
             +0.5 * sum(log(TS)),
             # lml -= 0.5 * sum(log(ttau)),
@@ -81,6 +81,7 @@ class EPLinearKernel(EP):
         self._update()
 
         L = self._posterior.L()
+        # LQT = self._posterior.LQT()
         ttau = self._site.tau
         teta = self._site.eta
         A = self._posterior._A
@@ -103,9 +104,9 @@ class EPLinearKernel(EP):
         QTAe_m = dot(Q.T, Ae_m)
         dKAs_m = -s * dot(QS, QTAe_m) + s * Ae_m
         TAtQ = ldot(TA, tQ)
-        LQt = cho_solve(L, Q.T)
+        LQT = self._posterior.LQT()
         TAQ = ldot(TA, Q)
-        r = dotd(TAQ, dot(dot(LQt, TAQ), QS.T)).sum()
+        r = dotd(TAQ, dot(dot(LQT, TAQ), QS.T)).sum()
 
         dlml_mean = dot(e_m, ldot(A, dm)) - dot(
             Ae_m, dot(tQ, cho_solve(L, dot(tQ.T, ldot(TA, dm)))))
@@ -116,7 +117,7 @@ class EPLinearKernel(EP):
         dlml_scale -= 0.5 * dotd(TAtQ, tQS.T).sum()
         dlml_scale -= 0.5 * sum(TA) * d
         dlml_scale += 0.5 * r * (1 - d)**2
-        dlml_scale += 0.5 * d * dotd(TAQ, dotr(LQt, TA)).sum() * (1 - d)
+        dlml_scale += 0.5 * d * dotd(TAQ, dotr(LQT, TA)).sum() * (1 - d)
 
         dlml_delta = 0.5 * dot(Ae_m, dKAs_m)
         dlml_delta -= sum(w * dKAs_m)
@@ -124,7 +125,7 @@ class EPLinearKernel(EP):
         dlml_delta += 0.5 * s * dotd(ldot(TA, Q), QS.T).sum()
         dlml_delta -= 0.5 * sum(TA) * s
         dlml_delta -= 0.5 * s * r * (1 - d)
-        dlml_delta += 0.5 * s * dotd(TAQ, dotr(LQt, TA)).sum() * (1 - d)
+        dlml_delta += 0.5 * s * dotd(TAQ, dotr(LQT, TA)).sum() * (1 - d)
 
         g = dict(mean=dlml_mean, scale=dlml_scale, delta=dlml_delta)
 

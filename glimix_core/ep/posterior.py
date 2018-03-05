@@ -30,6 +30,7 @@ class Posterior(object):
         self._RxN_data = None
         self._RxR_data = None
         self._L_cache = None
+        self._LQT_cache = None
 
     @property
     def _NxR(self):
@@ -112,12 +113,23 @@ class Posterior(object):
         self._L_cache = cho_factor(B, lower=True)[0]
         return self._L_cache
 
+    def LQT(self):
+        if self._LQT_cache is not None:
+            return self._LQT_cache
+
+        L = self.L()
+        Q = self._cov['QS'][0][0]
+
+        self._LQT_cache = cho_solve(L, Q.T)
+        return self._LQT_cache
+
     def _BiQt(self):
         Q = self._cov['QS'][0][0]
         return cho_solve(self.L(), Q.T)
 
     def update(self):
         self._L_cache = None
+        self._LQT_cache = None
 
         Q = self._cov['QS'][0][0]
         S = self._cov['QS'][1]
