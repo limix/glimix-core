@@ -2,10 +2,10 @@ from __future__ import absolute_import, division, unicode_literals
 
 from math import fsum
 
-from numpy import dot, isfinite, log, sqrt
+from numpy import dot, isfinite, log
 
 from numpy_sugar import epsilon
-from numpy_sugar.linalg import cho_solve, ddot, dotd
+from numpy_sugar.linalg import ddot, dotd
 
 from .ep import EP
 from .posterior_linear_kernel import PosteriorLinearKernel
@@ -80,8 +80,7 @@ class EPLinearKernel(EP):
 
         self._update()
 
-        L = self._posterior.L()
-        # LQT = self._posterior.LQT()
+        LQT = self._posterior.LQT()
         ttau = self._site.tau
         teta = self._site.eta
         A = self._posterior._A
@@ -91,32 +90,29 @@ class EPLinearKernel(EP):
         S = cov['QS'][1]
         s = cov['scale']
         d = cov['delta']
-        tQ = sqrt(1 - d) * Q
-        tQS = dotr(tQ, S)
         QS = dotr(Q, S)
 
         e_m = teta - ttau * self._posterior.mean
         Ae_m = A * e_m
         TA = ttau * A
-        tQTAe_m = dot(tQ.T, Ae_m)
-        dKAd_m = dot(tQS, tQTAe_m) + d * Ae_m
-        w = TA * dot(tQ, cho_solve(L, tQTAe_m))
+        LtQTAe_m = dot(LQT, Ae_m)
+        tQTAe_m = dot(Q.T, Ae_m)
+        dKAd_m = dot(QS, tQTAe_m) * (1 - d) + d * Ae_m
+        w = TA * dot(Q, LtQTAe_m) * (1 - d)
         QTAe_m = dot(Q.T, Ae_m)
         dKAs_m = -s * dot(QS, QTAe_m) + s * Ae_m
-        TAtQ = ldot(TA, tQ)
-        LQT = self._posterior.LQT()
         TAQ = ldot(TA, Q)
         r = dotd(TAQ, dot(dot(LQT, TAQ), QS.T)).sum()
 
-        dlml_mean = dot(e_m, ldot(A, dm)) - dot(
-            Ae_m, dot(tQ, cho_solve(L, dot(tQ.T, ldot(TA, dm)))))
+        dlml_mean = dot(e_m, ldot(
+            A, dm)) - dot(Ae_m, dot(Q, dot(LQT, ldot(TA, dm)))) * (1 - d)
 
         dlml_scale = 0.5 * dot(Ae_m, dKAd_m)
         dlml_scale -= sum(w * dKAd_m)
-        dlml_scale += 0.5 * dot(w, dot(tQS, dot(tQ.T, w)) + d * w)
-        dlml_scale -= 0.5 * dotd(TAtQ, tQS.T).sum()
+        dlml_scale += 0.5 * dot(w, dot(QS, dot(Q.T, w) * (1 - d)) + d * w)
+        dlml_scale -= 0.5 * dotd(TAQ, QS.T).sum() * (1 - d)
         dlml_scale -= 0.5 * sum(TA) * d
-        dlml_scale += 0.5 * r * (1 - d)**2
+        dlml_scale += 0.5 * r * (1 - d) * (1 - d)
         dlml_scale += 0.5 * d * dotd(TAQ, dotr(LQT, TA)).sum() * (1 - d)
 
         dlml_delta = 0.5 * dot(Ae_m, dKAs_m)
