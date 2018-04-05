@@ -45,18 +45,18 @@ as long as you have [pytest](https://docs.pytest.org/en/latest/).
 Here it is a very simple example to get you started:
 
 ```python
-    >>> from numpy import array, ones
-    >>> from numpy_sugar.linalg import economic_qs_linear
-    >>> from glimix_core.lmm import LMM
-    >>>
-    >>> X = array([[1, 2], [3, -1], [1.1, 0.5], [0.5, -0.4]], float)
-    >>> QS = economic_qs_linear(X)
-    >>> X = ones((4, 1))
-    >>> y = array([-1, 2, 0.3, 0.5])
-    >>> lmm = LMM(y, X, QS)
-    >>> lmm.fit(verbose=False)
-    >>> lmm.lml()  
-    -2.2726234086180557
+>>> from numpy import array, ones
+>>> from numpy_sugar.linalg import economic_qs_linear
+>>> from glimix_core.lmm import LMM
+>>>
+>>> X = array([[1, 2], [3, -1], [1.1, 0.5], [0.5, -0.4]], float)
+>>> QS = economic_qs_linear(X)
+>>> X = ones((4, 1))
+>>> y = array([-1, 2, 0.3, 0.5])
+>>> lmm = LMM(y, X, QS)
+>>> lmm.fit(verbose=False)
+>>> lmm.lml()
+-2.2726234086180557
 ```
 
 An extensive documentation of the library can be found at
