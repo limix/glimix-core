@@ -1,3 +1,4 @@
+setuptools>=39.0.1
 brent-search>=1.0.32
 cachetools>=2.0.1
 liknorm>=1.0.13
