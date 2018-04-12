@@ -10,7 +10,7 @@ from numpy_sugar.linalg import ddot, economic_svd, rsolve
 
 
 class LMMCore(object):
-    def __init__(self, y, X, QS):
+    def __init__(self, y, X, QS, SVD=None):
         y = asarray(y, float).ravel()
         X = atleast_2d(asarray(X, float).T).T
         if not npy_all(isfinite(X)):
@@ -37,12 +37,15 @@ class LMMCore(object):
         self._y = y
         self._scale = 1.0
         self._fix_scale = False
-
+        
         self._tM = None
         self._tbeta = None
-
         self._svd = None
-        self._set_X(X)
+        
+        if SVD not is None:
+            self._set_SVD(SVD)
+        else:
+            self._set_X(X)
 
     @property
     def _D(self):
@@ -112,6 +115,11 @@ class LMMCore(object):
 
     def _set_X(self, X):
         self._svd = economic_svd(X)
+        self._tM = ddot(self._svd[0], sqrt(self._svd[1]), left=False)
+        self._tbeta = zeros(self._tM.shape[1])
+
+    def _set_SVD(self, SVD):
+        self._svd = SVD
         self._tM = ddot(self._svd[0], sqrt(self._svd[1]), left=False)
         self._tbeta = zeros(self._tM.shape[1])
 
