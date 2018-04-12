@@ -10,12 +10,17 @@ from numpy_sugar.linalg import ddot, economic_svd, rsolve
 
 
 class LMMCore(object):
-    def __init__(self, y, X, QS):
+    def __init__(self, y, X=None, QS=None, SVD=None):
         y = asarray(y, float).ravel()
-        X = atleast_2d(asarray(X, float).T).T
-        if not npy_all(isfinite(X)):
-            msg = "Not all values are finite in the covariates matrix."
-            raise ValueError(msg)
+
+        if X is not None:
+            X = atleast_2d(asarray(X, float).T).T
+            if not npy_all(isfinite(X)):
+                msg = "Not all values are finite in the covariates matrix."
+                raise ValueError(msg)
+            n = X.shape[0]
+        else:
+            n = SVD[0].shape[0]
 
         if not npy_all(isfinite(y)):
             raise ValueError(
@@ -25,7 +30,7 @@ class LMMCore(object):
             raise ValueError("I was expecting a tuple for the covariance "
                              "decomposition")
 
-        if y.shape[0] != X.shape[0]:
+        if y.shape[0] != n:
             raise ValueError("Number of samples differs between outcome "
                              "and covariates.")
 
@@ -42,7 +47,7 @@ class LMMCore(object):
         self._tbeta = None
 
         self._svd = None
-        self._set_X(X)
+        self._set_X(X=X, SVD=SVD)
 
     @property
     def _D(self):
@@ -110,8 +115,11 @@ class LMMCore(object):
         p1 = sum(dot(dot(b, i), b) for i in self._mTQDiQTm)
         return maximum((p0 + p1) / len(self._y), epsilon.tiny)
 
-    def _set_X(self, X):
-        self._svd = economic_svd(X)
+    def _set_X(self, X=None, SVD=None):
+        if SVD is None:
+            self._svd = economic_svd(X)
+        else:
+            self._svd = SVD
         self._tM = ddot(self._svd[0], sqrt(self._svd[1]), left=False)
         self._tbeta = zeros(self._tM.shape[1])
 
