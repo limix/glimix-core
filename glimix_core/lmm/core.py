@@ -6,7 +6,7 @@ from numpy import all as npy_all
 
 from glimix_core.util import log2pi
 from numpy_sugar import epsilon
-from numpy_sugar.linalg import ddot, economic_svd, rsolve
+from numpy_sugar.linalg import ddot, economic_svd, rsolve, sum2diag
 
 
 class LMMCore(object):
@@ -23,8 +23,7 @@ class LMMCore(object):
             n = SVD[0].shape[0]
 
         if not npy_all(isfinite(y)):
-            raise ValueError(
-                "Not all values are finite in the outcome array.")
+            raise ValueError("Not all values are finite in the outcome array.")
 
         if not isinstance(QS, tuple):
             raise ValueError("I was expecting a tuple for the covariance "
@@ -256,3 +255,24 @@ class LMMCore(object):
     @scale.setter
     def scale(self, scale):
         self._scale = scale
+
+    def mean_star(self, Xstar):
+        return dot(Xstar, self.beta)
+
+    def variance_star(self, kss):
+        return kss * self.v0 + self.v1
+
+    def covariance_star(self, ks):
+        return ks * self.v0
+
+    def covariance(self):
+        r"""Covariance of the prior.
+
+        Returns
+        -------
+        array_like
+            :math:`v_0 \mathrm K + v_1 \mathrm I`.
+        """
+        Q0 = self._QS[0][0]
+        S0 = self._QS[1]
+        return sum2diag(dot(ddot(Q0, self.v0 * S0), Q0.T), self.v1)

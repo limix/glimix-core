@@ -1,7 +1,7 @@
 from __future__ import division
 
 import pytest
-from numpy import arange, inf, nan, ones, sqrt, zeros
+from numpy import arange, inf, nan, ones, sqrt, zeros, dot, corrcoef
 from numpy.random import RandomState
 from numpy.testing import assert_, assert_allclose
 
@@ -203,3 +203,23 @@ def _covariates_sample(random, n, p):
     X /= X.std(0)
     X /= sqrt(X.shape[1])
     return X
+
+
+def test_lmm_prediction():
+    random = RandomState(9458)
+    n = 30
+    X = _covariates_sample(random, n, n + 1)
+
+    offset = 1.0
+
+    y = _outcome_sample(random, offset, X)
+
+    QS = economic_qs_linear(X)
+
+    lmm = LMM(y, ones((n, 1)), QS)
+
+    lmm.fit(verbose=False)
+
+    K = dot(X, X.T)
+    pm = lmm.predictive_mean(ones((n, 1)), K, K.diagonal())
+    assert_allclose(corrcoef(y, pm)[0, 1], 0.8358820971891354)

@@ -1,7 +1,9 @@
 from __future__ import division
 
-from numpy import clip, errstate, exp, log
+from numpy import clip, errstate, exp, log, dot, asarray
+from numpy.linalg import solve
 from numpy_sugar import epsilon, is_all_finite
+from numpy_sugar.linalg import sum2diag
 from optimix import Function, Scalar, maximize_scalar
 
 from .core import LMMCore
@@ -277,3 +279,21 @@ class LMM(LMMCore, Function):
 
     def gradient(self, *_):
         raise NotImplementedError
+
+    def predictive_mean(self, Xstar, ks, kss):
+        mstar = self.mean_star(Xstar)
+        ks = self.covariance_star(ks)
+        m = self.mean
+        K = LMMCore.covariance(self)
+        return mstar + dot(ks, solve(K, self._y - m))
+
+    def predictive_covariance(self, Xstar, ks, kss):
+        kss = self.variance_star(kss)
+        ks = self.covariance_star(ks)
+        K = LMMCore.covariance(self)
+        ktk = solve(K, ks.T)
+        b = []
+        for i in range(len(kss)):
+            b += [dot(ks[i, :], ktk[:, i])]
+        b = asarray(b)
+        return kss - b
