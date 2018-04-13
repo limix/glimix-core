@@ -1,5 +1,6 @@
 import pytest
 from numpy import asarray, ascontiguousarray, dot, ones, sqrt, zeros
+from numpy import arange, eye, corrcoef
 from numpy.random import RandomState
 from numpy.testing import assert_allclose
 from numpy_sugar.linalg import economic_qs, economic_qs_linear
@@ -354,3 +355,57 @@ def test_glmmexpfam_delta_one_zero():
     glmm.fit(verbose=False)
     assert_allclose(glmm.lml(), -72.82680932955623, atol=ATOL, rtol=RTOL)
     assert_allclose(glmm.delta, 0.9999999998430158, atol=ATOL, rtol=RTOL)
+
+
+def test_glmmexpfam_predict():
+
+    random = RandomState(4)
+    n = 100
+    p = n + 1
+
+    X = ones((n, 2))
+    X[:, 1] = random.randn(n)
+
+    G = random.randn(n, p)
+    G /= G.std(0)
+    G -= G.mean(0)
+    G /= sqrt(p)
+    K = dot(G, G.T)
+
+    i = asarray(arange(0, n), int)
+    si = random.choice(i, n, replace=False)
+    ntest = int(n // 5)
+    itrain = si[:-ntest]
+    itest = si[-ntest:]
+
+    Xtrain = X[itrain, :]
+    Ktrain = K[itrain, :][:, itrain]
+
+    Xtest = X[itest, :]
+
+    beta = random.randn(2)
+    z = random.multivariate_normal(dot(X, beta), 0.9 * K + 0.1 * eye(n))
+
+    ntri = random.randint(1, 100, n)
+    nsuc = zeros(n, dtype=int)
+    for (i, ni) in enumerate(ntri):
+        nsuc[i] += sum(z[i] + 0.2 * random.randn(ni) > 0)
+
+    ntri = ascontiguousarray(ntri)
+
+    QStrain = economic_qs(Ktrain)
+    nsuc_train = ascontiguousarray(nsuc[itrain])
+    ntri_train = ascontiguousarray(ntri[itrain])
+
+    nsuc_test = ascontiguousarray(nsuc[itest])
+    ntri_test = ascontiguousarray(ntri[itest])
+
+    glmm = GLMMExpFam((nsuc_train, ntri_train), 'binomial', Xtrain, QStrain)
+    glmm.fit(verbose=False)
+    ks = K[itest, :][:, itrain]
+    kss = asarray([K[i, i] for i in itest])
+    pm = glmm.predictive_mean(Xtest, ks, kss)
+    pk = glmm.predictive_covariance(Xtest, ks, kss)
+    r = nsuc_test / ntri_test
+    assert_allclose(corrcoef([pm, r])[0, 1], 0.8236400028753632)
+    assert_allclose(pk[0], 54.263491276875726)

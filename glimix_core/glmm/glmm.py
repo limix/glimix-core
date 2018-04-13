@@ -261,6 +261,15 @@ class GLMM(Function):
     def gradient(self, *_):
         raise NotImplementedError
 
+    def mean_star(self, Xstar):
+        return dot(Xstar, self.beta)
+
+    def variance_star(self, kss):
+        return kss * self.v0 + self.v1
+
+    def covariance_star(self, ks):
+        return ks * self.v0
+
 
 def _to_internal_name(name):
     translation = dict(scale='logscale', delta='logitdelta', beta='beta')

@@ -3,11 +3,13 @@ from __future__ import absolute_import, division, unicode_literals
 from copy import copy
 
 from liknorm import LikNormMachine
-from numpy import ascontiguousarray, exp
+from numpy import ascontiguousarray, exp, dot, asarray
 from numpy.linalg import norm
+from numpy.linalg import solve
 
 from glimix_core.ep import EPLinearKernel
 from numpy_sugar import epsilon
+from numpy_sugar.linalg import sum2diag
 
 from .glmm import GLMM
 
@@ -198,3 +200,26 @@ class GLMMExpFam(GLMM):
             print("b={: 10.6} d={: 10.6} s={: 10.6}".format(b, d, s))
         self._update_approx()
         return self._ep.lml()
+
+    def predictive_mean(self, Xstar, ks, kss):
+        mstar = self.mean_star(Xstar)
+        ks = self.covariance_star(ks)
+        m = self.mean()
+        eta = self._ep.posterior.eta
+        tau = self._ep.posterior.tau
+        mu = eta / tau
+        K = GLMM.covariance(self)
+        return mstar + dot(ks, solve(K, mu - m))
+
+    def predictive_covariance(self, Xstar, ks, kss):
+        kss = self.variance_star(kss)
+        ks = self.covariance_star(ks)
+        tau = self._ep.posterior.tau
+        K = GLMM.covariance(self)
+        KT = sum2diag(K, 1 / tau)
+        ktk = solve(KT, ks.T)
+        b = []
+        for i in range(len(kss)):
+            b += [dot(ks[i, :], ktk[:, i])]
+        b = asarray(b)
+        return kss - b
