@@ -9,7 +9,6 @@ from numpy_sugar.linalg import economic_qs_linear
 from glimix_core.cov import EyeCov, LinearCov, SumCov
 from glimix_core.lik import DeltaProdLik
 from glimix_core.lmm import LMM
-from glimix_core.lmm.core import LMMCore
 from glimix_core.mean import OffsetMean
 from glimix_core.random import GGPSampler
 
@@ -221,47 +220,12 @@ def test_lmm_iid_prior():
     y = _outcome_sample(random, offset, X)
 
     lmm = LMM(y, ones((n, 1)), None)
-    print(lmm.isfixed('delta'))
-    print(lmm.delta)
 
-    # assert_(not lmm.isfixed('delta'))
-    # lmm.fix('delta')
-    # assert_(lmm.isfixed('delta'))
-    #
-    # assert_(not lmm.isfixed('scale'))
-    # lmm.fix('scale')
-    # assert_(lmm.isfixed('scale'))
-    #
-    # lmm.scale = 1.0
-    # lmm.delta = 0.5
+    assert_(lmm.isfixed('delta'))
 
-    # lmm.fit(verbose=True)
+    lmm.fit(verbose=False)
 
-    # assert_allclose(lmm.beta[0], 0.7065598068496923)
-    # assert_allclose(lmm.scale, 1.0)
-    # assert_allclose(lmm.delta, 0.5)
-    # assert_allclose(lmm.v0, 0.5)
-    # assert_allclose(lmm.v1, 0.5)
-    # assert_allclose(lmm.lml(), -57.56642490856645)
-    #
-    # lmm.unfix('scale')
-    # lmm.fit(verbose=False)
-    #
-    # assert_allclose(lmm.beta[0], 0.7065598068496923)
-    # assert_allclose(lmm.v0, 1.060029052117017)
-    # assert_allclose(lmm.v1, 1.060029052117017)
-    # assert_allclose(lmm.lml(), -52.037205784544476)
-    #
-    # lmm.unfix('delta')
-    # lmm.fit(verbose=False)
-    #
-    # assert_allclose(lmm.beta[0], 0.7065598068496922, rtol=1e-5)
-    # assert_allclose(lmm.v0, 0.5667112269084563, rtol=1e-5)
-    # assert_allclose(lmm.v1, 1.3679269553495002, rtol=1e-5)
-    # assert_allclose(lmm.lml(), -51.84396136865774, rtol=1e-5)
-    #
-    # with pytest.raises(ValueError):
-    #     lmm.fix('deltaa')
-    #
-    # with pytest.raises(ValueError):
-    #     lmm.isfixed('deltaa')
+    assert_allclose(lmm.beta[0], 0.7065598068496929)
+    assert_allclose(lmm.scale, 1.9127630509027338)
+    assert_allclose(lmm.delta, 0.9999999999999998)
+    assert_allclose(lmm.lml(), -52.29638826846388)

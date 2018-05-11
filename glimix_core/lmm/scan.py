@@ -1,18 +1,18 @@
 from __future__ import division
 
 from numpy import all as npall
-from numpy import sum as _sum
+from numpy import (asarray, atleast_2d, clip, copyto, dot, empty, full, inf,
+                   isfinite, log)
 from numpy import min as _min
-from numpy import (asarray, clip, dot, empty, full, inf, isfinite, log, zeros,
-                   newaxis, copyto, atleast_2d)
+from numpy import newaxis
+from numpy import sum as _sum
+from numpy import zeros
 from numpy.linalg import LinAlgError
 from numpy_sugar import epsilon
-from numpy_sugar.linalg import rsolve, dotd
+from numpy_sugar.linalg import dotd, rsolve
 from tqdm import tqdm
-from ..util import hsolve
 
-from ..util import wprint
-from ..util import log2pi
+from ..util import hsolve, log2pi, wprint
 
 
 class FastScanner(object):

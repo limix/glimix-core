@@ -1,6 +1,6 @@
 from __future__ import division
 
-from numpy import asarray, clip, dot, errstate, exp, log
+from numpy import asarray, clip, dot, exp
 from numpy.linalg import solve
 from numpy_sugar import epsilon, is_all_finite
 
@@ -81,7 +81,7 @@ class LMM(LMMCore):
     def _get_delta(self):
         v = clip(self.variables().get('logistic').value, -20, 20)
         x = 1 / (1 + exp(-v))
-        return clip(x, 1e-5, 1 - 1e-5)
+        return clip(x, epsilon.tiny, 1 - epsilon.tiny)
 
     @property
     def beta(self):
