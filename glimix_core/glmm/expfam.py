@@ -3,9 +3,8 @@ from __future__ import absolute_import, division, unicode_literals
 from copy import copy
 
 from liknorm import LikNormMachine
-from numpy import ascontiguousarray, exp, dot, asarray
-from numpy.linalg import norm
-from numpy.linalg import solve
+from numpy import asarray, ascontiguousarray, dot, exp
+from numpy.linalg import norm, solve
 
 from glimix_core.ep import EPLinearKernel
 from numpy_sugar import epsilon

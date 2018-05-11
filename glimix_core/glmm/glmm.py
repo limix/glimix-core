@@ -2,14 +2,14 @@ from __future__ import absolute_import, division, unicode_literals
 
 from copy import copy
 
-from numpy import asarray, clip, dot, exp, finfo, log, zeros, eye
-from optimix import Function, Scalar, Vector
+from numpy import asarray, clip, dot, exp, eye, finfo, log, zeros
 
 from numpy_sugar import epsilon
 from numpy_sugar.linalg import ddot, sum2diag
+from optimix import Function, Scalar, Vector
 
 from ..util import (check_covariates, check_economic_qs, check_outcome,
-                    normalise_outcome)
+                    economic_qs_zeros, normalise_outcome)
 
 
 class GLMM(Function):
@@ -67,7 +67,7 @@ class GLMM(Function):
         self._y = check_outcome(y, self._lik_name)
         self._X = check_covariates(X)
         if QS is None:
-            self._QS = None
+            self._QS = economic_qs_zeros(self._y.shape[0])
         else:
             self._QS = check_economic_qs(QS)
             if self._y.shape[0] != self._QS[0][0].shape[0]:

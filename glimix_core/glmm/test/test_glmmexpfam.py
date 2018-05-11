@@ -1,14 +1,14 @@
 import pytest
-from numpy import asarray, ascontiguousarray, dot, ones, sqrt, zeros
-from numpy import arange, eye, corrcoef
+from numpy import (arange, asarray, ascontiguousarray, corrcoef, dot, eye,
+                   ones, sqrt, zeros)
 from numpy.random import RandomState
 from numpy.testing import assert_allclose
-from numpy_sugar.linalg import economic_qs, economic_qs_linear
-from optimix import check_grad
 
 from glimix_core.example import linear_eye_cov, nsamples
 from glimix_core.glmm import GLMMExpFam, GLMMNormal
 from glimix_core.random import bernoulli_sample
+from numpy_sugar.linalg import economic_qs, economic_qs_linear
+from optimix import check_grad
 
 ATOL = 1e-3
 RTOL = 1e-3
@@ -409,3 +409,33 @@ def test_glmmexpfam_predict():
     r = nsuc_test / ntri_test
     assert_allclose(corrcoef([pm, r])[0, 1], 0.8236400028753632)
     assert_allclose(pk[0], 54.263491276875726)
+
+
+def test_glmmexpfam_qs_none():
+    random = RandomState(0)
+    X = random.randn(nsamples(), 5)
+    K = linear_eye_cov().feed().value()
+    z = random.multivariate_normal(0.2 * ones(nsamples()), K)
+
+    ntri = random.randint(1, 30, nsamples())
+    nsuc = zeros(nsamples(), dtype=int)
+    for (i, ni) in enumerate(ntri):
+        nsuc[i] += sum(z[i] + 0.2 * random.randn(ni) > 0)
+
+    ntri = ascontiguousarray(ntri)
+    glmm = GLMMExpFam((nsuc, ntri), 'binomial', X, None)
+
+    assert_allclose(glmm.lml(), -38.30173374439622, atol=ATOL, rtol=RTOL)
+    glmm.fix('beta')
+    glmm.fix('scale')
+
+    glmm.fit(verbose=False)
+
+    assert_allclose(glmm.lml(), -32.03927471370041, atol=ATOL, rtol=RTOL)
+
+    glmm.unfix('beta')
+    glmm.unfix('scale')
+
+    glmm.fit(verbose=False)
+
+    assert_allclose(glmm.lml(), -19.575736561760586, atol=ATOL, rtol=RTOL)

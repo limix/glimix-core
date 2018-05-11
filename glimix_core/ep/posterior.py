@@ -85,7 +85,10 @@ class Posterior(object):
         Q = self._cov['QS'][0][0]
         S = self._cov['QS'][1]
 
-        self.tau[:] = 1 / npsum((Q * sqrt(S))**2, axis=1)
+        if S.size > 0:
+            self.tau[:] = 1 / npsum((Q * sqrt(S))**2, axis=1)
+        else:
+            self.tau[:] = 0.0
         self.eta[:] = self._mean
         self.eta[:] *= self.tau
 

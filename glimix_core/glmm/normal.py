@@ -2,11 +2,10 @@ from __future__ import absolute_import, division, unicode_literals
 
 from copy import deepcopy
 
-from liknorm import LikNormMachine
-from numpy import asarray, dot, exp, log, pi, trace, zeros, eye
+from numpy import dot, exp, eye, log, pi, trace, zeros
 from numpy.linalg import slogdet, solve
+
 from numpy_sugar.linalg import ddot, economic_qs, sum2diag
-from optimix import Function, Scalar, Vector
 
 from ..lmm import FastScanner
 from .glmm import GLMM
