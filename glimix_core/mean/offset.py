@@ -15,6 +15,21 @@ class OffsetMean(Function):
         f(n) = o \mathbf 1
 
     where :math:`\mathbf 1` is a :math:`n`-sized vector of ones.
+
+    Example
+    -------
+
+    .. doctest::
+
+        >>> from glimix_core.mean import OffsetMean
+        >>>
+        >>> mean = OffsetMean()
+        >>> mean.offset = 2.0
+        >>> x = [0, 1, 2]
+        >>> print(mean.value(x))
+        [2. 2. 2.]
+        >>> print(mean.gradient(x))
+        {'offset': array([1., 1., 1.])}
     """
 
     def __init__(self):
@@ -30,7 +45,8 @@ class OffsetMean(Function):
 
         Returns
         -------
-        :math:`o \mathbf 1`.
+        float
+            :math:`o \mathbf 1`.
         """
         x = asarray(x)
         return full(x.shape, self.variables().get('offset').value)
@@ -45,7 +61,8 @@ class OffsetMean(Function):
 
         Returns
         -------
-        :math:`\mathbf 1`.
+        dict
+            Dictionary having the `offset` key for :math:`\mathbf 1`.
         """
         x = asarray(x)
         return dict(offset=ones(x.shape))

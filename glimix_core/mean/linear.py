@@ -15,6 +15,26 @@ class LinearMean(Function):
         f(\mathbf x) = \mathbf x^\intercal \boldsymbol\alpha
 
     where :math:`\boldsymbol\alpha` is a vector of effect sizes.
+
+    Parameters
+    ----------
+    size : int
+        Number of effects.
+
+    Example
+    -------
+
+    .. doctest::
+
+        >>> from glimix_core.mean import LinearMean
+        >>>
+        >>> mean = LinearMean(2)
+        >>> mean.effsizes = [1.0, -1.0]
+        >>> x = [5.1, 1.0]
+        >>> print(mean.value(x))
+        4.1
+        >>> print(mean.gradient(x))
+        {'effsizes': [5.1, 1.0]}
     """
 
     def __init__(self, size):
@@ -30,7 +50,8 @@ class LinearMean(Function):
 
         Returns
         -------
-        float : :math:`\mathbf x^\intercal \boldsymbol\alpha`.
+        float
+            :math:`\mathbf x^\intercal \boldsymbol\alpha`.
         """
         return dot(x, self.variables().get('effsizes').value)
 
@@ -44,7 +65,8 @@ class LinearMean(Function):
 
         Returns
         -------
-        array_like : :math:`\mathbf x`.
+        dict
+            Dictionary having the `effsizes` key for :math:`\mathbf x`.
         """
         return dict(effsizes=x)
 

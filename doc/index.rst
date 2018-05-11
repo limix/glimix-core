@@ -2,6 +2,9 @@
 Glimix-core's documentation
 ===========================
 
+:Date: |today|
+:Version: |version|
+
 Fast inference for Generalised Linear Mixed Models.
 
 .. toctree::
