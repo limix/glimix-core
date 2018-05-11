@@ -75,7 +75,7 @@ class GLMMExpFam(GLMM):
                  y,
                  lik_name,
                  X,
-                 QS,
+                 QS=None,
                  n_int=1000,
                  rtol=epsilon.small * 1000,
                  atol=epsilon.small):

@@ -1,16 +1,16 @@
 from __future__ import division
 
-from numpy import clip, errstate, exp, log, dot, asarray
+from numpy import asarray, clip, dot, errstate, exp, log
 from numpy.linalg import solve
 from numpy_sugar import epsilon, is_all_finite
-from numpy_sugar.linalg import sum2diag
-from optimix import Function, Scalar, maximize_scalar
+
+from optimix import maximize_scalar
 
 from .core import LMMCore
 from .scan import FastScanner
 
 
-class LMM(LMMCore, Function):
+class LMM(LMMCore):
     r"""Fast Linear Mixed Models inference via maximum likelihood.
 
     It perform inference on the model :eq:`lmm1`, explained in the
@@ -70,12 +70,11 @@ class LMM(LMMCore, Function):
         -3.713
     """
 
-    def __init__(self, y, X, QS):
+    def __init__(self, y, X, QS=None):
         LMMCore.__init__(self, y, X, QS)
-        Function.__init__(self, logistic=Scalar(0.0))
 
         if not is_all_finite(y):
-            raise ValueError("There are non-finite values in the phenotype.")
+            raise ValueError("There are non-finite values in the outcome.")
 
         self.set_nodata()
 
@@ -103,29 +102,15 @@ class LMM(LMMCore, Function):
         o = LMM.__new__(LMM)
 
         LMMCore.__init__(o, self._y, self.X, self._QS)
-        Function.__init__(
-            o, logistic=Scalar(self.variables().get('logistic').value))
+        o.delta = self.delta
+        if self.isfixed('delta'):
+            o.fix('delta')
 
         setattr(o, '_fix_scale', self._fix_scale)
         setattr(o, '_scale', self._scale)
 
         o.set_nodata()
         return o
-
-    @property
-    def delta(self):
-        r"""Variance ratio between ``K`` and ``I``."""
-        # return self._delta
-        v = float(self.variables().get('logistic').value)
-        with errstate(over='ignore', under='ignore'):
-            v = 1 / (1 + exp(-v))
-        return clip(v, epsilon.tiny, 1 - epsilon.tiny)
-
-    @delta.setter
-    def delta(self, delta):
-        delta = clip(delta, epsilon.tiny, 1 - epsilon.tiny)
-        # self._delta = delta
-        self.variables().set(dict(logistic=log(delta / (1 - delta))))
 
     def isfixed(self, var_name):
         r"""Return whether a variable it is fixed or not.
@@ -143,7 +128,7 @@ class LMM(LMMCore, Function):
         if var_name not in ['delta', 'scale']:
             raise ValueError("Possible values are 'delta' and 'scale'.")
         if var_name == 'delta':
-            return Function.isfixed(self, 'logistic')
+            return super(LMM, self).isfixed('logistic')
         return self._fix_scale
 
     @property

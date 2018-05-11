@@ -2,7 +2,7 @@ from __future__ import absolute_import, division, unicode_literals
 
 from copy import copy
 
-from numpy import asarray, clip, dot, exp, finfo, log, zeros
+from numpy import asarray, clip, dot, exp, finfo, log, zeros, eye
 from optimix import Function, Scalar, Vector
 
 from numpy_sugar import epsilon
@@ -53,7 +53,7 @@ class GLMM(Function):
         Economic eigen decomposition.
     """
 
-    def __init__(self, y, lik_name, X, QS):
+    def __init__(self, y, lik_name, X, QS=None):
         y = normalise_outcome(y)
         X = asarray(X, float)
 
@@ -66,15 +66,17 @@ class GLMM(Function):
         self._lik_name = lik_name.lower()
         self._y = check_outcome(y, self._lik_name)
         self._X = check_covariates(X)
-        self._QS = check_economic_qs(QS)
+        if QS is None:
+            self._QS = None
+        else:
+            self._QS = check_economic_qs(QS)
+            if self._y.shape[0] != self._QS[0][0].shape[0]:
+                raise ValueError(
+                    "Number of samples in outcome and covariance differ.")
 
         if self._y.shape[0] != self._X.shape[0]:
             raise ValueError(
-                "Number of samples in " + "outcome and covariates differ.")
-
-        if self._y.shape[0] != self._QS[0][0].shape[0]:
-            raise ValueError(
-                "Number of samples in " + "outcome and covariance differ.")
+                "Number of samples in outcome and covariates differ.")
 
         self._factr = 1e5
         self._pgtol = 1e-6
@@ -123,6 +125,8 @@ class GLMM(Function):
         array_like
             :math:`v_0 \mathrm K + v_1 \mathrm I`.
         """
+        if self._QS is None:
+            return self.v1 * eye(self._y.shape[0])
         Q0 = self._QS[0][0]
         S0 = self._QS[1]
         return sum2diag(dot(ddot(Q0, self.v0 * S0), Q0.T), self.v1)

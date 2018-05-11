@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, unicode_literals
 from copy import deepcopy
 
 from liknorm import LikNormMachine
-from numpy import asarray, dot, exp, log, pi, trace, zeros
+from numpy import asarray, dot, exp, log, pi, trace, zeros, eye
 from numpy.linalg import slogdet, solve
 from numpy_sugar.linalg import ddot, economic_qs, sum2diag
 from optimix import Function, Scalar, Vector
@@ -42,7 +42,7 @@ class GLMMNormal(GLMM):
         Economic eigen decomposition of :math:`\mathrm K`.
     """
 
-    def __init__(self, eta, tau, X, QS):
+    def __init__(self, eta, tau, X, QS=None):
         self._cache = dict(value=None, grad=None)
         GLMM.__init__(self, (eta, tau), 'normal', X, QS)
         self.variables().get('beta').listen(self.clear_cache)
@@ -103,10 +103,14 @@ class GLMMNormal(GLMM):
         delta."""
         y = self.eta / self.tau
 
-        Q0 = self._QS[0][0]
-        S0 = self._QS[1]
-        K = dot(ddot(Q0, self.v0 * S0), Q0.T)
-        K = sum2diag(K, 1 / self.tau)
+        if self._QS is None:
+            K = eye(y.shape[0]) / self.tau
+        else:
+            Q0 = self._QS[0][0]
+            S0 = self._QS[1]
+            K = dot(ddot(Q0, self.v0 * S0), Q0.T)
+            K = sum2diag(K, 1 / self.tau)
+
         return FastScanner(y, self._X, economic_qs(K), self.v1)
 
     def gradient(self):
@@ -119,13 +123,15 @@ class GLMMNormal(GLMM):
         v0 = scale * (1 - delta)
         v1 = scale * delta
 
-        Q0 = self._QS[0][0]
-        S0 = self._QS[1]
-
         mu = self.eta / self.tau
-        K = dot(ddot(Q0, S0), Q0.T)
+        n = len(mu)
+        if self._QS is None:
+            K = zeros((n, n))
+        else:
+            Q0 = self._QS[0][0]
+            S0 = self._QS[1]
+            K = dot(ddot(Q0, S0), Q0.T)
 
-        n = K.shape[0]
         A = sum2diag(sum2diag(v0 * K, v1), 1 / self.tau)
         X = self._X
 
@@ -197,13 +203,15 @@ class GLMMNormal(GLMM):
         v0 = scale * (1 - delta)
         v1 = scale * delta
 
-        Q0 = self._QS[0][0]
-        S0 = self._QS[1]
-
         mu = self.eta / self.tau
-        K = dot(ddot(Q0, S0), Q0.T)
+        n = len(mu)
+        if self._QS is None:
+            K = zeros((n, n))
+        else:
+            Q0 = self._QS[0][0]
+            S0 = self._QS[1]
+            K = dot(ddot(Q0, S0), Q0.T)
 
-        n = K.shape[0]
         A = sum2diag(sum2diag(v0 * K, v1), 1 / self.tau)
         m = mu - self.mean()
 

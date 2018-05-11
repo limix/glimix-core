@@ -1,41 +1,54 @@
 from __future__ import division
 
+from numpy import all as npall
+from numpy import (asarray, atleast_2d, clip, dot, errstate, exp, full,
+                   isfinite, log, maximum, sqrt)
 from numpy import sum as npsum
-from numpy import asarray, atleast_2d, dot, log, maximum, sqrt, zeros, isfinite
-from numpy import all as npy_all
-
-from glimix_core.util import log2pi
+from numpy import zeros
 from numpy_sugar import epsilon
 from numpy_sugar.linalg import ddot, economic_svd, rsolve, sum2diag
 
+from glimix_core.util import log2pi
+from optimix import Function, Scalar
 
-class LMMCore(object):
+from ..util import economic_qs_zeros
+
+
+class LMMCore(Function):
     def __init__(self, y, X=None, QS=None, SVD=None):
+        Function.__init__(self, logistic=Scalar(0.0))
         y = asarray(y, float).ravel()
 
         if X is not None:
             X = atleast_2d(asarray(X, float).T).T
-            if not npy_all(isfinite(X)):
+            if not npall(isfinite(X)):
                 msg = "Not all values are finite in the covariates matrix."
                 raise ValueError(msg)
             n = X.shape[0]
         else:
             n = SVD[0].shape[0]
 
-        if not npy_all(isfinite(y)):
+        if not npall(isfinite(y)):
             raise ValueError("Not all values are finite in the outcome array.")
 
+        if QS is None:
+            QS = economic_qs_zeros(n)
+            self.delta = 1.0
+            super(LMMCore, self).fix('logistic')
+        else:
+            self.delta = 0.5
+
         if not isinstance(QS, tuple):
-            raise ValueError("I was expecting a tuple for the covariance "
+            raise ValueError("I was expecting a tuple for the covariance ")
+
+        if QS[0][0].shape[0] != y.shape[0]:
+            raise ValueError("Number of samples differs between outcome"
+                             " and covariance decomposition"
                              "decomposition")
 
         if y.shape[0] != n:
             raise ValueError("Number of samples differs between outcome "
                              "and covariates.")
-
-        if QS[0][0].shape[0] != y.shape[0]:
-            raise ValueError("Number of samples differs between outcome"
-                             " and covariance decomposition")
 
         self._QS = QS
         self._y = y
@@ -50,9 +63,12 @@ class LMMCore(object):
 
     @property
     def _D(self):
-        D = [self._QS[1] * (1 - self.delta) + self.delta]
-        if self._QS[0][1].size > 0:
-            D += [self.delta]
+        D = []
+        n = self._y.shape[0]
+        if self._QS[1].size > 0:
+            D += [self._QS[1] * (1 - self.delta) + self.delta]
+        if self._QS[1].size < n:
+            D += [full(n - self._QS[1].size, self.delta)]
         return D
 
     def _lml_optimal_scale(self):
@@ -68,9 +84,7 @@ class LMMCore(object):
 
         n = len(self._y)
         lml = -n * log2pi - n - n * log(self.scale)
-        lml -= npsum(log(self._D[0]))
-        if n > self._QS[1].shape[0]:
-            lml -= (n - self._QS[1].shape[0]) * log(self._D[1])
+        lml -= sum(npsum(log(D)) for D in self._D)
 
         return lml / 2
 
@@ -88,9 +102,7 @@ class LMMCore(object):
         n = len(self._y)
         lml = -n * log2pi - n * log(s)
 
-        lml -= npsum(log(self._D[0]))
-        if n > self._QS[1].shape[0]:
-            lml -= (n - self._QS[1].shape[0]) * log(self._D[1])
+        lml -= sum(npsum(log(D)) for D in self._D)
 
         d = (mTQ - yTQ for (mTQ, yTQ) in zip(self._mTQ, self._yTQ))
         lml += sum(
@@ -205,14 +217,16 @@ class LMMCore(object):
 
     @property
     def delta(self):
-        raise NotImplementedError
+        r"""Variance ratio between ``K`` and ``I``."""
+        v = float(self.variables().get('logistic').value)
+        with errstate(over='ignore', under='ignore'):
+            v = 1 / (1 + exp(-v))
+        return clip(v, epsilon.tiny, 1 - epsilon.tiny)
 
     @delta.setter
-    def delta(self, _):
-        raise NotImplementedError
-
-    def isfixed(self, var_name):
-        raise NotImplementedError
+    def delta(self, delta):
+        delta = clip(delta, epsilon.tiny, 1 - epsilon.tiny)
+        self.variables().set(dict(logistic=log(delta / (1 - delta))))
 
     def lml(self):
         r"""Log of the marginal likelihood.

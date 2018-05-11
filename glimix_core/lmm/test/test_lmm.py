@@ -1,9 +1,10 @@
 from __future__ import division
 
 import pytest
-from numpy import arange, inf, nan, ones, sqrt, zeros, dot, corrcoef
+from numpy import arange, corrcoef, dot, inf, nan, ones, sqrt, zeros
 from numpy.random import RandomState
 from numpy.testing import assert_, assert_allclose
+from numpy_sugar.linalg import economic_qs_linear
 
 from glimix_core.cov import EyeCov, LinearCov, SumCov
 from glimix_core.lik import DeltaProdLik
@@ -11,7 +12,6 @@ from glimix_core.lmm import LMM
 from glimix_core.lmm.core import LMMCore
 from glimix_core.mean import OffsetMean
 from glimix_core.random import GGPSampler
-from numpy_sugar.linalg import economic_qs_linear
 
 
 def test_lmm_fix_unfix():
@@ -106,20 +106,6 @@ def test_lmm_nonfinite_outcome():
     y[0] = +inf
     with pytest.raises(ValueError):
         LMM(y, ones((N, 1)), QS)
-
-
-def test_lmm_lmmcore_interface():
-    random = RandomState(9458)
-    N = 5
-    QS = economic_qs_linear(random.randn(N, N + 1))
-    y = zeros(N)
-
-    lmmc = LMMCore(y, ones((N, 1)), QS)
-    with pytest.raises(NotImplementedError):
-        print(lmmc.delta)
-
-    with pytest.raises(NotImplementedError):
-        lmmc.delta = 1
 
 
 def test_lmm_redundant_covariates_fullrank():
@@ -223,3 +209,59 @@ def test_lmm_prediction():
     K = dot(X, X.T)
     pm = lmm.predictive_mean(ones((n, 1)), K, K.diagonal())
     assert_allclose(corrcoef(y, pm)[0, 1], 0.8358820971891354)
+
+
+def test_lmm_iid_prior():
+    random = RandomState(9458)
+    n = 30
+    X = _covariates_sample(random, n, n + 1)
+
+    offset = 1.0
+
+    y = _outcome_sample(random, offset, X)
+
+    lmm = LMM(y, ones((n, 1)), None)
+    print(lmm.isfixed('delta'))
+    print(lmm.delta)
+
+    # assert_(not lmm.isfixed('delta'))
+    # lmm.fix('delta')
+    # assert_(lmm.isfixed('delta'))
+    #
+    # assert_(not lmm.isfixed('scale'))
+    # lmm.fix('scale')
+    # assert_(lmm.isfixed('scale'))
+    #
+    # lmm.scale = 1.0
+    # lmm.delta = 0.5
+
+    # lmm.fit(verbose=True)
+
+    # assert_allclose(lmm.beta[0], 0.7065598068496923)
+    # assert_allclose(lmm.scale, 1.0)
+    # assert_allclose(lmm.delta, 0.5)
+    # assert_allclose(lmm.v0, 0.5)
+    # assert_allclose(lmm.v1, 0.5)
+    # assert_allclose(lmm.lml(), -57.56642490856645)
+    #
+    # lmm.unfix('scale')
+    # lmm.fit(verbose=False)
+    #
+    # assert_allclose(lmm.beta[0], 0.7065598068496923)
+    # assert_allclose(lmm.v0, 1.060029052117017)
+    # assert_allclose(lmm.v1, 1.060029052117017)
+    # assert_allclose(lmm.lml(), -52.037205784544476)
+    #
+    # lmm.unfix('delta')
+    # lmm.fit(verbose=False)
+    #
+    # assert_allclose(lmm.beta[0], 0.7065598068496922, rtol=1e-5)
+    # assert_allclose(lmm.v0, 0.5667112269084563, rtol=1e-5)
+    # assert_allclose(lmm.v1, 1.3679269553495002, rtol=1e-5)
+    # assert_allclose(lmm.lml(), -51.84396136865774, rtol=1e-5)
+    #
+    # with pytest.raises(ValueError):
+    #     lmm.fix('deltaa')
+    #
+    # with pytest.raises(ValueError):
+    #     lmm.isfixed('deltaa')
