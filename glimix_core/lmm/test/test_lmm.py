@@ -223,6 +223,7 @@ def test_lmm_iid_prior():
 
     assert_(lmm.isfixed('delta'))
 
+    assert_allclose(lmm.lml(), -52.29638826846387)
     lmm.fit(verbose=False)
 
     assert_allclose(lmm.beta[0], 0.7065598068496929)

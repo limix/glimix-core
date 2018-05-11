@@ -1,16 +1,16 @@
 from __future__ import division
 
-from numpy import arange, concatenate, newaxis, ones, sqrt, array
+from numpy import arange, array, concatenate, newaxis, ones, sqrt
 from numpy.random import RandomState
 from numpy.testing import assert_allclose
-from numpy_sugar.linalg import economic_qs_linear, economic_qs
+from numpy_sugar.linalg import economic_qs, economic_qs_linear
 
 from glimix_core.cov import EyeCov, LinearCov, SumCov
 from glimix_core.lik import DeltaProdLik
 from glimix_core.lmm import LMM
+from glimix_core.lmm.scan import FastScanner
 from glimix_core.mean import OffsetMean
 from glimix_core.random import GGPSampler
-from glimix_core.lmm.scan import FastScanner
 
 
 def test_scan_fix_unfix():
@@ -114,9 +114,7 @@ def test_scan_fastlmm_redundant_candidates():
     fast_scanner = lmm.get_fast_scanner()
 
     lmls = fast_scanner.fast_scan(markers, verbose=False)[0]
-    assert_allclose(
-        lmls, [-13.897468, -13.897468, -13.897468, -13.897468, -13.897468],
-        rtol=1e-5)
+    assert_allclose(lmls, [-9.929912871392519] * 5, rtol=1e-5)
 
 
 def test_scan_fastlmm_set_scale_1covariate():

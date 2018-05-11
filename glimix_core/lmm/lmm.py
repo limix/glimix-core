@@ -162,7 +162,8 @@ class LMM(LMMCore):
             ``True`` for progress output; ``False`` otherwise.
             Defaults to ``True``.
         """
-        maximize_scalar(self, 'LMM', verbose=verbose)
+        if not self.isfixed('delta'):
+            maximize_scalar(self, 'LMM', verbose=verbose)
         self._update()
         self.delta = self._get_delta()
 
