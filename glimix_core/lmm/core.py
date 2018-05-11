@@ -5,10 +5,10 @@ from numpy import (asarray, atleast_2d, clip, dot, errstate, exp, full,
                    isfinite, log, maximum, sqrt)
 from numpy import sum as npsum
 from numpy import zeros
-from numpy_sugar import epsilon
-from numpy_sugar.linalg import ddot, economic_svd, rsolve, sum2diag
 
 from glimix_core.util import log2pi
+from numpy_sugar import epsilon
+from numpy_sugar.linalg import ddot, economic_svd, rsolve, sum2diag
 from optimix import Function, Scalar
 
 from ..util import economic_qs_zeros

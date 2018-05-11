@@ -2,7 +2,7 @@ from __future__ import absolute_import, division, unicode_literals
 
 from copy import copy
 
-from numpy import asarray, clip, dot, exp, eye, finfo, log, zeros
+from numpy import asarray, clip, dot, exp, finfo, log, zeros
 
 from numpy_sugar import epsilon
 from numpy_sugar.linalg import ddot, sum2diag
@@ -125,8 +125,6 @@ class GLMM(Function):
         array_like
             :math:`v_0 \mathrm K + v_1 \mathrm I`.
         """
-        if self._QS is None:
-            return self.v1 * eye(self._y.shape[0])
         Q0 = self._QS[0][0]
         S0 = self._QS[1]
         return sum2diag(dot(ddot(Q0, self.v0 * S0), Q0.T), self.v1)
