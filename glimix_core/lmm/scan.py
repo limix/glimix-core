@@ -3,14 +3,15 @@ from __future__ import division
 from numpy import all as npall
 from numpy import (asarray, atleast_2d, clip, copyto, dot, empty, full, inf,
                    isfinite, log)
-from numpy import min as _min
+from numpy import min as npmin
 from numpy import newaxis
-from numpy import sum as _sum
+from numpy import sum as npsum
 from numpy import zeros
 from numpy.linalg import LinAlgError
+from tqdm import tqdm
+
 from numpy_sugar import epsilon
 from numpy_sugar.linalg import dotd, rsolve
-from tqdm import tqdm
 
 from ..util import hsolve, log2pi, wprint
 
@@ -34,6 +35,17 @@ class FastScanner(object):
     Variance :math:`v` is not optimised for performance reasons.
     The method assumes the user has provided a reasonable value for it.
 
+    Parameters
+    ----------
+    y : array_like
+    Real-valued outcome.
+    X : array_like
+    Matrix of covariates.
+    QS : tuple
+    Economic eigendecomposition ``((Q0, Q1), S0)`` of ``K``.
+    v : float
+    Variance due to iid effect.
+
     Notes
     -----
     The implementation requires further explanation as it is somehow obscure.
@@ -50,17 +62,6 @@ class FastScanner(object):
     :math:`\mathrm X^{\intercal}\mathrm B_i\mathbf m_j`,
     :math:`\mathbf m_j^{\intercal}\mathrm B_i\mathrm X`, and
     :math:`\mathbf m_j^{\intercal}\mathrm B_i\mathbf m_j`, respectively.
-
-    Parameters
-    ----------
-    y : array_like
-    Real-valued outcome.
-    X : array_like
-    Matrix of covariates.
-    QS : tuple
-    Economic eigendecomposition ``((Q0, Q1), S0)`` of ``K``.
-    v : float
-    Variance due to iid effect.
     """
 
     def __init__(self, y, X, QS, v):
@@ -80,18 +81,23 @@ class FastScanner(object):
         if not isfinite(v):
             raise ValueError("Variance has to be a finite value..")
 
-        D = [QS[1] + v, v]
-        yTQ = [dot(y.T, Q) for Q in QS[0]]
-        XTQ = [dot(X.T, Q) for Q in QS[0]]
+        D = []
+        if QS[1].size > 0:
+            D += [QS[1] + v]
+        if QS[1].size < y.shape[0]:
+            D += [full(y.shape[0] - QS[1].size, v)]
+        yTQ = [dot(y.T, Q) for Q in QS[0] if Q.size > 0]
+        XTQ = [dot(X.T, Q) for Q in QS[0] if Q.size > 0]
 
-        yTQDi = [l / r for (l, r) in zip(yTQ, D) if _min(r) > 0]
-        yTBy = _sum(_sum(i * i / j) for (i, j) in zip(yTQ, D) if _min(j) > 0)
+        yTQDi = [l / r for (l, r) in zip(yTQ, D) if npmin(r) > 0]
+        yTBy = npsum(
+            npsum(i * i / j) for (i, j) in zip(yTQ, D) if npmin(j) > 0)
         yTBX = [dot(i, j.T) for (i, j) in zip(yTQDi, XTQ)]
-        XTQDi = [i / j for (i, j) in zip(XTQ, D) if _min(j) > 0]
+        XTQDi = [i / j for (i, j) in zip(XTQ, D) if npmin(j) > 0]
 
         self._yTBy = yTBy
         self._yTBX = yTBX
-        self._ETBE = [ETBE(i, j) for (i, j) in zip(XTQDi, XTQ)]
+        self._ETBE = [_ETBE(i, j) for (i, j) in zip(XTQDi, XTQ)]
         self._yTBE = [empty(len(i) + 1) for i in yTBX]
         self._XTQ = XTQ
         self._yTQDi = yTQDi
@@ -108,14 +114,12 @@ class FastScanner(object):
 
     @property
     def _ncovariates(self):
-        return self._XTQ[0].shape[0]
+        return self._X.shape[1]
 
     def _static_lml(self):
         n = self._nsamples
-        p = len(self._D[0])
         static_lml = -n * log2pi - n
-        static_lml -= _sum(_safe_log(self._D[0]))
-        static_lml -= (n - p) * _safe_log(self._D[1])
+        static_lml -= sum(npsum(_safe_log(D)) for D in self._D)
         return static_lml
 
     def _fast_scan_chunk(self, M):
@@ -127,11 +131,11 @@ class FastScanner(object):
         if not npall(isfinite(M)):
             raise ValueError("One or more variants have non-finite value.")
 
-        MTQ = [dot(M.T, Q) for Q in self._QS[0]]
+        MTQ = [dot(M.T, Q) for Q in self._QS[0] if Q.size > 0]
         yTBM = [dot(i, j.T) for (i, j) in zip(self._yTQDi, MTQ)]
         XTBM = [dot(i, j.T) for (i, j) in zip(self._XTQDi, MTQ)]
         D = self._D
-        MTBM = [_sum(i / j * i, 1) for i, j in zip(MTQ, D) if _min(j) > 0]
+        MTBM = [npsum(i / j * i, 1) for i, j in zip(MTQ, D) if npmin(j) > 0]
 
         lmls = full(M.shape[1], self._static_lml())
         effsizes = empty(M.shape[1])
@@ -299,7 +303,7 @@ class FastScanner(object):
         self._scale = None
 
 
-class ETBE(object):
+class _ETBE(object):
     def __init__(self, XTQDi, XTQ):
         n = XTQDi.shape[0] + 1
         self._data = empty((n, n))
@@ -339,7 +343,7 @@ def _bstar(beta, yTBy, yTBX, yTBM, XTBX, XTBM, MTBM):
     r -= 2 * sum(i * beta[1] for i in yTBM)
     r += sum(dotd(beta[0].T, dot(i, beta[0])) for i in XTBX)
     r += sum(dotd(beta[0].T, i * beta[1]) for i in XTBM)
-    r += sum(_sum(beta[1] * i * beta[0], axis=0) for i in XTBM)
+    r += sum(npsum(beta[1] * i * beta[0], axis=0) for i in XTBM)
     r += sum(beta[1] * i * beta[1] for i in MTBM)
     return r
 

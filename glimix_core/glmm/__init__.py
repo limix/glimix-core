@@ -47,12 +47,6 @@ a closed-form solution otherwise (refer to
 The class :class:`glimix_core.glmm.GLMM` is a base classe for those two
 implementations, providing common methods to query the model.
 
-GLMM class
-^^^^^^^^^^
-
-.. autoclass:: glimix_core.glmm.GLMM
-    :members:
-
 GLMMExpFam class
 ^^^^^^^^^^^^^^^^
 
@@ -67,7 +61,6 @@ GLMMNormal class
 """
 
 from .expfam import GLMMExpFam
-from .glmm import GLMM
 from .normal import GLMMNormal
 
-__all__ = ['GLMM', 'GLMMNormal', 'GLMMExpFam']
+__all__ = ['GLMMNormal', 'GLMMExpFam']

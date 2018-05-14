@@ -10,7 +10,7 @@ from glimix_core.ep import EPLinearKernel
 from numpy_sugar import epsilon
 from numpy_sugar.linalg import sum2diag
 
-from .glmm import GLMM
+from ._glmm import GLMM
 
 
 class GLMMExpFam(GLMM):

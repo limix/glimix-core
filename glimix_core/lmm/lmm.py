@@ -2,11 +2,11 @@ from __future__ import division
 
 from numpy import asarray, clip, dot, exp
 from numpy.linalg import solve
-from numpy_sugar import epsilon, is_all_finite
 
+from numpy_sugar import epsilon, is_all_finite
 from optimix import maximize_scalar
 
-from .core import LMMCore
+from ._core import LMMCore
 from .scan import FastScanner
 
 
@@ -28,7 +28,6 @@ class LMM(LMMCore):
 
     Examples
     --------
-
     .. doctest::
 
         >>> from numpy import array
@@ -85,6 +84,7 @@ class LMM(LMMCore):
 
     @property
     def beta(self):
+        r"""Fixed-effect sizes."""
         return LMMCore.beta.fget(self)
 
     def copy(self):
@@ -211,7 +211,7 @@ class LMM(LMMCore):
         QS = (self._QS[0], v0 * self._QS[1])
         return FastScanner(self._y, self.X, QS, v1)
 
-    def lml(self):
+    def lml(self):  # noqa: D102
         self.delta = self._get_delta()
         return LMMCore.lml(self)
 
@@ -227,7 +227,7 @@ class LMM(LMMCore):
         return LMMCore.mean.fget(self)
 
     @property
-    def scale(self):
+    def scale(self):  # noqa: D102
         if self._fix_scale:
             return self._scale
         return LMMCore.scale.fget(self)
@@ -251,29 +251,29 @@ class LMM(LMMCore):
         else:
             self._fix_scale = False
 
-    def value(self, *_):
+    def value(self, *_):  # noqa: D102
         self.delta = self._get_delta()
         return self.lml()
 
     @property
-    def X(self):
+    def X(self):  # noqa: D102
         return LMMCore.X.fget(self)
 
     @X.setter
     def X(self, X):
         LMMCore.X.fset(self, X)
 
-    def gradient(self, *_):
+    def gradient(self, *_):  # noqa: D102
         raise NotImplementedError
 
-    def predictive_mean(self, Xstar, ks, kss):
+    def predictive_mean(self, Xstar, ks, kss):  # noqa: D102
         mstar = self.mean_star(Xstar)
         ks = self.covariance_star(ks)
         m = self.mean
         K = LMMCore.covariance(self)
         return mstar + dot(ks, solve(K, self._y - m))
 
-    def predictive_covariance(self, Xstar, ks, kss):
+    def predictive_covariance(self, Xstar, ks, kss):  # noqa: D102
         kss = self.variance_star(kss)
         ks = self.covariance_star(ks)
         K = LMMCore.covariance(self)

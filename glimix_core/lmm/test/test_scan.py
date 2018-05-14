@@ -3,7 +3,6 @@ from __future__ import division
 from numpy import arange, array, concatenate, newaxis, ones, sqrt
 from numpy.random import RandomState
 from numpy.testing import assert_allclose
-from numpy_sugar.linalg import economic_qs, economic_qs_linear
 
 from glimix_core.cov import EyeCov, LinearCov, SumCov
 from glimix_core.lik import DeltaProdLik
@@ -11,6 +10,7 @@ from glimix_core.lmm import LMM
 from glimix_core.lmm.scan import FastScanner
 from glimix_core.mean import OffsetMean
 from glimix_core.random import GGPSampler
+from numpy_sugar.linalg import economic_qs, economic_qs_linear
 
 
 def test_scan_fix_unfix():
@@ -375,3 +375,21 @@ def _covariates_sample(random, n, p):
     X /= X.std(0)
     X /= sqrt(X.shape[1])
     return X
+
+
+def test_scan_lmm_iid_prior():
+    random = RandomState(9458)
+    n = 30
+    X = _covariates_sample(random, n, n + 1)
+    markers = random.randn(n, 2)
+
+    offset = 1.0
+
+    y = _outcome_sample(random, offset, X)
+
+    lmm = LMM(y, ones((n, 1)), None)
+
+    lmm.fit(verbose=False)
+    fast_scanner = lmm.get_fast_scanner()
+    lmls = fast_scanner.fast_scan(markers, verbose=False)[0]
+    assert_allclose(lmls[:2], [-63.16019973550036, -62.489358539276715])

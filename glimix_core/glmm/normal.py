@@ -8,7 +8,7 @@ from numpy.linalg import slogdet, solve
 from numpy_sugar.linalg import ddot, economic_qs, sum2diag
 
 from ..lmm import FastScanner
-from .glmm import GLMM
+from ._glmm import GLMM
 
 
 class GLMMNormal(GLMM):
