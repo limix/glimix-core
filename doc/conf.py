@@ -18,9 +18,12 @@ def _get_name():
 
 extensions = [
     'sphinx.ext.autodoc', 'sphinx.ext.doctest', 'sphinx.ext.viewcode',
-    'sphinx.ext.intersphinx', 'sphinx.ext.napoleon', 'sphinx.ext.mathjax'
+    'sphinx.ext.intersphinx', 'sphinx.ext.napoleon', 'sphinx.ext.mathjax',
+    'sphinx.ext.autosummary'
 ]
 
+autodoc_default_flags = ['members']
+autosummary_generate = True
 napoleon_numpy_docstring = True
 templates_path = ['_templates']
 

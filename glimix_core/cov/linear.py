@@ -12,7 +12,7 @@ class LinearCov(Function):
 
     .. math::
 
-        f(\mathrm x_0, \mathrm x_1) = s \mathrm x_0^\intercal \mathrm x_1
+        f(\mathrm x_0, \mathrm x_1) = s \mathrm x_0^\intercal \mathrm x_1,
 
     where :math:`s` is the scale parameter.
     """
@@ -30,13 +30,18 @@ class LinearCov(Function):
         self.variables().get('logscale').value = log(scale)
 
     def value(self, x0, x1):
-        r"""Covariance function evaluated at `(x0, x1)`.
+        r"""Covariance function evaluated at ``(x0, x1)``.
 
-        Args:
-            x0 (array_like): left-hand side sample or samples.
-            x1 (array_like): right-hand side sample or samples.
+        Parameters
+        ----------
+        x0 : array_like
+            Left-hand side sample or samples.
+        x1 : array_like
+            Right-hand side sample or samples.
 
-        Returns:
+        Returns
+        -------
+        array_like
             :math:`s \mathrm x_0^\intercal \mathrm x_1`.
         """
         x0 = stack(x0, axis=0)
@@ -44,16 +49,25 @@ class LinearCov(Function):
         return self.scale * x0.dot(x1.T)
 
     def gradient(self, x0, x1):
-        r"""Derivative of the covariance function evaluated at `(x0, x1)`.
+        r"""Derivative of the covariance function evaluated at ``(x0, x1)``.
 
-        Derivative of the covariance function over :math:`\log(s)`.
+        Derivative of the covariance function over :math:`\log(s)`:
 
-        Args:
-            x0 (array_like): left-hand side sample or samples.
-            x1 (array_like): right-hand side sample or samples.
+        .. math::
 
-        Returns:
-            :math:`s \mathrm x_0^\intercal \mathrm x_1`.
+            s \mathrm x_0^\intercal \mathrm x_1.
+
+        Parameters
+        ----------
+        x0 : array_like
+            Left-hand side sample or samples.
+        x1 : array_like
+            Right-hand side sample or samples.
+
+        Returns
+        -------
+        dict
+            Dictionary having the `logscale` key for the derivative.
         """
         x0 = stack(x0, axis=0)
         x1 = stack(x1, axis=0)

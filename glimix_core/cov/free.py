@@ -1,4 +1,3 @@
-# pylint: disable=E1101
 from __future__ import division
 
 from numpy import dot, ones, stack, tril_indices_from, zeros, zeros_like
@@ -7,20 +6,54 @@ from optimix import Function, Vector
 
 
 class FreeFormCov(Function):
-    """
-    General semi-definite positive matrix with no contraints.
-    A free-form covariance matrix of dimension d has 1/2 * d * (d + 1) params
+    r"""General semi-definite positive matrix.
+
+    A :math:`d`-by-:math:`d` covariance matrix :math:`\mathrm K` will have
+    ``((d + 1) * d) / 2`` parameters defining the lower triangular part of
+    the Cholesky matrix ``L``: :math:`\mathrm L\mathrm L^\intercal=\mathrm K`.
+
+    Parameters
+    ----------
+    size : int
+        Dimension :math:`d` of the free-form covariance matrix.
+
+    Example
+    -------
+
+    .. doctest::
+
+        >>> from glimix_core.cov import FreeFormCov
+        >>>
+        >>> cov = FreeFormCov(2)
+        >>> print(cov.value([0, 1], [0, 1]))
+        [[1. 1.]
+         [1. 2.]]
+        >>> print(cov.L)
+        [[1. 0.]
+         [1. 1.]]
+        >>> print(cov.Lu)
+        [1. 1. 1.]
+        >>> g = cov.gradient([0, 1], [0, 1])
+        >>> print(g['Lu'].shape)
+        (2, 2, 3)
+        >>> print(g['Lu'])
+        [[[2. 0. 0.]
+          [1. 1. 0.]]
+        <BLANKLINE>
+         [[1. 1. 0.]
+          [0. 2. 2.]]]
+        >>> cov.Lu[1] = -2
+        >>> print(cov.L)
+        [[ 1.  0.]
+         [-2.  1.]]
+        >>> print(cov.value([0, 1], [0, 1]))
+        [[ 1. -2.]
+         [-2.  5.]]
     """
 
     def __init__(self, size):
-        """
-        Args:
-            dim:        dimension of the free-form covariance
-            jitter:     extent of diagonal offset which is added for numerical
-                        stability (default value: 1e-4)
-        """
-        tsize = ((size + 1) * size) / 2
-        tsize = int(tsize)
+        size = int(size)
+        tsize = ((size + 1) * size) // 2
         self._L = zeros((size, size))
         self._tril = tril_indices_from(self._L)
         self._L[self._tril] = 1
@@ -28,6 +61,7 @@ class FreeFormCov(Function):
 
     @property
     def L(self):
+        """Cholesky decomposition of the covariance matrix."""
         self._L[self._tril] = self.variables().get('Lu').value
         return self._L
 
@@ -38,6 +72,7 @@ class FreeFormCov(Function):
 
     @property
     def Lu(self):
+        """Cholesky decomposition of the covariance matrix in flat form."""
         return self.variables().get('Lu').value
 
     @Lu.setter
@@ -45,9 +80,42 @@ class FreeFormCov(Function):
         self.variables().get('Lu').value = value
 
     def value(self, x0, x1):
+        r"""Covariance function evaluated at ``(x0, x1)``.
+
+        Parameters
+        ----------
+        x0 : array_like
+            Left-hand side sample indices.
+        x1 : array_like
+            Right-hand side sample indices.
+
+        Returns
+        -------
+        array_like
+            Submatrix of :math:`\mathrm L\mathrm L^\intercal`, row and
+            column-indexed by ``x0`` and ``x1``.
+        """
         return dot(self.L, self.L.T)[x0, ...][..., x1]
 
     def gradient(self, x0, x1):
+        r"""Derivative of the covariance function evaluated at ``(x0, x1)``.
+
+        Derivative over the lower triangular part of :math:`\mathrm L`.
+
+        Parameters
+        ----------
+        x0 : array_like
+            Left-hand side sample indices.
+        x1 : array_like
+            Right-hand side sample indices.
+
+        Returns
+        -------
+        dict
+            Dictionary having the `Lu` key for the lower triangular part
+            of the derivative of :math:`\mathrm L\mathrm L^\intercal`, row and
+            column-indexed by ``x0`` and ``x1``.
+        """
         L = self.L
         Lo = zeros_like(L)
         grad = []
