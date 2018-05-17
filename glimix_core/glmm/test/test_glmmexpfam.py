@@ -246,6 +246,42 @@ def test_glmmexpfam_bernoulli_problematic():
     assert_allclose(model.beta, [-0.00247856564728], atol=ATOL, rtol=RTOL)
 
 
+def test_glmmexpfam_bernoulli_probit_problematic():
+    random = RandomState(1)
+    N = 30
+    G = random.randn(N, N + 50)
+    y = bernoulli_sample(0.0, G, random_state=random)
+    y = (y, )
+
+    G = ascontiguousarray(G, dtype=float)
+    _stdnorm(G, 0, out=G)
+    G /= sqrt(G.shape[1])
+
+    QS = economic_qs_linear(G)
+    S0 = QS[1]
+    S0 /= S0.mean()
+
+    X = ones((len(y[0]), 1))
+    model = GLMMExpFam(y, 'bernoulli_probit', X, QS=(QS[0], QS[1]))
+    model.delta = 0
+    model.fix('delta')
+    model.fit(verbose=False)
+    assert_allclose(model.lml(), -10.397208931928175, atol=ATOL, rtol=RTOL)
+    assert_allclose(model.delta, 0, atol=1e-3)
+    assert_allclose(model.scale, 0.0020000000000000005, atol=ATOL, rtol=RTOL)
+    assert_allclose(model.beta, [5.898199725925706], atol=ATOL, rtol=RTOL)
+
+    model.unfix('delta')
+    model.delta = 0.5
+    model.scale = 1.0
+    model.fit(verbose=False)
+
+    assert_allclose(model.lml(), -10.397288272000074, atol=ATOL, rtol=RTOL)
+    assert_allclose(model.delta, 0.5009423974512935, atol=1e-3)
+    assert_allclose(model.scale, 0.034015807023543426, atol=ATOL, rtol=RTOL)
+    assert_allclose(model.beta, [5.897801980496132], atol=ATOL, rtol=RTOL)
+
+
 def _stdnorm(X, axis=None, out=None):
     X = ascontiguousarray(X)
     if out is None:
