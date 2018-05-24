@@ -87,6 +87,11 @@ class LMM(LMMCore):
         r"""Fixed-effect sizes."""
         return LMMCore.beta.fget(self)
 
+    @beta.setter
+    def beta(self, beta):
+        r"""Set fixed-effect sizes."""
+        LMMCore.beta.fset(self, beta)
+
     def copy(self):
         r"""Return a copy of this object.
 
@@ -108,6 +113,7 @@ class LMM(LMMCore):
 
         setattr(o, '_fix_scale', self._fix_scale)
         setattr(o, '_scale', self._scale)
+        setattr(o, '_fix_beta', self._fix_beta)
 
         o.set_nodata()
         return o
@@ -125,10 +131,13 @@ class LMM(LMMCore):
         bool
             ``True`` if fixed; ``False`` otherwise.
         """
-        if var_name not in ['delta', 'scale']:
-            raise ValueError("Possible values are 'delta' and 'scale'.")
+        if var_name not in ['delta', 'scale', 'beta']:
+            msg = "Possible values are 'delta', 'scale', and 'beta'."
+            raise ValueError(msg)
         if var_name == 'delta':
             return super(LMM, self).isfixed('logistic')
+        if var_name == 'beta':
+            return self._fix_beta
         return self._fix_scale
 
     @property
@@ -175,11 +184,14 @@ class LMM(LMMCore):
         var_name : str
             Possible values are `delta` and `scale`.
         """
-        if var_name not in ['delta', 'scale']:
-            raise ValueError("Possible values are 'delta' and 'scale'.")
+        if var_name not in ['delta', 'scale', 'beta']:
+            msg = "Possible values are 'delta', 'scale', and 'beta'."
+            raise ValueError(msg)
 
         if var_name == 'delta':
             super(LMM, self).fix('logistic')
+        elif var_name == 'beta':
+            self._fix_beta = True
         else:
             if not self._fix_scale:
                 self._scale = self.scale
@@ -244,10 +256,13 @@ class LMM(LMMCore):
         var_name : str
             Possible values are `delta` and `scale`.
         """
-        if var_name not in ['delta', 'scale']:
-            raise ValueError("Possible values are 'delta' and 'scale'.")
+        if var_name not in ['delta', 'scale', 'beta']:
+            msg = "Possible values are 'delta', 'scale', and 'beta'."
+            raise ValueError(msg)
         if var_name == 'delta':
             super(LMM, self).unfix('logistic')
+        elif var_name == 'beta':
+            self._fix_beta = False
         else:
             self._fix_scale = False
 

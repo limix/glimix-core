@@ -68,6 +68,26 @@ def test_lmm_fix_unfix():
     with pytest.raises(ValueError):
         lmm.isfixed('deltaa')
 
+    lmm = LMM(y, ones((n, 1)), QS)
+    lmm.fix('beta')
+    lmm.beta = [1.5]
+    assert_allclose(lmm.lml(), -59.02992868385325)
+    assert_allclose(lmm.beta[0], 1.5)
+    lmm.fit(verbose=False)
+    assert_allclose(lmm.lml(), -56.56425503034913)
+    assert_allclose(lmm.beta[0], 1.5)
+    lmm.unfix('beta')
+    assert_allclose(lmm.lml(), -52.2963882611983)
+    assert_allclose(lmm.beta[0], 0.7065598068496929)
+    lmm.fit(verbose=False)
+    assert_allclose(lmm.lml(), -51.84396136865775)
+    assert_allclose(lmm.beta[0], 0.7065598068496929)
+    lmm.fix('beta')
+    lmm.beta = lmm.beta[0] + 0.01
+    assert_allclose(lmm.lml(), -51.84505787833421)
+    lmm.beta = lmm.beta[0] - 2 * 0.01
+    assert_allclose(lmm.lml(), -51.84505787833422)
+
 
 def test_lmm_unique_outcome():
     random = RandomState(9458)

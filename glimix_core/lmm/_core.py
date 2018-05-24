@@ -54,6 +54,7 @@ class LMMCore(Function):
         self._y = y
         self._scale = 1.0
         self._fix_scale = False
+        self._fix_beta = False
 
         self._tM = None
         self._tbeta = None
@@ -139,6 +140,8 @@ class LMMCore(Function):
         return (self._tM.T.dot(Q) for Q in self._QS[0] if Q.size > 0)
 
     def _update_fixed_effects(self):
+        if self.isfixed('beta'):
+            return
         yTQDiQTm = list(self._yTQDiQTm)
         mTQDiQTm = list(self._mTQDiQTm)
         nominator = yTQDiQTm[0]
@@ -214,6 +217,12 @@ class LMMCore(Function):
         z = rsolve(SVs, self.mean)
         VsD = ddot(sqrt(self._svd[1]), self._svd[2])
         return rsolve(VsD, z)
+
+    @beta.setter
+    def beta(self, beta):
+        beta = asarray(beta, float)
+        VsD = ddot(sqrt(self._svd[1]), self._svd[2])
+        self._tbeta[:] = dot(VsD, beta)
 
     @property
     def delta(self):
