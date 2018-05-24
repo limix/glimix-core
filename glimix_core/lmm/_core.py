@@ -131,7 +131,7 @@ class LMMCore(Function):
             self._svd = economic_svd(X)
         else:
             self._svd = SVD
-        self._tM = ddot(self._svd[0], sqrt(self._svd[1]), left=False)
+        self._tM = ddot(self._svd[0], sqrt(self._svd[1]))
         self._tbeta = zeros(self._tM.shape[1])
 
     @property
@@ -210,9 +210,9 @@ class LMMCore(Function):
         array_like
             Optimal fixed-effect sizes.
         """
-        SVs = ddot(self._svd[0], sqrt(self._svd[1]), left=False)
+        SVs = ddot(self._svd[0], sqrt(self._svd[1]))
         z = rsolve(SVs, self.mean)
-        VsD = ddot(sqrt(self._svd[1]), self._svd[2], left=True)
+        VsD = ddot(sqrt(self._svd[1]), self._svd[2])
         return rsolve(VsD, z)
 
     @property

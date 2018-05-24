@@ -4,13 +4,13 @@ import pytest
 from numpy import arange, corrcoef, dot, inf, nan, ones, sqrt, zeros
 from numpy.random import RandomState
 from numpy.testing import assert_, assert_allclose
-from numpy_sugar.linalg import economic_qs_linear
 
 from glimix_core.cov import EyeCov, LinearCov, SumCov
 from glimix_core.lik import DeltaProdLik
 from glimix_core.lmm import LMM
 from glimix_core.mean import OffsetMean
 from glimix_core.random import GGPSampler
+from numpy_sugar.linalg import economic_qs_linear
 
 
 def test_lmm_fix_unfix():
@@ -230,3 +230,21 @@ def test_lmm_iid_prior():
     assert_allclose(lmm.scale, 1.9127630509027338)
     assert_allclose(lmm.delta, 0.9999999999999998)
     assert_allclose(lmm.lml(), -52.29638826846388)
+
+
+def test_lmm_zero_rank_covariates():
+    random = RandomState(9458)
+    n = 30
+    X = _covariates_sample(random, n, n + 1)
+
+    offset = 1.0
+
+    y = _outcome_sample(random, offset, X)
+
+    QS = economic_qs_linear(X)
+    lmm = LMM(y, zeros((n, 1)), QS)
+    lmm.fit(verbose=False)
+    assert_allclose(lmm.lml(), -55.774936794143315)
+    assert_allclose(lmm.scale, 2.411989807718206)
+    assert_allclose(lmm.delta, 0.9999999979388463)
+    assert_allclose(lmm.beta, [0])
