@@ -6,7 +6,6 @@ env:
 addons:
   apt:
     packages:
-    - pandoc
     - libffi-dev
     - libffi6
 install:

@@ -262,7 +262,7 @@ def test_glmmexpfam_bernoulli_probit_problematic():
     S0 /= S0.mean()
 
     X = ones((len(y[0]), 1))
-    model = GLMMExpFam(y, 'bernoulli_probit', X, QS=(QS[0], QS[1]))
+    model = GLMMExpFam(y, 'probit', X, QS=(QS[0], QS[1]))
     model.delta = 0
     model.fix('delta')
     model.fit(verbose=False)

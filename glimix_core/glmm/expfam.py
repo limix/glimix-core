@@ -18,7 +18,7 @@ class GLMMExpFam(GLMM):
 
     It implements inference over the GLMM explained in Section BLA via
     the Expectation Propagation [Min01]_ algorithm.
-    It currently supports the `Bernoulli`, `Binomial`, and `Poisson`
+    It currently supports the `Bernoulli`, `Probit`, `Binomial`, and `Poisson`
     likelihoods. (For heterogeneous Normal likelihood, please refer to
     :class:`glimix_core.glmm.GLMMNormal` for a closed-form inference.)
 
@@ -27,7 +27,8 @@ class GLMMExpFam(GLMM):
     y : array_like
         Outcome variable.
     lik_name : str
-        Likelihood name. It supports `Bernoulli`, `Binomial`, and `Poisson`.
+        Likelihood name. It supports `Bernoulli`, `Probit`, `Binomial`, and
+        `Poisson`.
     X : array_like
         Covariates.
     QS : tuple
