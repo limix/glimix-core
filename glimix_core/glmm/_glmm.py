@@ -81,7 +81,7 @@ class GLMM(Function):
         self._factr = 1e5
         self._pgtol = 1e-6
         self._verbose = False
-        self.set_variable_bounds('logscale', (log(0.002), 6.))
+        self.set_variable_bounds('logscale', (log(0.001), 6.))
         logmax = log(finfo(float).max)
         self.set_variable_bounds('logitdelta', (-logmax, +logmax))
 
@@ -142,7 +142,7 @@ class GLMM(Function):
 
     @delta.setter
     def delta(self, v):
-        v = clip(v, epsilon.large, 1 - epsilon.large)
+        v = clip(v, epsilon.small, 1 - epsilon.small)
         self.logitdelta = log(v / (1 - v))
 
     def fix(self, var_name):
@@ -220,7 +220,8 @@ class GLMM(Function):
 
     @scale.setter
     def scale(self, v):
-        self.logscale = log(v)
+        b = self.variables().get('logscale').bounds
+        self.logscale = clip(log(v), b[0], b[1])
 
     def set_variable_bounds(self, var_name, bounds):
         self.variables().get(var_name).bounds = bounds

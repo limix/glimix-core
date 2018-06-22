@@ -383,20 +383,21 @@ def test_glmmexpfam_delta_one_zero():
     glmm.beta = asarray([1.0, 0, 0.5, 0.1, 0.4, -0.2])
 
     glmm.delta = 0
-    assert_allclose(glmm.lml(), -113.22468572634763)
+    assert_allclose(glmm.lml(), -113.24570457063275)
     assert_allclose(check_grad(glmm, step=1e-4), 0, atol=1e-2)
 
     glmm.fit(verbose=False)
-    assert_allclose(glmm.lml(), -72.82680932787409, atol=ATOL, rtol=RTOL)
-    assert_allclose(glmm.delta, 1.0, atol=ATOL, rtol=RTOL)
+    assert_allclose(glmm.lml(), -98.21144899310399, atol=ATOL, rtol=RTOL)
+    assert_allclose(glmm.delta, 0, atol=ATOL, rtol=RTOL)
 
     glmm.delta = 1
-    assert_allclose(glmm.lml(), -72.82807619885995, atol=ATOL, rtol=RTOL)
+    assert_allclose(glmm.lml(), -98.00058169240869, atol=ATOL, rtol=RTOL)
     assert_allclose(check_grad(glmm, step=1e-4), 0, atol=1e-1)
 
     glmm.fit(verbose=False)
-    assert_allclose(glmm.lml(), -72.82680932955623, atol=ATOL, rtol=RTOL)
-    assert_allclose(glmm.delta, 0.9999999998430158, atol=ATOL, rtol=RTOL)
+
+    assert_allclose(glmm.lml(), -72.82680948264196, atol=ATOL, rtol=RTOL)
+    assert_allclose(glmm.delta, 0.9999999850988439, atol=ATOL, rtol=RTOL)
 
 
 def test_glmmexpfam_predict():
