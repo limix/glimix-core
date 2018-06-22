@@ -2,7 +2,7 @@ import pytest
 from numpy import (arange, asarray, ascontiguousarray, corrcoef, dot, eye,
                    ones, sqrt, zeros)
 from numpy.random import RandomState
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_
 
 from glimix_core.example import linear_eye_cov, nsamples
 from glimix_core.glmm import GLMMExpFam, GLMMNormal
@@ -287,6 +287,28 @@ def test_glmmexpfam_bernoulli_probit_problematic():
     
     assert_allclose(h20, h21, atol=ATOL, rtol=RTOL)
 
+def test_glmmexpfam_bernoulli_probit_assure_delta_fixed():
+    random = RandomState(1)
+    N = 10
+    G = random.randn(N, N + 50)
+    y = bernoulli_sample(0.0, G, random_state=random)
+    y = (y, )
+
+    G = ascontiguousarray(G, dtype=float)
+    _stdnorm(G, 0, out=G)
+    G /= sqrt(G.shape[1])
+
+    QS = economic_qs_linear(G)
+    S0 = QS[1]
+    S0 /= S0.mean()
+
+    X = ones((len(y[0]), 1))
+    model = GLMMExpFam(y, 'probit', X, QS=(QS[0], QS[1]))
+    model.fit(verbose=False)
+
+    assert_allclose(model.lml(), -6.108751595773174, rtol=RTOL)
+    assert_allclose(model.delta, 1.4901161193847673e-08, atol=1e-5)
+    assert_(model.isfixed('logitdelta'))
 
 def _stdnorm(X, axis=None, out=None):
     X = ascontiguousarray(X)

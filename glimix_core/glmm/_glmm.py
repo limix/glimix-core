@@ -85,6 +85,10 @@ class GLMM(Function):
         logmax = log(finfo(float).max)
         self.set_variable_bounds('logitdelta', (-logmax, +logmax))
 
+        if lik_name == 'probit':
+            self.delta = 0.0
+            self.fix('delta')
+
         self.set_nodata()
 
     def _copy_to(self, to):
