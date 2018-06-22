@@ -271,6 +271,8 @@ def test_glmmexpfam_bernoulli_probit_problematic():
     assert_allclose(model.scale, 0.33022865011938707, atol=ATOL, rtol=RTOL)
     assert_allclose(model.beta, [-0.002617161564786044], atol=ATOL, rtol=RTOL)
 
+    h20 = model.scale*(1-model.delta) / (model.scale + 1)
+
     model.unfix('delta')
     model.delta = 0.5
     model.scale = 1.0
@@ -280,6 +282,10 @@ def test_glmmexpfam_bernoulli_probit_problematic():
     assert_allclose(model.delta, 0.5017852859580029, atol=1e-3)
     assert_allclose(model.scale, 0.9928931515372, atol=ATOL, rtol=RTOL)
     assert_allclose(model.beta, [-0.003203427206253548], atol=ATOL, rtol=RTOL)
+
+    h21 = model.scale*(1-model.delta) / (model.scale + 1)
+    
+    assert_allclose(h20, h21, atol=ATOL, rtol=RTOL)
 
 
 def _stdnorm(X, axis=None, out=None):
