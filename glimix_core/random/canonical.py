@@ -11,12 +11,14 @@ from ..mean import LinearMean, OffsetMean, SumMean
 from .ggp import GGPSampler
 
 
-def bernoulli_sample(offset,
-                     G,
-                     heritability=0.5,
-                     causal_variants=None,
-                     causal_variance=0,
-                     random_state=None):
+def bernoulli_sample(
+    offset,
+    G,
+    heritability=0.5,
+    causal_variants=None,
+    causal_variance=0,
+    random_state=None,
+):
     r"""Bernoulli likelihood sampling.
 
     Sample according to
@@ -56,21 +58,24 @@ def bernoulli_sample(offset,
         array([1, 1])
     """
     link = LogitLink()
-    mean, cov = _mean_cov(offset, G, heritability, causal_variants,
-                          causal_variance, random_state)
+    mean, cov = _mean_cov(
+        offset, G, heritability, causal_variants, causal_variance, random_state
+    )
     lik = BernoulliProdLik(link)
     sampler = GGPSampler(lik, mean, cov)
 
     return sampler.sample(random_state)
 
 
-def binomial_sample(ntrials,
-                    offset,
-                    G,
-                    heritability=0.5,
-                    causal_variants=None,
-                    causal_variance=0,
-                    random_state=None):
+def binomial_sample(
+    ntrials,
+    offset,
+    G,
+    heritability=0.5,
+    causal_variants=None,
+    causal_variance=0,
+    random_state=None,
+):
     """Binomial likelihood sampling.
 
     Example
@@ -87,20 +92,23 @@ def binomial_sample(ntrials,
         array([ 2, 14])
     """
     link = LogitLink()
-    mean, cov = _mean_cov(offset, G, heritability, causal_variants,
-                          causal_variance, random_state)
+    mean, cov = _mean_cov(
+        offset, G, heritability, causal_variants, causal_variance, random_state
+    )
     lik = BinomialProdLik(ntrials, link)
     sampler = GGPSampler(lik, mean, cov)
 
     return sampler.sample(random_state)
 
 
-def poisson_sample(offset,
-                   G,
-                   heritability=0.5,
-                   causal_variants=None,
-                   causal_variance=0,
-                   random_state=None):
+def poisson_sample(
+    offset,
+    G,
+    heritability=0.5,
+    causal_variants=None,
+    causal_variance=0,
+    random_state=None,
+):
     """Poisson likelihood sampling.
 
     Example
@@ -115,8 +123,9 @@ def poisson_sample(offset,
         >>> poisson_sample(offset, G, random_state=RandomState(0))
         array([0, 6])
     """
-    mean, cov = _mean_cov(offset, G, heritability, causal_variants,
-                          causal_variance, random_state)
+    mean, cov = _mean_cov(
+        offset, G, heritability, causal_variants, causal_variance, random_state
+    )
     link = LogLink()
     lik = PoissonProdLik(link)
     sampler = GGPSampler(lik, mean, cov)
@@ -138,13 +147,12 @@ def _causal_mean(causal_variants, causal_variance, random):
     directions *= sqrt(causal_variance)
     directions -= directions.mean()
     mean = LinearMean(p)
-    mean.set_data((causal_variants, ), 'sample')
+    mean.set_data((causal_variants,), "sample")
     mean.effsizes = directions
     return mean
 
 
-def _mean_cov(offset, G, heritability, causal_variants, causal_variance,
-              random_state):
+def _mean_cov(offset, G, heritability, causal_variants, causal_variance, random_state):
     G = ascontiguousarray(G, dtype=float)
     nsamples = G.shape[0]
     G = _stdnorm(G, axis=0)
@@ -158,10 +166,10 @@ def _mean_cov(offset, G, heritability, causal_variants, causal_variance,
     cov2 = EyeCov()
     cov = SumCov([cov1, cov2])
 
-    mean1.set_data(arange(nsamples), 'sample')
-    cov1.set_data((G, G), 'sample')
+    mean1.set_data(arange(nsamples), "sample")
+    cov1.set_data((G, G), "sample")
     a = arange(nsamples)
-    cov2.set_data((a, a), 'sample')
+    cov2.set_data((a, a), "sample")
 
     cov1.scale = heritability - causal_variance
     cov2.scale = 1 - heritability - causal_variance
