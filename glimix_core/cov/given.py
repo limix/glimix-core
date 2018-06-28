@@ -1,6 +1,7 @@
 from __future__ import division
 
 from numpy import exp, log
+from numpy_sugar import epsilon
 
 from optimix import Function, Scalar
 
@@ -26,11 +27,12 @@ class GivenCov(Function):
     @property
     def scale(self):
         r"""Scale parameter."""
-        return exp(self.variables().get('logscale').value)
+        return exp(self.variables().get("logscale").value)
 
     @scale.setter
     def scale(self, scale):
-        self.variables().get('logscale').value = log(scale)
+        scale = max(scale, epsilon.small)
+        self.variables().get("logscale").value = log(scale)
 
     def value(self, x0, x1):
         r"""Covariance function evaluated at ``(x0, x1)``.

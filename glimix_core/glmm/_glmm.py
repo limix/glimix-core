@@ -8,8 +8,14 @@ from numpy_sugar import epsilon
 from numpy_sugar.linalg import ddot, sum2diag
 from optimix import Function, Scalar, Vector
 
-from ..util import (check_covariates, check_economic_qs, check_outcome,
-                    economic_qs_zeros, normalise_outcome)
+from ..util import numbers
+from ..util import (
+    check_covariates,
+    check_economic_qs,
+    check_outcome,
+    economic_qs_zeros,
+    normalise_outcome,
+)
 
 
 class GLMM(Function):
@@ -61,7 +67,8 @@ class GLMM(Function):
             self,
             beta=Vector(zeros(X.shape[1])),
             logscale=Scalar(0.0),
-            logitdelta=Scalar(0.0))
+            logitdelta=Scalar(0.0),
+        )
 
         self._lik_name = lik_name.lower()
         self._y = check_outcome(y, self._lik_name)
@@ -71,23 +78,21 @@ class GLMM(Function):
         else:
             self._QS = check_economic_qs(QS)
             if self._y.shape[0] != self._QS[0][0].shape[0]:
-                raise ValueError(
-                    "Number of samples in outcome and covariance differ.")
+                raise ValueError("Number of samples in outcome and covariance differ.")
 
         if self._y.shape[0] != self._X.shape[0]:
-            raise ValueError(
-                "Number of samples in outcome and covariates differ.")
+            raise ValueError("Number of samples in outcome and covariates differ.")
 
         self._factr = 1e5
         self._pgtol = 1e-6
         self._verbose = False
-        self.set_variable_bounds('logscale', (log(0.001), 6.))
-        logmax = log(finfo(float).max)
-        self.set_variable_bounds('logitdelta', (-logmax, +logmax))
+        self.set_variable_bounds("logscale", (log(0.001), 6.))
 
-        if lik_name == 'probit':
+        self.set_variable_bounds("logitdelta", (-numbers.logmax, +numbers.logmax))
+
+        if lik_name == "probit":
             self.delta = 0.0
-            self.fix('delta')
+            self.fix("delta")
 
         self.set_nodata()
 
@@ -95,10 +100,10 @@ class GLMM(Function):
         d = to.variables()
         s = self.variables()
 
-        d.get('beta').value = asarray(s.get('beta').value, float)
-        d.get('beta').bounds = s.get('beta').bounds
+        d.get("beta").value = asarray(s.get("beta").value, float)
+        d.get("beta").bounds = s.get("beta").bounds
 
-        for v in ['logscale', 'logitdelta']:
+        for v in ["logscale", "logitdelta"]:
             d.get(v).value = float(s.get(v).value)
             d.get(v).bounds = s.get(v).bounds
 
@@ -111,11 +116,11 @@ class GLMM(Function):
         array_like
             :math:`\boldsymbol\beta`.
         """
-        return asarray(self.variables().get('beta').value, float)
+        return asarray(self.variables().get("beta").value, float)
 
     @beta.setter
     def beta(self, v):
-        self.variables().get('beta').value = v
+        self.variables().get("beta").value = v
 
     def copy(self):
         r"""Create a copy of this object."""
@@ -187,19 +192,19 @@ class GLMM(Function):
 
     @property
     def logitdelta(self):
-        return float(self.variables().get('logitdelta').value)
+        return float(self.variables().get("logitdelta").value)
 
     @logitdelta.setter
     def logitdelta(self, v):
-        self.variables().get('logitdelta').value = v
+        self.variables().get("logitdelta").value = v
 
     @property
     def logscale(self):
-        return float(self.variables().get('logscale').value)
+        return float(self.variables().get("logscale").value)
 
     @logscale.setter
     def logscale(self, v):
-        self.variables().get('logscale').value = v
+        self.variables().get("logscale").value = v
 
     def mean(self):
         r"""Mean of the prior.
@@ -224,7 +229,7 @@ class GLMM(Function):
 
     @scale.setter
     def scale(self, v):
-        b = self.variables().get('logscale').bounds
+        b = self.variables().get("logscale").bounds
         self.logscale = clip(log(v), b[0], b[1])
 
     def set_variable_bounds(self, var_name, bounds):
@@ -279,5 +284,5 @@ class GLMM(Function):
 
 
 def _to_internal_name(name):
-    translation = dict(scale='logscale', delta='logitdelta', beta='beta')
+    translation = dict(scale="logscale", delta="logitdelta", beta="beta")
     return translation[name]

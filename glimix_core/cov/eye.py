@@ -1,5 +1,6 @@
 from __future__ import division
 
+from numpy_sugar import epsilon
 from numpy import asarray, atleast_1d, exp, log, newaxis
 
 from optimix import Function, Scalar
@@ -53,11 +54,12 @@ class EyeCov(Function):
     @property
     def scale(self):
         r"""Scale parameter."""
-        return exp(self.variables().get('logscale').value)
+        return exp(self.variables().get("logscale").value)
 
     @scale.setter
     def scale(self, scale):
-        self.variables().get('logscale').value = log(scale)
+        scale = max(scale, epsilon.small)
+        self.variables().get("logscale").value = log(scale)
 
     def value(self, x0, x1):
         r"""Covariance function evaluated at `(x0, x1)`.
