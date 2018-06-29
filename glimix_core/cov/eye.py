@@ -58,7 +58,7 @@ class EyeCov(Function):
 
     @scale.setter
     def scale(self, scale):
-        scale = max(scale, epsilon.small)
+        scale = max(scale, epsilon.tiny)
         self.variables().get("logscale").value = log(scale)
 
     def value(self, x0, x1):
