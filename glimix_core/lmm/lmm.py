@@ -78,7 +78,7 @@ class LMM(LMMCore):
         self.set_nodata()
 
     def _get_delta(self):
-        v = clip(self.variables().get('logistic').value, -20, 20)
+        v = clip(self.variables().get("logistic").value, -20, 20)
         x = 1 / (1 + exp(-v))
         return clip(x, epsilon.tiny, 1 - epsilon.tiny)
 
@@ -108,12 +108,13 @@ class LMM(LMMCore):
 
         LMMCore.__init__(o, self._y, self.X, self._QS)
         o.delta = self.delta
-        if self.isfixed('delta'):
-            o.fix('delta')
+        if self.isfixed("delta"):
+            o.fix("delta")
 
-        setattr(o, '_fix_scale', self._fix_scale)
-        setattr(o, '_scale', self._scale)
-        setattr(o, '_fix_beta', self._fix_beta)
+        setattr(o, "_fix_scale", self._fix_scale)
+        setattr(o, "_scale", self._scale)
+        setattr(o, "_fix_beta", self._fix_beta)
+        setattr(o, "_verbose", self._verbose)
 
         o.set_nodata()
         return o
@@ -131,12 +132,12 @@ class LMM(LMMCore):
         bool
             ``True`` if fixed; ``False`` otherwise.
         """
-        if var_name not in ['delta', 'scale', 'beta']:
+        if var_name not in ["delta", "scale", "beta"]:
             msg = "Possible values are 'delta', 'scale', and 'beta'."
             raise ValueError(msg)
-        if var_name == 'delta':
-            return super(LMM, self).isfixed('logistic')
-        if var_name == 'beta':
+        if var_name == "delta":
+            return super(LMM, self).isfixed("logistic")
+        if var_name == "beta":
             return self._fix_beta
         return self._fix_scale
 
@@ -171,10 +172,12 @@ class LMM(LMMCore):
             ``True`` for progress output; ``False`` otherwise.
             Defaults to ``True``.
         """
-        if not self.isfixed('delta'):
-            maximize_scalar(self, 'LMM', verbose=verbose)
+        self._verbose = verbose
+        if not self.isfixed("delta"):
+            maximize_scalar(self, "LMM", verbose=verbose)
         self._update()
         self.delta = self._get_delta()
+        self._verbose = True
 
     def fix(self, var_name):
         r"""Disable the optimisation of a given variable.
@@ -184,13 +187,13 @@ class LMM(LMMCore):
         var_name : str
             Possible values are `delta` and `scale`.
         """
-        if var_name not in ['delta', 'scale', 'beta']:
+        if var_name not in ["delta", "scale", "beta"]:
             msg = "Possible values are 'delta', 'scale', and 'beta'."
             raise ValueError(msg)
 
-        if var_name == 'delta':
-            super(LMM, self).fix('logistic')
-        elif var_name == 'beta':
+        if var_name == "delta":
+            super(LMM, self).fix("logistic")
+        elif var_name == "beta":
             self._fix_beta = True
         else:
             if not self._fix_scale:
@@ -223,7 +226,7 @@ class LMM(LMMCore):
         QS = (self._QS[0], v0 * self._QS[1])
         return FastScanner(self._y, self.X, QS, v1)
 
-    def lml(self):  # noqa: D102
+    def lml(self):
         self.delta = self._get_delta()
         return LMMCore.lml(self)
 
@@ -239,7 +242,7 @@ class LMM(LMMCore):
         return LMMCore.mean.fget(self)
 
     @property
-    def scale(self):  # noqa: D102
+    def scale(self):
         if self._fix_scale:
             return self._scale
         return LMMCore.scale.fget(self)
@@ -256,39 +259,39 @@ class LMM(LMMCore):
         var_name : str
             Possible values are `delta` and `scale`.
         """
-        if var_name not in ['delta', 'scale', 'beta']:
+        if var_name not in ["delta", "scale", "beta"]:
             msg = "Possible values are 'delta', 'scale', and 'beta'."
             raise ValueError(msg)
-        if var_name == 'delta':
-            super(LMM, self).unfix('logistic')
-        elif var_name == 'beta':
+        if var_name == "delta":
+            super(LMM, self).unfix("logistic")
+        elif var_name == "beta":
             self._fix_beta = False
         else:
             self._fix_scale = False
 
-    def value(self, *_):  # noqa: D102
+    def value(self, *_):
         self.delta = self._get_delta()
         return self.lml()
 
     @property
-    def X(self):  # noqa: D102
+    def X(self):
         return LMMCore.X.fget(self)
 
     @X.setter
     def X(self, X):
         LMMCore.X.fset(self, X)
 
-    def gradient(self, *_):  # noqa: D102
+    def gradient(self, *_):
         raise NotImplementedError
 
-    def predictive_mean(self, Xstar, ks, kss):  # noqa: D102
+    def predictive_mean(self, Xstar, ks, kss):
         mstar = self.mean_star(Xstar)
         ks = self.covariance_star(ks)
         m = self.mean
         K = LMMCore.covariance(self)
         return mstar + dot(ks, solve(K, self._y - m))
 
-    def predictive_covariance(self, Xstar, ks, kss):  # noqa: D102
+    def predictive_covariance(self, Xstar, ks, kss):
         kss = self.variance_star(kss)
         ks = self.covariance_star(ks)
         K = LMMCore.covariance(self)

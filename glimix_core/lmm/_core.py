@@ -1,8 +1,19 @@
 from __future__ import division
 
 from numpy import all as npall
-from numpy import (asarray, atleast_2d, clip, dot, errstate, exp, full,
-                   isfinite, log, maximum, sqrt)
+from numpy import (
+    asarray,
+    atleast_2d,
+    clip,
+    dot,
+    errstate,
+    exp,
+    full,
+    isfinite,
+    log,
+    maximum,
+    sqrt,
+)
 from numpy import sum as npsum
 from numpy import zeros
 
@@ -34,7 +45,7 @@ class LMMCore(Function):
         if QS is None:
             QS = economic_qs_zeros(n)
             self.delta = 1.0
-            super(LMMCore, self).fix('logistic')
+            super(LMMCore, self).fix("logistic")
         else:
             self.delta = 0.5
 
@@ -42,13 +53,16 @@ class LMMCore(Function):
             raise ValueError("I was expecting a tuple for the covariance ")
 
         if QS[0][0].shape[0] != y.shape[0]:
-            raise ValueError("Number of samples differs between outcome"
-                             " and covariance decomposition"
-                             "decomposition")
+            raise ValueError(
+                "Number of samples differs between outcome"
+                " and covariance decomposition"
+                "decomposition"
+            )
 
         if y.shape[0] != n:
-            raise ValueError("Number of samples differs between outcome "
-                             "and covariates.")
+            raise ValueError(
+                "Number of samples differs between outcome " "and covariates."
+            )
 
         self._QS = QS
         self._y = y
@@ -61,6 +75,7 @@ class LMMCore(Function):
 
         self._svd = None
         self._set_X(X=X, SVD=SVD)
+        self._verbose = True
 
     @property
     def _D(self):
@@ -106,8 +121,7 @@ class LMMCore(Function):
         lml -= sum(npsum(log(D)) for D in self._D)
 
         d = (mTQ - yTQ for (mTQ, yTQ) in zip(self._mTQ, self._yTQ))
-        lml += sum(
-            dot(j / i, l) for (i, j, l) in zip(self._D, d, self._yTQ)) / s
+        lml += sum(dot(j / i, l) for (i, j, l) in zip(self._D, d, self._yTQ)) / s
 
         return lml / 2
 
@@ -140,7 +154,7 @@ class LMMCore(Function):
         return (self._tM.T.dot(Q) for Q in self._QS[0] if Q.size > 0)
 
     def _update_fixed_effects(self):
-        if self.isfixed('beta'):
+        if self.isfixed("beta"):
             return
         yTQDiQTm = list(self._yTQDiQTm)
         mTQDiQTm = list(self._mTQDiQTm)
@@ -162,7 +176,7 @@ class LMMCore(Function):
 
     @property
     def _yTQQTy(self):
-        return (yTQ**2 for yTQ in self._yTQ)
+        return (yTQ ** 2 for yTQ in self._yTQ)
 
     @property
     def _yTQDiQTy(self):
@@ -227,8 +241,8 @@ class LMMCore(Function):
     @property
     def delta(self):
         r"""Variance ratio between ``K`` and ``I``."""
-        v = float(self.variables().get('logistic').value)
-        with errstate(over='ignore', under='ignore'):
+        v = float(self.variables().get("logistic").value)
+        with errstate(over="ignore", under="ignore"):
             v = 1 / (1 + exp(-v))
         return clip(v, epsilon.tiny, 1 - epsilon.tiny)
 
@@ -245,7 +259,11 @@ class LMMCore(Function):
         float
             Log of the marginal likelihood.
         """
-        if self.isfixed('scale'):
+        if self._verbose:
+            print("Scale: {%g}".format(self.scale))
+            print("Delta: {%g}".format(self.delta))
+            print("Beta: {}".format(str(self.beta)))
+        if self.isfixed("scale"):
             return self._lml_arbitrary_scale()
         return self._lml_optimal_scale()
 
@@ -271,7 +289,7 @@ class LMMCore(Function):
         float
             Current scale if fixed; optimal scale otherwise.
         """
-        if self.isfixed('scale'):
+        if self.isfixed("scale"):
             return self._scale
         return self._optimal_scale()
 
