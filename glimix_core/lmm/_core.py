@@ -22,7 +22,7 @@ from numpy_sugar import epsilon
 from numpy_sugar.linalg import ddot, economic_svd, rsolve, sum2diag
 from optimix import Function, Scalar
 
-from ..util import economic_qs_zeros
+from ..util import economic_qs_zeros, numbers
 
 
 class LMMCore(Function):
@@ -64,6 +64,8 @@ class LMMCore(Function):
                 "Number of samples differs between outcome " "and covariates."
             )
 
+        self.variables().get("logistic").bounds = (-numbers.logmax, +numbers.logmax)
+
         self._QS = QS
         self._y = y
         self._scale = 1.0
@@ -75,7 +77,7 @@ class LMMCore(Function):
 
         self._svd = None
         self._set_X(X=X, SVD=SVD)
-        self._verbose = True
+        self._verbose = False
 
     @property
     def _D(self):
@@ -260,9 +262,9 @@ class LMMCore(Function):
             Log of the marginal likelihood.
         """
         if self._verbose:
-            print("Scale: {%g}".format(self.scale))
-            print("Delta: {%g}".format(self.delta))
-            print("Beta: {}".format(str(self.beta)))
+            print("Scale: {:g}".format(self.scale))
+            print("Delta: {:g}".format(self.delta))
+            print("Beta: {:}".format(str(self.beta)))
         if self.isfixed("scale"):
             return self._lml_arbitrary_scale()
         return self._lml_optimal_scale()

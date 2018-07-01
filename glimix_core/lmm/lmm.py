@@ -177,7 +177,7 @@ class LMM(LMMCore):
             maximize_scalar(self, "LMM", verbose=verbose)
         self._update()
         self.delta = self._get_delta()
-        self._verbose = True
+        self._verbose = False
 
     def fix(self, var_name):
         r"""Disable the optimisation of a given variable.
