@@ -1,5 +1,5 @@
 from glimix_core.mean import OffsetMean
-from optimix.testing import Assertion
+from optimix import Assertion
 
 
 def test_offsetmean_optimix():

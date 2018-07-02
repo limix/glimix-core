@@ -3,7 +3,7 @@ from numpy.testing import assert_allclose
 from numpy.random import RandomState
 
 from glimix_core.cov import GivenCov
-from optimix.testing import Assertion
+from optimix import Assertion
 
 
 def test_givencov_optimix():

@@ -4,7 +4,6 @@ from numpy import asarray, clip, dot, exp
 from numpy.linalg import solve
 
 from numpy_sugar import epsilon, is_all_finite
-from optimix import maximize_scalar
 
 from ._core import LMMCore
 from .scan import FastScanner
@@ -174,7 +173,7 @@ class LMM(LMMCore):
         """
         self._verbose = verbose
         if not self.isfixed("delta"):
-            maximize_scalar(self, "LMM", verbose=verbose)
+            self.feed().maximize_scalar(verbose=verbose)
         self._update()
         self.delta = self._get_delta()
         self._verbose = False

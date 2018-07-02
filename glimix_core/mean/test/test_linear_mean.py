@@ -1,7 +1,7 @@
 from numpy.testing import assert_allclose
 
 from glimix_core.mean import LinearMean
-from optimix.testing import Assertion
+from optimix import Assertion
 
 
 def test_offsetmean_optimix():
