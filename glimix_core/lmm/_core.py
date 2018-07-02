@@ -64,7 +64,10 @@ class LMMCore(Function):
                 "Number of samples differs between outcome " "and covariates."
             )
 
-        self.variables().get("logistic").bounds = (-numbers.logmax, +numbers.logmax)
+        self.variables().get("logistic").bounds = (
+            -numbers.logmax,
+            +numbers.logmax,
+        )
 
         self._QS = QS
         self._y = y
@@ -123,7 +126,9 @@ class LMMCore(Function):
         lml -= sum(npsum(log(D)) for D in self._D)
 
         d = (mTQ - yTQ for (mTQ, yTQ) in zip(self._mTQ, self._yTQ))
-        lml += sum(dot(j / i, l) for (i, j, l) in zip(self._D, d, self._yTQ)) / s
+        lml += (
+            sum(dot(j / i, l) for (i, j, l) in zip(self._D, d, self._yTQ)) / s
+        )
 
         return lml / 2
 
@@ -141,7 +146,7 @@ class LMMCore(Function):
         b = self._tbeta
         p0 = sum(i - 2 * dot(j, b) for (i, j) in zip(yTQDiQTy, yTQDiQTm))
         p1 = sum(dot(dot(b, i), b) for i in self._mTQDiQTm)
-        return maximum((p0 + p1) / len(self._y), epsilon.tiny)
+        return maximum((p0 + p1) / len(self._y), epsilon.small)
 
     def _set_X(self, X=None, SVD=None):
         if SVD is None:
