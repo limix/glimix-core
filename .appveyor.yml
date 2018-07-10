@@ -16,8 +16,6 @@ environment:
 
 install:
   - set PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%
-  - python -m pip install https://download.lfd.uci.edu/pythonlibs/j1ulh5xc/numpy-1.14.5+mkl-cp36-cp36m-win_amd64.whl
-  - python -m pip install https://download.lfd.uci.edu/pythonlibs/j1ulh5xc/scipy-1.1.0-cp36-cp36m-win_amd64.whl
 
 build_script:
   - powershell -Command "(New-Object Net.WebClient).DownloadFile('https://raw.githubusercontent.com/horta/ci/master/appveyor.bat', 'appveyor.bat')" && appveyor.bat
