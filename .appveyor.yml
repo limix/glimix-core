@@ -1,21 +1,34 @@
 build: off
 clone_depth: 5
-platform: x64
 configuration: Release
 
 environment:
-    PKG_NAME: glimix_core
-    PYTHON: "C:\\Python36-x64"
-    ARCH: x64
+  PKG_NAME: glimix_core
+  matrix:
+    - platform: x64
+      ARCH: x64
+      PYTHON: C:\Python36-x64
+      CIBW_SKIP: cp27-* cp33-* cp34-* cp35-* *-win32
+    - platform: x86
+      ARCH: x86
+      PYTHON: C:\Python36
+      CIBW_SKIP: cp27-* cp33-* cp34-* cp35-* *-win_amd64
 
 install:
-    - powershell -Command "(New-Object Net.WebClient).DownloadFile('https://raw.githubusercontent.com/limix/liknorm/master/install.bat', 'install-liknorm.bat')" && install-liknorm.bat
-    - set PATH=%programfiles%\liknorm\bin;%PATH%
-    - set LIBRARY_INC=%programfiles%\liknorm\include;%LIBRARY_INC%
-    - set LIBRARY_LIB=%programfiles%\liknorm\lib;%LIBRARY_LIB%
-    - set PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%
-    - python -m pip install https://download.lfd.uci.edu/pythonlibs/j1ulh5xc/numpy-1.14.5+mkl-cp36-cp36m-win_amd64.whl
-    - python -m pip install https://download.lfd.uci.edu/pythonlibs/j1ulh5xc/scipy-1.1.0-cp36-cp36m-win_amd64.whl
+  - set PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%
+  - python -m pip install https://download.lfd.uci.edu/pythonlibs/j1ulh5xc/numpy-1.14.5+mkl-cp36-cp36m-win_amd64.whl
+  - python -m pip install https://download.lfd.uci.edu/pythonlibs/j1ulh5xc/scipy-1.1.0-cp36-cp36m-win_amd64.whl
 
 build_script:
-    - powershell -Command "(New-Object Net.WebClient).DownloadFile('https://raw.githubusercontent.com/horta/ci/master/appveyor.bat', 'appveyor.bat')" && appveyor.bat
+  - powershell -Command "(New-Object Net.WebClient).DownloadFile('https://raw.githubusercontent.com/horta/ci/master/appveyor.bat', 'appveyor.bat')" && appveyor.bat
+  - "%PYTHON%\\python.exe -m cibuildwheel --output-dir wheelhouse"
+  - FOR %%F IN (wheelhouse\*.whl) DO set filename=%%F
+  - "%PYTHON%\\python.exe -m pip install %filename%"
+  - cd ..
+  - "%PYTHON%\\python.exe -c \"import glimix_core; import sys; sys.exit(glimix_core.test())\""
+  - cd %APPVEYOR_BUILD_FOLDER%
+  - if [%APPVEYOR_REPO_TAG%]==[true] (%PYTHON%\python.exe -m pip install twine && %PYTHON%\python.exe -m twine upload --skip-existing wheelhouse/*)
+
+artifacts:
+  - path: "wheelhouse\\*.whl"
+    name: Wheels
