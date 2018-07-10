@@ -18,12 +18,13 @@ matrix:
         - brew unlink python && brew link python
         - export PATH="/usr/local/opt/python/libexec/bin:$PATH"
         - hash -r
-        - pip install --upgrade pip setuptools wheel
+        - python -m pip install --upgrade pip setuptools wheel
 addons:
   apt:
     packages:
     - libffi-dev
     - libffi6
+    - cmake
 script:
 - |
   if [ "${TRAVIS_OS_NAME}" == "osx" ]; then
@@ -31,11 +32,11 @@ script:
     sudo chown -R "${USER}:admin" /usr/local/man
   fi
 - bash <(curl -fsSL https://raw.githubusercontent.com/horta/ci/master/travis.sh)
+- python -m pip install cibuildwheel>=0.9.1
+- cibuildwheel --output-dir wheelhouse
 - |
   if [ "${TRAVIS_TAG:-}" != "" ]; then
-    pip install cibuildwheel>=0.9.1
-    cibuildwheel --output-dir wheelhouse
-    pip install twine
+    python -m pip install twine
     python -m twine upload --skip-existing wheelhouse/*
   fi
 deploy:
