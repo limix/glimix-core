@@ -1,5 +1,5 @@
 build: off
-clone_depth: 5
+clone_depth: 4
 platform: x64
 configuration: Release
 
