@@ -5,8 +5,10 @@ from numpy import exp, log, stack
 
 from optimix import Function, Scalar
 
+from ..util.classes import NamedClass
 
-class LinearCov(Function):
+
+class LinearCov(NamedClass, Function):
     r"""Linear covariance function.
 
     The mathematical representation is
@@ -20,6 +22,7 @@ class LinearCov(Function):
 
     def __init__(self):
         Function.__init__(self, logscale=Scalar(0.0))
+        NamedClass.__init__(self)
 
     @property
     def scale(self):
@@ -77,6 +80,9 @@ class LinearCov(Function):
 
     def __str__(self):
         tname = type(self).__name__
-        msg = "{}()\n".format(tname)
+        msg = "{}()".format(tname)
+        if self.name is not None:
+            msg += ": {}".format(self.name)
+        msg += "\n"
         msg += "  scale: {}".format(self.scale)
         return msg

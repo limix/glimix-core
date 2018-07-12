@@ -4,8 +4,10 @@ from numpy import add
 
 from optimix import FunctionReduce
 
+from ..util.classes import NamedClass
 
-class SumCov(FunctionReduce):
+
+class SumCov(NamedClass, FunctionReduce):
     r"""Sum covariance function.
 
     The mathematical representation is
@@ -40,11 +42,21 @@ class SumCov(FunctionReduce):
             scale: 0.5
           LinearCov()
             scale: 1.0
+        >>> cov_left.name = "A"
+        >>> cov_right.name = "B"
+        >>> cov.name = "A+B"
+        >>> print(cov)
+        SumCov(covariances=...): A+B
+          LinearCov(): A
+            scale: 0.5
+          LinearCov(): B
+            scale: 1.0
     """
 
     def __init__(self, covariances):
         self._covariances = [c for c in covariances]
         FunctionReduce.__init__(self, self._covariances, "sum")
+        NamedClass.__init__(self)
 
     def value_reduce(self, values):
         r"""Sum covariance function evaluated at ``(f_0, f_1, ...)``."""
@@ -67,6 +79,8 @@ class SumCov(FunctionReduce):
     def __str__(self):
         tname = type(self).__name__
         msg = "{}(covariances=...)".format(tname)
+        if self.name is not None:
+            msg += ": {}".format(self.name)
         for c in self._covariances:
             spl = str(c).split("\n")
             msg = msg + "\n" + "\n".join(["  " + s for s in spl])

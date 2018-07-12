@@ -5,8 +5,10 @@ from numpy_sugar import epsilon
 
 from optimix import Function, Scalar
 
+from ..util.classes import NamedClass
 
-class GivenCov(Function):
+
+class GivenCov(NamedClass, Function):
     r"""Given covariance function.
 
     The mathematical representation is
@@ -35,11 +37,16 @@ class GivenCov(Function):
         >>> print(cov)
         GivenCov(K=...)
           scale: 1.3
+        >>> cov.name = "covname"
+        >>> print(cov)
+        GivenCov(K=...): covname
+          scale: 1.3
     """
 
     def __init__(self, K):
         Function.__init__(self, logscale=Scalar(0.0))
         self._K = K
+        NamedClass.__init__(self)
 
     @property
     def scale(self):
@@ -91,6 +98,9 @@ class GivenCov(Function):
 
     def __str__(self):
         tname = type(self).__name__
-        msg = "{}(K=...)\n".format(tname)
+        msg = "{}(K=...)".format(tname)
+        if self.name is not None:
+            msg += ": {}".format(self.name)
+        msg += "\n"
         msg += "  scale: {}".format(self.scale)
         return msg

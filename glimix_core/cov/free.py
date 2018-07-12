@@ -4,8 +4,10 @@ from numpy import dot, ones, stack, tril_indices_from, zeros, zeros_like
 
 from optimix import Function, Vector
 
+from ..util.classes import NamedClass
 
-class FreeFormCov(Function):
+
+class FreeFormCov(NamedClass, Function):
     r"""General semi-definite positive matrix.
 
     A :math:`d`-by-:math:`d` covariance matrix :math:`\mathrm K` will have
@@ -52,6 +54,10 @@ class FreeFormCov(Function):
         >>> print(cov)
         FreeFormCov()
           Lu: [ 1. -2.  1.]
+        >>> cov.name = "covname"
+        >>> print(cov)
+        FreeFormCov(): covname
+          Lu: [ 1. -2.  1.]
     """
 
     def __init__(self, size):
@@ -61,6 +67,7 @@ class FreeFormCov(Function):
         self._tril = tril_indices_from(self._L)
         self._L[self._tril] = 1
         Function.__init__(self, Lu=Vector(ones(tsize)))
+        NamedClass.__init__(self)
 
     @property
     def L(self):
@@ -134,6 +141,9 @@ class FreeFormCov(Function):
 
     def __str__(self):
         tname = type(self).__name__
-        msg = "{}()\n".format(tname)
+        msg = "{}()".format(tname)
+        if self.name is not None:
+            msg += ": {}".format(self.name)
+        msg += "\n"
         msg += "  Lu: {}".format(self.Lu)
         return msg

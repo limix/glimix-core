@@ -5,8 +5,10 @@ from numpy import asarray, atleast_1d, exp, log, newaxis
 
 from optimix import Function, Scalar
 
+from ..util.classes import NamedClass
 
-class EyeCov(Function):
+
+class EyeCov(NamedClass, Function):
     r"""Identity covariance function.
 
     The mathematical representation is
@@ -49,10 +51,15 @@ class EyeCov(Function):
         >>> print(cov)
         EyeCov()
           scale: 2.5
+        >>> cov.name = "identity"
+        >>> print(cov)
+        EyeCov(): identity
+          scale: 2.5
     """
 
     def __init__(self):
         Function.__init__(self, logscale=Scalar(0.0))
+        NamedClass.__init__(self)
 
     @property
     def scale(self):
@@ -108,6 +115,9 @@ class EyeCov(Function):
 
     def __str__(self):
         tname = type(self).__name__
-        msg = "{}()\n".format(tname)
+        msg = "{}()".format(tname)
+        if self.name is not None:
+            msg += ": {}".format(self.name)
+        msg += "\n"
         msg += "  scale: {}".format(self.scale)
         return msg
