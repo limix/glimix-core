@@ -2,8 +2,10 @@ from numpy import add
 
 from optimix import FunctionReduce
 
+from ..util.classes import NamedClass
 
-class SumMean(FunctionReduce):
+
+class SumMean(NamedClass, FunctionReduce):
     r"""Sum mean function.
 
     The mathematical representation is
@@ -51,11 +53,21 @@ class SumMean(FunctionReduce):
             effsizes: [-1.   0.5]
           OffsetMean()
             offset: 2.0
+        >>> mean0.name = "A"
+        >>> mean1.name = "B"
+        >>> mean.name = "A+B"
+        >>> print(mean)
+        SumMean(means=...): A+B
+          LinearMean(size=2): A
+            effsizes: [-1.   0.5]
+          OffsetMean(): B
+            offset: 2.0
     """
 
     def __init__(self, means):
         self._means = [c for c in means]
         FunctionReduce.__init__(self, self._means, "sum")
+        NamedClass.__init__(self)
 
     def value_reduce(self, values):
         r"""Sum mean function evaluated at :math:`(f_0, f_1, \dots)`."""
@@ -79,6 +91,8 @@ class SumMean(FunctionReduce):
     def __str__(self):
         tname = type(self).__name__
         msg = "{}(means=...)".format(tname)
+        if self.name is not None:
+            msg += ": {}".format(self.name)
         for m in self._means:
             spl = str(m).split("\n")
             msg = msg + "\n" + "\n".join(["  " + s for s in spl])

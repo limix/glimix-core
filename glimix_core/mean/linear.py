@@ -4,8 +4,10 @@ from numpy import ascontiguousarray, dot, zeros
 
 from optimix import Function, Vector
 
+from ..util.classes import NamedClass
 
-class LinearMean(Function):
+
+class LinearMean(NamedClass, Function):
     r"""Linear mean function.
 
     The mathematical representation is
@@ -38,10 +40,15 @@ class LinearMean(Function):
         >>> print(mean)
         LinearMean(size=2)
           effsizes: [ 1. -1.]
+        >>> mean.name = "covariates"
+        >>> print(mean)
+        LinearMean(size=2): covariates
+          effsizes: [ 1. -1.]
     """
 
     def __init__(self, size):
         Function.__init__(self, effsizes=Vector(zeros(size)))
+        NamedClass.__init__(self)
 
     def value(self, x):
         r"""Linear mean function.
@@ -84,6 +91,9 @@ class LinearMean(Function):
 
     def __str__(self):
         tname = type(self).__name__
-        msg = "{}(size={})\n".format(tname, len(self.effsizes))
+        msg = "{}(size={})".format(tname, len(self.effsizes))
+        if self.name is not None:
+            msg += ": {}".format(self.name)
+        msg += "\n"
         msg += "  effsizes: {}".format(self.effsizes)
         return msg

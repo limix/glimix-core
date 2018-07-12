@@ -4,8 +4,10 @@ from numpy import asarray, full, ones
 
 from optimix import Function, Scalar
 
+from ..util.classes import NamedClass
 
-class OffsetMean(Function):
+
+class OffsetMean(NamedClass, Function):
     r"""Offset mean function.
 
     The mathematical representation is
@@ -33,10 +35,15 @@ class OffsetMean(Function):
         >>> print(mean)
         OffsetMean()
           offset: 2.0
+        >>> mean.name = "mean-name"
+        >>> print(mean)
+        OffsetMean(): mean-name
+          offset: 2.0
     """
 
     def __init__(self):
         Function.__init__(self, offset=Scalar(0.0))
+        NamedClass.__init__(self)
 
     def value(self, x):
         r"""Offset function evaluated at ``x``.
@@ -81,6 +88,9 @@ class OffsetMean(Function):
 
     def __str__(self):
         tname = type(self).__name__
-        msg = "{}()\n".format(tname)
+        msg = "{}()".format(tname)
+        if self.name is not None:
+            msg += ": {}".format(self.name)
+        msg += "\n"
         msg += "  offset: {}".format(self.offset)
         return msg
