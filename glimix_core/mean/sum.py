@@ -45,11 +45,17 @@ class SumMean(FunctionReduce):
         [[5.1, 1.0], [2.1, -0.2]]
         >>> print(g['sum[1].offset'])
         [1. 1.]
+        >>> print(mean)
+        SumMean(means=...)
+          LinearMean(size=2)
+            effsizes: [-1.   0.5]
+          OffsetMean()
+            offset: 2.0
     """
 
     def __init__(self, means):
         self._means = [c for c in means]
-        FunctionReduce.__init__(self, self._means, 'sum')
+        FunctionReduce.__init__(self, self._means, "sum")
 
     def value_reduce(self, values):
         r"""Sum mean function evaluated at :math:`(f_0, f_1, \dots)`."""
@@ -67,5 +73,13 @@ class SumMean(FunctionReduce):
         grad = dict()
         for (gn, gv) in iter(gradients.items()):
             for n, v in iter(gv.items()):
-                grad[gn + '.' + n] = v
+                grad[gn + "." + n] = v
         return grad
+
+    def __str__(self):
+        tname = type(self).__name__
+        msg = "{}(means=...)".format(tname)
+        for m in self._means:
+            spl = str(m).split("\n")
+            msg = msg + "\n" + "\n".join(["  " + s for s in spl])
+        return msg

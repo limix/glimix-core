@@ -18,6 +18,23 @@ class GivenCov(Function):
     where :math:`s` is the scale parameter and :math:`\mathrm K` is given.
     In other words, the user specify passes a covariance matrix, which is
     then indexed by the ``x_0`` and ``x_1``.
+
+    Example
+    -------
+
+    .. doctest::
+
+        >>> from glimix_core.cov import GivenCov
+        >>> from numpy import dot
+        >>> from numpy.random import RandomState
+        >>>
+        >>> K = RandomState(0).randn(5, 5)
+        >>> K = dot(K, K.T)
+        >>> cov = GivenCov(K)
+        >>> cov.scale = 1.3
+        >>> print(cov)
+        GivenCov(K=...)
+          scale: 1.3
     """
 
     def __init__(self, K):
@@ -71,3 +88,9 @@ class GivenCov(Function):
             column-indexed by ``x0`` and ``x1``.
         """
         return dict(logscale=self.scale * self._K[x0, :][..., x1])
+
+    def __str__(self):
+        tname = type(self).__name__
+        msg = "{}(K=...)\n".format(tname)
+        msg += "  scale: {}".format(self.scale)
+        return msg

@@ -49,6 +49,9 @@ class FreeFormCov(Function):
         >>> print(cov.value([0, 1], [0, 1]))
         [[ 1. -2.]
          [-2.  5.]]
+        >>> print(cov)
+        FreeFormCov()
+          Lu: [ 1. -2.  1.]
     """
 
     def __init__(self, size):
@@ -62,22 +65,22 @@ class FreeFormCov(Function):
     @property
     def L(self):
         """Cholesky decomposition of the covariance matrix."""
-        self._L[self._tril] = self.variables().get('Lu').value
+        self._L[self._tril] = self.variables().get("Lu").value
         return self._L
 
     @L.setter
     def L(self, value):
         self._L[:] = value
-        self.variables().get('Lu').value = self._L[self._tril]
+        self.variables().get("Lu").value = self._L[self._tril]
 
     @property
     def Lu(self):
         """Cholesky decomposition of the covariance matrix in flat form."""
-        return self.variables().get('Lu').value
+        return self.variables().get("Lu").value
 
     @Lu.setter
     def Lu(self, value):
-        self.variables().get('Lu').value = value
+        self.variables().get("Lu").value = value
 
     def value(self, x0, x1):
         r"""Covariance function evaluated at ``(x0, x1)``.
@@ -128,3 +131,9 @@ class FreeFormCov(Function):
 
         grad = [g[x0, ...][..., x1] for g in grad]
         return dict(Lu=stack(grad, axis=-1))
+
+    def __str__(self):
+        tname = type(self).__name__
+        msg = "{}()\n".format(tname)
+        msg += "  Lu: {}".format(self.Lu)
+        return msg

@@ -27,7 +27,7 @@ Fast inference for Generalised Linear Mixed Models.
 Comments and bugs
 *****************
 
-You can get the source and open issues `on Github.`_
+You can get the source code and open issues `on Github.`_
 
 .. _on Github.: https://github.com/limix/glimix-core
 

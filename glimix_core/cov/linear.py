@@ -74,3 +74,9 @@ class LinearCov(Function):
         x0 = stack(x0, axis=0)
         x1 = stack(x1, axis=0)
         return dict(logscale=self.scale * x0.dot(x1.T))
+
+    def __str__(self):
+        tname = type(self).__name__
+        msg = "{}()\n".format(tname)
+        msg += "  scale: {}".format(self.scale)
+        return msg

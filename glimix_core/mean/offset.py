@@ -30,6 +30,9 @@ class OffsetMean(Function):
         [2. 2. 2.]
         >>> print(mean.gradient(x))
         {'offset': array([1., 1., 1.])}
+        >>> print(mean)
+        OffsetMean()
+          offset: 2.0
     """
 
     def __init__(self):
@@ -75,3 +78,9 @@ class OffsetMean(Function):
     @offset.setter
     def offset(self, v):
         self.variables().get("offset").value = v
+
+    def __str__(self):
+        tname = type(self).__name__
+        msg = "{}()\n".format(tname)
+        msg += "  offset: {}".format(self.offset)
+        return msg

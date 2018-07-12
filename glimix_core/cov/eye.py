@@ -46,6 +46,9 @@ class EyeCov(Function):
         [[2.5 0.  0. ]
          [0.  2.5 0. ]
          [0.  0.  2.5]]
+        >>> print(cov)
+        EyeCov()
+          scale: 2.5
     """
 
     def __init__(self):
@@ -102,3 +105,9 @@ class EyeCov(Function):
             :math:`s \delta[\mathrm x_0 = \mathrm x_1]`.
         """
         return dict(logscale=self.value(x0, x1))
+
+    def __str__(self):
+        tname = type(self).__name__
+        msg = "{}()\n".format(tname)
+        msg += "  scale: {}".format(self.scale)
+        return msg

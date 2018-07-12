@@ -1,4 +1,4 @@
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_string_equal
 
 from glimix_core.mean import LinearMean
 from optimix import Assertion
@@ -16,3 +16,9 @@ def test_offsetmean_optimix():
 
     cov.effsizes = [1.0, -1.0]
     assert_allclose(cov.effsizes, [1.0, -1.0])
+
+
+def test_offsetmean_str():
+    cov = LinearMean(2)
+    cov.effsizes = [0.5, 1.0]
+    assert_string_equal(str(cov), "LinearMean(size=2)\n  effsizes: [0.5 1. ]")

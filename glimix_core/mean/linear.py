@@ -35,6 +35,9 @@ class LinearMean(Function):
         4.1
         >>> print(mean.gradient(x))
         {'effsizes': [5.1, 1.0]}
+        >>> print(mean)
+        LinearMean(size=2)
+          effsizes: [ 1. -1.]
     """
 
     def __init__(self, size):
@@ -53,7 +56,7 @@ class LinearMean(Function):
         float
             :math:`\mathbf x^\intercal \boldsymbol\alpha`.
         """
-        return dot(x, self.variables().get('effsizes').value)
+        return dot(x, self.variables().get("effsizes").value)
 
     def gradient(self, x):
         r"""Gradient of the linear mean function.
@@ -73,8 +76,14 @@ class LinearMean(Function):
     @property
     def effsizes(self):
         r"""Effect-sizes parameter."""
-        return self.variables().get('effsizes').value
+        return self.variables().get("effsizes").value
 
     @effsizes.setter
     def effsizes(self, v):
-        self.variables().get('effsizes').value = ascontiguousarray(v)
+        self.variables().get("effsizes").value = ascontiguousarray(v)
+
+    def __str__(self):
+        tname = type(self).__name__
+        msg = "{}(size={})\n".format(tname, len(self.effsizes))
+        msg += "  effsizes: {}".format(self.effsizes)
+        return msg
