@@ -28,6 +28,7 @@ class LinearMean(NamedClass, Function):
 
     .. doctest::
 
+        >>> from numpy import asarray
         >>> from glimix_core.mean import LinearMean
         >>>
         >>> mean = LinearMean(2)
@@ -44,6 +45,17 @@ class LinearMean(NamedClass, Function):
         >>> print(mean)
         LinearMean(size=2): covariates
           effsizes: [ 1. -1.]
+        >>> X = asarray([[5.1,  1.0],
+        ...              [0.3, -9.0]])
+        >>> mean.set_data(X)
+        >>> print(mean.feed().value())
+        [4.1 9.3]
+        >>> X = asarray([[5.1,  1.0],
+        ...              [0.3, -9.0],
+        ...              [4.9,  0.0]])
+        >>> mean.set_data(X, "dataB")
+        >>> print(mean.feed("dataB").value())
+        [4.1 9.3 4.9]
     """
 
     def __init__(self, size):
