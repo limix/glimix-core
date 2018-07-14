@@ -5,15 +5,10 @@ LinearMean
 
 .. autoclass:: LinearMean
 
-   
-   .. automethod:: __init__
-
-   
    .. rubric:: Methods
 
    .. autosummary::
-   
-      ~LinearMean.__init__
+
       ~LinearMean.feed
       ~LinearMean.fix
       ~LinearMean.gradient
@@ -23,17 +18,10 @@ LinearMean
       ~LinearMean.unfix
       ~LinearMean.unset_data
       ~LinearMean.value
-      ~LinearMean.variables
-   
-   
 
-   
-   
    .. rubric:: Attributes
 
    .. autosummary::
-   
+
       ~LinearMean.effsizes
       ~LinearMean.name
-   
-   

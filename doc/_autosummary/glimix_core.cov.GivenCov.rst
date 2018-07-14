@@ -5,15 +5,10 @@ GivenCov
 
 .. autoclass:: GivenCov
 
-   
-   .. automethod:: __init__
-
-   
    .. rubric:: Methods
 
    .. autosummary::
-   
-      ~GivenCov.__init__
+
       ~GivenCov.feed
       ~GivenCov.fix
       ~GivenCov.gradient
@@ -23,17 +18,10 @@ GivenCov
       ~GivenCov.unfix
       ~GivenCov.unset_data
       ~GivenCov.value
-      ~GivenCov.variables
-   
-   
 
-   
-   
    .. rubric:: Attributes
 
    .. autosummary::
-   
+
       ~GivenCov.name
       ~GivenCov.scale
-   
-   

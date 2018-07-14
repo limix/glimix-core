@@ -5,14 +5,10 @@ EyeCov
 
 .. autoclass:: EyeCov
 
-   
-   .. automethod:: __init__
-
-   
    .. rubric:: Methods
 
    .. autosummary::
-   
+
       ~EyeCov.__init__
       ~EyeCov.feed
       ~EyeCov.fix
@@ -23,17 +19,10 @@ EyeCov
       ~EyeCov.unfix
       ~EyeCov.unset_data
       ~EyeCov.value
-      ~EyeCov.variables
-   
-   
 
-   
-   
    .. rubric:: Attributes
 
    .. autosummary::
-   
+
       ~EyeCov.name
       ~EyeCov.scale
-   
-   
