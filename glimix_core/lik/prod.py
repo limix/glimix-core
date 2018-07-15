@@ -2,7 +2,7 @@ from __future__ import division, unicode_literals
 
 import scipy.stats as st
 from numpy import ascontiguousarray
-from ..link import IdentityLink, LogitLink
+from ..link import IdentityLink, LogLink, LogitLink
 
 
 def _sample_doc(func):
@@ -200,6 +200,8 @@ class PoissonProdLik(object):
     """
 
     def __init__(self, link=None):
+        if link is None:
+            link = LogLink()
         self._link = link
         self._noccurrences = None
 
