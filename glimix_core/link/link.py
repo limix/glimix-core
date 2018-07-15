@@ -13,8 +13,24 @@ def _value_doc(func):
 
         Returns
         -------
-        numpy.ndarray
+        :class:`numpy.ndarray`
             Link function values.
+        """
+    return func
+
+
+def _inv_doc(func):
+    func.__doc__ = r"""Inverse of the link function evaluated at the given points.
+
+        Parameters
+        ----------
+        x : array_like
+            Array of points.
+
+        Returns
+        -------
+        :class:`numpy.ndarray`
+            Inverse of the link function values.
         """
     return func
 
@@ -33,6 +49,7 @@ class IdentityLink(object):
     def value(self, x):
         return asarray(x, float)
 
+    @_inv_doc
     def inv(self, x):
         return asarray(x, float)
 
@@ -51,12 +68,13 @@ class LogitLink(object):
     def value(self, x):
         return asarray(log(x / (1 - x)), float)
 
+    @_inv_doc
     def inv(self, x):
         return asarray(1 / (1 + exp(-x)), float)
 
 
 class ProbitLink(object):
-    r"""Logit link function.
+    r"""Probit link function.
 
     Mathematically,
 
@@ -69,12 +87,13 @@ class ProbitLink(object):
     def value(self, x):
         return asarray(_normal_icdf(asarray(x, float)), float)
 
+    @_inv_doc
     def inv(self, x):
         return asarray(_normal_cdf(asarray(x, float)), float)
 
 
 class LogLink(object):
-    r"""Logit link function.
+    r"""Log link function.
 
     Mathematically,
 
@@ -87,6 +106,7 @@ class LogLink(object):
     def value(self, x):
         return asarray(log(x), float)
 
+    @_inv_doc
     def inv(self, x):
         return asarray(exp(x), float)
 

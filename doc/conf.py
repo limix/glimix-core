@@ -20,11 +20,12 @@ def _get_name():
 
 extensions = [
     "sphinx.ext.autodoc",
-    "sphinx.ext.doctest",
-    "sphinx.ext.viewcode",
-    "sphinx.ext.napoleon",
-    "sphinx.ext.mathjax",
     "sphinx.ext.autosummary",
+    "sphinx.ext.doctest",
+    "sphinx.ext.intersphinx",
+    "sphinx.ext.mathjax",
+    "sphinx.ext.napoleon",
+    "sphinx.ext.viewcode",
 ]
 
 autodoc_default_flags = ["members"]
@@ -57,4 +58,7 @@ htmlhelp_basename = "{}doc".format(project)
 
 man_pages = [(master_doc, _get_name(), "{} documentation".format(project), [author], 1)]
 
-intersphinx_mapping = {"python": ("http://docs.python.org/", None)}
+intersphinx_mapping = {
+    "python": ("http://docs.python.org/", None),
+    "numpy": ("http://docs.scipy.org/doc/numpy/", None),
+}

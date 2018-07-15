@@ -5,19 +5,9 @@ LogitLink
 
 .. autoclass:: LogitLink
 
-   
-   .. automethod:: __init__
-
-   
    .. rubric:: Methods
 
    .. autosummary::
-   
+
       ~LogitLink.inv
       ~LogitLink.value
-   
-   
-
-   
-   
-   

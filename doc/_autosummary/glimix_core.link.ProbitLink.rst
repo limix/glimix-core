@@ -5,19 +5,9 @@ ProbitLink
 
 .. autoclass:: ProbitLink
 
-   
-   .. automethod:: __init__
-
-   
    .. rubric:: Methods
 
    .. autosummary::
-   
+
       ~ProbitLink.inv
       ~ProbitLink.value
-   
-   
-
-   
-   
-   
