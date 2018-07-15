@@ -2,6 +2,7 @@ from __future__ import division, unicode_literals
 
 import scipy.stats as st
 from numpy import ascontiguousarray
+from ..link import LogitLink
 
 
 def _sample_doc(func):
@@ -31,6 +32,11 @@ class DeltaProdLik(object):
 
         \prod_i \delta[y_i = x_i]
 
+    Parameters
+    ----------
+    link : link_func
+        Link function establishing :math:`g(y_i) = x_i`. Defaults to ``None``, which
+        leads to the identity link function.
     """
 
     def __init__(self, link=None):
@@ -72,13 +78,20 @@ class BernoulliProdLik(object):
 
     .. math::
 
-        \prod_i g(x_i)^{y_i} (1-g(x_i))^{1-y_i}
+        \prod_i p_i^{y_i} (1-p_i)^{1-y_i}
 
-    where :math:`g(\cdot)` is the inverse of the link function.
+    where :math:`p_i` is the probability of success.
 
+    Parameters
+    ----------
+    link : link_func
+        Link function establishing :math:`g(p_i) = x_i`. Defaults to ``None``, which
+        leads to the :class:`glimix_core.link.LogitLink` link function.
     """
 
-    def __init__(self, link):
+    def __init__(self, link=None):
+        if link is None:
+            link = LogitLink
         self._link = link
         self._outcome = None
 
@@ -118,14 +131,23 @@ class BinomialProdLik(object):
 
     .. math::
 
-        \prod_i \binom{n_i}{n_i y_i} g(x_i)^{n_i y_i}
-        (1-g(x_i))^{n_i - n_i y_i}
+        \prod_i \binom{n_i}{n_i y_i} p_i^{n_i y_i}
+        (1-p_i)^{n_i - n_i y_i}
 
-    where :math:`g(x)` is the inverse of the link function.
+    where :math:`p_i` is the probability of success.
 
+    Parameters
+    ----------
+    ntrials : array_like
+        Array of number of trials.
+    link : link_func
+        Link function establishing :math:`g(p_i) = x_i`. Defaults to ``None``, which
+        leads to the :class:`glimix_core.link.LogitLink` link function.
     """
 
-    def __init__(self, ntrials, link):
+    def __init__(self, ntrials, link=None):
+        if link is None:
+            link = LogitLink
         self._link = link
         self._nsuccesses = None
         self._ntrials = _aca(ntrials)
@@ -142,7 +164,7 @@ class BinomialProdLik(object):
 
     @property
     def nsuccesses(self):
-        r"""Get or set an array of successfully trials."""
+        r"""Get or set an array of successful trials."""
         return self._nsuccesses
 
     @nsuccesses.setter
@@ -150,7 +172,7 @@ class BinomialProdLik(object):
         self._nsuccesses = _aca(v)
 
     def mean(self, x):
-        r"""Mean of the number of successfully trials."""
+        r"""Mean of the number of successful trials."""
         return self._link.inv(x)
 
     @_sample_doc
@@ -166,9 +188,16 @@ class BinomialProdLik(object):
 
 
 class PoissonProdLik(object):
-    r"""TODO."""
+    r"""Represents a product of Poisson likelihoods.
 
-    def __init__(self, link):
+    Parameters
+    ----------
+    link : link_func
+        Link function establishing :math:`g(y_i) = x_i`. Defaults to ``None``, which
+        leads to the :class:`glimix_core.link.LogitLink` link function.
+    """
+
+    def __init__(self, link=None):
         self._link = link
         self._noccurrences = None
 
