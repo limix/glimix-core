@@ -59,11 +59,30 @@ class SumCov(NamedClass, FunctionReduce):
         NamedClass.__init__(self)
 
     def value_reduce(self, values):
-        r"""Sum covariance function evaluated at ``(f_0, f_1, ...)``."""
+        r"""Sum covariance function evaluated at ``(f_0, f_1, ...)``.
+
+        Parameters
+        ----------
+        values : dict
+            A value for each function involved in the summation.
+
+        Returns
+        -------
+        dict
+            :math:`f_0 + f_1 + \dots`
+        """
         return add.reduce(list(values.values()))
 
-    def gradient_reduce(self, _, gradients):
+    def gradient_reduce(self, values, gradients):
         r"""Sum of covariance function derivatives.
+
+        Parameters
+        ----------
+        values : dict
+            Its value is not used in this particular function. We suggest you to simply
+            pass ``None``.
+        gradients : dict
+            A gradient for each function involved in the summation.
 
         Returns
         -------

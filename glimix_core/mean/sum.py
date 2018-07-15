@@ -70,11 +70,30 @@ class SumMean(NamedClass, FunctionReduce):
         NamedClass.__init__(self)
 
     def value_reduce(self, values):
-        r"""Sum mean function evaluated at :math:`(f_0, f_1, \dots)`."""
+        r"""Sum mean function evaluated at :math:`(f_0, f_1, \dots)`.
+
+        Parameters
+        ----------
+        values : dict
+            A value for each function involved in the summation.
+
+        Returns
+        -------
+        dict
+            :math:`f_0 + f_1 + \dots`
+        """
         return add.reduce(list(values.values()))
 
-    def gradient_reduce(self, _, gradients):
+    def gradient_reduce(self, values, gradients):
         r"""Sum of mean function derivatives.
+
+        Parameters
+        ----------
+        values : dict
+            Its value is not used in this particular function. We suggest you to simply
+            pass ``None``.
+        gradients : dict
+            A gradient for each function involved in the summation.
 
         Returns
         -------

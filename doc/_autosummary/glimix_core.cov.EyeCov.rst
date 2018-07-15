@@ -9,7 +9,6 @@ EyeCov
 
    .. autosummary::
 
-      ~EyeCov.__init__
       ~EyeCov.feed
       ~EyeCov.fix
       ~EyeCov.gradient

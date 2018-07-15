@@ -55,7 +55,7 @@ def bernoulli_sample(
         >>> offset = 5
         >>> G = [[1, -1], [2, 1]]
         >>> bernoulli_sample(offset, G, random_state=RandomState(0))
-        array([1, 1])
+        array([1., 1.])
     """
     link = LogitLink()
     mean, cov = _mean_cov(
@@ -89,7 +89,7 @@ def binomial_sample(
         >>> offset = 0.5
         >>> G = [[1, -1], [2, 1]]
         >>> binomial_sample(ntrials, offset, G, random_state=RandomState(0))
-        array([ 2, 14])
+        array([ 2., 14.])
     """
     link = LogitLink()
     mean, cov = _mean_cov(

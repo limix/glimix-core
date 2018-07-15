@@ -4,6 +4,24 @@ import scipy.stats as st
 from numpy import ascontiguousarray
 
 
+def _sample_doc(func):
+    func.__doc__ = r"""Sample from the likelihood distribution.
+
+        Parameters
+        ----------
+        x : array_like
+            Array of likelihood parameters.
+        random_state : random_state
+            Set the initial random state.
+
+        Returns
+        -------
+        numpy.ndarray
+            Sampled outcome.
+        """
+    return func
+
+
 class DeltaProdLik(object):
     r"""Represents a product of Kronecker delta likelihoods.
 
@@ -21,10 +39,12 @@ class DeltaProdLik(object):
 
     @property
     def name(self):
-        return 'Delta'
+        r"""Get the name of this likelihood."""
+        return "Delta"
 
     @property
     def outcome(self):
+        r"""Get or set an array of outcomes."""
         return self._outcome
 
     @outcome.setter
@@ -32,13 +52,16 @@ class DeltaProdLik(object):
         self._outcome = _aca(v)
 
     def mean(self, x):
+        r"""Outcome mean."""
         return x
 
-    def sample(self, x, random_state=None):  # pylint: disable=W0613
-        return x
+    @_sample_doc
+    def sample(self, x, random_state=None):
+        return _aca(x)
 
     @property
     def sample_size(self):
+        r"""Get the number of samples."""
         return len(self.outcome)
 
 
@@ -61,10 +84,12 @@ class BernoulliProdLik(object):
 
     @property
     def name(self):
-        return 'Bernoulli'
+        r"""Get the name of this likelihood."""
+        return "Bernoulli"
 
     @property
     def outcome(self):
+        r"""Get or set an array of outcomes."""
         return self._outcome
 
     @outcome.setter
@@ -72,14 +97,17 @@ class BernoulliProdLik(object):
         self._outcome = _aca(v)
 
     def mean(self, x):
+        r"""Outcome mean."""
         return self._link.inv(x)
 
+    @_sample_doc
     def sample(self, x, random_state=None):
         p = self.mean(x)
-        return st.bernoulli(p).rvs(random_state=random_state)
+        return _aca(st.bernoulli(p).rvs(random_state=random_state))
 
     @property
     def sample_size(self):
+        r"""Get the number of samples."""
         return len(self.outcome)
 
 
@@ -104,14 +132,17 @@ class BinomialProdLik(object):
 
     @property
     def name(self):
-        return 'Binomial'
+        r"""Get the name of this likelihood."""
+        return "Binomial"
 
     @property
     def ntrials(self):
+        r"""Get the array of number of trials."""
         return self._ntrials
 
     @property
     def nsuccesses(self):
+        r"""Get or set an array of successfully trials."""
         return self._nsuccesses
 
     @nsuccesses.setter
@@ -119,15 +150,18 @@ class BinomialProdLik(object):
         self._nsuccesses = _aca(v)
 
     def mean(self, x):
+        r"""Mean of the number of successfully trials."""
         return self._link.inv(x)
 
+    @_sample_doc
     def sample(self, x, random_state=None):
         p = self.mean(x)
         nt = ascontiguousarray(self._ntrials, dtype=int)
-        return st.binom(nt, p).rvs(random_state=random_state)
+        return _aca(st.binom(nt, p).rvs(random_state=random_state))
 
     @property
     def sample_size(self):
+        r"""Get the number of samples."""
         return len(self.nsuccesses)
 
 
@@ -140,10 +174,12 @@ class PoissonProdLik(object):
 
     @property
     def name(self):
-        return 'Poisson'
+        r"""Get the name of this likelihood."""
+        return "Poisson"
 
     @property
     def noccurrences(self):
+        r"""Get or set an array of number of occurrences."""
         return self._noccurrences
 
     @noccurrences.setter
@@ -151,14 +187,17 @@ class PoissonProdLik(object):
         self._noccurrences = _aca(v)
 
     def mean(self, x):
+        r"""Mean of the number of occurrences."""
         return self._link.inv(x)
 
+    @_sample_doc
     def sample(self, x, random_state=None):
         lam = self.mean(x)
         return st.poisson(mu=lam).rvs(random_state=random_state)
 
     @property
     def sample_size(self):
+        r"""Get the number of samples."""
         return len(self.noccurrences)
 
 
