@@ -16,6 +16,7 @@ Fast inference for Generalised Linear Mixed Models.
     mean
     cov
     lik
+    link
     lmm
     glmm
     gp

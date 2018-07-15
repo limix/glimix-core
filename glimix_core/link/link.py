@@ -1,61 +1,103 @@
 from __future__ import division
 
-from numpy import asarray, exp, log, pi
+from numpy import asarray, exp, log
 
 
-class Link(object):
+def _value_doc(func):
+    func.__doc__ = r"""Link function evaluated at the given points.
+
+        Parameters
+        ----------
+        x : array_like
+            Array of points.
+
+        Returns
+        -------
+        numpy.ndarray
+            Link function values.
+        """
+    return func
+
+
+class IdentityLink(object):
+    r"""Identity link function.
+
+    Mathematically,
+
+    .. math::
+
+        g(x) = x.
+    """
+
+    @_value_doc
     def value(self, x):
-        raise NotImplementedError
+        return asarray(x, float)
 
     def inv(self, x):
-        raise NotImplementedError
-
-    @property
-    def latent_variance(self):
-        raise NotImplementedError
+        return asarray(x, float)
 
 
-class LogitLink(Link):
+class LogitLink(object):
+    r"""Logit link function.
+
+    Mathematically,
+
+    .. math::
+
+        g(x) = \log(x/(1 - x)).
+    """
+
+    @_value_doc
     def value(self, x):
-        return log(x / (1 - x))
+        return asarray(log(x / (1 - x)), float)
 
     def inv(self, x):
-        return 1 / (1 + exp(-x))
-
-    @property
-    def latent_variance(self):
-        return pi**2 / 3.0
+        return asarray(1 / (1 + exp(-x)), float)
 
 
-class ProbitLink(Link):
+class ProbitLink(object):
+    r"""Logit link function.
+
+    Mathematically,
+
+    .. math::
+
+        g(x) = \Phi^{-1}(x).
+    """
+
+    @_value_doc
     def value(self, x):
-        return _normal_icdf(asarray(x, float))
+        return asarray(_normal_icdf(asarray(x, float)), float)
 
     def inv(self, x):
-        return _normal_cdf(asarray(x, float))
-
-    @property
-    def latent_variance(self):
-        return 1.0
+        return asarray(_normal_cdf(asarray(x, float)), float)
 
 
-class LogLink(Link):
+class LogLink(object):
+    r"""Logit link function.
+
+    Mathematically,
+
+    .. math::
+
+        g(x) = \log(x).
+    """
+
+    @_value_doc
     def value(self, x):
-        return log(x)
+        return asarray(log(x), float)
 
     def inv(self, x):
-        return exp(x)
-
-    @property
-    def latent_variance(self):
-        raise NotImplementedError
+        return asarray(exp(x), float)
 
 
 def _normal_cdf(x):
     import scipy.stats as st
+
     return st.norm.cdf(x)
 
 
 def _normal_icdf(x):
     import scipy.stats as st
+
     return st.norm.isf(1 - x)

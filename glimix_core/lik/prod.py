@@ -2,7 +2,7 @@ from __future__ import division, unicode_literals
 
 import scipy.stats as st
 from numpy import ascontiguousarray
-from ..link import LogitLink
+from ..link import IdentityLink, LogitLink
 
 
 def _sample_doc(func):
@@ -40,6 +40,8 @@ class DeltaProdLik(object):
     """
 
     def __init__(self, link=None):
+        if link is None:
+            link = IdentityLink()
         self._link = link
         self._outcome = None
 
