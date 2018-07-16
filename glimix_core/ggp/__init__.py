@@ -21,7 +21,7 @@ An instance of such process is given by
 .. math::
 
     \mathbf y \sim \int \prod_i \text{ExpFam}(y_i ~|~ \mu_i = g(z_i))
-      \mathcal N(\mathbf z ~|~ \mathbf m, \mathrm K) \mathrm d\mathbf z
+      \mathcal N(\mathbf z ~|~ \mathbf m, \mathrm K) \mathrm d\mathbf z.
 
 :class:`.ExpFamGP` performs inference over the mean and covariance
 parameters via maximum likelihood and Expectation Propagation `[3]`_
@@ -31,9 +31,9 @@ approximation.
 .. _[2]: http://www.gaussianprocess.org/gpml/
 .. _[3]: http://www.gaussianprocess.org/gpml/chapters/RW3.pdf
 
-Public interface
-^^^^^^^^^^^^^^^^
+Usage
+^^^^^
 """
-from .expfam import ExpFamGP
+from ._expfam import ExpFamGP
 
-__all__ = ['ExpFamGP']
+__all__ = ["ExpFamGP"]

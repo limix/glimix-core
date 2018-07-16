@@ -21,9 +21,9 @@ class ExpFamGP(FunctionReduce):
         Outcome variable.
     lik_name : str
         Likelihood name.
-    mean : :class:`optimix.Function`
+    mean : function
         Mean function. (Refer to :doc:`mean`.)
-    cov : :class:`optimix.Function`
+    cov : function
         Covariance function. (Refer to :doc:`cov`.)
 
     Example
@@ -49,10 +49,10 @@ class ExpFamGP(FunctionReduce):
         >>> y = GGPSampler(lik, mean, cov).sample(random)
         >>>
         >>> ggp = ExpFamGP(y, 'bernoulli', mean, cov)
-        >>> print('Before: %.4f' % ggp.feed().value())
+        >>> print('Before: %.4f' % ggp.lml())
         Before: -6.9802
-        >>> ggp.feed().maximize(verbose=False)
-        >>> print('After: %.2f' % ggp.feed().value())
+        >>> ggp.fit(verbose=False)
+        >>> print('After: %.2f' % ggp.lml())
         After: -6.55
     """
 
@@ -61,7 +61,7 @@ class ExpFamGP(FunctionReduce):
             n = len(y[0])
         else:
             n = len(y)
-        FunctionReduce.__init__(self, [mean, cov], name='ExpFamGP')
+        FunctionReduce.__init__(self, [mean, cov], name="ExpFamGP")
 
         self._y = y
         self._mean = mean
@@ -75,29 +75,48 @@ class ExpFamGP(FunctionReduce):
         self._machine = LikNormMachine(lik_name, 500)
 
     def __del__(self):
-        if hasattr(self, '_machine'):
+        if hasattr(self, "_machine"):
             self._machine.finish()
+
+    def fit(self, verbose=True, factr=1e5, pgtol=1e-7):
+        r"""Maximise the marginal likelihood.
+
+        Parameters
+        ----------
+        verbose : bool
+            ``True`` for progress output; ``False`` otherwise.
+            Defaults to ``True``.
+        factr : float, optional
+            The iteration stops when
+            ``(f^k - f^{k+1})/max{|f^k|,|f^{k+1}|,1} <= factr * eps``, where ``eps`` is
+            the machine precision.
+        pgtol : float, optional
+            The iteration will stop when ``max{|proj g_i | i = 1, ..., n} <= pgtol``
+            where ``pg_i`` is the i-th component of the projected gradient.
+        
+        Notes
+        -----
+        Please, refer to :func:`scipy.optimize.fmin_l_bfgs_b` for further information
+        about ``factr`` and ``pgtol``.
+        """
+        self.feed().maximize(verbose=verbose, factr=factr, pgtol=pgtol)
+
+    def lml(self):
+        r"""Log of the marginal likelihood.
+
+        Returns
+        -------
+        float
+            :math:`\log p(\mathbf y)`
+        """
+        return self.feed().value()
 
     def compute_moments(self, eta, tau, moments):
         self._machine.moments(self._y, eta, tau, moments)
 
     def value_reduce(self, values):
-        r"""Log of the marginal likelihood.
-
-        Parameters
-        ----------
-        mean : array_like
-            Realised mean.
-        cov : array_like
-            Realised covariance.
-
-        Returns
-        -------
-        float
-            Log of the marginal likelihood.
-        """
-        mean = values['ExpFamGP[0]']
-        cov = values['ExpFamGP[1]']
+        mean = values["ExpFamGP[0]"]
+        cov = values["ExpFamGP[1]"]
         try:
             self._ep.set_prior(mean, dict(QS=economic_qs(cov)))
             lml = self._ep.lml()
@@ -107,29 +126,10 @@ class ExpFamGP(FunctionReduce):
         return lml
 
     def gradient_reduce(self, values, gradients):
-        r"""Gradient of the log of the marginal likelihood.
-
-        Parameters
-        ----------
-        mean : array_like
-            Realised mean.
-        cov : array_like
-            Realised cov.
-        gmean : array_like
-            Realised mean derivative.
-        gcov : array_like
-            Realised covariance derivative.
-
-        Returns
-        -------
-        list
-            Derivatives.
-        """
-
-        mean = values['ExpFamGP[0]']
-        cov = values['ExpFamGP[1]']
-        gmean = gradients['ExpFamGP[0]']
-        gcov = gradients['ExpFamGP[1]']
+        mean = values["ExpFamGP[0]"]
+        cov = values["ExpFamGP[1]"]
+        gmean = gradients["ExpFamGP[0]"]
+        gcov = gradients["ExpFamGP[1]"]
 
         try:
             self._ep.set_prior(mean, dict(QS=economic_qs(cov)))
@@ -137,11 +137,11 @@ class ExpFamGP(FunctionReduce):
             grad = dict()
 
             for n, g in iter(gmean.items()):
-                grad['ExpFamGP[0].' + n] = self._ep.lml_derivative_over_mean(g)
+                grad["ExpFamGP[0]." + n] = self._ep.lml_derivative_over_mean(g)
 
             for n, g in iter(gcov.items()):
                 QS = economic_qs(g)
-                grad['ExpFamGP[1].' + n] = self._ep.lml_derivative_over_cov(QS)
+                grad["ExpFamGP[1]." + n] = self._ep.lml_derivative_over_cov(QS)
 
             return grad
         except (ValueError, LinAlgError) as e:
