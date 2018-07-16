@@ -22,7 +22,6 @@ Fast inference for Generalised Linear Mixed Models.
     gp
     ggp
     random
-    advanced
 
 *****************
 Comments and bugs
