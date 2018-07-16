@@ -5,9 +5,6 @@ BinomialProdLik   Binomial likelihood.
 DeltaProdLik      Delta likelihood.
 PoissonProdLik    Poisson likelihood.
 """
-from .prod import (BernoulliProdLik, BinomialProdLik, DeltaProdLik,
-                   PoissonProdLik)
+from ._prod import BernoulliProdLik, BinomialProdLik, DeltaProdLik, PoissonProdLik
 
-__all__ = [
-    'DeltaProdLik', 'BernoulliProdLik', 'BinomialProdLik', 'PoissonProdLik'
-]
+__all__ = ["DeltaProdLik", "BernoulliProdLik", "BinomialProdLik", "PoissonProdLik"]

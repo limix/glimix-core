@@ -6,7 +6,7 @@ from numpy_sugar.linalg import sum2diag
 from numpy_sugar.random import multivariate_normal
 
 
-class GPSampler(object):  # pylint: disable=R0903
+class GPSampler(object):
     r"""Sample from a Gaussian Process.
 
     Outcome modelled via
@@ -16,11 +16,12 @@ class GPSampler(object):  # pylint: disable=R0903
         \mathbf y \sim \mathcal N(\mathbf z ~|~ \mathbf m, \mathrm K)
         \mathrm d\mathbf z.
 
-    Args:
-        mean (:class:`optimix.Function`): mean function.
-                                          (Refer to :doc:`mean`.)
-        cov (:class:`optimix.Function`): covariance function.
-                                         (Refer to :doc:`cov`.)
+    Parameters
+    ----------
+    mean : function
+        Mean function. (Refer to :doc:`mean`.)
+    cov : function
+        Covariance function. (Refer to :doc:`cov`.)
 
     Example
     -------
@@ -39,7 +40,7 @@ class GPSampler(object):  # pylint: disable=R0903
         >>> cov = linear_eye_cov()
         >>>
         >>> y = GPSampler(mean, cov).sample(random)
-        >>> print(y[:5])
+        >>> print(y[:5])  # doctest: +FLOAT_CMP
         [-2.42181498  0.50720447 -1.01053967  0.736624    1.64019063]
     """
 
@@ -48,11 +49,23 @@ class GPSampler(object):  # pylint: disable=R0903
         self._cov = cov
 
     def sample(self, random_state=None):
+        r"""Sample from the specified distribution.
+
+        Parameters
+        ----------
+        random_state : random_state
+            Set the initial random state.
+
+        Returns
+        -------
+        numpy.ndarray
+            Sample.
+        """
         if random_state is None:
             random_state = RandomState()
 
-        m = self._mean.feed('sample').value()
-        K = self._cov.feed('sample').value().copy()
+        m = self._mean.feed("sample").value()
+        K = self._cov.feed("sample").value().copy()
 
         sum2diag(K, +epsilon.small, out=K)
 

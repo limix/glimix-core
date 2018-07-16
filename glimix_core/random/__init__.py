@@ -1,21 +1,20 @@
-"""
-**************
-Random sampler
-**************
+"""Random sampler.
 
-Introduction
-^^^^^^^^^^^^
-
-Helper classes and functions for sampling: :class:`.GGPSampler`,
-:class:`.GPSampler`.
-
-Public interface
-^^^^^^^^^^^^^^^^
+GGPSampler       Sample from a Generalised Gaussian Process.
+GPSampler        Sample from a Gaussian Process.
+bernoulli_sample Bernoulli likelihood sampling.
+binomial_sample  Binomial likelihood sampling.
+poisson_sample   Poisson likelihood sampling.
 """
 
-from .ggp import GGPSampler
-from .gp import GPSampler
-from .canonical import bernoulli_sample, binomial_sample, poisson_sample
+from ._ggp import GGPSampler
+from ._gp import GPSampler
+from ._canonical import bernoulli_sample, binomial_sample, poisson_sample
 
-__all__ = ['GGPSampler', 'GPSampler', 'bernoulli_sample', 'binomial_sample',
-           'poisson_sample']
+__all__ = [
+    "GGPSampler",
+    "GPSampler",
+    "bernoulli_sample",
+    "binomial_sample",
+    "poisson_sample",
+]

@@ -1,5 +1,3 @@
-# pylint: disable=R0913
-
 from __future__ import division
 
 from numpy import arange, ascontiguousarray, atleast_2d, sqrt, std
@@ -8,7 +6,7 @@ from ..cov import EyeCov, LinearCov, SumCov
 from ..lik import BernoulliProdLik, BinomialProdLik, PoissonProdLik
 from ..link import LogitLink, LogLink
 from ..mean import LinearMean, OffsetMean, SumMean
-from .ggp import GGPSampler
+from ._ggp import GGPSampler
 
 
 def bernoulli_sample(
@@ -45,6 +43,11 @@ def bernoulli_sample(
     The causal effect-sizes :math:`\boldsymbol\alpha` are draw from
     :math:`\{-1, +1\}` and subsequently normalized for mean-zero and std-one""
 
+    Parameters
+    ----------
+    random_state : random_state
+        Set the initial random state.
+
     Example
     -------
 
@@ -78,6 +81,11 @@ def binomial_sample(
 ):
     """Binomial likelihood sampling.
 
+    Parameters
+    ----------
+    random_state : random_state
+        Set the initial random state.
+
     Example
     -------
 
@@ -110,6 +118,11 @@ def poisson_sample(
     random_state=None,
 ):
     """Poisson likelihood sampling.
+
+    Parameters
+    ----------
+    random_state : random_state
+        Set the initial random state.
 
     Example
     -------
