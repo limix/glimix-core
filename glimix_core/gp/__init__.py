@@ -14,7 +14,7 @@ An instance of such class of processes is defined via a mean function
 domains are :math:`\mathrm T` and :math:`\mathrm T\times\mathrm T`,
 respectively.
 
-An instance of such process is given by
+A finite instance of such process is given by
 
 .. math::
 
@@ -32,6 +32,6 @@ approximation.
 Public interface
 ^^^^^^^^^^^^^^^^
 """
-from .gp import GP
+from ._gp import GP
 
-__all__ = ['GP']
+__all__ = ["GP"]
