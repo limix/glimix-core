@@ -1,5 +1,8 @@
 from __future__ import unicode_literals
 
+from numpy.random import RandomState
+from numpy.testing import assert_, assert_allclose
+
 from glimix_core.lik import (
     BernoulliProdLik,
     BinomialProdLik,
@@ -7,8 +10,6 @@ from glimix_core.lik import (
     PoissonProdLik
 )
 from glimix_core.link import ProbitLink
-from numpy.random import RandomState
-from numpy.testing import assert_, assert_allclose
 
 
 def test_delta_prod_lik():

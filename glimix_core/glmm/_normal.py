@@ -1,9 +1,9 @@
 from __future__ import absolute_import, division, unicode_literals
 
 from copy import deepcopy
-
 from numpy import dot, exp, eye, log, pi, trace, zeros
 from numpy.linalg import slogdet, solve
+
 from numpy_sugar.linalg import ddot, economic_qs, sum2diag
 
 from ..lmm import FastScanner

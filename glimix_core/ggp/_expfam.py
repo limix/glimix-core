@@ -1,10 +1,10 @@
 from __future__ import absolute_import, division, unicode_literals
 
 import warnings
-
-from liknorm import LikNormMachine
 from numpy import sign
 from numpy.linalg import LinAlgError
+
+from liknorm import LikNormMachine
 from numpy_sugar import epsilon
 from numpy_sugar.linalg import economic_qs
 

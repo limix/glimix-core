@@ -1,7 +1,8 @@
 from __future__ import division, unicode_literals
 
-import scipy.stats as st
 from numpy import ascontiguousarray
+
+import scipy.stats as st
 
 from ..link import IdentityLink, LogitLink, LogLink
 

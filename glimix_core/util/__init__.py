@@ -18,5 +18,4 @@ __all__ = [
     "normalise_covariates",
     "normalise_outcome",
     "numbers",
-    "wprint",
 ]

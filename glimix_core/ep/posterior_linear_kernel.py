@@ -1,6 +1,7 @@
 from __future__ import division
 
 from numpy import dot
+
 from numpy_sugar.linalg import ddot, dotd, sum2diag
 from scipy.linalg import cho_factor
 
@@ -28,7 +29,7 @@ class PosteriorLinearKernel(Posterior):
         super(PosteriorLinearKernel, self).__init__(site)
 
     @property
-    def _A(self):
+    def A(self):
         s = self._cov["scale"]
         d = self._cov["delta"]
         return 1 / (s * d * self._site.tau + 1)
@@ -38,7 +39,7 @@ class PosteriorLinearKernel(Posterior):
             return self._AQ_cache
 
         Q = self._cov["QS"][0][0]
-        A = self._A
+        A = self.A
 
         self._AQ_cache = ddot(A, Q)
         return self._AQ_cache
@@ -55,7 +56,7 @@ class PosteriorLinearKernel(Posterior):
             return self._QSQtATQLQtA_cache
 
         LQt = self.LQt()
-        A = self._A
+        A = self.A
         Q = self._cov["QS"][0][0]
         LQtA = ddot(LQt, A)
         AQ = self.AQ()
@@ -80,7 +81,7 @@ class PosteriorLinearKernel(Posterior):
         Q = self._cov["QS"][0][0]
         S = self._cov["QS"][1]
 
-        ddot(self._A * self._site.tau, Q, left=True, out=self._NxR)
+        ddot(self.A * self._site.tau, Q, left=True, out=self._NxR)
         B = dot(Q.T, self._NxR, out=self._RxR)
         B *= 1 - d
         sum2diag(B, 1. / S / s, out=B)
@@ -94,7 +95,7 @@ class PosteriorLinearKernel(Posterior):
         d = self._cov["delta"]
         Q = self._cov["QS"][0][0]
 
-        A = self._A
+        A = self.A
         LQt = self.LQt()
 
         T = self._site.tau

@@ -1,5 +1,6 @@
-from glimix_core.link import LogitLink, LogLink, ProbitLink
 from numpy.testing import assert_allclose
+
+from glimix_core.link import LogitLink, LogLink, ProbitLink
 
 
 def test_probit_link():

@@ -1,8 +1,8 @@
 from __future__ import absolute_import, division, unicode_literals
 
 from math import fsum
-
 from numpy import dot, isfinite, log
+
 from numpy_sugar import epsilon
 from numpy_sugar.linalg import ddot, dotd
 
@@ -45,7 +45,7 @@ class EPLinearKernel(EP):
 
         s = cov["scale"]
         d = cov["delta"]
-        A = self._posterior._A
+        A = self._posterior.A
 
         lml = [
             -log(L.diagonal()).sum(),
@@ -84,7 +84,7 @@ class EPLinearKernel(EP):
         ATQ = self._posterior.ATQ()
         ttau = self._site.tau
         teta = self._site.eta
-        A = self._posterior._A
+        A = self._posterior.A
 
         cov = self._posterior.cov
         Q = cov["QS"][0][0]

@@ -1,7 +1,6 @@
 from __future__ import division
 
 import warnings
-
 from numpy import all as npall
 from numpy import (
     asarray,
@@ -20,6 +19,7 @@ from numpy import newaxis
 from numpy import sum as npsum
 from numpy import zeros
 from numpy.linalg import LinAlgError
+
 from numpy_sugar import epsilon
 from numpy_sugar.linalg import dotd, rsolve
 from tqdm import tqdm

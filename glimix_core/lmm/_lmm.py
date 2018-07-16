@@ -2,6 +2,7 @@ from __future__ import division
 
 from numpy import asarray, clip, dot, exp
 from numpy.linalg import solve
+
 from numpy_sugar import epsilon, is_all_finite
 
 from ._core import LMMCore

@@ -1,6 +1,7 @@
 from __future__ import division
 
 from numpy import exp, log, stack
+
 from numpy_sugar import epsilon
 
 from optimix import Function, Scalar
