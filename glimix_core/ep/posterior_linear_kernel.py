@@ -25,9 +25,6 @@ class PosteriorLinearKernel(Posterior):
           (\tilde{\mathrm T} + \mathrm K^{-1})^{-1}\right).
     """
 
-    def __init__(self, site):
-        super(PosteriorLinearKernel, self).__init__(site)
-
     @property
     def A(self):
         s = self._cov["scale"]
