@@ -186,10 +186,8 @@ class GLMM(Function):
         about ``factr`` and ``pgtol``.
         """
         f = self.feed()
-        f.factr = factr
-        f.pgtol = pgtol
         self._verbose = verbose
-        f.maximize(verbose=verbose)
+        f.maximize(verbose=verbose, factr=factr, pgtol=pgtol)
         self._verbose = False
 
     def lml(self):
