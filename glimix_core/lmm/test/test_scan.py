@@ -7,7 +7,7 @@ from numpy.testing import assert_allclose
 from glimix_core.cov import EyeCov, LinearCov, SumCov
 from glimix_core.lik import DeltaProdLik
 from glimix_core.lmm import LMM
-from glimix_core.lmm.scan import FastScanner
+from glimix_core.lmm import FastScanner
 from glimix_core.mean import OffsetMean
 from glimix_core.random import GGPSampler
 from numpy_sugar.linalg import economic_qs, economic_qs_linear

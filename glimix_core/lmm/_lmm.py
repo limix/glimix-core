@@ -6,7 +6,7 @@ from numpy.linalg import solve
 from numpy_sugar import epsilon, is_all_finite
 
 from ._core import LMMCore
-from .scan import FastScanner
+from ._scan import FastScanner
 
 
 class LMM(LMMCore):

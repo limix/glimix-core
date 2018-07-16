@@ -1,6 +1,6 @@
 r"""Linear mixed model package."""
 
-from .lmm import LMM
-from .scan import FastScanner
+from ._lmm import LMM
+from ._scan import FastScanner
 
-__all__ = ['LMM', 'FastScanner']
+__all__ = ["LMM", "FastScanner"]
