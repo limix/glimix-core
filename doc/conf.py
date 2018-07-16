@@ -61,4 +61,5 @@ man_pages = [(master_doc, _get_name(), "{} documentation".format(project), [auth
 intersphinx_mapping = {
     "python": ("http://docs.python.org/", None),
     "numpy": ("http://docs.scipy.org/doc/numpy/", None),
+    "scipy": ("http://docs.scipy.org/doc/scipy/reference/", None),
 }

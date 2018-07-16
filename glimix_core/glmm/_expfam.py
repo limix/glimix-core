@@ -16,10 +16,10 @@ from ._glmm import GLMM
 class GLMMExpFam(GLMM):
     r"""Generalised Linear Gaussian Processes implementation.
 
-    It implements inference over the GLMM explained in Section BLA via
-    the Expectation Propagation [Min01]_ algorithm.
-    It currently supports the `Bernoulli`, `Probit`, `Binomial`, and `Poisson`
-    likelihoods. (For heterogeneous Normal likelihood, please refer to
+    It implements inference over GLMMs via the Expectation Propagation [Min01]_
+    algorithm.
+    It currently supports the ``"Bernoulli"``, ``"Probit"``, ``"Binomial"``, and
+    ``"Poisson"`` likelihoods. (For heterogeneous Normal likelihood, please refer to
     :class:`glimix_core.glmm.GLMMNormal` for a closed-form inference.)
 
     Parameters
@@ -27,12 +27,12 @@ class GLMMExpFam(GLMM):
     y : array_like
         Outcome variable.
     lik_name : str
-        Likelihood name. It supports `Bernoulli`, `Probit`, `Binomial`, and
-        `Poisson`.
+        Likelihood name. It supports ``"Bernoulli"``, ``"Probit"``, ``"Binomial"``, and
+        ``"Poisson"``.
     X : array_like
         Covariates.
     QS : tuple
-        Economic eigen decomposition.
+        Economic eigendecomposition.
 
     Example
     -------
@@ -71,14 +71,16 @@ class GLMMExpFam(GLMM):
         After: -13.43
     """
 
-    def __init__(self,
-                 y,
-                 lik_name,
-                 X,
-                 QS=None,
-                 n_int=1000,
-                 rtol=epsilon.small * 1000,
-                 atol=epsilon.small):
+    def __init__(
+        self,
+        y,
+        lik_name,
+        X,
+        QS=None,
+        n_int=1000,
+        rtol=epsilon.small * 1000,
+        atol=epsilon.small,
+    ):
         GLMM.__init__(self, y, lik_name, X, QS)
 
         self._ep = EPLinearKernel(self._X.shape[0], rtol=rtol, atol=atol)
@@ -86,14 +88,14 @@ class GLMMExpFam(GLMM):
         self._machine = LikNormMachine(self._lik_name, n_int)
         self.update_approx = True
 
-        self.variables().get('beta').listen(self.set_update_approx)
-        self.variables().get('logscale').listen(self.set_update_approx)
-        self.variables().get('logitdelta').listen(self.set_update_approx)
+        self.variables().get("beta").listen(self.set_update_approx)
+        self.variables().get("logscale").listen(self.set_update_approx)
+        self.variables().get("logitdelta").listen(self.set_update_approx)
 
     def __copy__(self):
         gef = GLMMExpFam(self._y, self._lik_name, self._X, self._QS)
-        gef.__dict__['_ep'] = copy(self._ep)
-        gef.__dict__['_ep'].set_compute_moments(gef.compute_moments)
+        gef.__dict__["_ep"] = copy(self._ep)
+        gef.__dict__["_ep"].set_compute_moments(gef.compute_moments)
         gef.update_approx = self.update_approx
 
         GLMM._copy_to(self, gef)
@@ -101,7 +103,7 @@ class GLMMExpFam(GLMM):
         return gef
 
     def __del__(self):
-        if hasattr(self, '_machine'):
+        if hasattr(self, "_machine"):
             self._machine.finish()
 
     def _update_approx(self):
@@ -129,14 +131,6 @@ class GLMMExpFam(GLMM):
         return dict(QS=self._QS, scale=self.scale, delta=self.delta)
 
     def fit(self, verbose=True, factr=1e5, pgtol=1e-7):
-        r"""Maximise the marginal likelihood.
-
-        Parameters
-        ----------
-        verbose : bool
-            ``True`` for progress output; ``False`` otherwise.
-            Defaults to ``True``.
-        """
         self._ep.verbose = verbose
         super(GLMMExpFam, self).fit(verbose=verbose, factr=factr, pgtol=pgtol)
         self._ep.verbose = False
@@ -146,6 +140,13 @@ class GLMMExpFam(GLMM):
         self.set_update_approx()
 
     def gradient(self):
+        r"""Gradient of the log of the marginal likelihood.
+        
+        Returns
+        -------
+        dict
+            Map between variables to their gradient values.
+        """
         self._update_approx()
 
         g = self._ep.lml_derivatives(self._X)
@@ -153,9 +154,9 @@ class GLMMExpFam(GLMM):
         es = exp(self.logscale)
 
         grad = dict()
-        grad['logitdelta'] = g['delta'] * (ed / (1 + ed)) / (1 + ed)
-        grad['logscale'] = g['scale'] * es
-        grad['beta'] = g['mean']
+        grad["logitdelta"] = g["delta"] * (ed / (1 + ed)) / (1 + ed)
+        grad["logscale"] = g["scale"] * es
+        grad["beta"] = g["mean"]
 
         return grad
 

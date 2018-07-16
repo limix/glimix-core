@@ -113,7 +113,7 @@ class GLMM(Function):
 
         Returns
         -------
-        array_like
+        :class:`numpy.ndarray`
             :math:`\boldsymbol\beta`.
         """
         return asarray(self.variables().get("beta").value, float)
@@ -131,7 +131,7 @@ class GLMM(Function):
 
         Returns
         -------
-        array_like
+        :class:`numpy.ndarray`
             :math:`v_0 \mathrm K + v_1 \mathrm I`.
         """
         Q0 = self._QS[0][0]
@@ -140,7 +140,7 @@ class GLMM(Function):
 
     @property
     def delta(self):
-        r"""Ratio of variance between ``K`` and ``I``.
+        r"""Get or set the ratio of variance between ``K`` and ``I``.
 
         Returns
         -------
@@ -172,6 +172,18 @@ class GLMM(Function):
         verbose : bool
             ``True`` for progress output; ``False`` otherwise.
             Defaults to ``True``.
+        factr : float, optional
+            The iteration stops when
+            ``(f^k - f^{k+1})/max{|f^k|,|f^{k+1}|,1} <= factr * eps``, where ``eps`` is
+            the machine precision.
+        pgtol : float, optional
+            The iteration will stop when ``max{|proj g_i | i = 1, ..., n} <= pgtol``
+            where ``pg_i`` is the i-th component of the projected gradient.
+        
+        Notes
+        -----
+        Please, refer to :func:`scipy.optimize.fmin_l_bfgs_b` for further information
+        about ``factr`` and ``pgtol``.
         """
         f = self.feed()
         f.factr = factr
@@ -211,14 +223,14 @@ class GLMM(Function):
 
         Returns
         -------
-        array_like
+        :class:`numpy.ndarray`
             :math:`\mathrm X\boldsymbol\beta`.
         """
         return dot(self._X, self.beta)
 
     @property
     def scale(self):
-        r"""Overall variance.
+        r"""Get or set the overall variance.
 
         Returns
         -------

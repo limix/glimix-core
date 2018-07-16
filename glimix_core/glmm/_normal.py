@@ -14,17 +14,17 @@ from ._glmm import GLMM
 class GLMMNormal(GLMM):
     r"""LMM with heterogeneous Normal likelihoods.
 
-    Here we model
+    We model
 
     .. math::
 
         \tilde{\boldsymbol\mu} \sim \mathcal N(\mathrm X\boldsymbol\beta,
-        v_0 \mathrm K + v_1 \mathrm I + \tilde{\Sigma})
+        v_0 \mathrm K + v_1 \mathrm I + \tilde{\Sigma}),
 
     where :math:`\tilde{\boldsymbol\mu}` and :math:`\tilde{\Sigma}` are
-    typically given by EP approximation to non-normal likelihood (please, refer
-    to :class:`glimix_core.glmm.expfam.GLMMExpFam`).
-    Note that :math:`\tilde{\Sigma}` is a diagonal matrix with non-negative
+    typically given by EP approximation to non-Normal likelihood (please, refer
+    to :class:`glimix_core.expfam.GLMMExpFam`).
+    If that is the case, :math:`\tilde{\Sigma}` is a diagonal matrix with non-negative
     values.
     Those EP parameters are given to this class via their natural forms:
     ``eta`` and ``tau``.
@@ -32,31 +32,31 @@ class GLMMNormal(GLMM):
     Parameters
     ----------
     eta : array_like
-        :math:`\tilde{\mu}_i \tilde{\sigma}^{-2}_i`.
+        :math:`[\tilde{\mu}_0\tilde{\sigma}^{-2}_0 \quad \tilde{\mu}_1\tilde{\sigma}^{-2}_1 \quad\cdots\quad \tilde{\mu}_n\tilde{\sigma}^{-2}_n]`.
     tau : array_like
-        :math:`\tilde{\sigma}^{-2}_i`.
+        :math:`[\tilde{\sigma}^{-2}_0\quad\tilde{\sigma}^{-2}_1 \quad\cdots\quad \tilde{\sigma}^{-2}_n]`.
     X : array_like
         Covariates.
     QS : tuple
-        Economic eigen decomposition of :math:`\mathrm K`.
+        Economic eigendecomposition of :math:`\mathrm K`.
     """
 
     def __init__(self, eta, tau, X, QS=None):
         self._cache = dict(value=None, grad=None)
-        GLMM.__init__(self, (eta, tau), 'normal', X, QS)
-        self.variables().get('beta').listen(self.clear_cache)
-        self.variables().get('logscale').listen(self.clear_cache)
-        self.variables().get('logitdelta').listen(self.clear_cache)
+        GLMM.__init__(self, (eta, tau), "normal", X, QS)
+        self.variables().get("beta").listen(self.clear_cache)
+        self.variables().get("logscale").listen(self.clear_cache)
+        self.variables().get("logitdelta").listen(self.clear_cache)
 
     def __copy__(self):
         gef = GLMMNormal(self.eta, self.tau, self._X, self._QS)
         GLMM._copy_to(self, gef)
-        gef.__dict__['_cache'] = deepcopy(self._cache)
+        gef.__dict__["_cache"] = deepcopy(self._cache)
         return gef
 
     def clear_cache(self, _=None):
-        self._cache['value'] = None
-        self._cache['grad'] = None
+        self._cache["value"] = None
+        self._cache["grad"] = None
 
     @property
     def beta(self):
@@ -113,8 +113,8 @@ class GLMMNormal(GLMM):
         return FastScanner(y, self._X, economic_qs(K), self.v1)
 
     def gradient(self):
-        if self._cache['grad'] is not None:
-            return self._cache['grad']
+        if self._cache["grad"] is not None:
+            return self._cache["grad"]
 
         scale = exp(self.logscale)
         delta = 1 / (1 + exp(-self.logitdelta))
@@ -138,30 +138,30 @@ class GLMMNormal(GLMM):
         g = dict()
         Aim = solve(A, m)
 
-        g['beta'] = dot(m, solve(A, X))
+        g["beta"] = dot(m, solve(A, X))
 
         Kd0 = sum2diag((1 - delta) * K, delta)
         Kd1 = sum2diag(-scale * K, scale)
 
-        g['scale'] = -trace(solve(A, Kd0))
-        g['scale'] += dot(Aim, dot(Kd0, Aim))
-        g['scale'] *= 1 / 2
+        g["scale"] = -trace(solve(A, Kd0))
+        g["scale"] += dot(Aim, dot(Kd0, Aim))
+        g["scale"] *= 1 / 2
 
-        g['delta'] = -trace(solve(A, Kd1))
-        g['delta'] += dot(Aim, dot(Kd1, Aim))
-        g['delta'] *= 1 / 2
+        g["delta"] = -trace(solve(A, Kd1))
+        g["delta"] += dot(Aim, dot(Kd1, Aim))
+        g["delta"] *= 1 / 2
 
         ed = exp(-self.logitdelta)
         es = exp(self.logscale)
 
         grad = dict()
-        grad['logitdelta'] = g['delta'] * (ed / (1 + ed)) / (1 + ed)
-        grad['logscale'] = g['scale'] * es
-        grad['beta'] = g['beta']
+        grad["logitdelta"] = g["delta"] * (ed / (1 + ed)) / (1 + ed)
+        grad["logscale"] = g["scale"] * es
+        grad["beta"] = g["beta"]
 
-        self._cache['grad'] = grad
+        self._cache["grad"] = grad
 
-        return self._cache['grad']
+        return self._cache["grad"]
 
     def set_variable_bounds(self, var_name, bounds):
         GLMM.set_variable_bounds(self, var_name, bounds)
@@ -193,8 +193,8 @@ class GLMMNormal(GLMM):
         float
             :math:`\log{p(\tilde{\boldsymbol\mu})}`
         """
-        if self._cache['value'] is not None:
-            return self._cache['value']
+        if self._cache["value"] is not None:
+            return self._cache["value"]
 
         scale = exp(self.logscale)
         delta = 1 / (1 + exp(-self.logitdelta))
@@ -218,6 +218,7 @@ class GLMMNormal(GLMM):
         v -= slogdet(A)[1]
         v -= dot(m, solve(A, m))
 
-        self._cache['value'] = v / 2
+        self._cache["value"] = v / 2
 
-        return self._cache['value']
+        return self._cache["value"]
+

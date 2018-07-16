@@ -44,23 +44,25 @@ Expectation Propagation approximation [Min01]_ when the likelihood is
 not normally distributed (refer to :class:`glimix_core.glmm.GLMMExpFam`);
 a closed-form solution otherwise (refer to
 :class:`glimix_core.glmm.GLMMNormal`).
-The class :class:`glimix_core.glmm.GLMM` is a base classe for those two
-implementations, providing common methods to query the model.
 
-GLMMExpFam class
-^^^^^^^^^^^^^^^^
+Exponential family likelihood
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. autoclass:: glimix_core.glmm.GLMMExpFam
     :members:
+    :inherited-members:
+    :exclude-members: value, set_data, set_nodata, unset_data, variables, feed
 
-GLMMNormal class
-^^^^^^^^^^^^^^^^
+Heterogeneous Normal likelihood
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. autoclass:: glimix_core.glmm.GLMMNormal
     :members:
+    :inherited-members:
+    :exclude-members: value, set_data, set_nodata, unset_data, variables, feed
 """
 
-from .expfam import GLMMExpFam
-from .normal import GLMMNormal
+from ._expfam import GLMMExpFam
+from ._normal import GLMMNormal
 
-__all__ = ['GLMMNormal', 'GLMMExpFam']
+__all__ = ["GLMMNormal", "GLMMExpFam"]
