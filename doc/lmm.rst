@@ -34,9 +34,8 @@ This module provides :class:`.LMM`, a FastLMM [Lip11]_
 implementation to perform inference over the variance parameters
 :math:`v_0` and :math:`v_1` and over the vector
 :math:`\boldsymbol\beta` of fixed-effect sizes.
-An instance of this class is created by provided the outcome ``y``,
-the covariates ``X``, and the covariance ``K`` via its egonomic
-eigendecomposition.
+An instance of this class is created by providing the outcome ``y``,
+the covariates ``X``, and the covariance ``K`` via its economic eigendecomposition.
 Here is an example:
 
 .. doctest::
@@ -45,14 +44,14 @@ Here is an example:
     >>> from numpy_sugar.linalg import economic_qs_linear
     >>> from glimix_core.lmm import LMM
     >>>
-    >>> X = array([[1, 2], [3, -1], [1.1, 0.5], [0.5, -0.4]], float)
-    >>> QS = economic_qs_linear(X)
+    >>> G = array([[1, 2], [3, -1], [1.1, 0.5], [0.5, -0.4]], float)
+    >>> QS = economic_qs_linear(G)
     >>> X = ones((4, 1))
     >>> y = array([-1, 2, 0.3, 0.5])
     >>> lmm = LMM(y, X, QS)
     >>> lmm.fit(verbose=False)
-    >>> lmm.lml()
-    -2.27...
+    >>> lmm.lml()  # doctest: +FLOAT_CMP
+    -2.2726234086180557
 
 The method :func:`glimix_core.lmm.LMM.fit` is called to optimise the marginal
 likelihood over the fixed-effect sizes :math:`\boldsymbol\beta` and over the
@@ -61,12 +60,12 @@ The resulting values for the above inference are:
 
 .. doctest::
 
-    >>> lmm.beta[0]
-    0.066...
-    >>> lmm.v0
-    0.337...
-    >>> lmm.v1
-    0.01...
+    >>> lmm.beta[0]  # doctest: +FLOAT_CMP
+    0.0664650291693258
+    >>> lmm.v0  # doctest: +FLOAT_CMP
+    0.33736446158226896
+    >>> lmm.v1  # doctest: +FLOAT_CMP
+    0.012503600451739165
 
 This module also provides :class:`.FastScanner`,
 an approximated LMM implementation for performing an even faster
@@ -97,7 +96,7 @@ can be performed quickly over millions of candidates.
 The user provides the outcome ``y``, the covariates ``X``, the covariance ``K``
 via its eigendecomposition, and the variance ``v`` to create an instance of
 the :class:`glimix_core.lmm.FastScanner` class.
-After that, the user can call the
+After that, the user is able to call the
 :func:`glimix_core.lmm.FastScanner.fast_scan` method and pass the matrix of
 candidates ``M`` to compute the log of the marginal likelihood and the
 fixed-effect size corresponding to each column of ``M``.
@@ -111,18 +110,18 @@ For example:
     >>> M = array([[1, 3, -1.5], [0, -2, 4], [-2, -2.5, 3], [0.2, +2, 2]])
     >>> lmls, effect_sizes = scanner.fast_scan(M, verbose=False)
     >>>
-    >>> lmls[0]
-    0.254...
-    >>> lmls[1]
-    0.4...
-    >>> lmls[2]
-    0.865...
-    >>> effect_sizes[0]
-    -0.074...
-    >>> effect_sizes[1]
-    -0.0441...
-    >>> effect_sizes[2]
-    0.090...
+    >>> lmls[0]  # doctest: +FLOAT_CMP
+    0.25435129186857885
+    >>> lmls[1]  # doctest: +FLOAT_CMP
+    0.4399332250146468
+    >>> lmls[2]  # doctest: +FLOAT_CMP
+    0.8654753462599309
+    >>> effect_sizes[0]  # doctest: +FLOAT_CMP
+    -0.07463997107886489
+    >>> effect_sizes[1]  # doctest: +FLOAT_CMP
+    -0.044137681512885746
+    >>> effect_sizes[2]  # doctest: +FLOAT_CMP
+    0.09065047700251282
 
 
 Implementation
@@ -255,6 +254,7 @@ LMM class
 
 .. autoclass:: glimix_core.lmm.LMM
   :members:
+  :exclude-members: value
 
 FastScanner class
 ^^^^^^^^^^^^^^^^^

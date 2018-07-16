@@ -83,12 +83,11 @@ class LMM(LMMCore):
 
     @property
     def beta(self):
-        r"""Fixed-effect sizes."""
+        r"""Get or set fixed-effect sizes."""
         return LMMCore.beta.fget(self)
 
     @beta.setter
     def beta(self, beta):
-        r"""Set fixed-effect sizes."""
         LMMCore.beta.fset(self, beta)
 
     def copy(self):
@@ -124,7 +123,7 @@ class LMM(LMMCore):
         Parameters
         ----------
         var_name : str
-            Possible values are `delta` and `scale`.
+            Possible values are ``"delta"`` and ``"scale"``.
 
         Returns
         -------
@@ -184,7 +183,7 @@ class LMM(LMMCore):
         Parameters
         ----------
         var_name : str
-            Possible values are `delta` and `scale`.
+            Possible values are ``"delta"`` and ``"scale"``.
         """
         if var_name not in ["delta", "scale", "beta"]:
             msg = "Possible values are 'delta', 'scale', and 'beta'."
@@ -207,7 +206,7 @@ class LMM(LMMCore):
 
         Returns
         -------
-        array_like
+        :class:`numpy.ndarray`
             Estimated variance of the fixed-effects.
         """
         return self.mean.var()
@@ -218,7 +217,7 @@ class LMM(LMMCore):
         Returns
         -------
         :class:`.FastScanner`
-            Class initially designed to perform very fast genome-wide scan.
+            Instance of a class designed to perform very fast association scan.
         """
         v0 = self.v0
         v1 = self.v1
@@ -235,7 +234,7 @@ class LMM(LMMCore):
 
         Returns
         -------
-        array_like
+        :class:`numpy.ndarray`
             Mean of the prior.
         """
         return LMMCore.mean.fget(self)
@@ -256,7 +255,7 @@ class LMM(LMMCore):
         Parameters
         ----------
         var_name : str
-            Possible values are `delta` and `scale`.
+            Possible values are ``"delta"`` and ``"scale"``.
         """
         if var_name not in ["delta", "scale", "beta"]:
             msg = "Possible values are 'delta', 'scale', and 'beta'."
@@ -279,9 +278,6 @@ class LMM(LMMCore):
     @X.setter
     def X(self, X):
         LMMCore.X.fset(self, X)
-
-    def gradient(self, *_):
-        raise NotImplementedError
 
     def predictive_mean(self, Xstar, ks, kss):
         mstar = self.mean_star(Xstar)

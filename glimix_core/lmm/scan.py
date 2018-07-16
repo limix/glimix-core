@@ -1,8 +1,18 @@
 from __future__ import division
 
 from numpy import all as npall
-from numpy import (asarray, atleast_2d, clip, copyto, dot, empty, full, inf,
-                   isfinite, log)
+from numpy import (
+    asarray,
+    atleast_2d,
+    clip,
+    copyto,
+    dot,
+    empty,
+    full,
+    inf,
+    isfinite,
+    log,
+)
 from numpy import min as npmin
 from numpy import newaxis
 from numpy import sum as npsum
@@ -31,20 +41,19 @@ class FastScanner(object):
     values.
     Vector :math:`\mathbf{m}_j` is the candidate defined by the i-th column
     of matrix ``M`` provided to method
-    :func:`glimix_core.lmm.FastScanner.fast_scan`.
-    Variance :math:`v` is not optimised for performance reasons.
+    :func:`.fast_scan`. Variance :math:`v` is not optimised for performance reasons.
     The method assumes the user has provided a reasonable value for it.
 
     Parameters
     ----------
     y : array_like
-    Real-valued outcome.
+        Real-valued outcome.
     X : array_like
-    Matrix of covariates.
+        Matrix of covariates.
     QS : tuple
-    Economic eigendecomposition ``((Q0, Q1), S0)`` of ``K``.
+        Economic eigendecomposition ``((Q0, Q1), S0)`` of ``K``.
     v : float
-    Variance due to iid effect.
+        Variance due to iid effect.
 
     Notes
     -----
@@ -54,9 +63,9 @@ class FastScanner(object):
     :math:`\mathrm E_j = [\mathrm X;~ \mathbf m_j]`.
     The matrix resulted from
     :math:`\mathrm E_j^{\intercal}\mathrm B_i\mathrm E_j`
-    is represented by the attribute ``_ETBE``, and
-    four views of such a matrix are given by the attributes ``_XTBX``,
-    ``_XTBM``, ``_MTBX``, and ``_MTBM``.
+    is represented by the variable ``ETBE``, and
+    four views of such a matrix are given by the variables ``XTBX``,
+    ``XTBM``, ``MTBX``, and ``MTBM``.
     Those views represent
     :math:`\mathrm X^{\intercal}\mathrm B_i\mathrm X`,
     :math:`\mathrm X^{\intercal}\mathrm B_i\mathbf m_j`,
@@ -90,8 +99,7 @@ class FastScanner(object):
         XTQ = [dot(X.T, Q) for Q in QS[0] if Q.size > 0]
 
         yTQDi = [l / r for (l, r) in zip(yTQ, D) if npmin(r) > 0]
-        yTBy = npsum(
-            npsum(i * i / j) for (i, j) in zip(yTQ, D) if npmin(j) > 0)
+        yTBy = npsum(npsum(i * i / j) for (i, j) in zip(yTQ, D) if npmin(j) > 0)
         yTBX = [dot(i, j.T) for (i, j) in zip(yTQDi, XTQ)]
         XTQDi = [i / j for (i, j) in zip(XTQ, D) if npmin(j) > 0]
 
@@ -217,17 +225,17 @@ class FastScanner(object):
         Parameters
         ----------
         M : array_like
-        Matrix of fixed-effects across columns.
+            Matrix of fixed-effects across columns.
         verbose : bool, optional
-        ``True`` for progress information; ``False`` otherwise.
-        Defaults to ``True``.
+            ``True`` for progress information; ``False`` otherwise.
+            Defaults to ``True``.
 
         Returns
         -------
-        array_like
-        Log of the marginal likelihoods.
-        array_like
-        Fixed-effect sizes.
+        :class:`numpy.ndarray`
+            Log of the marginal likelihoods.
+        :class:`numpy.ndarray`
+            Fixed-effect sizes.
         """
         if M.ndim != 2:
             raise ValueError("`M` array must be bidimensional.")
@@ -260,7 +268,7 @@ class FastScanner(object):
         Returns
         -------
         float
-        Log of the marginal likelihood.
+            Log of the marginal likelihood.
         """
         n = self._nsamples
 
@@ -291,7 +299,7 @@ class FastScanner(object):
         Parameters
         ----------
         scale : float
-        Scaling factor.
+            Scaling factor.
         """
         self._scale = scale
 

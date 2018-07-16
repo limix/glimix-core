@@ -64,10 +64,7 @@ class LMMCore(Function):
                 "Number of samples differs between outcome " "and covariates."
             )
 
-        self.variables().get("logistic").bounds = (
-            -numbers.logmax,
-            +numbers.logmax,
-        )
+        self.variables().get("logistic").bounds = (-numbers.logmax, +numbers.logmax)
 
         self._QS = QS
         self._y = y
@@ -126,9 +123,7 @@ class LMMCore(Function):
         lml -= sum(npsum(log(D)) for D in self._D)
 
         d = (mTQ - yTQ for (mTQ, yTQ) in zip(self._mTQ, self._yTQ))
-        lml += (
-            sum(dot(j / i, l) for (i, j, l) in zip(self._D, d, self._yTQ)) / s
-        )
+        lml += sum(dot(j / i, l) for (i, j, l) in zip(self._D, d, self._yTQ)) / s
 
         return lml / 2
 
@@ -204,7 +199,7 @@ class LMMCore(Function):
 
         Returns
         -------
-        array_like
+        :class:`numpy.ndarray`
             Covariates.
         """
         return dot(self._svd[0], ddot(self._svd[1], self._svd[2], left=True))
@@ -231,7 +226,7 @@ class LMMCore(Function):
 
         Returns
         -------
-        array_like
+        :class:`numpy.ndarray`
             Optimal fixed-effect sizes.
         """
         SVs = ddot(self._svd[0], sqrt(self._svd[1]))
@@ -318,7 +313,7 @@ class LMMCore(Function):
 
         Returns
         -------
-        array_like
+        :class:`numpy.ndarray`
             :math:`v_0 \mathrm K + v_1 \mathrm I`.
         """
         Q0 = self._QS[0][0]
