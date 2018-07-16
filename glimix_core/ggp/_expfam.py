@@ -1,5 +1,7 @@
 from __future__ import absolute_import, division, unicode_literals
 
+import warnings
+
 from liknorm import LikNormMachine
 from numpy import sign
 from numpy.linalg import LinAlgError
@@ -9,7 +11,6 @@ from numpy_sugar.linalg import economic_qs
 from optimix import FunctionReduce
 
 from ..ep import EP
-from ..util import wprint
 
 
 class ExpFamGP(FunctionReduce):
@@ -121,7 +122,7 @@ class ExpFamGP(FunctionReduce):
             self._ep.set_prior(mean, dict(QS=economic_qs(cov)))
             lml = self._ep.lml()
         except (ValueError, LinAlgError) as e:
-            wprint(str(e))
+            warnings.warn(str(e), RuntimeWarning)
             lml = -1 / epsilon.small
         return lml
 
@@ -145,6 +146,6 @@ class ExpFamGP(FunctionReduce):
 
             return grad
         except (ValueError, LinAlgError) as e:
-            wprint(str(e))
+            warnings.warn(str(e), RuntimeWarning)
             v = self.variables().select(fixed=False)
             return {i: -sign(v.get(i).value) / epsilon.small for i in v}

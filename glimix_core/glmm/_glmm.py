@@ -8,8 +8,14 @@ from numpy_sugar.linalg import ddot, sum2diag
 
 from optimix import Function, Scalar, Vector
 
-from ..util import (check_covariates, check_economic_qs, check_outcome,
-                    economic_qs_zeros, normalise_outcome, numbers)
+from ..util import (
+    check_covariates,
+    check_economic_qs,
+    check_outcome,
+    economic_qs_zeros,
+    normalise_outcome,
+    numbers
+)
 
 
 class GLMM(Function):

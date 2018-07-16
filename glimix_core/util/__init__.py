@@ -1,5 +1,4 @@
 from .check import check_economic_qs, check_covariates, check_outcome
-from .io import wprint
 from .hsolve import hsolve
 from .eigen import economic_qs_zeros
 from . import numbers

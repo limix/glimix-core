@@ -1,8 +1,20 @@
 from __future__ import division
 
+import warnings
+
 from numpy import all as npall
-from numpy import (asarray, atleast_2d, clip, copyto, dot, empty, full, inf,
-                   isfinite, log)
+from numpy import (
+    asarray,
+    atleast_2d,
+    clip,
+    copyto,
+    dot,
+    empty,
+    full,
+    inf,
+    isfinite,
+    log
+)
 from numpy import min as npmin
 from numpy import newaxis
 from numpy import sum as npsum
@@ -12,7 +24,7 @@ from numpy_sugar import epsilon
 from numpy_sugar.linalg import dotd, rsolve
 from tqdm import tqdm
 
-from ..util import hsolve, log2pi, wprint
+from ..util import hsolve, log2pi
 
 
 class FastScanner(object):
@@ -362,7 +374,7 @@ def _solve(A, y):
         msg = "Could not converge to the optimal"
         msg += " effect-size of one of the candidates."
         msg += " Setting its effect-size to zero."
-        wprint(msg)
+        warnings.warn(msg, RuntimeWarning)
         beta = zeros(A.shape[0])
 
     return beta

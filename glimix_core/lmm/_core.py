@@ -2,8 +2,19 @@ from __future__ import division
 
 from glimix_core.util import log2pi
 from numpy import all as npall
-from numpy import (asarray, atleast_2d, clip, dot, errstate, exp, full,
-                   isfinite, log, maximum, sqrt)
+from numpy import (
+    asarray,
+    atleast_2d,
+    clip,
+    dot,
+    errstate,
+    exp,
+    full,
+    isfinite,
+    log,
+    maximum,
+    sqrt
+)
 from numpy import sum as npsum
 from numpy import zeros
 from numpy_sugar import epsilon
