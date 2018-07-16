@@ -2,11 +2,10 @@ from __future__ import absolute_import, division, unicode_literals
 
 from copy import copy
 
+from glimix_core.ep import EPLinearKernel
 from liknorm import LikNormMachine
 from numpy import asarray, ascontiguousarray, dot, exp
 from numpy.linalg import norm, solve
-
-from glimix_core.ep import EPLinearKernel
 from numpy_sugar import epsilon
 from numpy_sugar.linalg import sum2diag
 
@@ -141,7 +140,7 @@ class GLMMExpFam(GLMM):
 
     def gradient(self):
         r"""Gradient of the log of the marginal likelihood.
-        
+
         Returns
         -------
         dict

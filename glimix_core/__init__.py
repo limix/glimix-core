@@ -7,14 +7,24 @@ Fast inference for Generalised Linear Mixed Models.
 
 """
 
-from __future__ import absolute_import as _
+from __future__ import absolute_import
 
-from . import cov, ggp, glmm, gp, lik, link, lmm, mean, random, util
+from . import cov, example, ggp, glmm, gp, lik, link, lmm, mean, random
 from ._testit import test
 
 __version__ = "1.5.2"
 
 __all__ = [
-    "__version__", "test", "ggp", "gp", "lmm", "glmm", "cov", "lik", "mean",
-    "link", "random", "util"
+    "__version__",
+    "example",
+    "test",
+    "ggp",
+    "gp",
+    "lmm",
+    "glmm",
+    "cov",
+    "lik",
+    "mean",
+    "link",
+    "random",
 ]

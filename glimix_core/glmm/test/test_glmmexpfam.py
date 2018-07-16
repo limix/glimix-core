@@ -1,4 +1,7 @@
 import pytest
+from glimix_core.example import linear_eye_cov, nsamples
+from glimix_core.glmm import GLMMExpFam, GLMMNormal
+from glimix_core.random import bernoulli_sample
 from numpy import (
     arange,
     asarray,
@@ -11,12 +14,9 @@ from numpy import (
     zeros,
 )
 from numpy.random import RandomState
-from numpy.testing import assert_allclose, assert_
-
-from glimix_core.example import linear_eye_cov, nsamples
-from glimix_core.glmm import GLMMExpFam, GLMMNormal
-from glimix_core.random import bernoulli_sample
+from numpy.testing import assert_, assert_allclose
 from numpy_sugar.linalg import economic_qs, economic_qs_linear
+
 from optimix import check_grad
 
 ATOL = 1e-3
@@ -343,12 +343,12 @@ def _stdnorm(X, axis=None, out=None):
 
 def test_glmmexpfam_binomial_pheno_list():
     random = RandomState(0)
-    nsamples = 10
+    n = 10
 
-    X = random.randn(nsamples, 2)
-    G = random.randn(nsamples, 100)
+    X = random.randn(n, 2)
+    G = random.randn(n, 100)
     K = dot(G, G.T)
-    ntrials = random.randint(1, 100, nsamples)
+    ntrials = random.randint(1, 100, n)
     z = dot(G, random.randn(100)) / sqrt(100)
 
     successes = zeros(len(ntrials), int)

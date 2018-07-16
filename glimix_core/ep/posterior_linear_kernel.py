@@ -1,9 +1,8 @@
 from __future__ import division
 
 from numpy import dot
-from scipy.linalg import cho_factor
-
 from numpy_sugar.linalg import ddot, dotd, sum2diag
+from scipy.linalg import cho_factor
 
 from .posterior import Posterior
 
@@ -30,15 +29,15 @@ class PosteriorLinearKernel(Posterior):
 
     @property
     def _A(self):
-        s = self._cov['scale']
-        d = self._cov['delta']
+        s = self._cov["scale"]
+        d = self._cov["delta"]
         return 1 / (s * d * self._site.tau + 1)
 
     def AQ(self):
         if self._AQ_cache is not None:
             return self._AQ_cache
 
-        Q = self._cov['QS'][0][0]
+        Q = self._cov["QS"][0][0]
         A = self._A
 
         self._AQ_cache = ddot(A, Q)
@@ -57,7 +56,7 @@ class PosteriorLinearKernel(Posterior):
 
         LQt = self.LQt()
         A = self._A
-        Q = self._cov['QS'][0][0]
+        Q = self._cov["QS"][0][0]
         LQtA = ddot(LQt, A)
         AQ = self.AQ()
         QS = self.QS()
@@ -76,10 +75,10 @@ class PosteriorLinearKernel(Posterior):
         if self._L_cache is not None:
             return self._L_cache
 
-        s = self._cov['scale']
-        d = self._cov['delta']
-        Q = self._cov['QS'][0][0]
-        S = self._cov['QS'][1]
+        s = self._cov["scale"]
+        d = self._cov["delta"]
+        Q = self._cov["QS"][0][0]
+        S = self._cov["QS"][1]
 
         ddot(self._A * self._site.tau, Q, left=True, out=self._NxR)
         B = dot(Q.T, self._NxR, out=self._RxR)
@@ -91,9 +90,9 @@ class PosteriorLinearKernel(Posterior):
     def update(self):
         self._flush_cache()
 
-        s = self._cov['scale']
-        d = self._cov['delta']
-        Q = self._cov['QS'][0][0]
+        s = self._cov["scale"]
+        d = self._cov["delta"]
+        Q = self._cov["QS"][0][0]
 
         A = self._A
         LQt = self.LQt()

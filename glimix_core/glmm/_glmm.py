@@ -179,7 +179,7 @@ class GLMM(Function):
         pgtol : float, optional
             The iteration will stop when ``max{|proj g_i | i = 1, ..., n} <= pgtol``
             where ``pg_i`` is the i-th component of the projected gradient.
-        
+
         Notes
         -----
         Please, refer to :func:`scipy.optimize.fmin_l_bfgs_b` for further information

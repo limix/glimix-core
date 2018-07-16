@@ -2,9 +2,8 @@ from __future__ import division
 
 from numpy import dot, empty, empty_like, sqrt
 from numpy import sum as npsum
-from scipy.linalg import cho_factor
-
 from numpy_sugar.linalg import cho_solve, ddot, dotd, sum2diag
+from scipy.linalg import cho_factor
 
 
 class Posterior(object):
@@ -39,21 +38,21 @@ class Posterior(object):
     @property
     def _NxR(self):
         if self._NxR_data is None:
-            Q = self._cov['QS'][0][0]
+            Q = self._cov["QS"][0][0]
             self._NxR_data = empty_like(Q)
         return self._NxR_data
 
     @property
     def _RxN(self):
         if self._RxN_data is None:
-            Q = self._cov['QS'][0][0]
+            Q = self._cov["QS"][0][0]
             self._RxN_data = empty_like(Q.T)
         return self._RxN_data
 
     @property
     def _RxR(self):
         if self._RxR_data is None:
-            Q = self._cov['QS'][0][0]
+            Q = self._cov["QS"][0][0]
             r = Q.shape[1]
             self._RxR_data = empty((r, r))
         return self._RxR_data
@@ -82,11 +81,11 @@ class Posterior(object):
         if self._mean is None or self._cov is None:
             return
 
-        Q = self._cov['QS'][0][0]
-        S = self._cov['QS'][1]
+        Q = self._cov["QS"][0][0]
+        S = self._cov["QS"][1]
 
         if S.size > 0:
-            self.tau[:] = 1 / npsum((Q * sqrt(S))**2, axis=1)
+            self.tau[:] = 1 / npsum((Q * sqrt(S)) ** 2, axis=1)
         else:
             self.tau[:] = 0.0
         self.eta[:] = self._mean
@@ -121,8 +120,8 @@ class Posterior(object):
         if self._L_cache is not None:
             return self._L_cache
 
-        Q = self._cov['QS'][0][0]
-        S = self._cov['QS'][1]
+        Q = self._cov["QS"][0][0]
+        S = self._cov["QS"][1]
         B = dot(Q.T, ddot(self._site.tau, Q, left=True))
         sum2diag(B, 1. / S, out=B)
         self._L_cache = cho_factor(B, lower=True)[0]
@@ -133,7 +132,7 @@ class Posterior(object):
             return self._LQt_cache
 
         L = self.L()
-        Q = self._cov['QS'][0][0]
+        Q = self._cov["QS"][0][0]
 
         self._LQt_cache = cho_solve(L, Q.T)
         return self._LQt_cache
@@ -142,8 +141,8 @@ class Posterior(object):
         if self._QS_cache is not None:
             return self._QS_cache
 
-        Q = self._cov['QS'][0][0]
-        S = self._cov['QS'][1]
+        Q = self._cov["QS"][0][0]
+        S = self._cov["QS"][1]
 
         self._QS_cache = ddot(Q, S)
         return self._QS_cache
@@ -151,7 +150,7 @@ class Posterior(object):
     def update(self):
         self._flush_cache()
 
-        Q = self._cov['QS'][0][0]
+        Q = self._cov["QS"][0][0]
 
         K = dot(self.QS(), Q.T)
 

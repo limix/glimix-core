@@ -5,7 +5,6 @@ from math import fsum
 
 from numpy import dot, empty, inf, isfinite, log, maximum, sqrt, zeros
 from numpy.linalg import norm
-
 from numpy_sugar import epsilon
 from numpy_sugar.linalg import cho_solve, ddot, dotd
 
@@ -44,11 +43,13 @@ class EP(object):
         _moments (dict): moments for KL moment matching.
     """
 
-    def __init__(self,
-                 nsites,
-                 posterior_type=Posterior,
-                 rtol=epsilon.small * 1000,
-                 atol=epsilon.small):
+    def __init__(
+        self,
+        nsites,
+        posterior_type=Posterior,
+        rtol=epsilon.small * 1000,
+        atol=epsilon.small,
+    ):
 
         self._site = Site(nsites)
         self._psite = Site(nsites)
@@ -59,9 +60,9 @@ class EP(object):
         self._posterior = posterior_type(self._site)
 
         self._moments = {
-            'log_zeroth': empty(nsites),
-            'mean': empty(nsites),
-            'variance': empty(nsites)
+            "log_zeroth": empty(nsites),
+            "mean": empty(nsites),
+            "variance": empty(nsites),
         }
 
         self._need_update = True
@@ -73,23 +74,23 @@ class EP(object):
         cls = self.__class__
         ep = cls.__new__(cls)
 
-        ep.__dict__['_site'] = deepcopy(self.site)
-        ep.__dict__['_psite'] = deepcopy(self.__dict__['_psite'])
+        ep.__dict__["_site"] = deepcopy(self.site)
+        ep.__dict__["_psite"] = deepcopy(self.__dict__["_psite"])
 
-        ep.__dict__['_rtol'] = self._rtol
-        ep.__dict__['_atol'] = self._atol
+        ep.__dict__["_rtol"] = self._rtol
+        ep.__dict__["_atol"] = self._atol
 
-        ep.__dict__['_cav'] = deepcopy(self.cav)
+        ep.__dict__["_cav"] = deepcopy(self.cav)
 
         posterior_type = type(self.posterior)
-        ep.__dict__['_posterior'] = posterior_type(ep.site)
+        ep.__dict__["_posterior"] = posterior_type(ep.site)
 
-        ep.__dict__['_moments'] = deepcopy(self.moments)
+        ep.__dict__["_moments"] = deepcopy(self.moments)
 
-        ep.__dict__['_need_update'] = self._need_update
-        ep.__dict__['_compute_moments'] = None
-        ep.__dict__['_cache'] = deepcopy(self._cache)
-        ep.__dict__['verbose'] = deepcopy(self.verbose)
+        ep.__dict__["_need_update"] = self._need_update
+        ep.__dict__["_compute_moments"] = None
+        ep.__dict__["_cache"] = deepcopy(self._cache)
+        ep.__dict__["verbose"] = deepcopy(self.verbose)
 
         return ep
 
@@ -105,26 +106,24 @@ class EP(object):
             self._psite.tau[:] = self._site.tau
             self._psite.eta[:] = self._site.eta
 
-            self._cav['tau'][:] = maximum(self._posterior.tau - self._site.tau,
-                                          0)
-            self._cav['eta'][:] = self._posterior.eta - self._site.eta
-            self._compute_moments(self._cav['eta'], self._cav['tau'],
-                                  self._moments)
+            self._cav["tau"][:] = maximum(self._posterior.tau - self._site.tau, 0)
+            self._cav["eta"][:] = self._posterior.eta - self._site.eta
+            self._compute_moments(self._cav["eta"], self._cav["tau"], self._moments)
 
-            self._site.update(self._moments['mean'], self._moments['variance'],
-                              self._cav)
+            self._site.update(
+                self._moments["mean"], self._moments["variance"], self._cav
+            )
 
             self._posterior.update()
 
             n0 = norm(self._psite.tau)
-            n1 = norm(self._cav['tau'])
+            n1 = norm(self._cav["tau"])
             tol = self._rtol * sqrt(n0 * n1) + self._atol
             i += 1
 
         if i == MAX_ITERS:
-            msg = ('Maximum number of EP iterations has' + ' been attained.')
-            msg += " Last EP step was: %.10f." % norm(
-                self._site.tau - self._psite.tau)
+            msg = "Maximum number of EP iterations has" + " been attained."
+            msg += " Last EP step was: %.10f." % norm(self._site.tau - self._psite.tau)
             raise ValueError(msg)
 
         if self.verbose:
@@ -136,18 +135,18 @@ class EP(object):
         return self._cav
 
     def lml(self):
-        if self._cache['lml'] is not None:
-            return self._cache['lml']
+        if self._cache["lml"] is not None:
+            return self._cache["lml"]
 
         self._update()
 
         L = self._posterior.L()
-        Q, S = self._posterior.cov['QS']
+        Q, S = self._posterior.cov["QS"]
         Q = Q[0]
         ttau = self._site.tau
         teta = self._site.eta
-        ctau = self._cav['tau']
-        ceta = self._cav['eta']
+        ctau = self._cav["tau"]
+        ceta = self._cav["eta"]
         m = self._posterior.mean
 
         TS = ttau + ctau
@@ -159,27 +158,26 @@ class EP(object):
             +0.5 * dot(teta, dot(Q, cho_solve(L, dot(Q.T, teta)))),
             -0.5 * dot(teta, teta / TS),
             +dot(m, teta) - 0.5 * dot(m, ttau * m),
-            -0.5 * dot(m * ttau,
-                       dot(Q, cho_solve(L, dot(Q.T, 2 * teta - ttau * m)))),
-            +sum(self._moments['log_zeroth']),
+            -0.5 * dot(m * ttau, dot(Q, cho_solve(L, dot(Q.T, 2 * teta - ttau * m)))),
+            +sum(self._moments["log_zeroth"]),
             +0.5 * sum(log(TS)),
             # lml -= 0.5 * sum(log(ttau)),
             -0.5 * sum(log(ctau)),
-            +0.5 * dot(ceta / TS, ttau * ceta / ctau - 2 * teta)
+            +0.5 * dot(ceta / TS, ttau * ceta / ctau - 2 * teta),
         ]
         lml = fsum(lml)
 
         if not isfinite(lml):
             raise ValueError("LML should not be %f." % lml)
 
-        self._cache['lml'] = lml
+        self._cache["lml"] = lml
         return lml
 
     def lml_derivative_over_cov(self, dQS):
         self._update()
 
         L = self._posterior.L()
-        Q = self._posterior.cov['QS'][0][0]
+        Q = self._posterior.cov["QS"][0][0]
         ttau = self._site.tau
         teta = self._site.eta
 
@@ -203,7 +201,7 @@ class EP(object):
         self._update()
 
         L = self._posterior.L()
-        Q = self._posterior.cov['QS'][0][0]
+        Q = self._posterior.cov["QS"][0][0]
         ttau = self._site.tau
         teta = self._site.eta
 

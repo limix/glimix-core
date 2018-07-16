@@ -5,7 +5,7 @@ from numpy_sugar import epsilon
 
 def _norm(x0, x1):
     m = maximum(npy_abs(x0), npy_abs(x1))
-    with errstate(invalid='ignore'):
+    with errstate(invalid="ignore"):
         a = (x0 / m) * (x0 / m)
         b = (x1 / m) * (x1 / m)
         return nan_to_num(m * sqrt(a + b))
@@ -33,7 +33,7 @@ def hsolve(A00, A01, A11, y0, y1):
     u1 = A01
     nu = _norm(u0, u1)
 
-    with errstate(invalid='ignore', divide='ignore'):
+    with errstate(invalid="ignore", divide="ignore"):
         v0 = nan_to_num(u0 / nu)
         v1 = nan_to_num(u1 / nu)
 
@@ -53,7 +53,7 @@ def hsolve(A00, A01, A11, y0, y1):
     u1 = D01
     nu = _norm(u0, u1)
 
-    with errstate(invalid='ignore', divide='ignore'):
+    with errstate(invalid="ignore", divide="ignore"):
         v0 = nan_to_num(u0 / nu)
         v1 = nan_to_num(u1 / nu)
 
@@ -67,7 +67,7 @@ def hsolve(A00, A01, A11, y0, y1):
 
     F11 = (npy_abs(F11) > epsilon.small) * F11
 
-    with errstate(divide='ignore', invalid='ignore'):
+    with errstate(divide="ignore", invalid="ignore"):
         Fi00 = nan_to_num(F00 / F00 / F00)
         Fi11 = nan_to_num(F11 / F11 / F11)
         Fi10 = nan_to_num(-(F01 / F00) * Fi11)

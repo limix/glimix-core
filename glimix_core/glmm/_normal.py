@@ -221,4 +221,3 @@ class GLMMNormal(GLMM):
         self._cache["value"] = v / 2
 
         return self._cache["value"]
-

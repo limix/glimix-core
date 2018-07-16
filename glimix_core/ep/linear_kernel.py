@@ -3,7 +3,6 @@ from __future__ import absolute_import, division, unicode_literals
 from math import fsum
 
 from numpy import dot, isfinite, log
-
 from numpy_sugar import epsilon
 from numpy_sugar.linalg import ddot, dotd
 
@@ -22,29 +21,30 @@ def dotr(A, B):
 class EPLinearKernel(EP):
     def __init__(self, nsites, rtol=epsilon.small * 1000, atol=epsilon.small):
         super(EPLinearKernel, self).__init__(
-            nsites, PosteriorLinearKernel, rtol=rtol, atol=atol)
+            nsites, PosteriorLinearKernel, rtol=rtol, atol=atol
+        )
 
     def lml(self):
-        if self._cache['lml'] is not None:
-            return self._cache['lml']
+        if self._cache["lml"] is not None:
+            return self._cache["lml"]
 
         self._update()
 
         L = self._posterior.L()
         LQt = self._posterior.LQt()
         cov = self._posterior.cov
-        Q = cov['QS'][0][0]
-        S = cov['QS'][1]
+        Q = cov["QS"][0][0]
+        S = cov["QS"][1]
         ttau = self._site.tau
         teta = self._site.eta
-        ctau = self._cav['tau']
-        ceta = self._cav['eta']
+        ctau = self._cav["tau"]
+        ceta = self._cav["eta"]
         m = self._posterior.mean
 
         TS = ttau + ctau
 
-        s = cov['scale']
-        d = cov['delta']
+        s = cov["scale"]
+        d = cov["delta"]
         A = self._posterior._A
 
         lml = [
@@ -55,28 +55,28 @@ class EPLinearKernel(EP):
             +0.5 * dot(teta * A, dot(Q, dot(LQt, teta * A))) * (1 - d),
             -0.5 * dot(teta, teta / TS),
             +dot(m, A * teta) - 0.5 * dot(m, A * ttau * m),
-            -0.5 * dot(m * A * ttau,
-                       dot(Q, dot(LQt, 2 * A * teta - A * ttau * m))) *
-            (1 - d),
-            +sum(self._moments['log_zeroth']),
+            -0.5
+            * dot(m * A * ttau, dot(Q, dot(LQt, 2 * A * teta - A * ttau * m)))
+            * (1 - d),
+            +sum(self._moments["log_zeroth"]),
             +0.5 * sum(log(TS)),
             # lml -= 0.5 * sum(log(ttau)),
             -0.5 * sum(log(ctau)),
             +0.5 * dot(ceta / TS, ttau * ceta / ctau - 2 * teta),
-            0.5 * s * d * sum(teta * A * teta)
+            0.5 * s * d * sum(teta * A * teta),
         ]
         lml = fsum(lml)
 
         if not isfinite(lml):
             raise ValueError("LML should not be %f." % lml)
 
-        self._cache['lml'] = lml
+        self._cache["lml"] = lml
 
         return lml
 
     def lml_derivatives(self, dm):
-        if self._cache['grad'] is not None:
-            return self._cache['grad']
+        if self._cache["grad"] is not None:
+            return self._cache["grad"]
 
         self._update()
 
@@ -87,9 +87,9 @@ class EPLinearKernel(EP):
         A = self._posterior._A
 
         cov = self._posterior.cov
-        Q = cov['QS'][0][0]
-        s = cov['scale']
-        d = cov['delta']
+        Q = cov["QS"][0][0]
+        s = cov["scale"]
+        d = cov["delta"]
         QS = self._posterior.QS()
 
         e_m = teta - ttau * self._posterior.mean
@@ -104,8 +104,9 @@ class EPLinearKernel(EP):
 
         r = (self._posterior.QSQtATQLQtA() * ttau).sum()
 
-        dlml_mean = dot(e_m, ldot(
-            A, dm)) - dot(Ae_m, dot(Q, dot(LQt, ldot(TA, dm)))) * (1 - d)
+        dlml_mean = dot(e_m, ldot(A, dm)) - dot(
+            Ae_m, dot(Q, dot(LQt, ldot(TA, dm)))
+        ) * (1 - d)
 
         r1 = (TA * dotd(Q, LQt) * TA).sum()
 
@@ -127,6 +128,6 @@ class EPLinearKernel(EP):
 
         g = dict(mean=dlml_mean, scale=dlml_scale, delta=dlml_delta)
 
-        self._cache['grad'] = g
+        self._cache["grad"] = g
 
         return g

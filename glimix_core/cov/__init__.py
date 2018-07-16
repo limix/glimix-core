@@ -12,4 +12,4 @@ from .given import GivenCov
 from .linear import LinearCov
 from .sum import SumCov
 
-__all__ = ['EyeCov', 'FreeFormCov', 'GivenCov', 'LinearCov', 'SumCov']
+__all__ = ["EyeCov", "FreeFormCov", "GivenCov", "LinearCov", "SumCov"]

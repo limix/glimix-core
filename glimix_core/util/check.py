@@ -39,10 +39,10 @@ def check_outcome(y, lik_name):
     if not npall(isfinite(y)):
         raise ValueError("Outcome must be finite.")
 
-    if lik_name == 'poisson':
+    if lik_name == "poisson":
         return _check_poisson_outcome(y)
 
-    if lik_name == 'binomial' or lik_name == 'normal':
+    if lik_name == "binomial" or lik_name == "normal":
         if y.ndim != 2 or y.shape[1] != 2:
             msg = "Outcome must be a matrix of two columns"
             msg += " for {} likelihood.".format(lik_name)
@@ -58,6 +58,6 @@ def _check_poisson_outcome(y):
         msg = "Output values of Poisson likelihood greater"
         msg += " than {lim} is set to {lim} before applying GLMM."
         wprint(msg.format(lim=poisson_lim))
-        y = (clip(y[0], 0, poisson_lim), )
+        y = (clip(y[0], 0, poisson_lim),)
 
     return y
