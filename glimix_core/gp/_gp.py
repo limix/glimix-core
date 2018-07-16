@@ -45,6 +45,7 @@ class GP(FunctionReduce):
         After: -13.4791
         >>> print(gp)  # doctest: +FLOAT_CMP
         GP(...)
+          lml: -13.479078786068948
           OffsetMean()
             offset: 0.7755707079204702
           SumCov(covariances=...)
@@ -64,16 +65,28 @@ class GP(FunctionReduce):
         self._cov = cov
         self._mean = mean
 
-    def fit(self, verbose=True):
+    def fit(self, verbose=True, factr=1e5, pgtol=1e-7):
         r"""Maximise the marginal likelihood.
 
         Parameters
         ----------
-        verbose : bool, optional
+        verbose : bool
             ``True`` for progress output; ``False`` otherwise.
             Defaults to ``True``.
+        factr : float, optional
+            The iteration stops when
+            ``(f^k - f^{k+1})/max{|f^k|,|f^{k+1}|,1} <= factr * eps``, where ``eps`` is
+            the machine precision.
+        pgtol : float, optional
+            The iteration will stop when ``max{|proj g_i | i = 1, ..., n} <= pgtol``
+            where ``pg_i`` is the i-th component of the projected gradient.
+        
+        Notes
+        -----
+        Please, refer to :func:`scipy.optimize.fmin_l_bfgs_b` for further information
+        about ``factr`` and ``pgtol``.
         """
-        self.feed().maximize(verbose=verbose)
+        self.feed().maximize(verbose=verbose, factr=factr, pgtol=pgtol)
 
     def lml(self):
         r"""Log of the marginal likelihood.
@@ -124,6 +137,7 @@ class GP(FunctionReduce):
     def __str__(self):
         tname = type(self).__name__
         msg = "{}(...)\n".format(tname)
+        msg += "  lml: {}\n".format(self.lml())
 
         mmsg = str(self._mean).split("\n")
         mmsg = "\n".join(["  " + m for m in mmsg])

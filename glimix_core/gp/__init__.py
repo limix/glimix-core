@@ -29,8 +29,8 @@ approximation.
 .. _[3]: http://www.gaussianprocess.org/gpml/chapters/RW3.pdf
 
 
-Public interface
-^^^^^^^^^^^^^^^^
+Usage
+^^^^^
 """
 from ._gp import GP
 
