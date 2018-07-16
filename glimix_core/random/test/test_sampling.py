@@ -1,15 +1,14 @@
 from __future__ import division
 
-from numpy import arange
-from numpy.random import RandomState
-from numpy.testing import assert_allclose, assert_array_less, assert_equal
-
 from glimix_core.cov import EyeCov, LinearCov, SumCov
 from glimix_core.lik import BinomialProdLik, PoissonProdLik
 from glimix_core.link import LogitLink, LogLink
 from glimix_core.mean import OffsetMean
 from glimix_core.random import (GGPSampler, GPSampler, bernoulli_sample,
                                 binomial_sample, poisson_sample)
+from numpy import arange
+from numpy.random import RandomState
+from numpy.testing import assert_allclose, assert_array_less, assert_equal
 
 
 def test_binomial_sampler():

@@ -1,27 +1,16 @@
 from __future__ import division
 
 from numpy import all as npall
-from numpy import (
-    asarray,
-    atleast_2d,
-    clip,
-    copyto,
-    dot,
-    empty,
-    full,
-    inf,
-    isfinite,
-    log,
-)
+from numpy import (asarray, atleast_2d, clip, copyto, dot, empty, full, inf,
+                   isfinite, log)
 from numpy import min as npmin
 from numpy import newaxis
 from numpy import sum as npsum
 from numpy import zeros
 from numpy.linalg import LinAlgError
-from tqdm import tqdm
-
 from numpy_sugar import epsilon
 from numpy_sugar.linalg import dotd, rsolve
+from tqdm import tqdm
 
 from ..util import hsolve, log2pi, wprint
 

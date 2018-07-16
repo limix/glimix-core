@@ -2,17 +2,8 @@ import pytest
 from glimix_core.example import linear_eye_cov, nsamples
 from glimix_core.glmm import GLMMExpFam, GLMMNormal
 from glimix_core.random import bernoulli_sample
-from numpy import (
-    arange,
-    asarray,
-    ascontiguousarray,
-    corrcoef,
-    dot,
-    eye,
-    ones,
-    sqrt,
-    zeros,
-)
+from numpy import (arange, asarray, ascontiguousarray, corrcoef, dot, eye,
+                   ones, sqrt, zeros)
 from numpy.random import RandomState
 from numpy.testing import assert_, assert_allclose
 from numpy_sugar.linalg import economic_qs, economic_qs_linear

@@ -1,8 +1,8 @@
-from numpy import dot
-from numpy.testing import assert_allclose
-from numpy.random import RandomState
-
 from glimix_core.cov import GivenCov
+from numpy import dot
+from numpy.random import RandomState
+from numpy.testing import assert_allclose
+
 from optimix import Assertion
 
 

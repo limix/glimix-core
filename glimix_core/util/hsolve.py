@@ -1,5 +1,5 @@
-from numpy import array, sqrt, nan_to_num, errstate, maximum
 from numpy import abs as npy_abs
+from numpy import array, errstate, maximum, nan_to_num, sqrt
 from numpy_sugar import epsilon
 
 

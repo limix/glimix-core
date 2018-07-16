@@ -3,19 +3,13 @@ from __future__ import absolute_import, division, unicode_literals
 from copy import copy
 
 from numpy import asarray, clip, dot, exp, log, zeros
-
 from numpy_sugar import epsilon
 from numpy_sugar.linalg import ddot, sum2diag
+
 from optimix import Function, Scalar, Vector
 
-from ..util import numbers
-from ..util import (
-    check_covariates,
-    check_economic_qs,
-    check_outcome,
-    economic_qs_zeros,
-    normalise_outcome,
-)
+from ..util import (check_covariates, check_economic_qs, check_outcome,
+                    economic_qs_zeros, normalise_outcome, numbers)
 
 
 class GLMM(Function):

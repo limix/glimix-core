@@ -1,7 +1,7 @@
 import pytest
-from numpy import array, ones, inf, nan
-from numpy_sugar.linalg import economic_qs
 from glimix_core.lmm import FastScanner
+from numpy import array, inf, nan, ones
+from numpy_sugar.linalg import economic_qs
 
 
 def test_scan_interface():

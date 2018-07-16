@@ -1,5 +1,5 @@
 from numpy import all as npall
-from numpy import isfinite, clip, asarray
+from numpy import asarray, clip, isfinite
 
 from .io import wprint
 

@@ -2,7 +2,8 @@ from __future__ import division, unicode_literals
 
 import scipy.stats as st
 from numpy import ascontiguousarray
-from ..link import IdentityLink, LogLink, LogitLink
+
+from ..link import IdentityLink, LogitLink, LogLink
 
 
 def _sample_doc(func):
