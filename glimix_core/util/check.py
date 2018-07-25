@@ -1,3 +1,4 @@
+import warnings
 from numpy import all as npall
 from numpy import asarray, clip, isfinite
 
@@ -55,7 +56,8 @@ def _check_poisson_outcome(y):
     if y[0].max() > poisson_lim:
         msg = "Output values of Poisson likelihood greater"
         msg += " than {lim} is set to {lim} before applying GLMM."
-        print(msg.format(lim=poisson_lim))
+        msg = msg.format(lim=poisson_lim)
+        warnings.warn(msg)
         y = (clip(y[0], 0, poisson_lim),)
 
     return y
