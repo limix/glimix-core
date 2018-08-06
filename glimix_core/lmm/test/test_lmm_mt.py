@@ -44,56 +44,75 @@ def test_lmm_mt():
     lmm.scale = 1.0
     lmm.delta = 0.5
 
-    # lmm.fit(verbose=False)
+    lmm.fit(verbose=False)
 
-    # assert_allclose(lmm.beta[0], 0.7065598068496923)
-    # assert_allclose(lmm.scale, 1.0)
-    # assert_allclose(lmm.delta, 0.5)
-    # assert_allclose(lmm.v0, 0.5)
-    # assert_allclose(lmm.v1, 0.5)
-    # assert_allclose(lmm.lml(), -57.56642490856645)
+    assert_allclose(
+        lmm.beta[0], [1.428343850340893, -0.1237931925675461, 0.4402245351179559]
+    )
+    assert_allclose(
+        lmm.beta[1], [-2.5806732580851466, 0.06110533548877167, 0.33064850937519386]
+    )
+    assert_allclose(lmm.scale, 1.0)
+    assert_allclose(lmm.delta, 0.5)
+    assert_allclose(lmm.v0, 0.5)
+    assert_allclose(lmm.v1, 0.5)
+    assert_allclose(lmm.lml(), -137.23576677088965)
 
-    # lmm.unfix("scale")
-    # lmm.fit(verbose=False)
+    lmm.unfix("scale")
+    lmm.fit(verbose=False)
 
-    # assert_allclose(lmm.beta[0], 0.7065598068496923)
-    # assert_allclose(lmm.v0, 1.060029052117017)
-    # assert_allclose(lmm.v1, 1.060029052117017)
-    # assert_allclose(lmm.lml(), -52.037205784544476)
+    assert_allclose(
+        lmm.beta[0], [1.428343850340893, -0.1237931925675461, 0.4402245351179559]
+    )
+    assert_allclose(
+        lmm.beta[1], [-2.5806732580851466, 0.06110533548877167, 0.33064850937519386]
+    )
+    assert_allclose(lmm.v0, 1.4275698502922902)
+    assert_allclose(lmm.v1, 1.4275698502922902)
+    assert_allclose(lmm.lml(), -2.1096297207596546)
 
-    # lmm.unfix("delta")
-    # lmm.fit(verbose=False)
+    lmm.unfix("delta")
+    lmm.fit(verbose=False)
 
-    # assert_allclose(lmm.beta[0], 0.7065598068496922, rtol=1e-5)
-    # assert_allclose(lmm.v0, 0.5667112269084563, rtol=1e-5)
-    # assert_allclose(lmm.v1, 1.3679269553495002, rtol=1e-5)
-    # assert_allclose(lmm.lml(), -51.84396136865774, rtol=1e-5)
+    assert_allclose(
+        lmm.beta[0],
+        [0.10805999290878535, -0.9196607986310403, 0.44022453511797177],
+        rtol=1e-5,
+    )
+    assert_allclose(
+        lmm.beta[1],
+        [-3.755505547671947, 1.305711706302464, 0.3306485093751931],
+        rtol=1e-5,
+    )
+    assert_allclose(lmm.v0, 19.034683831532796, rtol=1e-5)
+    assert_allclose(lmm.v1, 3.923340745047039e-08, rtol=1e-5)
+    assert_allclose(lmm.lml(), 16.83968479456045, rtol=1e-5)
 
-    # with pytest.raises(ValueError):
-    #     lmm.fix("deltaa")
+    with pytest.raises(ValueError):
+        lmm.fix("deltaa")
 
-    # with pytest.raises(ValueError):
-    #     lmm.isfixed("deltaa")
+    with pytest.raises(ValueError):
+        lmm.isfixed("deltaa")
 
-    # lmm = LMM(y, ones((n, 1)), QS)
-    # lmm.fix("beta")
-    # lmm.beta = [1.5]
-    # assert_allclose(lmm.lml(), -59.02992868385325)
-    # assert_allclose(lmm.beta[0], 1.5)
-    # lmm.fit(verbose=False)
-    # assert_allclose(lmm.lml(), -56.56425503034913)
-    # assert_allclose(lmm.beta[0], 1.5)
-    # lmm.unfix("beta")
-    # assert_allclose(lmm.lml(), -52.2963882611983)
-    # assert_allclose(lmm.beta[0], 0.7065598068496929)
-    # lmm.fit(verbose=False)
-    # assert_allclose(lmm.lml(), -51.84396136865775)
-    # assert_allclose(lmm.beta[0], 0.7065598068496929)
-    # lmm.fix("beta")
-    # lmm.beta = lmm.beta[0] + 0.01
-    # assert_allclose(lmm.lml(), -51.84505787833421)
-    # lmm.beta = lmm.beta[0] - 2 * 0.01
-    # assert_allclose(lmm.lml(), -51.84505787833422)
+    lmm = MTLMM(y, X, QS)
+    lmm.fix("beta")
+    lmm.beta = [[1.5, 1.0, -0.1], [1.1, -1.0, -0.2]]
+    assert_allclose(lmm.lml(), -3.172805158447899)
+    assert_allclose(lmm.beta[0][0], 1.5)
+    lmm.fit(verbose=False)
+    assert_allclose(lmm.lml(), 6.649135553753846)
+    assert_allclose(lmm.beta[0][0], 1.5)
+    lmm.unfix("beta")
+    assert_allclose(lmm.lml(), 10.64851984823196)
+    assert_allclose(lmm.beta[0][0], 1.77367626062221)
+    lmm.fit(verbose=False)
+    assert_allclose(lmm.lml(), 16.83968479456045)
+    assert_allclose(lmm.beta[0][0], 0.10805999290878535)
+    lmm.fix("beta")
+    lmm.beta = [lmm.beta[0] + 0.01, lmm.beta[1]]
+    assert_allclose(lmm.lml(), 9.688653002124916)
+    lmm.beta = [lmm.beta[0] - 2 * 1.01, lmm.beta[1]]
+    assert_allclose(lmm.lml(), -0.9171747398890027)
 
 
 def _covariates_sample(random, n, p):

@@ -173,8 +173,10 @@ class MTLMM(MTLMMCore):
         self._verbose = verbose
         if not self.isfixed("delta"):
             self.feed().maximize_scalar(verbose=verbose)
-        self._update()
+
         self.delta = self._get_delta()
+        self._update()
+
         self._verbose = False
 
     def fix(self, var_name):

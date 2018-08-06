@@ -119,13 +119,21 @@ class MTLMMCore(Function):
         self._update()
         s = self.scale
 
-        n = len(self._y)
-        lml = -n * log2pi - n * log(s)
+        nm = sum(len(yi) for yi in self._y)
+        m = len(self._y)
+        lml = -nm * log2pi - nm * log(s)
 
-        lml -= sum(npsum(log(D)) for D in self._D)
+        lml -= m * sum(npsum(log(D)) for D in self._D)
 
-        d = (mTQ - yTQ for (mTQ, yTQ) in zip(self._mTQ, self._yTQ))
-        lml += sum(dot(j / i, l) for (i, j, l) in zip(self._D, d, self._yTQ)) / s
+        d = (
+            (i - j for (i, j) in zip(ii, jj)) for (ii, jj) in zip(self._mTQ, self._yTQ)
+        )
+
+        tmp = sum(
+            sum(dot(j / i, l) for (i, j, l) in zip(self._D, di, yTQ))
+            for (di, yTQ) in zip(d, self._yTQ)
+        )
+        lml += tmp / s
 
         return lml / 2
 
@@ -135,7 +143,7 @@ class MTLMMCore(Function):
 
     @property
     def _mTQ(self):
-        return (dot(self.mean.T, Q) for Q in self._QS[0] if Q.size > 0)
+        return ((dot(m.T, Q) for Q in self._QS[0] if Q.size > 0) for m in self.mean)
 
     def _optimal_scale(self):
         yTQDiQTy = self._yTQDiQTy
@@ -164,16 +172,18 @@ class MTLMMCore(Function):
     def _update_fixed_effects(self):
         if self.isfixed("beta"):
             return
-        yTQDiQTm = list(self._yTQDiQTm)
-        mTQDiQTm = list(self._mTQDiQTm)
-        nominator = yTQDiQTm[0]
-        denominator = mTQDiQTm[0]
 
-        if len(yTQDiQTm) > 1:
-            nominator += yTQDiQTm[1]
-            denominator += mTQDiQTm[1]
+        for (i, j, bi) in zip(self._yTQDiQTm, self._mTQDiQTm, self._tbeta):
+            i = list(i)
+            j = list(j)
+            nominator = i[0]
+            denominator = j[0]
 
-        self._tbeta[:] = rsolve(denominator, nominator)
+            if len(i) > 1:
+                nominator += i[1]
+                denominator += j[1]
+
+            bi[:] = rsolve(denominator, nominator)
 
     def _update(self):
         self._update_fixed_effects()
@@ -238,16 +248,17 @@ class MTLMMCore(Function):
         :class:`numpy.ndarray`
             Optimal fixed-effect sizes.
         """
-        SVs = ddot(self._svd[0], sqrt(self._svd[1]))
-        z = rsolve(SVs, self.mean)
-        VsD = ddot(sqrt(self._svd[1]), self._svd[2])
-        return rsolve(VsD, z)
+        SVs = (ddot(svd[0], sqrt(svd[1])) for svd in self._svd)
+        z = (rsolve(SVsi, m) for (SVsi, m) in zip(SVs, self.mean))
+        VsD = (ddot(sqrt(svd[1]), svd[2]) for svd in self._svd)
+        return [rsolve(VsDi, zi) for (VsDi, zi) in zip(VsD, z)]
 
     @beta.setter
     def beta(self, beta):
-        beta = asarray(beta, float)
-        VsD = ddot(sqrt(self._svd[1]), self._svd[2])
-        self._tbeta[:] = dot(VsD, beta)
+        beta = (asarray(b, float) for b in beta)
+        VsD = (ddot(sqrt(svd[1]), svd[2]) for svd in self._svd)
+        for (tb, VsDi, b) in zip(self._tbeta, VsD, beta):
+            tb[:] = dot(VsDi, b)
 
     @property
     def delta(self):
@@ -289,7 +300,7 @@ class MTLMMCore(Function):
         array_like
             Mean of the prior.
         """
-        return dot(self._tM, self._tbeta)
+        return [dot(tM, tb) for (tM, tb) in zip(self._tM, self._tbeta)]
 
     @property
     def scale(self):
