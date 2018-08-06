@@ -33,16 +33,16 @@ def test_lmm_mt():
 
     lmm = MTLMM(y, X, QS)
 
-    # assert_(not lmm.isfixed("delta"))
-    # lmm.fix("delta")
-    # assert_(lmm.isfixed("delta"))
+    assert_(not lmm.isfixed("delta"))
+    lmm.fix("delta")
+    assert_(lmm.isfixed("delta"))
 
-    # assert_(not lmm.isfixed("scale"))
-    # lmm.fix("scale")
-    # assert_(lmm.isfixed("scale"))
+    assert_(not lmm.isfixed("scale"))
+    lmm.fix("scale")
+    assert_(lmm.isfixed("scale"))
 
-    # lmm.scale = 1.0
-    # lmm.delta = 0.5
+    lmm.scale = 1.0
+    lmm.delta = 0.5
 
     # lmm.fit(verbose=False)
 

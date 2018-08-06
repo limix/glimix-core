@@ -84,7 +84,7 @@ class MTLMMCore(Function):
     @property
     def _D(self):
         D = []
-        n = self._y.shape[0]
+        n = self._y[0].shape[0]
         if self._QS[1].size > 0:
             D += [self._QS[1] * (1 - self.delta) + self.delta]
         if self._QS[1].size < n:
@@ -131,7 +131,7 @@ class MTLMMCore(Function):
 
     @property
     def _mTQDiQTm(self):
-        return (dot(i / j, i.T) for (i, j) in zip(self._tMTQ, self._D))
+        return ((dot(i / j, i.T) for (i, j) in zip(ii, self._D)) for ii in self._tMTQ)
 
     @property
     def _mTQ(self):
@@ -140,10 +140,14 @@ class MTLMMCore(Function):
     def _optimal_scale(self):
         yTQDiQTy = self._yTQDiQTy
         yTQDiQTm = self._yTQDiQTm
+        mTQDiQTm = self._mTQDiQTm
         b = self._tbeta
-        p0 = sum(i - 2 * dot(j, b) for (i, j) in zip(yTQDiQTy, yTQDiQTm))
-        p1 = sum(dot(dot(b, i), b) for i in self._mTQDiQTm)
-        return maximum((p0 + p1) / len(self._y), epsilon.small)
+        p0 = sum(
+            sum(i - 2 * dot(j, bi) for (i, j) in zip(ii, jj))
+            for (ii, jj, bi) in zip(yTQDiQTy, yTQDiQTm, b)
+        )
+        p1 = sum(sum(dot(dot(bi, i), bi) for i in ii) for (ii, bi) in zip(mTQDiQTm, b))
+        return maximum((p0 + p1) / sum(len(yi) for yi in self._y), epsilon.small)
 
     def _set_X(self, X=None, SVD=None):
         if SVD is None:
@@ -155,7 +159,7 @@ class MTLMMCore(Function):
 
     @property
     def _tMTQ(self):
-        return (self._tM.T.dot(Q) for Q in self._QS[0] if Q.size > 0)
+        return ((tM.T.dot(Q) for Q in self._QS[0] if Q.size > 0) for tM in self._tM)
 
     def _update_fixed_effects(self):
         if self.isfixed("beta"):
@@ -176,22 +180,25 @@ class MTLMMCore(Function):
 
     @property
     def _yTQ(self):
-        return (dot(self._y.T, Q) for Q in self._QS[0] if Q.size > 0)
+        return ((dot(yi.T, Q) for Q in self._QS[0] if Q.size > 0) for yi in self._y)
 
     @property
     def _yTQQTy(self):
-        return (yTQ ** 2 for yTQ in self._yTQ)
+        return ((yTQi ** 2 for yTQi in yTQ) for yTQ in self._yTQ)
 
     @property
     def _yTQDiQTy(self):
-        return (npsum(i / j) for (i, j) in zip(self._yTQQTy, self._D))
+        return ((npsum(i / j) for (i, j) in zip(ii, self._D)) for ii in self._yTQQTy)
 
     @property
     def _yTQDiQTm(self):
         yTQ = self._yTQ
         D = self._D
         tMTQ = self._tMTQ
-        return (dot(i / j, l.T) for (i, j, l) in zip(yTQ, D, tMTQ))
+        return (
+            (dot(i / j, l.T) for (i, j, l) in zip(ii, D, ll))
+            for (ii, ll) in zip(yTQ, tMTQ)
+        )
 
     @property
     def X(self):
