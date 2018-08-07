@@ -12,7 +12,7 @@ from numpy import (
     isfinite,
     log,
     maximum,
-    sqrt
+    sqrt,
 )
 from numpy import sum as npsum
 from numpy import zeros
@@ -99,7 +99,7 @@ class LMMCore(Function):
             Log of the marginal likelihood.
 
         """
-        self._update()
+        self._update_fixed_effects()
 
         n = len(self._y)
         lml = -n * log2pi - n - n * log(self.scale)
@@ -115,7 +115,7 @@ class LMMCore(Function):
         float
             Log of the marginal likelihood.
         """
-        self._update()
+        self._update_fixed_effects()
         s = self.scale
 
         n = len(self._y)
@@ -137,12 +137,21 @@ class LMMCore(Function):
         return (dot(self.mean.T, Q) for Q in self._QS[0] if Q.size > 0)
 
     def _optimal_scale(self):
+        if not self.isfixed("beta"):
+            return self._optimal_scale_using_optimal_beta()
+
         yTQDiQTy = self._yTQDiQTy
         yTQDiQTm = self._yTQDiQTm
         b = self._tbeta
         p0 = sum(i - 2 * dot(j, b) for (i, j) in zip(yTQDiQTy, yTQDiQTm))
         p1 = sum(dot(dot(b, i), b) for i in self._mTQDiQTm)
         return maximum((p0 + p1) / len(self._y), epsilon.small)
+
+    def _optimal_scale_using_optimal_beta(self):
+        yTQDiQTy = self._yTQDiQTy
+        yTQDiQTm = self._yTQDiQTm
+        s = sum(i - dot(j, self._tbeta) for (i, j) in zip(yTQDiQTy, yTQDiQTm))
+        return maximum(s / len(self._y), epsilon.small)
 
     def _set_X(self, X=None, SVD=None):
         if SVD is None:
@@ -169,9 +178,6 @@ class LMMCore(Function):
             denominator += mTQDiQTm[1]
 
         self._tbeta[:] = rsolve(denominator, nominator)
-
-    def _update(self):
-        self._update_fixed_effects()
 
     @property
     def _yTQ(self):
