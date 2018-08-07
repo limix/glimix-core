@@ -80,15 +80,29 @@ class LMMCore(Function):
         self._set_X(X=X, SVD=SVD)
         self._verbose = False
 
-    @property
-    def _D(self):
-        D = []
-        n = self._y.shape[0]
-        if self._QS[1].size > 0:
-            D += [self._QS[1] * (1 - self.delta) + self.delta]
-        if self._QS[1].size < n:
-            D += [full(n - self._QS[1].size, self.delta)]
-        return D
+    def _set_X(self, X=None, SVD=None):
+        if SVD is None:
+            self._svd = economic_svd(X)
+        else:
+            self._svd = SVD
+        self._tM = ddot(self._svd[0], sqrt(self._svd[1]))
+        self._tbeta = zeros(self._tM.shape[1])
+
+    def lml(self):
+        r"""Log of the marginal likelihood.
+
+        Returns
+        -------
+        float
+            Log of the marginal likelihood.
+        """
+        if self._verbose:
+            print("Scale: {:g}".format(self.scale))
+            print("Delta: {:g}".format(self.delta))
+            print("Beta: {:}".format(str(self.beta)))
+        if self.isfixed("scale"):
+            return self._lml_arbitrary_scale()
+        return self._lml_optimal_scale()
 
     def _lml_optimal_scale(self):
         r"""Log of the marginal likelihood.
@@ -128,14 +142,6 @@ class LMMCore(Function):
 
         return lml / 2
 
-    @property
-    def _mTQDiQTm(self):
-        return (dot(i / j, i.T) for (i, j) in zip(self._tMTQ, self._D))
-
-    @property
-    def _mTQ(self):
-        return (dot(self.mean.T, Q) for Q in self._QS[0] if Q.size > 0)
-
     def _optimal_scale(self):
         if not self.isfixed("beta"):
             return self._optimal_scale_using_optimal_beta()
@@ -153,18 +159,6 @@ class LMMCore(Function):
         s = sum(i - dot(j, self._tbeta) for (i, j) in zip(yTQDiQTy, yTQDiQTm))
         return maximum(s / len(self._y), epsilon.small)
 
-    def _set_X(self, X=None, SVD=None):
-        if SVD is None:
-            self._svd = economic_svd(X)
-        else:
-            self._svd = SVD
-        self._tM = ddot(self._svd[0], sqrt(self._svd[1]))
-        self._tbeta = zeros(self._tM.shape[1])
-
-    @property
-    def _tMTQ(self):
-        return (self._tM.T.dot(Q) for Q in self._QS[0] if Q.size > 0)
-
     def _update_fixed_effects(self):
         if self.isfixed("beta"):
             return
@@ -178,6 +172,28 @@ class LMMCore(Function):
             denominator += mTQDiQTm[1]
 
         self._tbeta[:] = rsolve(denominator, nominator)
+
+    @property
+    def _D(self):
+        D = []
+        n = self._y.shape[0]
+        if self._QS[1].size > 0:
+            D += [self._QS[1] * (1 - self.delta) + self.delta]
+        if self._QS[1].size < n:
+            D += [full(n - self._QS[1].size, self.delta)]
+        return D
+
+    @property
+    def _mTQDiQTm(self):
+        return (dot(i / j, i.T) for (i, j) in zip(self._tMTQ, self._D))
+
+    @property
+    def _mTQ(self):
+        return (dot(self.mean.T, Q) for Q in self._QS[0] if Q.size > 0)
+
+    @property
+    def _tMTQ(self):
+        return (self._tM.T.dot(Q) for Q in self._QS[0] if Q.size > 0)
 
     @property
     def _yTQ(self):
@@ -260,35 +276,6 @@ class LMMCore(Function):
         delta = clip(delta, epsilon.tiny, 1 - epsilon.tiny)
         self.variables().set(dict(logistic=log(delta / (1 - delta))))
 
-    def lml(self):
-        r"""Log of the marginal likelihood.
-
-        Returns
-        -------
-        float
-            Log of the marginal likelihood.
-        """
-        if self._verbose:
-            print("Scale: {:g}".format(self.scale))
-            print("Delta: {:g}".format(self.delta))
-            print("Beta: {:}".format(str(self.beta)))
-        if self.isfixed("scale"):
-            return self._lml_arbitrary_scale()
-        return self._lml_optimal_scale()
-
-    @property
-    def mean(self):
-        r"""Mean of the prior.
-
-        Formally, :math:`\mathbf m = \mathrm X \boldsymbol\beta`.
-
-        Returns
-        -------
-        array_like
-            Mean of the prior.
-        """
-        return dot(self._tM, self._tbeta)
-
     @property
     def scale(self):
         r"""Scaling factor.
@@ -305,6 +292,19 @@ class LMMCore(Function):
     @scale.setter
     def scale(self, scale):
         self._scale = scale
+
+    @property
+    def mean(self):
+        r"""Mean of the prior.
+
+        Formally, :math:`\mathbf m = \mathrm X \boldsymbol\beta`.
+
+        Returns
+        -------
+        array_like
+            Mean of the prior.
+        """
+        return dot(self._tM, self._tbeta)
 
     def mean_star(self, Xstar):
         return dot(Xstar, self.beta)
