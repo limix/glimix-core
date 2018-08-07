@@ -1,5 +1,10 @@
 from __future__ import division
 
+try:
+    from itertools import izip as zip
+except ImportError:
+    pass
+
 from numpy import all as npall
 from numpy import (
     asarray,
@@ -182,6 +187,7 @@ class MTLMMCore(Function):
             if len(i) > 1:
                 nominator += i[1]
                 denominator += j[1]
+
 
             bi[:] = rsolve(denominator, nominator)
 
