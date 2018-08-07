@@ -271,6 +271,7 @@ likelihood:
            &= \log \mathcal N(\text{Diag}(\sqrt{s^*\mathrm D})
                ~|~ \mathbf 0, s^*\mathrm D).
 
+.. _mtlmm-impl:
 
 Multi-trait
 -----------
@@ -318,6 +319,7 @@ where :math:`\mathrm K` is repeated |m| times in :math:`\tilde{\mathrm K}`.
 We thus consider the model
 
 .. math::
+    :label: mtlmm1
 
     \mathbf y \sim \mathcal N\Big(~
         \mathrm X\boldsymbol\beta;~

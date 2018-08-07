@@ -1,6 +1,6 @@
 from __future__ import division
 
-from numpy import arange, corrcoef, dot, inf, nan, ones, sqrt, zeros
+from numpy import arange, ones, sqrt
 from numpy import concatenate
 from numpy.random import RandomState
 from numpy.testing import assert_, assert_allclose

@@ -23,7 +23,7 @@ from numpy import sum as npsum
 from numpy import zeros
 
 from glimix_core.util import log2pi
-from numpy_sugar import epsilon
+from numpy_sugar import epsilon, is_all_finite
 from numpy_sugar.linalg import ddot, economic_svd, rsolve, sum2diag
 
 from optimix import Function, Scalar
@@ -36,6 +36,8 @@ class MTLMMCore(Function):
         Function.__init__(self, logistic=Scalar(0.0))
 
         y = [asarray(yi, float).ravel() for yi in y]
+        if not all(is_all_finite(yi) for yi in y):
+            raise ValueError("There are non-finite values in the outcome.")
 
         if X is not None:
             X = [atleast_2d(asarray(Xi, float).T).T for Xi in X]
@@ -45,6 +47,10 @@ class MTLMMCore(Function):
             n = X[0].shape[0]
         else:
             n = SVD[0][0].shape[0]
+
+        ntraits = len(y)
+        if ntraits != len(X):
+            raise ValueError("Number of traits differs between outcome and covariates.")
 
         if not all([npall(isfinite(yi)) for yi in y]):
             raise ValueError("Not all values are finite in the outcome array.")
@@ -62,8 +68,7 @@ class MTLMMCore(Function):
         if QS[0][0].shape[0] != y[0].shape[0]:
             raise ValueError(
                 "Number of samples differs between outcome"
-                " and covariance decomposition"
-                "decomposition"
+                " and covariance matrix decomposition."
             )
 
         if any([yi.shape[0] != n for yi in y]):
@@ -187,7 +192,6 @@ class MTLMMCore(Function):
             if len(i) > 1:
                 nominator += i[1]
                 denominator += j[1]
-
 
             bi[:] = rsolve(denominator, nominator)
 

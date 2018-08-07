@@ -3,17 +3,17 @@ from __future__ import division
 from numpy import asarray, clip, dot, exp
 from numpy.linalg import solve
 
-from numpy_sugar import epsilon, is_all_finite
+from numpy_sugar import epsilon
 
 from ._mt_core import MTLMMCore
 from ._scan import FastScanner
 
 
 class MTLMM(MTLMMCore):
-    r"""Fast Linear Mixed Models inference via maximum likelihood.
+    r"""Multi-Trait Linear Mixed Models inference via maximum likelihood.
 
-    It perform inference on the model :eq:`lmm1`, explained in the
-    :ref:`lmm-intro` section.
+    It perform inference on the model :eq:`mtlmm1`, explained in the
+    :ref:`mtlmm-impl` section.
 
     Parameters
     ----------
@@ -70,10 +70,6 @@ class MTLMM(MTLMMCore):
 
     def __init__(self, y, X, QS=None):
         MTLMMCore.__init__(self, y, X, QS)
-
-        if not is_all_finite(y):
-            raise ValueError("There are non-finite values in the outcome.")
-
         self.set_nodata()
 
     def _get_delta(self):
