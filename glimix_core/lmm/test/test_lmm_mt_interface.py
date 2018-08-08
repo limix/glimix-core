@@ -1,10 +1,51 @@
-from numpy import inf
+from numpy import inf, newaxis, nan
 from numpy.random import RandomState
 from numpy.testing import assert_allclose
 
 import pytest
 from glimix_core.lmm import MTLMM
 from numpy_sugar.linalg import economic_qs_linear
+
+
+def test_lmm_interface():
+    random = RandomState(0)
+    y = random.randn(4)
+    X = random.randn(5, 2)
+    G = random.randn(5, 6)
+
+    QS = economic_qs_linear(G)
+    with pytest.raises(ValueError):
+        MTLMM(y, X, QS)
+
+    y = random.randn(6)
+    X = random.randn(6, 2)
+    with pytest.raises(ValueError):
+        MTLMM(y, X, QS)
+
+    with pytest.raises(ValueError):
+        MTLMM(y, X, X)
+
+    X = random.randn(6)
+    G = random.randn(6, 6)
+    QS = economic_qs_linear(G)
+
+    lmm = MTLMM(y, X, QS)
+    lml0 = lmm.lml()
+
+    lmm = MTLMM(y, X[:, newaxis], QS)
+    lml1 = lmm.lml()
+
+    assert_allclose(lml0, -5.88892141334)
+    assert_allclose(lml0, lml1)
+
+    y[0] = inf
+    with pytest.raises(ValueError):
+        MTLMM(y, X[:, newaxis], QS)
+
+    y[0] = 0
+    X[3] = nan
+    with pytest.raises(ValueError):
+        MTLMM(y, X[:, newaxis], QS)
 
 
 def test_lmm_mt_interface():

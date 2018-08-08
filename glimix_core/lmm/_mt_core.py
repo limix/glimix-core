@@ -360,7 +360,7 @@ def _check_outcome(y):
 def _check_covariates(X, SVD):
     if X is not None:
         if hasattr(X, "ndim"):
-            if X.ndim == 2:
+            if X.ndim == 1 or X.ndim == 2:
                 X = [X]
             else:
                 raise ValueError(
