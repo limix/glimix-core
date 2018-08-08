@@ -49,7 +49,7 @@ def test_lmm_mt_interface():
         MTLMM([y1, y0], [X0, X1], QS1)
 
 
-def test_lmm_mt_interface_pandas():
+def test_lmm_mt_interface_pandas1():
     from pandas import Series, DataFrame
 
     random = RandomState(0)
@@ -60,21 +60,6 @@ def test_lmm_mt_interface_pandas():
     QS = economic_qs_linear(G)
     lmm = MTLMM([y, y], [X, X], QS)
     assert_allclose(lmm.lml(), -10.474952610114517)
-
-
-def test_lmm_interface_pandas1():
-    from glimix_core.lmm import LMM
-    from pandas import Series, DataFrame
-
-    random = RandomState(0)
-    y = Series(random.randn(5))
-    X = DataFrame(random.randn(5, 2))
-    G = random.randn(5, 6)
-
-    QS = economic_qs_linear(G)
-    lmm = LMM(y, X, QS)
-
-    assert_allclose(lmm.lml(), -6.7985689491)
 
 
 def test_lmm_interface_pandas2():
