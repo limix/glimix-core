@@ -5,6 +5,7 @@ try:
 except ImportError:
     pass
 
+import collections
 from numpy import all as npall
 from numpy import (
     asarray,
@@ -29,14 +30,6 @@ from numpy_sugar.linalg import ddot, economic_svd, rsolve, sum2diag
 from optimix import Function, Scalar
 
 from ..util import economic_qs_zeros, numbers
-
-
-def _check_outcome_against_covariates(y, n, ntraits):
-    if any([yi.shape[0] != n for yi in y]):
-        raise ValueError("Number of samples differs between outcome and covariates.")
-
-    if len(y) != ntraits:
-        raise ValueError("Number of traits differs between outcome and covariates.")
 
 
 class MTLMMCore(Function):
@@ -97,8 +90,8 @@ class MTLMMCore(Function):
         """
         self._update_fixed_effects()
 
-        n = len(self._y)
-        lml = -n * log2pi - n - n * log(self.scale)
+        nm = len(self._y[0]) * len(self._y)
+        lml = -nm * log2pi - nm - nm * log(self.scale)
         lml -= sum(npsum(log(D)) for D in self._D)
 
         return lml / 2
@@ -341,6 +334,19 @@ class MTLMMCore(Function):
 
 
 def _check_outcome(y):
+    if hasattr(y, "ndim"):
+        if y.ndim == 1:
+            y = [y]
+        elif y.ndim == 2:
+            y = y.T
+        else:
+            raise ValueError("Unrecognized number of dimensions of the outcome array.")
+    else:
+        if isinstance(y, collections.Sequence):
+            if not hasattr(y[0], "ndim") and not isinstance(y[0], collections.Sequence):
+                y = [asarray(y, float)]
+        else:
+            y = [y]
     y = [asarray(yi, float).ravel() for yi in y]
     if not all(is_all_finite(yi) for yi in y):
         raise ValueError("There are non-finite values in the outcome.")
@@ -353,6 +359,22 @@ def _check_outcome(y):
 
 def _check_covariates(X, SVD):
     if X is not None:
+        if hasattr(X, "ndim"):
+            if X.ndim == 2:
+                X = [X]
+            else:
+                raise ValueError(
+                    "Unrecognized number of dimensions of the covariates array."
+                )
+        else:
+            if isinstance(X, collections.Sequence):
+                if not hasattr(X[0], "ndim") and not isinstance(
+                    X[0], collections.Sequence
+                ):
+                    X = [asarray(X, float)]
+            else:
+                X = [X]
+
         X = [atleast_2d(asarray(Xi, float).T).T for Xi in X]
         if not all([npall(isfinite(Xi)) for Xi in X]):
             msg = "Not all values are finite in the covariates matrix."
@@ -375,3 +397,11 @@ def _check_qs(QS, y):
             "Number of samples differs between outcome"
             " and covariance matrix decomposition."
         )
+
+
+def _check_outcome_against_covariates(y, n, ntraits):
+    if any([yi.shape[0] != n for yi in y]):
+        raise ValueError("Number of samples differs between outcome and covariates.")
+
+    if len(y) != ntraits:
+        raise ValueError("Number of traits differs between outcome and covariates.")

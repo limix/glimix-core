@@ -38,7 +38,11 @@ def test_lmm_mt_interface():
     lmm = MTLMM([y0, y1], [X0, X1], QS)
     lml = lmm.lml()
 
-    assert_allclose(lml, -4.024120615594013)
+    assert_allclose(lml, -7.713526905947342)
+
+    lmm = MTLMM(y0, X0, QS)
+    lml = lmm.lml()
+    assert_allclose(lml, -5.721633217309584)
 
     y0[3] = inf
     with pytest.raises(ValueError):
@@ -55,4 +59,33 @@ def test_lmm_mt_interface_pandas():
 
     QS = economic_qs_linear(G)
     lmm = MTLMM([y, y], [X, X], QS)
-    assert_allclose(lmm.lml(), -4.592738752488828)
+    assert_allclose(lmm.lml(), -10.474952610114517)
+
+
+def test_lmm_interface_pandas1():
+    from glimix_core.lmm import LMM
+    from pandas import Series, DataFrame
+
+    random = RandomState(0)
+    y = Series(random.randn(5))
+    X = DataFrame(random.randn(5, 2))
+    G = random.randn(5, 6)
+
+    QS = economic_qs_linear(G)
+    lmm = LMM(y, X, QS)
+
+    assert_allclose(lmm.lml(), -6.7985689491)
+
+
+def test_lmm_interface_pandas2():
+    from pandas import Series, DataFrame
+
+    random = RandomState(0)
+    y = Series(random.randn(5))
+    X = DataFrame(random.randn(5, 2))
+    G = random.randn(5, 6)
+
+    QS = economic_qs_linear(G)
+    lmm = MTLMM(y, X, QS)
+
+    assert_allclose(lmm.lml(), -6.7985689491)

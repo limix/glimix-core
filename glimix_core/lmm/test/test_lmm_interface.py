@@ -47,15 +47,3 @@ def test_lmm_interface():
     with pytest.raises(ValueError):
         LMM(y, X[:, newaxis], QS)
 
-
-def test_lmm_interface_pandas():
-    from pandas import Series, DataFrame
-
-    random = RandomState(0)
-    y = Series(random.randn(5))
-    X = DataFrame(random.randn(5, 2))
-    G = random.randn(5, 6)
-
-    QS = economic_qs_linear(G)
-    lmm = LMM(y, X, QS)
-    assert_allclose(lmm.lml(), -6.7985689491)
