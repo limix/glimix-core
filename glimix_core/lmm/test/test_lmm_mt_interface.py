@@ -90,7 +90,7 @@ def test_lmm_mt_interface():
         MTLMM([y1, y0], [X0, X1], QS1)
 
 
-def test_lmm_mt_interface_pandas1():
+def test_lmm_mt_interface_pandas():
     from pandas import Series, DataFrame
 
     random = RandomState(0)
@@ -103,7 +103,7 @@ def test_lmm_mt_interface_pandas1():
     assert_allclose(lmm.lml(), -10.474952610114517)
 
 
-def test_lmm_interface_pandas2():
+def test_lmm_interface_pandas():
     from pandas import Series, DataFrame
 
     random = RandomState(0)

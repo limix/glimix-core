@@ -60,6 +60,7 @@ class EyeCov(NamedClass, Function):
 
     def __init__(self):
         Function.__init__(self, logscale=Scalar(0.0))
+        self.variables().get("logscale").bounds = (-20., +10)
         NamedClass.__init__(self)
 
     @property
