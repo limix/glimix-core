@@ -60,6 +60,7 @@ class LinearMean(NamedClass, Function):
 
     def __init__(self, size):
         Function.__init__(self, effsizes=Vector(zeros(size)))
+        self.variables().get("effsizes").bounds = [(-200., +200)] * size
         NamedClass.__init__(self)
 
     def value(self, x):
