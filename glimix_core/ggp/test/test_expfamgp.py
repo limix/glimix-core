@@ -67,5 +67,5 @@ def test_expfam_ep_optimize():
     ep = ExpFamGP((data["y"],), "bernoulli", data["mean"], data["cov"])
     data["cov_left"].fix("logscale")
     ep.feed().maximize(verbose=False)
-    assert_allclose(data["cov_right"].scale, 0.3815125853009603, atol=1e-5)
-    assert_allclose(data["mean"].offset, 2.8339582691250604, rtol=1e-6)
+    assert_allclose(data["cov_right"].scale, 0.38152460884420397, atol=1e-5)
+    assert_allclose(data["mean"].offset, 2.833961965438454, rtol=1e-6)

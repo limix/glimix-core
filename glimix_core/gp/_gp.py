@@ -47,14 +47,14 @@ class GP(FunctionReduce):
         After: -13.4791
         >>> print(gp)  # doctest: +FLOAT_CMP
         GP(...)
-          lml: -13.479078786068948
+          lml: -13.47907874997517
           OffsetMean()
-            offset: 0.7755707079204702
+            offset: 0.775580366877228
           SumCov(covariances=...)
             LinearCov()
-              scale: 2.1085555727363466e-08
+              scale: 2.061153622438558e-09
             EyeCov()
-              scale: 0.8675741638325485
+              scale: 0.8675680523425118
     """
 
     def __init__(self, y, mean, cov):
