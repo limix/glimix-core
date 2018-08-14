@@ -12,7 +12,7 @@ from numpy import (
     full,
     inf,
     isfinite,
-    log
+    log,
 )
 from numpy import min as npmin
 from numpy import newaxis
@@ -22,7 +22,6 @@ from numpy.linalg import LinAlgError
 
 from numpy_sugar import epsilon
 from numpy_sugar.linalg import dotd, rsolve
-from tqdm import tqdm
 
 from ..util import hsolve, log2pi
 
@@ -238,6 +237,8 @@ class FastScanner(object):
         :class:`numpy.ndarray`
             Fixed-effect sizes.
         """
+        from tqdm import tqdm
+
         if M.ndim != 2:
             raise ValueError("`M` array must be bidimensional.")
         p = M.shape[1]

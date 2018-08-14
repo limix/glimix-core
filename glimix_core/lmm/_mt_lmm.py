@@ -3,17 +3,17 @@ from __future__ import division
 from numpy import asarray, clip, dot, exp
 from numpy.linalg import solve
 
-from numpy_sugar import epsilon, is_all_finite
+from numpy_sugar import epsilon
 
-from ._core import LMMCore
+from ._mt_core import MTLMMCore
 from ._scan import FastScanner
 
 
-class LMM(LMMCore):
-    r"""Fast Linear Mixed Models inference via maximum likelihood.
+class MTLMM(MTLMMCore):
+    r"""Multi-Trait Linear Mixed Models inference via maximum likelihood.
 
-    It perform inference on the model :eq:`lmm1`, explained in the
-    :ref:`lmm-intro` section.
+    It perform inference on the model :eq:`mtlmm1`, explained in the
+    :ref:`mtlmm-impl` section.
 
     Parameters
     ----------
@@ -69,11 +69,7 @@ class LMM(LMMCore):
     """
 
     def __init__(self, y, X, QS=None):
-        LMMCore.__init__(self, y, X, QS)
-
-        if not is_all_finite(y):
-            raise ValueError("There are non-finite values in the outcome.")
-
+        MTLMMCore.__init__(self, y, X, QS)
         self.set_nodata()
 
     def _get_delta(self):
@@ -84,11 +80,11 @@ class LMM(LMMCore):
     @property
     def beta(self):
         r"""Get or set fixed-effect sizes."""
-        return LMMCore.beta.fget(self)
+        return MTLMMCore.beta.fget(self)
 
     @beta.setter
     def beta(self, beta):
-        LMMCore.beta.fset(self, beta)
+        MTLMMCore.beta.fset(self, beta)
 
     def copy(self):
         r"""Return a copy of this object.
@@ -102,9 +98,9 @@ class LMM(LMMCore):
         :class:`.LMM`
             Copy of this object.
         """
-        o = LMM.__new__(LMM)
+        o = MTLMM.__new__(MTLMM)
 
-        LMMCore.__init__(o, self._y, self.X, self._QS)
+        MTLMMCore.__init__(o, self._y, self.X, self._QS)
         o.delta = self.delta
         if self.isfixed("delta"):
             o.fix("delta")
@@ -134,7 +130,7 @@ class LMM(LMMCore):
             msg = "Possible values are 'delta', 'scale', and 'beta'."
             raise ValueError(msg)
         if var_name == "delta":
-            return super(LMM, self).isfixed("logistic")
+            return super(MTLMM, self).isfixed("logistic")
         if var_name == "beta":
             return self._fix_beta
         return self._fix_scale
@@ -190,7 +186,7 @@ class LMM(LMMCore):
             raise ValueError(msg)
 
         if var_name == "delta":
-            super(LMM, self).fix("logistic")
+            super(MTLMM, self).fix("logistic")
         elif var_name == "beta":
             self._fix_beta = True
         else:
@@ -226,7 +222,7 @@ class LMM(LMMCore):
 
     def lml(self):
         self.delta = self._get_delta()
-        return LMMCore.lml(self)
+        return MTLMMCore.lml(self)
 
     @property
     def mean(self):
@@ -237,13 +233,13 @@ class LMM(LMMCore):
         :class:`numpy.ndarray`
             Mean of the prior.
         """
-        return LMMCore.mean.fget(self)
+        return MTLMMCore.mean.fget(self)
 
     @property
     def scale(self):
         if self._fix_scale:
             return self._scale
-        return LMMCore.scale.fget(self)
+        return MTLMMCore.scale.fget(self)
 
     @scale.setter
     def scale(self, v):
@@ -261,7 +257,7 @@ class LMM(LMMCore):
             msg = "Possible values are 'delta', 'scale', and 'beta'."
             raise ValueError(msg)
         if var_name == "delta":
-            super(LMM, self).unfix("logistic")
+            super(MTLMM, self).unfix("logistic")
         elif var_name == "beta":
             self._fix_beta = False
         else:
@@ -273,23 +269,23 @@ class LMM(LMMCore):
 
     @property
     def X(self):
-        return LMMCore.X.fget(self)
+        return MTLMMCore.X.fget(self)
 
     @X.setter
     def X(self, X):
-        LMMCore.X.fset(self, X)
+        MTLMMCore.X.fset(self, X)
 
     def predictive_mean(self, Xstar, ks, kss):
         mstar = self.mean_star(Xstar)
         ks = self.covariance_star(ks)
         m = self.mean
-        K = LMMCore.covariance(self)
+        K = MTLMMCore.covariance(self)
         return mstar + dot(ks, solve(K, self._y - m))
 
     def predictive_covariance(self, Xstar, ks, kss):
         kss = self.variance_star(kss)
         ks = self.covariance_star(ks)
-        K = LMMCore.covariance(self)
+        K = MTLMMCore.covariance(self)
         ktk = solve(K, ks.T)
         b = []
         for i in range(len(kss)):
