@@ -2,8 +2,6 @@ from __future__ import division, unicode_literals
 
 from numpy import ascontiguousarray
 
-import scipy.stats as st
-
 from ..link import IdentityLink, LogitLink, LogLink
 
 
@@ -119,6 +117,8 @@ class BernoulliProdLik(object):
 
     @_sample_doc
     def sample(self, x, random_state=None):
+        import scipy.stats as st
+
         p = self.mean(x)
         return _aca(st.bernoulli(p).rvs(random_state=random_state))
 
@@ -181,6 +181,8 @@ class BinomialProdLik(object):
 
     @_sample_doc
     def sample(self, x, random_state=None):
+        import scipy.stats as st
+
         p = self.mean(x)
         nt = ascontiguousarray(self._ntrials, dtype=int)
         return _aca(st.binom(nt, p).rvs(random_state=random_state))
@@ -227,6 +229,8 @@ class PoissonProdLik(object):
 
     @_sample_doc
     def sample(self, x, random_state=None):
+        import scipy.stats as st
+
         lam = self.mean(x)
         return st.poisson(mu=lam).rvs(random_state=random_state)
 
