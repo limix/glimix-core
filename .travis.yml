@@ -5,7 +5,6 @@ python:
 env:
 - PKG_NAME=glimix_core
 script:
-- python -m pip install intel-numpy intel-scipy
 - bash <(curl -fsSL https://raw.githubusercontent.com/horta/ci/master/travis.sh)
 notifications:
   email:
