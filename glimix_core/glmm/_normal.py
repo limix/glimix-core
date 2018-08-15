@@ -42,7 +42,7 @@ class GLMMNormal(GLMM):
 
     def __init__(self, eta, tau, X, QS=None):
         self._cache = dict(value=None, grad=None)
-        GLMM.__init__(self, (eta, tau), "normal", X, QS)
+        GLMM.__init__(self, eta, ("normal", tau), X, QS)
         self.variables().get("beta").listen(self.clear_cache)
         self.variables().get("logscale").listen(self.clear_cache)
         self.variables().get("logitdelta").listen(self.clear_cache)
@@ -90,11 +90,11 @@ class GLMMNormal(GLMM):
 
     @property
     def eta(self):
-        return self._y[:, 0]
+        return self._y
 
     @property
     def tau(self):
-        return self._y[:, 1]
+        return self._lik[1]
 
     def get_fast_scanner(self):
         r"""Return :class:`glimix_core.lmm.FastScanner` for the current

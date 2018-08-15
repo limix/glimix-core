@@ -2,14 +2,6 @@ from numpy import ascontiguousarray, atleast_2d
 
 
 def normalise_outcome(y):
-    if isinstance(y, (tuple, list)):
-        y = ascontiguousarray(y, float).T
-
-    y = ascontiguousarray(y, float)
-    y = atleast_2d(y.T).T
-
-    if y.shape[1] > 2:
-        raise ValueError("Outcome matrix must have two or one columns.")
     return y
 
 
