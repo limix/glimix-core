@@ -51,7 +51,7 @@ def test_glmmexpfam_copy():
         nsuc[i] += sum(z[i] + 0.2 * random.randn(ni) > 0)
 
     ntri = ascontiguousarray(ntri)
-    glmm0 = GLMMExpFam((nsuc, ntri), "binomial", X, QS)
+    glmm0 = GLMMExpFam(nsuc, ("binomial", ntri), X, QS)
 
     assert_allclose(glmm0.lml(), -29.10216812909928, atol=ATOL, rtol=RTOL)
     glmm0.fit(verbose=False)
@@ -83,7 +83,7 @@ def test_glmmexpfam_precise():
     ntri = random.randint(1, 30, nsamples())
     nsuc = [random.randint(0, i) for i in ntri]
 
-    glmm = GLMMExpFam((nsuc, ntri), "binomial", X, QS)
+    glmm = GLMMExpFam(nsuc, ["binomial", ntri], X, QS)
     glmm.beta = asarray([1.0, 0, 0.5, 0.1, 0.4])
 
     glmm.scale = 1.0
@@ -139,7 +139,7 @@ def test_glmmexpfam_delta0():
     ntri = random.randint(1, 30, nsamples())
     nsuc = [random.randint(0, i) for i in ntri]
 
-    glmm = GLMMExpFam((nsuc, ntri), "binomial", X, QS)
+    glmm = GLMMExpFam(nsuc, ("binomial", ntri), X, QS)
     glmm.beta = asarray([1.0, 0, 0.5, 0.1, 0.4])
 
     glmm.delta = 0
@@ -157,7 +157,7 @@ def test_glmmexpfam_delta1():
     ntri = random.randint(1, 30, nsamples())
     nsuc = [random.randint(0, i) for i in ntri]
 
-    glmm = GLMMExpFam((nsuc, ntri), "binomial", X, QS)
+    glmm = GLMMExpFam(nsuc, ("binomial", ntri), X, QS)
     glmm.beta = asarray([1.0, 0, 0.5, 0.1, 0.4])
 
     glmm.delta = 1
@@ -192,7 +192,7 @@ def test_glmmexpfam_optimize():
         nsuc[i] += sum(z[i] + 0.2 * random.randn(ni) > 0)
 
     ntri = ascontiguousarray(ntri)
-    glmm = GLMMExpFam((nsuc, ntri), "binomial", X, QS)
+    glmm = GLMMExpFam(nsuc, ("binomial", ntri), X, QS)
 
     assert_allclose(glmm.lml(), -29.102168129099287, atol=ATOL, rtol=RTOL)
     glmm.fix("beta")
@@ -223,7 +223,7 @@ def test_glmmexpfam_optimize_low_rank():
         nsuc[i] += sum(z[i] + 0.2 * random.randn(ni) > 0)
 
     ntri = ascontiguousarray(ntri)
-    glmm = GLMMExpFam((nsuc, ntri), "binomial", X, QS)
+    glmm = GLMMExpFam(nsuc, ("binomial", ntri), X, QS)
 
     assert_allclose(glmm.lml(), -18.60476792256323, atol=ATOL, rtol=RTOL)
     glmm.fit(verbose=False)
@@ -235,7 +235,6 @@ def test_glmmexpfam_bernoulli_problematic():
     N = 30
     G = random.randn(N, N + 50)
     y = bernoulli_sample(0.0, G, random_state=random)
-    y = (y,)
 
     G = ascontiguousarray(G, dtype=float)
     _stdnorm(G, 0, out=G)
@@ -245,7 +244,7 @@ def test_glmmexpfam_bernoulli_problematic():
     S0 = QS[1]
     S0 /= S0.mean()
 
-    X = ones((len(y[0]), 1))
+    X = ones((len(y), 1))
     model = GLMMExpFam(y, "bernoulli", X, QS=(QS[0], QS[1]))
     model.delta = 0
     model.fix("delta")
@@ -261,7 +260,6 @@ def test_glmmexpfam_bernoulli_probit_problematic():
     N = 30
     G = random.randn(N, N + 50)
     y = bernoulli_sample(0.0, G, random_state=random)
-    y = (y,)
 
     G = ascontiguousarray(G, dtype=float)
     _stdnorm(G, 0, out=G)
@@ -271,7 +269,7 @@ def test_glmmexpfam_bernoulli_probit_problematic():
     S0 = QS[1]
     S0 /= S0.mean()
 
-    X = ones((len(y[0]), 1))
+    X = ones((len(y), 1))
     model = GLMMExpFam(y, "probit", X, QS=(QS[0], QS[1]))
     model.delta = 0
     model.fix("delta")
@@ -303,7 +301,6 @@ def test_glmmexpfam_bernoulli_probit_assure_delta_fixed():
     N = 10
     G = random.randn(N, N + 50)
     y = bernoulli_sample(0.0, G, random_state=random)
-    y = (y,)
 
     G = ascontiguousarray(G, dtype=float)
     _stdnorm(G, 0, out=G)
@@ -313,7 +310,7 @@ def test_glmmexpfam_bernoulli_probit_assure_delta_fixed():
     S0 = QS[1]
     S0 /= S0.mean()
 
-    X = ones((len(y[0]), 1))
+    X = ones((len(y), 1))
     model = GLMMExpFam(y, "probit", X, QS=(QS[0], QS[1]))
     model.fit(verbose=False)
 
@@ -357,10 +354,8 @@ def test_glmmexpfam_binomial_pheno_list():
         for _ in range(ntrials[i]):
             successes[i] += int(z[i] + 0.1 * random.randn() > 0)
 
-    y = [successes, ntrials]
-
     QS = economic_qs(K)
-    glmm = GLMMExpFam(y, "binomial", X, QS)
+    glmm = GLMMExpFam(successes, ("binomial", ntrials), X, QS)
     glmm.fit(verbose=False)
 
     assert_allclose(glmm.lml(), -11.43920790567486)
@@ -375,7 +370,7 @@ def test_glmmexpfam_scale_very_low():
     ntri = random.randint(1, 30, nsamples())
     nsuc = [random.randint(0, i) for i in ntri]
 
-    glmm = GLMMExpFam((nsuc, ntri), "binomial", X, QS)
+    glmm = GLMMExpFam(nsuc, ("binomial", ntri), X, QS)
     glmm.beta = asarray([1.0, 0, 0.5, 0.1, 0.4])
 
     glmm.scale = 1e-3
@@ -393,7 +388,7 @@ def test_glmmexpfam_scale_very_high():
     ntri = random.randint(1, 30, nsamples())
     nsuc = [random.randint(0, i) for i in ntri]
 
-    glmm = GLMMExpFam((nsuc, ntri), "binomial", X, QS)
+    glmm = GLMMExpFam(nsuc, ("binomial", ntri), X, QS)
     glmm.beta = asarray([1.0, 0, 0.5, 0.1, 0.4])
 
     glmm.scale = 30.
@@ -413,7 +408,7 @@ def test_glmmexpfam_delta_one_zero():
     ntri = random.randint(1, 30, n)
     nsuc = [random.randint(0, i) for i in ntri]
 
-    glmm = GLMMExpFam((nsuc, ntri), "binomial", X, QS)
+    glmm = GLMMExpFam(nsuc, ("binomial", ntri), X, QS)
     glmm.beta = asarray([1.0, 0, 0.5, 0.1, 0.4, -0.2])
 
     glmm.delta = 0
@@ -477,7 +472,7 @@ def test_glmmexpfam_predict():
     nsuc_test = ascontiguousarray(nsuc[itest])
     ntri_test = ascontiguousarray(ntri[itest])
 
-    glmm = GLMMExpFam((nsuc_train, ntri_train), "binomial", Xtrain, QStrain)
+    glmm = GLMMExpFam(nsuc_train, ("binomial", ntri_train), Xtrain, QStrain)
     glmm.fit(verbose=False)
     ks = K[itest, :][:, itrain]
     kss = asarray([K[i, i] for i in itest])
@@ -500,7 +495,7 @@ def test_glmmexpfam_qs_none():
         nsuc[i] += sum(z[i] + 0.2 * random.randn(ni) > 0)
 
     ntri = ascontiguousarray(ntri)
-    glmm = GLMMExpFam((nsuc, ntri), "binomial", X, None)
+    glmm = GLMMExpFam(nsuc, ("binomial", ntri), X, None)
 
     assert_allclose(glmm.lml(), -38.30173374439622, atol=ATOL, rtol=RTOL)
     glmm.fix("beta")

@@ -1,6 +1,9 @@
 import warnings
+import sys
 from numpy import all as npall
-from numpy import asarray, clip, isfinite
+from numpy import clip, isfinite, ascontiguousarray
+
+PY2 = sys.version_info < (3, 0)
 
 
 def check_economic_qs(QS):
@@ -31,9 +34,22 @@ def check_covariates(X):
     return X
 
 
-def check_outcome(y, lik_name):
-    lik_name = lik_name.lower()
-    y = asarray(y, float)
+def check_outcome(y, lik):
+    if not isinstance(lik, (list, tuple)):
+        lik = (lik,)
+
+    str_err = "The first item of ``lik`` has to be a string."
+    if PY2:
+        if not isinstance(lik[0], basestring):
+            raise ValueError(str_err)
+    else:
+        if not isinstance(lik[0], str):
+            raise ValueError(str_err)
+
+    lik_name = lik[0].lower()
+
+    y = ascontiguousarray(y, float)
+    lik = lik[:1] + tuple(ascontiguousarray(i, float) for i in lik[1:])
 
     if not npall(isfinite(y)):
         raise ValueError("Outcome must be finite.")
@@ -42,9 +58,9 @@ def check_outcome(y, lik_name):
         return _check_poisson_outcome(y)
 
     if lik_name in ("binomial", "normal"):
-        if y.ndim != 2 or y.shape[1] != 2:
-            msg = "Outcome must be a matrix of two columns"
-            msg += " for {} likelihood.".format(lik_name)
+        if len(lik) != 2:
+            msg = "``lik`` must be a tuple of two elements for"
+            msg += " {} likelihood.".format(lik_name[0].upper() + lik_name[1:])
             raise ValueError(msg)
 
     return y
@@ -53,11 +69,10 @@ def check_outcome(y, lik_name):
 def _check_poisson_outcome(y):
     poisson_lim = 25000
 
-    if y[0].max() > poisson_lim:
+    if y.max() > poisson_lim:
         msg = "Output values of Poisson likelihood greater"
         msg += " than {lim} is set to {lim} before applying GLMM."
-        msg = msg.format(lim=poisson_lim)
-        warnings.warn(msg)
-        y = (clip(y[0], 0, poisson_lim),)
+        warnings.warn(msg.format(lim=poisson_lim))
+        y = clip(y, 0, poisson_lim)
 
     return y

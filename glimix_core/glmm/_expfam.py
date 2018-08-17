@@ -1,7 +1,7 @@
 from __future__ import absolute_import, division, unicode_literals
 
 from copy import copy
-from numpy import asarray, ascontiguousarray, dot, exp
+from numpy import asarray, dot, exp
 from numpy.linalg import norm, solve
 
 from glimix_core.ep import EPLinearKernel
@@ -25,9 +25,10 @@ class GLMMExpFam(GLMM):
     ----------
     y : array_like
         Outcome variable.
-    lik_name : str
-        Likelihood name. It supports ``"Bernoulli"``, ``"Probit"``, ``"Binomial"``, and
-        ``"Poisson"``.
+    lik : tuple
+        Likelihood definition. The first item is one of the following likelihood names:
+        ``"Bernoulli"``, ``"Binomial"``, ``"Normal"``, and ``"Poisson"``. For
+        `Binomial`, the second item is an array of outcomes.
     X : array_like
         Covariates.
     QS : tuple
@@ -58,11 +59,9 @@ class GLMMExpFam(GLMM):
         >>> for i in range(len(ntrials)):
         ...    successes[i] = sum(z[i] + 0.2 * random.randn(ntrials[i]) > 0)
         >>>
-        >>> y = (successes, ntrials)
-        >>>
         >>> QS = economic_qs(K)
         >>>
-        >>> glmm = GLMMExpFam(y, 'binomial', X, QS)
+        >>> glmm = GLMMExpFam(successes, ('binomial', ntrials), X, QS)
         >>> print('Before: %.2f' % glmm.lml())
         Before: -16.40
         >>> glmm.fit(verbose=False)
@@ -73,18 +72,18 @@ class GLMMExpFam(GLMM):
     def __init__(
         self,
         y,
-        lik_name,
+        lik,
         X,
         QS=None,
         n_int=1000,
         rtol=epsilon.small * 1000,
         atol=epsilon.small,
     ):
-        GLMM.__init__(self, y, lik_name, X, QS)
+        GLMM.__init__(self, y, lik, X, QS)
 
         self._ep = EPLinearKernel(self._X.shape[0], rtol=rtol, atol=atol)
         self._ep.set_compute_moments(self.compute_moments)
-        self._machine = LikNormMachine(self._lik_name, n_int)
+        self._machine = LikNormMachine(self._lik[0], n_int)
         self.update_approx = True
 
         self.variables().get("beta").listen(self.set_update_approx)
@@ -92,7 +91,7 @@ class GLMMExpFam(GLMM):
         self.variables().get("logitdelta").listen(self.set_update_approx)
 
     def __copy__(self):
-        gef = GLMMExpFam(self._y, self._lik_name, self._X, self._QS)
+        gef = GLMMExpFam(self._y, self._lik, self._X, self._QS)
         gef.__dict__["_ep"] = copy(self._ep)
         gef.__dict__["_ep"].set_compute_moments(gef.compute_moments)
         gef.update_approx = self.update_approx
@@ -122,8 +121,7 @@ class GLMMExpFam(GLMM):
         self.set_update_approx()
 
     def compute_moments(self, eta, tau, moments):
-        y = self._y
-        y = tuple(ascontiguousarray(i) for i in y.T)
+        y = (self._y, ) + self._lik[1:]
         self._machine.moments(y, eta, tau, moments)
 
     def covariance(self):

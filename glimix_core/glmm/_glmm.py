@@ -1,7 +1,7 @@
 from __future__ import absolute_import, division, unicode_literals
 
 from copy import copy
-from numpy import asarray, clip, dot, exp, log, zeros
+from numpy import asarray, clip, dot, exp, log, zeros, ascontiguousarray
 
 from numpy_sugar import epsilon
 from numpy_sugar.linalg import ddot, sum2diag
@@ -50,17 +50,18 @@ class GLMM(Function):
     ----------
     y : array_like
         Outcome variable.
-    lik_name : str
-        Likelihood name. It supports `Bernoulli`, `Binomial`, `Normal`, and
-        `Poisson`.
+    lik : tuple
+        Likelihood definition. The first item is one of the following likelihood names:
+        ``"Bernoulli"``, ``"Binomial"``, ``"Normal"``, and ``"Poisson"``. For
+        `Binomial`, the second item is an array of outcomes.
     X : array_like
         Covariates.
     QS : tuple
         Economic eigen decomposition.
     """
 
-    def __init__(self, y, lik_name, X, QS=None):
-        y = normalise_outcome(y)
+    def __init__(self, y, lik, X, QS=None):
+        y = ascontiguousarray(normalise_outcome(y), float)
         X = asarray(X, float)
 
         Function.__init__(
@@ -70,8 +71,11 @@ class GLMM(Function):
             logitdelta=Scalar(0.0),
         )
 
-        self._lik_name = lik_name.lower()
-        self._y = check_outcome(y, self._lik_name)
+        if not isinstance(lik, (tuple, list)):
+            lik = (lik, )
+
+        self._lik = (lik[0].lower(), ) + tuple(ascontiguousarray(i) for i in lik[1:])
+        self._y = check_outcome(y, self._lik)
         self._X = check_covariates(X)
         if QS is None:
             self._QS = economic_qs_zeros(self._y.shape[0])
@@ -90,7 +94,7 @@ class GLMM(Function):
 
         self.set_variable_bounds("logitdelta", (-numbers.logmax, +numbers.logmax))
 
-        if lik_name == "probit":
+        if lik[0] == "probit":
             self.delta = 0.0
             self.fix("delta")
 
