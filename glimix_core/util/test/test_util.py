@@ -78,4 +78,5 @@ def test_util_check_poisson_outcome():
                 1.00000000e+00,
             ]
         )
-    assert_allclose(check_outcome(y, "poisson"), want)
+    with pytest.warns(UserWarning):
+        assert_allclose(check_outcome(y, "poisson"), want)

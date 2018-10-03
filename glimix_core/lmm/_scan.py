@@ -99,7 +99,7 @@ class FastScanner(object):
         XTQ = [dot(X.T, Q) for Q in QS[0] if Q.size > 0]
 
         yTQDi = [l / r for (l, r) in zip(yTQ, D) if npmin(r) > 0]
-        yTBy = npsum(npsum(i * i / j) for (i, j) in zip(yTQ, D) if npmin(j) > 0)
+        yTBy = npsum([npsum(i * i / j) for (i, j) in zip(yTQ, D) if npmin(j) > 0])
         yTBX = [dot(i, j.T) for (i, j) in zip(yTQDi, XTQ)]
         XTQDi = [i / j for (i, j) in zip(XTQ, D) if npmin(j) > 0]
 
