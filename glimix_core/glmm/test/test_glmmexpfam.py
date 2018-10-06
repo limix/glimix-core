@@ -1,3 +1,7 @@
+import pytest
+from glimix_core.example import linear_eye_cov, nsamples
+from glimix_core.glmm import GLMMExpFam, GLMMNormal
+from glimix_core.random import bernoulli_sample
 from numpy import (
     arange,
     asarray,
@@ -7,17 +11,11 @@ from numpy import (
     eye,
     ones,
     sqrt,
-    zeros
+    zeros,
 )
 from numpy.random import RandomState
 from numpy.testing import assert_, assert_allclose
-
-import pytest
-from glimix_core.example import linear_eye_cov, nsamples
-from glimix_core.glmm import GLMMExpFam, GLMMNormal
-from glimix_core.random import bernoulli_sample
 from numpy_sugar.linalg import economic_qs, economic_qs_linear
-
 from optimix import check_grad
 
 ATOL = 1e-3
@@ -391,7 +389,7 @@ def test_glmmexpfam_scale_very_high():
     glmm = GLMMExpFam(nsuc, ("binomial", ntri), X, QS)
     glmm.beta = asarray([1.0, 0, 0.5, 0.1, 0.4])
 
-    glmm.scale = 30.
+    glmm.scale = 30.0
     assert_allclose(glmm.lml(), -29.632791380478736, atol=ATOL, rtol=RTOL)
 
     assert_allclose(check_grad(glmm), 0, atol=1e-3)

@@ -8,4 +8,4 @@ from .linear import LinearMean
 from .offset import OffsetMean
 from .sum import SumMean
 
-__all__ = ['OffsetMean', 'LinearMean', 'SumMean']
+__all__ = ["OffsetMean", "LinearMean", "SumMean"]

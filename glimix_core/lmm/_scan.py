@@ -1,8 +1,9 @@
 from __future__ import division
 
 import warnings
-from numpy import all as npall
+
 from numpy import (
+    all as npall,
     asarray,
     atleast_2d,
     clip,
@@ -13,13 +14,12 @@ from numpy import (
     inf,
     isfinite,
     log,
+    min as npmin,
+    newaxis,
+    sum as npsum,
+    zeros,
 )
-from numpy import min as npmin
-from numpy import newaxis
-from numpy import sum as npsum
-from numpy import zeros
 from numpy.linalg import LinAlgError
-
 from numpy_sugar import epsilon
 from numpy_sugar.linalg import dotd, rsolve
 

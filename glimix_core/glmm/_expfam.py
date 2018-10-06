@@ -1,11 +1,11 @@
 from __future__ import absolute_import, division, unicode_literals
 
 from copy import copy
-from numpy import asarray, dot, exp
-from numpy.linalg import norm, solve
 
 from glimix_core.ep import EPLinearKernel
 from liknorm import LikNormMachine
+from numpy import asarray, dot, exp
+from numpy.linalg import solve
 from numpy_sugar import epsilon
 from numpy_sugar.linalg import sum2diag
 
@@ -121,7 +121,7 @@ class GLMMExpFam(GLMM):
         self.set_update_approx()
 
     def compute_moments(self, eta, tau, moments):
-        y = (self._y, ) + self._lik[1:]
+        y = (self._y,) + self._lik[1:]
         self._machine.moments(y, eta, tau, moments)
 
     def covariance(self):
@@ -191,11 +191,6 @@ class GLMMExpFam(GLMM):
         self.set_update_approx()
 
     def value(self):
-        if self._verbose:
-            b = norm(self.beta)
-            d = self.delta
-            s = self.scale
-            print("b={: 10.6} d={: 10.6} s={: 10.6}".format(b, d, s))
         self._update_approx()
         return self._ep.lml()
 

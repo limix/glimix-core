@@ -1,6 +1,4 @@
-from numpy import abs as npy_abs
-from numpy import array, errstate, maximum, nan_to_num, sqrt
-
+from numpy import abs as npy_abs, array, errstate, maximum, nan_to_num, sqrt
 from numpy_sugar import epsilon
 
 

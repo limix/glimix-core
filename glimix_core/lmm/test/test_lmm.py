@@ -1,14 +1,13 @@
 from __future__ import division
 
-from numpy import arange, corrcoef, dot, inf, nan, ones, sqrt, zeros
-from numpy.random import RandomState
-from numpy.testing import assert_, assert_allclose
-
 from glimix_core.cov import EyeCov, LinearCov, SumCov
 from glimix_core.lik import DeltaProdLik
 from glimix_core.lmm import LMM
 from glimix_core.mean import OffsetMean
 from glimix_core.random import GGPSampler
+from numpy import arange, corrcoef, dot, inf, nan, ones, sqrt, zeros
+from numpy.random import RandomState
+from numpy.testing import assert_, assert_allclose
 from numpy_sugar.linalg import economic_qs_linear
 
 

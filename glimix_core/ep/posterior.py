@@ -1,8 +1,6 @@
 from __future__ import division
 
-from numpy import dot, empty, empty_like, sqrt
-from numpy import sum as npsum
-
+from numpy import dot, empty, empty_like, sqrt, sum as npsum
 from numpy_sugar.linalg import cho_solve, ddot, dotd, sum2diag
 from scipy.linalg import cho_factor
 
@@ -124,7 +122,7 @@ class Posterior(object):
         Q = self._cov["QS"][0][0]
         S = self._cov["QS"][1]
         B = dot(Q.T, ddot(self._site.tau, Q, left=True))
-        sum2diag(B, 1. / S, out=B)
+        sum2diag(B, 1.0 / S, out=B)
         self._L_cache = cho_factor(B, lower=True)[0]
         return self._L_cache
 
@@ -163,7 +161,7 @@ class Posterior(object):
         self.tau -= dotd(Q, BiQtTK)
         self.tau[:] = 1 / self.tau
 
-        if not all(self.tau >= 0.):
+        if not all(self.tau >= 0.0):
             raise RuntimeError("'tau' has to be non-negative.")
 
         self.eta[:] = dot(K, self._site.eta)

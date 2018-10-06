@@ -1,7 +1,5 @@
-from numpy import array
-
 from glimix_core.cov import LinearCov
-
+from numpy import array
 from optimix import Assertion
 
 

@@ -2,9 +2,7 @@ from __future__ import division
 
 from numpy import log, pi
 from numpy.linalg import slogdet, solve
-
 from numpy_sugar import is_all_finite
-
 from optimix import FunctionReduce
 
 

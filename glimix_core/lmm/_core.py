@@ -1,7 +1,8 @@
 from __future__ import division
 
-from numpy import all as npall
+from glimix_core.util import log2pi
 from numpy import (
+    all as npall,
     asarray,
     atleast_2d,
     clip,
@@ -13,14 +14,11 @@ from numpy import (
     log,
     maximum,
     sqrt,
+    sum as npsum,
+    zeros,
 )
-from numpy import sum as npsum
-from numpy import zeros
-
-from glimix_core.util import log2pi
 from numpy_sugar import epsilon
 from numpy_sugar.linalg import ddot, economic_svd, rsolve, sum2diag
-
 from optimix import Function, Scalar
 
 from ..util import economic_qs_zeros, numbers
@@ -96,10 +94,6 @@ class LMMCore(Function):
         float
             Log of the marginal likelihood.
         """
-        if self._verbose:
-            print("Scale: {:g}".format(self.scale))
-            print("Delta: {:g}".format(self.delta))
-            print("Beta: {:}".format(str(self.beta)))
         if self.isfixed("scale"):
             return self._lml_arbitrary_scale()
         return self._lml_optimal_scale()

@@ -1,9 +1,7 @@
 from __future__ import division
 
 from numpy import exp, log
-
 from numpy_sugar import epsilon
-
 from optimix import Function, Scalar
 
 from ..util.classes import NamedClass
@@ -46,7 +44,7 @@ class GivenCov(NamedClass, Function):
 
     def __init__(self, K):
         Function.__init__(self, logscale=Scalar(0.0))
-        self.variables().get("logscale").bounds = (-20., +10)
+        self.variables().get("logscale").bounds = (-20.0, +10)
         self._K = K
         NamedClass.__init__(self)
 

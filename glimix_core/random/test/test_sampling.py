@@ -1,9 +1,5 @@
 from __future__ import division
 
-from numpy import arange
-from numpy.random import RandomState
-from numpy.testing import assert_allclose, assert_array_less, assert_equal
-
 from glimix_core.cov import EyeCov, LinearCov, SumCov
 from glimix_core.lik import BinomialProdLik, PoissonProdLik
 from glimix_core.link import LogitLink, LogLink
@@ -13,8 +9,11 @@ from glimix_core.random import (
     GPSampler,
     bernoulli_sample,
     binomial_sample,
-    poisson_sample
+    poisson_sample,
 )
+from numpy import arange
+from numpy.random import RandomState
+from numpy.testing import assert_allclose, assert_array_less, assert_equal
 
 
 def test_binomial_sampler():
@@ -44,23 +43,22 @@ def test_GGPSampler_poisson():
 
     mean = OffsetMean()
     mean.offset = 1.2
-    mean.set_data(arange(10), 'sample')
+    mean.set_data(arange(10), "sample")
     cov = LinearCov()
-    cov.set_data((X, X), 'sample')
+    cov.set_data((X, X), "sample")
     sampler = GGPSampler(lik, mean, cov)
-    assert_equal(
-        sampler.sample(random), [0, 289, 0, 11, 0, 0, 176, 0, 228, 82])
+    assert_equal(sampler.sample(random), [0, 289, 0, 11, 0, 0, 176, 0, 228, 82])
 
     mean = OffsetMean()
     mean.offset = 0.0
-    mean.set_data(arange(10), 'sample')
+    mean.set_data(arange(10), "sample")
 
     cov1 = LinearCov()
-    cov1.set_data((X, X), 'sample')
+    cov1.set_data((X, X), "sample")
 
     cov2 = EyeCov()
     a = arange(10)
-    cov2.set_data((a, a), 'sample')
+    cov2.set_data((a, a), "sample")
 
     cov1.scale = 1e-4
     cov2.scale = 1e-4
@@ -71,7 +69,7 @@ def test_GGPSampler_poisson():
 
     assert_equal(sampler.sample(random), [2, 0, 1, 2, 1, 1, 1, 2, 0, 0])
 
-    cov2.scale = 20.
+    cov2.scale = 20.0
     sampler = GGPSampler(lik, mean, cov)
     assert_equal(sampler.sample(random), [0, 0, 0, 2, 0, 0, 1, 22, 0, 0])
 
@@ -86,25 +84,25 @@ def test_GGPSampler_binomial():
 
     mean = OffsetMean()
     mean.offset = 1.2
-    mean.set_data(arange(10), 'sample')
+    mean.set_data(arange(10), "sample")
     cov = LinearCov()
-    cov.set_data((X, X), 'sample')
+    cov.set_data((X, X), "sample")
     sampler = GGPSampler(lik, mean, cov)
     assert_equal(sampler.sample(random), [0, 5, 0, 5, 1, 1, 5, 0, 5, 5])
 
-    mean.offset = 0.
+    mean.offset = 0.0
     assert_equal(sampler.sample(random), [5, 4, 1, 0, 0, 1, 4, 5, 5, 0])
 
     mean = OffsetMean()
     mean.offset = 0.0
-    mean.set_data(arange(10), 'sample')
+    mean.set_data(arange(10), "sample")
 
     cov1 = LinearCov()
-    cov1.set_data((X, X), 'sample')
+    cov1.set_data((X, X), "sample")
 
     cov2 = EyeCov()
     a = arange(10)
-    cov2.set_data((a, a), 'sample')
+    cov2.set_data((a, a), "sample")
 
     cov1.scale = 1e-4
     cov2.scale = 1e-4
@@ -113,13 +111,11 @@ def test_GGPSampler_binomial():
 
     lik = BinomialProdLik(100, link)
     sampler = GGPSampler(lik, mean, cov)
-    assert_equal(
-        sampler.sample(random), [56, 56, 55, 51, 59, 45, 47, 43, 51, 38])
+    assert_equal(sampler.sample(random), [56, 56, 55, 51, 59, 45, 47, 43, 51, 38])
 
-    cov2.scale = 100.
+    cov2.scale = 100.0
     sampler = GGPSampler(lik, mean, cov)
-    assert_equal(
-        sampler.sample(random), [99, 93, 99, 75, 77, 0, 0, 100, 99, 12])
+    assert_equal(sampler.sample(random), [99, 93, 99, 75, 77, 0, 0, 100, 99, 12])
 
 
 def test_canonical_bernoulli_sampler():
@@ -142,13 +138,11 @@ def test_canonical_binomial_sampler():
     assert_array_less(y, [i + 1 for i in ntrials])
 
     X = random.randn(len(ntrials))
-    y = binomial_sample(
-        ntrials, -0.1, G, causal_variants=X, random_state=random)
+    y = binomial_sample(ntrials, -0.1, G, causal_variants=X, random_state=random)
     assert_array_less(y, [i + 1 for i in ntrials])
 
     X = random.randn(len(ntrials), 2)
-    y = binomial_sample(
-        ntrials, -0.1, G, causal_variants=X, random_state=random)
+    y = binomial_sample(ntrials, -0.1, G, causal_variants=X, random_state=random)
     assert_array_less(y, [i + 1 for i in ntrials])
 
 
@@ -166,14 +160,22 @@ def test_GPSampler():
 
     mean = OffsetMean()
     mean.offset = 1.2
-    mean.set_data(arange(10), 'sample')
+    mean.set_data(arange(10), "sample")
     cov = LinearCov()
-    cov.set_data((X, X), 'sample')
+    cov.set_data((X, X), "sample")
     sampler = GPSampler(mean, cov)
 
     x = [
-        -1.34664027, 5.68720656, -6.01941814, 2.70860707, -1.81883975,
-        0.21338045, 5.16462597, -2.23134206, 5.49661095, 4.38526077
+        -1.34664027,
+        5.68720656,
+        -6.01941814,
+        2.70860707,
+        -1.81883975,
+        0.21338045,
+        5.16462597,
+        -2.23134206,
+        5.49661095,
+        4.38526077,
     ]
     assert_allclose(sampler.sample(random), x)
     sampler.sample()

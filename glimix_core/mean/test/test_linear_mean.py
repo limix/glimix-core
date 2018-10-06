@@ -1,7 +1,5 @@
-from numpy.testing import assert_allclose, assert_string_equal
-
 from glimix_core.mean import LinearMean
-
+from numpy.testing import assert_allclose, assert_string_equal
 from optimix import Assertion
 
 

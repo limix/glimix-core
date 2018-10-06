@@ -12,7 +12,7 @@ from __future__ import absolute_import
 from . import cov, example, ggp, glmm, gp, lik, link, lmm, mean, random
 from ._testit import test
 
-__version__ = "2.0.1"
+__version__ = "2.0.2"
 
 __all__ = [
     "__version__",

@@ -1,9 +1,7 @@
 from __future__ import division
 
 from numpy import asarray, atleast_1d, exp, log, newaxis
-
 from numpy_sugar import epsilon
-
 from optimix import Function, Scalar
 
 from ..util.classes import NamedClass
@@ -60,7 +58,7 @@ class EyeCov(NamedClass, Function):
 
     def __init__(self):
         Function.__init__(self, logscale=Scalar(0.0))
-        self.variables().get("logscale").bounds = (-20., +10)
+        self.variables().get("logscale").bounds = (-20.0, +10)
         NamedClass.__init__(self)
 
     @property

@@ -1,7 +1,6 @@
 from __future__ import division
 
 from numpy import ascontiguousarray, dot, zeros
-
 from optimix import Function, Vector
 
 from ..util.classes import NamedClass
@@ -60,7 +59,7 @@ class LinearMean(NamedClass, Function):
 
     def __init__(self, size):
         Function.__init__(self, effsizes=Vector(zeros(size)))
-        self.variables().get("effsizes").bounds = [(-200., +200)] * size
+        self.variables().get("effsizes").bounds = [(-200.0, +200)] * size
         NamedClass.__init__(self)
 
     def value(self, x):

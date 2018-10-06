@@ -1,10 +1,9 @@
 from __future__ import division
 
-from numpy import array, inf, nan, ones
-from numpy.testing import assert_allclose
-
 import pytest
 from glimix_core.util import check_covariates, check_economic_qs, check_outcome
+from numpy import array, inf, nan, ones
+from numpy.testing import assert_allclose
 
 
 def test_util_check_economic_qs():
@@ -52,7 +51,7 @@ def test_util_check_outcome():
         check_outcome((y,), "poisson")
 
     y[0] = 0.5
-    want = array([0.5, 1., 1., 1., 1.])
+    want = array([0.5, 1.0, 1.0, 1.0, 1.0])
     assert_allclose(check_outcome(y, "poisson"), want)
 
     x = ones(4)
@@ -70,13 +69,7 @@ def test_util_check_poisson_outcome():
     y = ones(5)
     y[0] = 25000 + 1
     want = array(
-            [
-                2.50000000e+04,
-                1.00000000e+00,
-                1.00000000e+00,
-                1.00000000e+00,
-                1.00000000e+00,
-            ]
-        )
+        [2.50000000e04, 1.00000000e00, 1.00000000e00, 1.00000000e00, 1.00000000e00]
+    )
     with pytest.warns(UserWarning):
         assert_allclose(check_outcome(y, "poisson"), want)

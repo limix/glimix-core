@@ -1,7 +1,7 @@
-import warnings
 import sys
-from numpy import all as npall
-from numpy import clip, isfinite, ascontiguousarray
+import warnings
+
+from numpy import all as npall, ascontiguousarray, clip, isfinite
 
 PY2 = sys.version_info < (3, 0)
 

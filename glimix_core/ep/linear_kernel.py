@@ -1,8 +1,8 @@
 from __future__ import absolute_import, division, unicode_literals
 
 from math import fsum
-from numpy import dot, isfinite, log
 
+from numpy import dot, isfinite, log
 from numpy_sugar import epsilon
 from numpy_sugar.linalg import ddot, dotd
 

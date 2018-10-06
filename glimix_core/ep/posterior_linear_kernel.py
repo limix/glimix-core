@@ -1,7 +1,6 @@
 from __future__ import division
 
 from numpy import dot
-
 from numpy_sugar.linalg import ddot, dotd, sum2diag
 from scipy.linalg import cho_factor
 
@@ -81,7 +80,7 @@ class PosteriorLinearKernel(Posterior):
         ddot(self.A * self._site.tau, Q, left=True, out=self._NxR)
         B = dot(Q.T, self._NxR, out=self._RxR)
         B *= 1 - d
-        sum2diag(B, 1. / S / s, out=B)
+        sum2diag(B, 1.0 / S / s, out=B)
         self._L_cache = _cho_factor(B)
         return self._L_cache
 

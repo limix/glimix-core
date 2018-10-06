@@ -1,7 +1,6 @@
 from __future__ import division
 
 from numpy import asarray, full, ones
-
 from optimix import Function, Scalar
 
 from ..util.classes import NamedClass
@@ -43,7 +42,7 @@ class OffsetMean(NamedClass, Function):
 
     def __init__(self):
         Function.__init__(self, offset=Scalar(0.0))
-        self.variables().get("offset").bounds = (-200., +200)
+        self.variables().get("offset").bounds = (-200.0, +200)
         NamedClass.__init__(self)
 
     def value(self, x):

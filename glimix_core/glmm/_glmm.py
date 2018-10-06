@@ -1,11 +1,10 @@
 from __future__ import absolute_import, division, unicode_literals
 
 from copy import copy
-from numpy import asarray, clip, dot, exp, log, zeros, ascontiguousarray
 
+from numpy import asarray, ascontiguousarray, clip, dot, exp, log, zeros
 from numpy_sugar import epsilon
 from numpy_sugar.linalg import ddot, sum2diag
-
 from optimix import Function, Scalar, Vector
 
 from ..util import (
@@ -14,7 +13,7 @@ from ..util import (
     check_outcome,
     economic_qs_zeros,
     normalise_outcome,
-    numbers
+    numbers,
 )
 
 
@@ -72,9 +71,9 @@ class GLMM(Function):
         )
 
         if not isinstance(lik, (tuple, list)):
-            lik = (lik, )
+            lik = (lik,)
 
-        self._lik = (lik[0].lower(), ) + tuple(ascontiguousarray(i) for i in lik[1:])
+        self._lik = (lik[0].lower(),) + tuple(ascontiguousarray(i) for i in lik[1:])
         self._y = check_outcome(y, self._lik)
         self._X = check_covariates(X)
         if QS is None:
@@ -90,7 +89,7 @@ class GLMM(Function):
         self._factr = 1e5
         self._pgtol = 1e-6
         self._verbose = False
-        self.set_variable_bounds("logscale", (log(0.001), 6.))
+        self.set_variable_bounds("logscale", (log(0.001), 6.0))
 
         self.set_variable_bounds("logitdelta", (-numbers.logmax, +numbers.logmax))
 

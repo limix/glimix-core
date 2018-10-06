@@ -1,7 +1,6 @@
 from __future__ import division
 
 from numpy import dot, ones, stack, tril_indices_from, zeros, zeros_like
-
 from optimix import Function, Vector
 
 from ..util.classes import NamedClass

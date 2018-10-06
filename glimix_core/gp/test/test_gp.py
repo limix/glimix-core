@@ -1,14 +1,12 @@
 from __future__ import division
 
-from numpy import arange, inf, nan, zeros
-from numpy.random import RandomState
-from numpy.testing import assert_allclose
-
 import pytest
 from glimix_core.cov import LinearCov
 from glimix_core.gp import GP
 from glimix_core.mean import LinearMean, OffsetMean
-
+from numpy import arange, inf, nan, zeros
+from numpy.random import RandomState
+from numpy.testing import assert_allclose
 from optimix import check_grad
 
 
@@ -20,7 +18,7 @@ def test_gp_value_1():
 
     mean = OffsetMean()
     mean.offset = offset
-    mean.fix('offset')
+    mean.fix("offset")
     mean.set_data(arange(N))
 
     cov = LinearCov()
@@ -63,7 +61,7 @@ def test_gp_gradient():
 
     mean = OffsetMean()
     mean.offset = offset
-    mean.fix('offset')
+    mean.fix("offset")
     mean.set_data(arange(N))
 
     cov = LinearCov()
@@ -85,7 +83,7 @@ def test_gp_maximize():
 
     mean = OffsetMean()
     mean.offset = offset
-    mean.fix('offset')
+    mean.fix("offset")
     mean.set_data(arange(N))
 
     cov = LinearCov()
@@ -109,7 +107,7 @@ def test_lmm_nonfinite_phenotype():
 
     mean = OffsetMean()
     mean.offset = offset
-    mean.fix('offset')
+    mean.fix("offset")
     mean.set_data(arange(N))
 
     cov = LinearCov()
