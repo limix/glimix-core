@@ -49,18 +49,17 @@ class LMMCore(Function):
             self.delta = 0.5
 
         if not isinstance(QS, tuple):
-            raise ValueError("I was expecting a tuple for the covariance ")
+            raise ValueError("I was expecting a tuple for the covariance decomposition.")
 
         if QS[0][0].shape[0] != y.shape[0]:
             raise ValueError(
                 "Number of samples differs between outcome"
-                " and covariance decomposition"
-                "decomposition"
+                " and covariance decomposition."
             )
 
         if y.shape[0] != n:
             raise ValueError(
-                "Number of samples differs between outcome " "and covariates."
+                "Number of samples differs between outcome and covariates."
             )
 
         self.variables().get("logistic").bounds = (-numbers.logmax, +numbers.logmax)

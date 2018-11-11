@@ -2,9 +2,10 @@ from __future__ import absolute_import, division, unicode_literals
 
 from copy import copy
 
-from numpy import asarray, ascontiguousarray, clip, dot, exp, log, zeros
+from numpy import asarray, ascontiguousarray, clip, dot, exp, log, zeros, diag
+from numpy.linalg import pinv
 from numpy_sugar import epsilon
-from numpy_sugar.linalg import ddot, sum2diag
+from numpy_sugar.linalg import ddot, sum2diag, rsolve
 from optimix import Function, Scalar, Vector
 
 from ..util import (
@@ -218,6 +219,21 @@ class GLMM(Function):
     @logscale.setter
     def logscale(self, v):
         self.variables().get("logscale").value = v
+
+    def posteriori_mean(self):
+        r""" Mean of the estimated posteriori.
+
+        This is also the maximum a posteriori estimation of the latent variable.
+        """
+        Sigma = self.posteriori_covariance()
+        eta = self._ep._posterior.eta
+        return dot(Sigma, eta + rsolve(GLMM.covariance(self), self.mean()))
+
+    def posteriori_covariance(self):
+        r""" Covariance of the estimated posteriori."""
+        K = GLMM.covariance(self)
+        tau = self._ep._posterior.tau
+        return pinv(pinv(K) + diag(1 / tau))
 
     def mean(self):
         r"""Mean of the prior.
