@@ -1,6 +1,7 @@
 from __future__ import division
 
 from numpy import asarray, atleast_1d, exp, log, newaxis
+
 from optimix import Function, Scalar
 
 from ..util.classes import NamedClass

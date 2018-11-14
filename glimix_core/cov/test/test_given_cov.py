@@ -1,7 +1,8 @@
-from glimix_core.cov import GivenCov
 from numpy import dot
 from numpy.random import RandomState
 from numpy.testing import assert_allclose
+
+from glimix_core.cov import GivenCov
 from optimix import Assertion
 
 

@@ -2,10 +2,11 @@ from __future__ import absolute_import, division, unicode_literals
 
 from copy import copy
 
-from glimix_core.ep import EPLinearKernel
 from liknorm import LikNormMachine
 from numpy import asarray, dot, exp
 from numpy.linalg import solve
+
+from glimix_core.ep import EPLinearKernel
 
 from ._glmm import GLMM
 

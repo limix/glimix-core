@@ -5,6 +5,7 @@ import warnings
 from liknorm import LikNormMachine
 from numpy import sign
 from numpy.linalg import LinAlgError
+
 from optimix import FunctionReduce
 
 from ..ep import EP

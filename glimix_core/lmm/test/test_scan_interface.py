@@ -1,6 +1,7 @@
 import pytest
-from glimix_core.lmm import FastScanner
 from numpy import array, inf, nan, ones
+
+from glimix_core.lmm import FastScanner
 from numpy_sugar.linalg import economic_qs
 
 

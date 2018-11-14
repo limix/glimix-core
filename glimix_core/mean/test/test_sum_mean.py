@@ -1,6 +1,7 @@
-from glimix_core.mean import LinearMean, OffsetMean, SumMean
 from numpy import arange
 from numpy.testing import assert_allclose
+
+from glimix_core.mean import LinearMean, OffsetMean, SumMean
 from optimix import check_grad
 
 

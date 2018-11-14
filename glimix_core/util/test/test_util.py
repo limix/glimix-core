@@ -1,9 +1,10 @@
 from __future__ import division
 
 import pytest
-from glimix_core.util import check_covariates, check_economic_qs, check_outcome
 from numpy import array, inf, nan, ones
 from numpy.testing import assert_allclose
+
+from glimix_core.util import check_covariates, check_economic_qs, check_outcome
 
 
 def test_util_check_economic_qs():

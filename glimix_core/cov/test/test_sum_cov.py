@@ -1,6 +1,7 @@
 import numpy as np
-from glimix_core.cov import LinearCov, SumCov
 from numpy.testing import assert_allclose
+
+from glimix_core.cov import LinearCov, SumCov
 from optimix import check_grad
 
 

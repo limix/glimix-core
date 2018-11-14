@@ -1,6 +1,7 @@
 from __future__ import division
 
 from numpy import add
+
 from optimix import FunctionReduce
 
 from ..util.classes import NamedClass

@@ -1,6 +1,5 @@
 from __future__ import division
 
-from glimix_core.util import log2pi
 from numpy import (
     all as npall,
     asarray,
@@ -17,6 +16,8 @@ from numpy import (
     sum as npsum,
     zeros,
 )
+
+from glimix_core.util import log2pi
 from optimix import Function, Scalar
 
 from ..util import economic_qs_zeros, numbers

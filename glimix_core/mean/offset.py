@@ -1,6 +1,7 @@
 from __future__ import division
 
 from numpy import asarray, full, ones
+
 from optimix import Function, Scalar
 
 from ..util.classes import NamedClass

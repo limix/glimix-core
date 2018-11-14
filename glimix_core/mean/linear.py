@@ -1,6 +1,7 @@
 from __future__ import division
 
 from numpy import ascontiguousarray, dot, zeros
+
 from optimix import Function, Vector
 
 from ..util.classes import NamedClass

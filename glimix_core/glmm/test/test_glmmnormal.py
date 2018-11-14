@@ -1,8 +1,9 @@
-from glimix_core.example import linear_eye_cov, nsamples
-from glimix_core.glmm import GLMMNormal
 from numpy import asarray, eye, zeros
 from numpy.random import RandomState
 from numpy.testing import assert_allclose
+
+from glimix_core.example import linear_eye_cov, nsamples
+from glimix_core.glmm import GLMMNormal
 from numpy_sugar.linalg import economic_qs
 from optimix import check_grad
 

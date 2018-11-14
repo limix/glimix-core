@@ -2,8 +2,9 @@ from __future__ import absolute_import, division, unicode_literals
 
 from copy import copy
 
-from numpy import asarray, ascontiguousarray, clip, dot, exp, log, zeros, diag
+from numpy import asarray, ascontiguousarray, clip, diag, dot, exp, log, zeros
 from numpy.linalg import pinv
+
 from optimix import Function, Scalar, Vector
 
 from ..util import (
