@@ -2,7 +2,6 @@ from __future__ import division
 
 from numpy import log, pi
 from numpy.linalg import slogdet, solve
-from numpy_sugar import is_all_finite
 from optimix import FunctionReduce
 
 
@@ -56,6 +55,8 @@ class GP(FunctionReduce):
     """
 
     def __init__(self, y, mean, cov):
+        from numpy_sugar import is_all_finite
+
         super(GP, self).__init__([mean, cov], name="GP")
 
         if not is_all_finite(y):

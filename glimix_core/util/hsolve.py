@@ -1,5 +1,4 @@
 from numpy import abs as npy_abs, array, errstate, maximum, nan_to_num, sqrt
-from numpy_sugar import epsilon
 
 
 def _norm(x0, x1):
@@ -26,6 +25,7 @@ def hsolve(A00, A01, A11, y0, y1):
     -------
     :class:`numpy.ndarray`  Solution ``x``.
     """
+    from numpy_sugar import epsilon
 
     n = _norm(A00, A01)
     u0 = A00 - n

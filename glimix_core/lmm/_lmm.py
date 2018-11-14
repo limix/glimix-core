@@ -2,7 +2,6 @@ from __future__ import division
 
 from numpy import asarray, clip, dot, exp
 from numpy.linalg import solve
-from numpy_sugar import epsilon, is_all_finite
 
 from ._core import LMMCore
 from ._scan import FastScanner
@@ -68,6 +67,8 @@ class LMM(LMMCore):
     """
 
     def __init__(self, y, X, QS=None):
+        from numpy_sugar import is_all_finite
+
         LMMCore.__init__(self, y, X, QS)
 
         if not is_all_finite(y):
@@ -76,6 +77,8 @@ class LMM(LMMCore):
         self.set_nodata()
 
     def _get_delta(self):
+        from numpy_sugar import epsilon
+
         v = clip(self.variables().get("logistic").value, -20, 20)
         x = 1 / (1 + exp(-v))
         return clip(x, epsilon.tiny, 1 - epsilon.tiny)

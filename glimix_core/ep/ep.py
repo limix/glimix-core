@@ -5,8 +5,6 @@ from math import fsum
 
 from numpy import dot, empty, inf, isfinite, log, maximum, sqrt, zeros
 from numpy.linalg import norm
-from numpy_sugar import epsilon
-from numpy_sugar.linalg import cho_solve, ddot, dotd
 
 from .posterior import Posterior
 from .site import Site
@@ -44,11 +42,7 @@ class EP(object):
     """
 
     def __init__(
-        self,
-        nsites,
-        posterior_type=Posterior,
-        rtol=epsilon.small * 1000,
-        atol=epsilon.small,
+        self, nsites, posterior_type=Posterior, rtol=1.49e-08 * 1000, atol=1.49e-08
     ):
 
         self._site = Site(nsites)
@@ -135,6 +129,8 @@ class EP(object):
         return self._cav
 
     def lml(self):
+        from numpy_sugar.linalg import cho_solve
+
         if self._cache["lml"] is not None:
             return self._cache["lml"]
 
@@ -174,6 +170,8 @@ class EP(object):
         return lml
 
     def lml_derivative_over_cov(self, dQS):
+        from numpy_sugar.linalg import cho_solve, ddot, dotd
+
         self._update()
 
         L = self._posterior.L()
@@ -198,6 +196,8 @@ class EP(object):
         return dlml
 
     def lml_derivative_over_mean(self, dm):
+        from numpy_sugar.linalg import cho_solve
+
         self._update()
 
         L = self._posterior.L()

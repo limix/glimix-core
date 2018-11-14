@@ -20,8 +20,6 @@ from numpy import (
     zeros,
 )
 from numpy.linalg import LinAlgError
-from numpy_sugar import epsilon
-from numpy_sugar.linalg import dotd, rsolve
 
 from ..util import hsolve, log2pi
 
@@ -348,6 +346,8 @@ class _ETBE(object):
 
 
 def _bstar(beta, yTBy, yTBX, yTBM, XTBX, XTBM, MTBM):
+    from numpy_sugar.linalg import dotd
+
     r = full(MTBM[0].shape[0], yTBy)
     r -= 2 * sum(dot(i, beta[0]) for i in yTBX)
     r -= 2 * sum(i * beta[1] for i in yTBM)
@@ -369,6 +369,8 @@ def _bstar_unpack(beta, yTBy, yTBE, ETBE):
 
 
 def _solve(A, y):
+    from numpy_sugar.linalg import rsolve
+
     try:
         beta = rsolve(A, y)
     except LinAlgError:
@@ -382,4 +384,6 @@ def _solve(A, y):
 
 
 def _safe_log(x):
+    from numpy_sugar import epsilon
+
     return log(clip(x, epsilon.small, inf))

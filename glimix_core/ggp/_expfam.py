@@ -5,8 +5,6 @@ import warnings
 from liknorm import LikNormMachine
 from numpy import sign
 from numpy.linalg import LinAlgError
-from numpy_sugar import epsilon
-from numpy_sugar.linalg import economic_qs
 from optimix import FunctionReduce
 
 from ..ep import EP
@@ -115,6 +113,9 @@ class ExpFamGP(FunctionReduce):
         self._machine.moments(self._y, eta, tau, moments)
 
     def value_reduce(self, values):
+        from numpy_sugar import epsilon
+        from numpy_sugar.linalg import economic_qs
+
         mean = values["ExpFamGP[0]"]
         cov = values["ExpFamGP[1]"]
         try:
@@ -126,6 +127,9 @@ class ExpFamGP(FunctionReduce):
         return lml
 
     def gradient_reduce(self, values, gradients):
+        from numpy_sugar import epsilon
+        from numpy_sugar.linalg import economic_qs
+
         mean = values["ExpFamGP[0]"]
         cov = values["ExpFamGP[1]"]
         gmean = gradients["ExpFamGP[0]"]

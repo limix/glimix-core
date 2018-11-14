@@ -2,7 +2,6 @@ from __future__ import division
 
 from numpy import asarray, clip, dot, exp
 from numpy.linalg import solve
-from numpy_sugar import epsilon
 
 from ._mt_core import MTLMMCore
 from ._scan import FastScanner
@@ -72,6 +71,8 @@ class MTLMM(MTLMMCore):
         self.set_nodata()
 
     def _get_delta(self):
+        from numpy_sugar import epsilon
+
         v = clip(self.variables().get("logistic").value, -20, 20)
         x = 1 / (1 + exp(-v))
         return clip(x, epsilon.tiny, 1 - epsilon.tiny)

@@ -1,13 +1,13 @@
 from __future__ import division
 
 from numpy import dot
-from numpy_sugar.linalg import ddot, dotd, sum2diag
-from scipy.linalg import cho_factor
 
 from .posterior import Posterior
 
 
 def _cho_factor(B):
+    from scipy.linalg import cho_factor
+
     B = cho_factor(B, overwrite_a=True, lower=True, check_finite=False)[0]
     return B
 
@@ -31,6 +31,8 @@ class PosteriorLinearKernel(Posterior):
         return 1 / (s * d * self._site.tau + 1)
 
     def AQ(self):
+        from numpy_sugar.linalg import ddot
+
         if self._AQ_cache is not None:
             return self._AQ_cache
 
@@ -41,6 +43,8 @@ class PosteriorLinearKernel(Posterior):
         return self._AQ_cache
 
     def ATQ(self):
+        from numpy_sugar.linalg import ddot
+
         if self._TAQ_cache is not None:
             return self._TAQ_cache
 
@@ -48,6 +52,8 @@ class PosteriorLinearKernel(Posterior):
         return self._TAQ_cache
 
     def QSQtATQLQtA(self):
+        from numpy_sugar.linalg import ddot, dotd
+
         if self._QSQtATQLQtA_cache is not None:
             return self._QSQtATQLQtA_cache
 
@@ -69,6 +75,8 @@ class PosteriorLinearKernel(Posterior):
             \mathrm B = \mathrm Q^{\intercal}\tilde{\mathrm{T}}\mathrm Q
                 + \mathrm{S}^{-1}
         """
+        from numpy_sugar.linalg import ddot, sum2diag
+
         if self._L_cache is not None:
             return self._L_cache
 
@@ -85,6 +93,8 @@ class PosteriorLinearKernel(Posterior):
         return self._L_cache
 
     def update(self):
+        from numpy_sugar.linalg import ddot, dotd
+
         self._flush_cache()
 
         s = self._cov["scale"]

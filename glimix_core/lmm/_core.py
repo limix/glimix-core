@@ -17,8 +17,6 @@ from numpy import (
     sum as npsum,
     zeros,
 )
-from numpy_sugar import epsilon
-from numpy_sugar.linalg import ddot, economic_svd, rsolve, sum2diag
 from optimix import Function, Scalar
 
 from ..util import economic_qs_zeros, numbers
@@ -49,7 +47,9 @@ class LMMCore(Function):
             self.delta = 0.5
 
         if not isinstance(QS, tuple):
-            raise ValueError("I was expecting a tuple for the covariance decomposition.")
+            raise ValueError(
+                "I was expecting a tuple for the covariance decomposition."
+            )
 
         if QS[0][0].shape[0] != y.shape[0]:
             raise ValueError(
@@ -78,6 +78,8 @@ class LMMCore(Function):
         self._verbose = False
 
     def _set_X(self, X=None, SVD=None):
+        from numpy_sugar.linalg import ddot, economic_svd
+
         if SVD is None:
             self._svd = economic_svd(X)
         else:
@@ -136,6 +138,8 @@ class LMMCore(Function):
         return lml / 2
 
     def _optimal_scale(self):
+        from numpy_sugar import epsilon
+
         if not self.isfixed("beta"):
             return self._optimal_scale_using_optimal_beta()
 
@@ -147,12 +151,16 @@ class LMMCore(Function):
         return maximum((p0 + p1) / len(self._y), epsilon.small)
 
     def _optimal_scale_using_optimal_beta(self):
+        from numpy_sugar import epsilon
+
         yTQDiQTy = self._yTQDiQTy
         yTQDiQTm = self._yTQDiQTm
         s = sum(i - dot(j, self._tbeta) for (i, j) in zip(yTQDiQTy, yTQDiQTm))
         return maximum(s / len(self._y), epsilon.small)
 
     def _update_fixed_effects(self):
+        from numpy_sugar.linalg import rsolve
+
         if self.isfixed("beta"):
             return
         yTQDiQTm = list(self._yTQDiQTm)
@@ -218,6 +226,8 @@ class LMMCore(Function):
         :class:`numpy.ndarray`
             Covariates.
         """
+        from numpy_sugar.linalg import ddot
+
         return dot(self._svd[0], ddot(self._svd[1], self._svd[2], left=True))
 
     @X.setter
@@ -245,6 +255,8 @@ class LMMCore(Function):
         :class:`numpy.ndarray`
             Optimal fixed-effect sizes.
         """
+        from numpy_sugar.linalg import ddot, rsolve
+
         SVs = ddot(self._svd[0], sqrt(self._svd[1]))
         z = rsolve(SVs, self.mean)
         VsD = ddot(sqrt(self._svd[1]), self._svd[2])
@@ -252,6 +264,8 @@ class LMMCore(Function):
 
     @beta.setter
     def beta(self, beta):
+        from numpy_sugar.linalg import ddot
+
         beta = asarray(beta, float)
         VsD = ddot(sqrt(self._svd[1]), self._svd[2])
         self._tbeta[:] = dot(VsD, beta)
@@ -259,6 +273,8 @@ class LMMCore(Function):
     @property
     def delta(self):
         r"""Variance ratio between ``K`` and ``I``."""
+        from numpy_sugar import epsilon
+
         v = float(self.variables().get("logistic").value)
         with errstate(over="ignore", under="ignore"):
             v = 1 / (1 + exp(-v))
@@ -266,6 +282,8 @@ class LMMCore(Function):
 
     @delta.setter
     def delta(self, delta):
+        from numpy_sugar import epsilon
+
         delta = clip(delta, epsilon.tiny, 1 - epsilon.tiny)
         self.variables().set(dict(logistic=log(delta / (1 - delta))))
 
@@ -316,6 +334,8 @@ class LMMCore(Function):
         :class:`numpy.ndarray`
             :math:`v_0 \mathrm K + v_1 \mathrm I`.
         """
+        from numpy_sugar.linalg import ddot, sum2diag
+
         Q0 = self._QS[0][0]
         S0 = self._QS[1]
         return sum2diag(dot(ddot(Q0, self.v0 * S0), Q0.T), self.v1)

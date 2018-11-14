@@ -6,8 +6,6 @@ from glimix_core.ep import EPLinearKernel
 from liknorm import LikNormMachine
 from numpy import asarray, dot, exp
 from numpy.linalg import solve
-from numpy_sugar import epsilon
-from numpy_sugar.linalg import sum2diag
 
 from ._glmm import GLMM
 
@@ -70,14 +68,7 @@ class GLMMExpFam(GLMM):
     """
 
     def __init__(
-        self,
-        y,
-        lik,
-        X,
-        QS=None,
-        n_int=1000,
-        rtol=epsilon.small * 1000,
-        atol=epsilon.small,
+        self, y, lik, X, QS=None, n_int=1000, rtol=1.49e-08 * 1000, atol=1.49e-08
     ):
         GLMM.__init__(self, y, lik, X, QS)
 
@@ -205,6 +196,8 @@ class GLMMExpFam(GLMM):
         return mstar + dot(ks, solve(K, mu - m))
 
     def predictive_covariance(self, Xstar, ks, kss):
+        from numpy_sugar.linalg import sum2diag
+
         kss = self.variance_star(kss)
         ks = self.covariance_star(ks)
         tau = self._ep.posterior.tau

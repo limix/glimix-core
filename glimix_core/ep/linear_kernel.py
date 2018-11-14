@@ -3,23 +3,25 @@ from __future__ import absolute_import, division, unicode_literals
 from math import fsum
 
 from numpy import dot, isfinite, log
-from numpy_sugar import epsilon
-from numpy_sugar.linalg import ddot, dotd
 
 from .ep import EP
 from .posterior_linear_kernel import PosteriorLinearKernel
 
 
 def ldot(A, B):
+    from numpy_sugar.linalg import ddot
+
     return ddot(A, B, left=True)
 
 
 def dotr(A, B):
+    from numpy_sugar.linalg import ddot
+
     return ddot(A, B, left=False)
 
 
 class EPLinearKernel(EP):
-    def __init__(self, nsites, rtol=epsilon.small * 1000, atol=epsilon.small):
+    def __init__(self, nsites, rtol=1.49e-08 * 1000, atol=1.49e-08):
         super(EPLinearKernel, self).__init__(
             nsites, PosteriorLinearKernel, rtol=rtol, atol=atol
         )
@@ -75,6 +77,8 @@ class EPLinearKernel(EP):
         return lml
 
     def lml_derivatives(self, dm):
+        from numpy_sugar.linalg import dotd
+
         if self._cache["grad"] is not None:
             return self._cache["grad"]
 

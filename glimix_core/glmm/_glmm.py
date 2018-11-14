@@ -4,8 +4,6 @@ from copy import copy
 
 from numpy import asarray, ascontiguousarray, clip, dot, exp, log, zeros, diag
 from numpy.linalg import pinv
-from numpy_sugar import epsilon
-from numpy_sugar.linalg import ddot, sum2diag, rsolve
 from optimix import Function, Scalar, Vector
 
 from ..util import (
@@ -138,6 +136,8 @@ class GLMM(Function):
         :class:`numpy.ndarray`
             :math:`v_0 \mathrm K + v_1 \mathrm I`.
         """
+        from numpy_sugar.linalg import ddot, sum2diag
+
         Q0 = self._QS[0][0]
         S0 = self._QS[1]
         return sum2diag(dot(ddot(Q0, self.v0 * S0), Q0.T), self.v1)
@@ -155,6 +155,8 @@ class GLMM(Function):
 
     @delta.setter
     def delta(self, v):
+        from numpy_sugar import epsilon
+
         v = clip(v, epsilon.small, 1 - epsilon.small)
         self.logitdelta = log(v / (1 - v))
 
@@ -225,6 +227,8 @@ class GLMM(Function):
 
         This is also the maximum a posteriori estimation of the latent variable.
         """
+        from numpy_sugar.linalg import rsolve
+
         Sigma = self.posteriori_covariance()
         eta = self._ep._posterior.eta
         return dot(Sigma, eta + rsolve(GLMM.covariance(self), self.mean()))

@@ -4,7 +4,6 @@ from copy import deepcopy
 
 from numpy import dot, exp, eye, log, pi, trace, zeros
 from numpy.linalg import slogdet, solve
-from numpy_sugar.linalg import ddot, economic_qs, sum2diag
 
 from ..lmm import FastScanner
 from ._glmm import GLMM
@@ -99,6 +98,8 @@ class GLMMNormal(GLMM):
     def get_fast_scanner(self):
         r"""Return :class:`glimix_core.lmm.FastScanner` for the current
         delta."""
+        from numpy_sugar.linalg import ddot, economic_qs, sum2diag
+
         y = self.eta / self.tau
 
         if self._QS is None:
@@ -112,6 +113,8 @@ class GLMMNormal(GLMM):
         return FastScanner(y, self._X, economic_qs(K), self.v1)
 
     def gradient(self):
+        from numpy_sugar.linalg import ddot, sum2diag
+
         if self._cache["grad"] is not None:
             return self._cache["grad"]
 
@@ -192,6 +195,8 @@ class GLMMNormal(GLMM):
         float
             :math:`\log{p(\tilde{\boldsymbol\mu})}`
         """
+        from numpy_sugar.linalg import ddot, sum2diag
+
         if self._cache["value"] is not None:
             return self._cache["value"]
 

@@ -1,9 +1,6 @@
 from __future__ import division
 
 from numpy.random import RandomState
-from numpy_sugar import epsilon
-from numpy_sugar.linalg import sum2diag
-from numpy_sugar.random import multivariate_normal
 
 
 class GGPSampler(object):
@@ -67,6 +64,10 @@ class GGPSampler(object):
         numpy.ndarray
             Sample.
         """
+        from numpy_sugar import epsilon
+        from numpy_sugar.linalg import sum2diag
+        from numpy_sugar.random import multivariate_normal
+
         if random_state is None:
             random_state = RandomState()
 

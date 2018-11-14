@@ -1,7 +1,6 @@
 from __future__ import division
 
 from numpy import exp, log, stack
-from numpy_sugar import epsilon
 from optimix import Function, Scalar
 
 from ..util.classes import NamedClass
@@ -31,6 +30,8 @@ class LinearCov(NamedClass, Function):
 
     @scale.setter
     def scale(self, scale):
+        from numpy_sugar import epsilon
+
         scale = max(scale, epsilon.tiny)
         self.variables().get("logscale").value = log(scale)
 

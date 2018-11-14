@@ -1,8 +1,6 @@
 from __future__ import division
 
 from numpy import dot, empty, empty_like, sqrt, sum as npsum
-from numpy_sugar.linalg import cho_solve, ddot, dotd, sum2diag
-from scipy.linalg import cho_factor
 
 
 class Posterior(object):
@@ -116,6 +114,9 @@ class Posterior(object):
             \mathrm B = \mathrm Q^{\intercal}\tilde{\mathrm{T}}\mathrm Q
                 + \mathrm{S}^{-1}
         """
+        from scipy.linalg import cho_factor
+        from numpy_sugar.linalg import ddot, sum2diag
+
         if self._L_cache is not None:
             return self._L_cache
 
@@ -127,6 +128,8 @@ class Posterior(object):
         return self._L_cache
 
     def LQt(self):
+        from numpy_sugar.linalg import cho_solve
+
         if self._LQt_cache is not None:
             return self._LQt_cache
 
@@ -137,6 +140,8 @@ class Posterior(object):
         return self._LQt_cache
 
     def QS(self):
+        from numpy_sugar.linalg import ddot
+
         if self._QS_cache is not None:
             return self._QS_cache
 
@@ -147,6 +152,8 @@ class Posterior(object):
         return self._QS_cache
 
     def update(self):
+        from numpy_sugar.linalg import ddot, dotd
+
         self._flush_cache()
 
         Q = self._cov["QS"][0][0]
