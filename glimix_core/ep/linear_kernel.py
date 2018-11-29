@@ -48,6 +48,7 @@ class EPLinearKernel(EP):
         s = cov["scale"]
         d = cov["delta"]
         A = self._posterior.A
+        dif = 2 * A * teta - A * ttau * m
 
         lml = [
             -log(L.diagonal()).sum(),
@@ -57,9 +58,7 @@ class EPLinearKernel(EP):
             +0.5 * dot(teta * A, dot(Q, dot(LQt, teta * A))) * (1 - d),
             -0.5 * dot(teta, teta / TS),
             +dot(m, A * teta) - 0.5 * dot(m, A * ttau * m),
-            -0.5
-            * dot(m * A * ttau, dot(Q, dot(LQt, 2 * A * teta - A * ttau * m)))
-            * (1 - d),
+            -0.5 * dot(m * A * ttau, dot(Q, dot(LQt, dif))) * (1 - d),
             +sum(self._moments["log_zeroth"]),
             +0.5 * sum(log(TS)),
             # lml -= 0.5 * sum(log(ttau)),

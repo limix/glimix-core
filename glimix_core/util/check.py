@@ -1,9 +1,6 @@
-import sys
 import warnings
 
 from numpy import all as npall, ascontiguousarray, clip, isfinite
-
-PY2 = sys.version_info < (3, 0)
 
 
 def check_economic_qs(QS):
@@ -39,12 +36,8 @@ def check_outcome(y, lik):
         lik = (lik,)
 
     str_err = "The first item of ``lik`` has to be a string."
-    if PY2:
-        if not isinstance(lik[0], basestring):
-            raise ValueError(str_err)
-    else:
-        if not isinstance(lik[0], str):
-            raise ValueError(str_err)
+    if not isinstance(lik[0], str):
+        raise ValueError(str_err)
 
     lik_name = lik[0].lower()
 
