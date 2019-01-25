@@ -3,12 +3,13 @@ from __future__ import absolute_import, division, unicode_literals
 import warnings
 
 from liknorm import LikNormMachine
-from numpy import sign
+from numpy import ascontiguousarray, sign
 from numpy.linalg import LinAlgError
 
 from optimix import FunctionReduce
 
 from ..ep import EP
+from ..util import check_outcome
 
 
 class ExpFamGP(FunctionReduce):
@@ -55,14 +56,19 @@ class ExpFamGP(FunctionReduce):
         After: -6.55
     """
 
-    def __init__(self, y, lik_name, mean, cov):
+    def __init__(self, y, lik, mean, cov):
         if isinstance(y, tuple):
             n = len(y[0])
         else:
             n = len(y)
         FunctionReduce.__init__(self, [mean, cov], name="ExpFamGP")
 
-        self._y = y
+        if not isinstance(lik, (tuple, list)):
+            lik = (lik,)
+
+        self._lik = (lik[0].lower(),) + tuple(ascontiguousarray(i) for i in lik[1:])
+        self._y = check_outcome(y, self._lik)
+
         self._mean = mean
         self._cov = cov
         self._ep = EP(n)
@@ -71,7 +77,7 @@ class ExpFamGP(FunctionReduce):
         self._mean_value = None
         self._cov_value = None
 
-        self._machine = LikNormMachine(lik_name, 500)
+        self._machine = LikNormMachine(lik[0], 500)
 
     def __del__(self):
         if hasattr(self, "_machine"):
@@ -111,7 +117,8 @@ class ExpFamGP(FunctionReduce):
         return self.feed().value()
 
     def compute_moments(self, eta, tau, moments):
-        self._machine.moments(self._y, eta, tau, moments)
+        y = (self._y,) + self._lik[1:]
+        self._machine.moments(y, eta, tau, moments)
 
     def value_reduce(self, values):
         from numpy_sugar import epsilon
