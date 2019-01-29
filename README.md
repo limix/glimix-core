@@ -15,20 +15,18 @@ data sets with thousands of samples and millions of covariates.
 
 ## Install
 
-We recommend installing it via
-[conda](http://conda.pydata.org/docs/index.html):
-```bash
-conda install -c conda-forge glimix-core
-```
+There are two main ways of installing it.
+Via [pip](https://pypi.python.org/pypi/pip):
 
-Alternatively, glimix-core can also be installed using
-[pip](https://pypi.python.org/pypi/pip):
 ```bash
 pip install glimix-core
 ```
 
-The second installation option requires from the user to install
-[liknorm](https://github.com/limix/liknorm) beforehand.
+Or via [conda](http://conda.pydata.org/docs/index.html):
+
+```bash
+conda install -c conda-forge glimix-core
+```
 
 ## Running the tests
 
