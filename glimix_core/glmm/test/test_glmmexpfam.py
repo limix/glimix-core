@@ -162,7 +162,7 @@ def test_glmmexpfam_delta1():
     glmm.delta = 1
 
     assert_allclose(glmm.lml(), -47.09677870648636, atol=ATOL, rtol=RTOL)
-    assert_allclose(check_grad(glmm), 0.0007071791692959544, atol=1e-4)
+    assert_allclose(check_grad(glmm), 0, atol=1e-4)
 
 
 def test_glmmexpfam_wrong_qs():
@@ -357,7 +357,7 @@ def test_glmmexpfam_binomial_pheno_list():
     glmm = GLMMExpFam(successes, ("binomial", ntrials), X, QS)
     glmm.fit(verbose=False)
 
-    assert_allclose(glmm.lml(), -11.43920790567486)
+    assert_allclose(glmm.lml(), -11.438821585341866)
 
 
 def test_glmmexpfam_scale_very_low():
@@ -479,7 +479,7 @@ def test_glmmexpfam_predict():
     pk = glmm.predictive_covariance(Xtest, ks, kss)
     r = nsuc_test / ntri_test
     assert_(corrcoef([pm, r])[0, 1] > 0.8)
-    assert_allclose(pk[0], 54.263491276875726)
+    assert_allclose(pk[0], 54.26335297363809)
 
 
 def test_glmmexpfam_qs_none():
