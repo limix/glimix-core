@@ -12,11 +12,11 @@ from numpy import (
 )
 from numpy.random import RandomState
 from numpy.testing import assert_, assert_allclose
+from numpy_sugar.linalg import economic_qs, economic_qs_linear
 
 from glimix_core.example import linear_eye_cov, nsamples
 from glimix_core.glmm import GLMMExpFam, GLMMNormal
 from glimix_core.random import bernoulli_sample
-from numpy_sugar.linalg import economic_qs, economic_qs_linear
 from optimix import check_grad
 
 ATOL = 1e-3
@@ -358,6 +358,28 @@ def test_glmmexpfam_binomial_pheno_list():
     glmm.fit(verbose=False)
 
     assert_allclose(glmm.lml(), -11.438821585341866)
+
+
+def test_glmmexpfam_binomial_large_ntrials():
+    random = RandomState(0)
+    n = 10
+
+    X = random.randn(n, 2)
+    G = random.randn(n, 100)
+    K = dot(G, G.T)
+    ntrials = random.randint(1, 100000, n)
+    z = dot(G, random.randn(100)) / sqrt(100)
+
+    successes = zeros(len(ntrials), int)
+    for i in range(len(ntrials)):
+        for _ in range(ntrials[i]):
+            successes[i] += int(z[i] + 0.1 * random.randn() > 0)
+
+    QS = economic_qs(K)
+    glmm = GLMMExpFam(successes, ("binomial", ntrials), X, QS)
+    glmm.fit(verbose=False)
+
+    assert_allclose(glmm.lml(), -43.067433588125446)
 
 
 def test_glmmexpfam_scale_very_low():
