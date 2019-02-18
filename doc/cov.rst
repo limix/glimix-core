@@ -11,5 +11,6 @@ Covariance functions
   EyeCov
   FreeFormCov
   GivenCov
+  LRFreeFormCov
   LinearCov
   SumCov
