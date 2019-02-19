@@ -73,7 +73,8 @@ class LRFreeFormCov(NamedClass, Function):
 
     @L.setter
     def L(self, value):
-        self._L[:] = value
+        # self._L[:] = value
+        self.Lu = value.ravel()
 
     @property
     def Lu(self):
