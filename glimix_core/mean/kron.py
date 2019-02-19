@@ -1,6 +1,6 @@
 from __future__ import division
 
-from numpy import ascontiguousarray, dot, zeros
+from numpy import asarray, atleast_2d, dot, kron, ones, stack, zeros
 
 from optimix import Function, Vector
 
@@ -17,19 +17,40 @@ class KronMean(NamedClass, Function):
 
     The mathematical representation is
 
-        f(𝐗)=(𝐀ᵗ⊗𝐅)vec(𝐗)
+        f(𝐀,𝐅)=(𝐀⊗𝐅)vec(𝐁)
 
-    where 𝐀 is a c×p trait design matrix of fixed effects and 𝐅 is a n×c sample design
-    matrix of fixed effects.
+    where 𝐀 is a p×p trait design matrix of fixed effects and 𝐅 is a n×c sample design
+    matrix of fixed effects. 𝐁 is a c×p matrix of fixed-effect sizes.
     """
 
-    def __init__(self):
-        Function.__init__(self)
+    def __init__(self, c, p):
+        vecB = zeros((c, p)).ravel()
+        self._c = c
+        self._p = p
+        Function.__init__(self, vecB=Vector(vecB))
         NamedClass.__init__(self)
 
+    def value_AF(self, A, F):
+        r""" Kronecker mean function. """
+        b = self.variables().get("vecB").value
+        n = F.shape[0]
+        p = A.shape[0]
+        return dot(kron(A, F), b).reshape((n, p))
+
     def value(self, x):
-        r""" Kronecker  mean function. """
-        return dot(x, self.variables().get("effsizes").value)
+        r""" Kronecker mean function. """
+
+        x = asarray(x, float)
+        orig_ndim = x.ndim
+        x = atleast_2d(x)
+        p = self._p
+        c = self._c
+        n = (len(x[0]) - p * p) // c
+        As = [i[: p * p].reshape((p, p)) for i in x]
+        Fs = [i[p * p :].reshape((n, c)) for i in x]
+        h = x.ndim - orig_ndim
+        r = stack([self.value_AF(A, F) for A, F in zip(As, Fs)])
+        return r.reshape(r.shape[h:])
 
     def gradient(self, x):
         r"""Gradient of the linear mean function.
@@ -44,22 +65,37 @@ class KronMean(NamedClass, Function):
         dict
             Dictionary having the `effsizes` key for :math:`\mathbf x`.
         """
-        return dict(effsizes=x)
+        from numpy import diag
+
+        x = atleast_2d(asarray(x, float))
+        p = self._p
+        c = self._c
+        n = (len(x[0]) - p * p) // c
+        As = [i[: p * p].reshape((p, p)) for i in x]
+        Fs = [i[p * p :].reshape((n, c)) for i in x]
+        one = diag(ones(p * c))
+        AF1s = [dot(kron(A, F), one).reshape((n, p, p * c)) for A, F in zip(As, Fs)]
+        r = stack(AF1s)
+        return dict(vecB=r)
 
     @property
-    def effsizes(self):
-        r"""Effect-sizes parameter."""
-        return self.variables().get("effsizes").value
+    def B(self):
+        r""" Effect-sizes parameter. """
+        return self.variables().get("vecB").value.reshape((self._c, self._p))
 
-    @effsizes.setter
-    def effsizes(self, v):
-        self.variables().get("effsizes").value = ascontiguousarray(v)
+    @B.setter
+    def B(self, v):
+        v = asarray(v, float)
+        self.variables().get("vecB").value[:] = v.ravel()
 
     def __str__(self):
         tname = type(self).__name__
-        msg = "{}(size={})".format(tname, len(self.effsizes))
+        p = self._p
+        c = self._c
+        msg = "{}(c={},p={})".format(tname, c, p)
         if self.name is not None:
             msg += ": {}".format(self.name)
         msg += "\n"
-        msg += "  effsizes: {}".format(self.effsizes)
+        mat = format(self.B)
+        msg += "  B: " + "\n     ".join(mat.split("\n"))
         return msg

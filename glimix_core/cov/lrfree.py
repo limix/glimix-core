@@ -1,6 +1,6 @@
 from __future__ import division
 
-from numpy import dot, ones, stack, zeros_like
+from numpy import dot, ones, stack, zeros_like, asarray
 
 from optimix import Function, Vector
 
@@ -74,7 +74,7 @@ class LRFreeFormCov(NamedClass, Function):
     @L.setter
     def L(self, value):
         # self._L[:] = value
-        self.Lu = value.ravel()
+        self.Lu = asarray(value, float).ravel()
 
     @property
     def Lu(self):
