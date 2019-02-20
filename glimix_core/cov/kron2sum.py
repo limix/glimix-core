@@ -1,4 +1,4 @@
-from numpy import arange, asarray, atleast_2d, kron, stack
+from numpy import arange, asarray, atleast_2d, dot, kron, stack
 
 from glimix_core.util.classes import NamedClass
 from optimix import Function
@@ -56,6 +56,11 @@ class Kron2SumCov(NamedClass, Function):
 
         return kron(X, Cr.T).T + kron(I, Cn.T).T
 
+    def compact_value(self):
+        K = self.feed().value()
+        d = K.shape[0] * K.shape[2]
+        return K.transpose((2, 0, 3, 1)).reshape(d, d)
+
     def gradient(self, x0, x1):
         Cr = self._Cr
         Cn = self._Cn
@@ -81,3 +86,23 @@ class Kron2SumCov(NamedClass, Function):
         Cn_Lu = Cn_Lu.reshape((1,) * X.ndim + Cn_Lu.shape)
 
         return {"Cr_Lu": kron(X, Cr_Lu.T).T, "Cn_Lu": kron(I, Cn_Lu.T).T}
+
+    def logdet(self):
+        import numpy as np
+
+        # E = self.Cr.X
+        # Lc = self.Lc()
+        # Estar = dot(Lc, E)
+
+        # Ue, Seh, Ve = nla.svd(Estar, full_matrices=0)
+        # Se = Seh ** 2
+        # SpI = kron(1.0 / Se, 1.0 / self._Sg) + 1
+        # logdetSg = sp.log(self._Sg).sum()
+
+        # rv = sp.sum(sp.log(self.Cn.S())) * self.dim_r
+        # rv += sp.log(SpI).sum()
+        # rv += sp.log(Se).sum() * self.rank_r
+        # rv += logdetSg * self.rank_c
+
+        # breakpoint()
+        return rv
