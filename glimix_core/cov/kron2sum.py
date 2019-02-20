@@ -1,33 +1,25 @@
-from numpy import arange, asarray, atleast_2d, dot, kron, stack, eye, sqrt, log, newaxis
-from scipy.linalg import svd, eigh
+from numpy import arange, asarray, atleast_2d, dot, eye, kron, log, newaxis, sqrt, stack
+from scipy.linalg import eigh, svd
 
 from glimix_core.util.classes import NamedClass
-from optimix import Function
 from numpy_sugar.linalg import ddot, economic_qs, economic_svd
+from optimix import Function
+from .lrfree import LRFreeFormCov
+from .free import FreeFormCov
 
 from .eye import EyeCov
 
 
-def svd_reduce(X, tol=1e-9):
-    U, Sh, V = svd(X, full_matrices=0)
-    I = Sh < tol
-    if I.any():
-        # warnings.warn('G has dependent columns, dimensionality reduced')
-        Sh = Sh[~I]
-        U = U[:, ~I]
-        V = eye(Sh.shape[0])
-        X = U * Sh[newaxis, :]
-    S = Sh ** 2
-    return X, U, S, V
-
-
 class Kron2SumCov(NamedClass, Function):
-    def __init__(self, Cr, Cn):
-        self._Cr = Cr
-        self._Cn = Cn
+    def __init__(self, dim, rank):
+        items = arange(dim)
+        self._Cr = LRFreeFormCov(dim, rank)
+        self._Cr.set_data((items, items))
+        self._Cn = FreeFormCov(dim)
+        self._Cn.set_data((items, items))
         self._G = None
-        Cr_Lu = Cr.variables().get("Lu")
-        Cn_Lu = Cn.variables().get("Lu")
+        Cr_Lu = self._Cr.variables().get("Lu")
+        Cn_Lu = self._Cn.variables().get("Lu")
         Function.__init__(self, Cr_Lu=Cr_Lu, Cn_Lu=Cn_Lu)
         NamedClass.__init__(self)
 
@@ -35,11 +27,9 @@ class Kron2SumCov(NamedClass, Function):
     def G(self):
         return self._G
 
-    def set_data_G(self, G):
+    @G.setter
+    def G(self, G):
         self._G = atleast_2d(asarray(G, float))
-        self._G = svd_reduce(self._G)[0]
-        self._dim_r = self._G.shape[0]
-        self._rank_r = self._G.shape[1]
         self.set_data((self._G, self._G))
 
     @property
@@ -62,7 +52,7 @@ class Kron2SumCov(NamedClass, Function):
         id1 = x1[..., 0].astype(int)
         x1 = x1[..., 1:]
 
-        p = Cr.size
+        p = Cr.L.shape[0]
         item0 = arange(p)
         item1 = arange(p)
         X = x0.dot(x1.T)
@@ -91,7 +81,7 @@ class Kron2SumCov(NamedClass, Function):
         id1 = x1[..., 0].astype(int)
         x1 = x1[..., 1:]
 
-        p = Cr.size
+        p = Cr.L.shape[0]
         item0 = arange(p)
         item1 = arange(p)
         X = x0.dot(x1.T)

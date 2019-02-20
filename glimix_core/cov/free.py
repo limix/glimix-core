@@ -16,7 +16,7 @@ class FreeFormCov(NamedClass, Function):
 
     Parameters
     ----------
-    size : int
+    dim : int
         Dimension :math:`d` of the free-form covariance matrix.
 
     Example
@@ -60,19 +60,14 @@ class FreeFormCov(NamedClass, Function):
           Lu: [ 1. -2.  1.]
     """
 
-    def __init__(self, size):
-        size = int(size)
-        tsize = ((size + 1) * size) // 2
-        self._L = zeros((size, size))
+    def __init__(self, dim):
+        dim = int(dim)
+        tsize = ((dim + 1) * dim) // 2
+        self._L = zeros((dim, dim))
         self._tril = tril_indices_from(self._L)
         self._L[self._tril] = 1
-        self._size = size
         Function.__init__(self, Lu=Vector(ones(tsize)))
         NamedClass.__init__(self)
-
-    @property
-    def size(self):
-        return self._size
 
     @property
     def L(self):
