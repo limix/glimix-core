@@ -44,8 +44,7 @@ class Kron2SumCov(NamedClass, Function):
         item1 = arange(p)
         X = x0.dot(x1.T)
         I = EyeCov().value(id0, id1)
-        ndim = X.ndim
-        shape = (1,) * ndim + (p, p)
+        shape = (1,) * X.ndim + (p, p)
 
         Cr = Cr.value(item0, item1).reshape(shape)
         Cn = Cn.value(item0, item1).reshape(shape)
@@ -69,18 +68,11 @@ class Kron2SumCov(NamedClass, Function):
         item1 = arange(p)
         X = x0.dot(x1.T)
         I = EyeCov().value(id0, id1)
-        ndim = X.ndim
 
-        g = {}
-        g0 = self._Cr.gradient(item0, item1)
-        shape0 = (1,) * ndim + g0["Lu"].shape
-        g1 = self._Cn.gradient(item0, item1)
-        shape1 = (1,) * ndim + g1["Lu"].shape
+        Cr_Lu = Cr.gradient(item0, item1)["Lu"]
+        Cr_Lu = Cr_Lu.reshape((1,) * X.ndim + Cr_Lu.shape)
 
-        g = {}
-        g0["Lu"] = g0["Lu"].reshape(shape0)
-        g1["Lu"] = g1["Lu"].reshape(shape1)
-        g["Cr_Lu"] = kron(X, g0["Lu"].T).T
-        g["Cn_Lu"] = kron(I, g1["Lu"].T).T
+        Cn_Lu = Cn.gradient(item0, item1)["Lu"]
+        Cn_Lu = Cn_Lu.reshape((1,) * X.ndim + Cn_Lu.shape)
 
-        return g
+        return {"Cr_Lu": kron(X, Cr_Lu.T).T, "Cn_Lu": kron(I, Cn_Lu.T).T}
