@@ -1,6 +1,8 @@
+from numpy import arange, kron, stack
+
 from glimix_core.util.classes import NamedClass
 from optimix import Function
-from numpy import stack, kron, arange
+
 from .eye import EyeCov
 
 
@@ -39,13 +41,18 @@ class Kron2SumCov(NamedClass, Function):
         item0 = arange(p)
         item1 = arange(p)
         X = x0.dot(x1.T)
+        ndim = X.ndim
+        Crr = Cr.value(item0, item1)
+        Crr = Crr.reshape((1,) * ndim + Crr.shape)
+        L = kron(X, Crr.T).T
 
-        L = kron(Cr.value(item0, item1), X)
         eye = EyeCov()
-        R = kron(Cn.value(item0, item1), eye.value(id0, id1))
+        I = eye.value(id0, id1)
+        Cnn = Cn.value(item0, item1)
+        Cnn = Cnn.reshape((1,) * ndim + Cnn.shape)
+        R = kron(I, Cnn.T).T
 
-        shape = tuple([1] * X.ndim) + L.shape
-        return L.reshape(shape) + R.reshape(shape)
+        return L + R
 
 
 # from __future__ import division
