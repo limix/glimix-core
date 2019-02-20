@@ -4,10 +4,10 @@ from scipy.linalg import eigh, svd
 from glimix_core.util.classes import NamedClass
 from numpy_sugar.linalg import ddot, economic_qs, economic_svd
 from optimix import Function
-from .lrfree import LRFreeFormCov
-from .free import FreeFormCov
 
 from .eye import EyeCov
+from .free import FreeFormCov
+from .lrfree import LRFreeFormCov
 
 
 class Kron2SumCov(NamedClass, Function):
@@ -20,8 +20,12 @@ class Kron2SumCov(NamedClass, Function):
         self._G = None
         Cr_Lu = self._Cr.variables().get("Lu")
         Cn_Lu = self._Cn.variables().get("Lu")
+        self._eye = EyeCov()
         Function.__init__(self, Cr_Lu=Cr_Lu, Cn_Lu=Cn_Lu)
         NamedClass.__init__(self)
+
+    def _I(self, items0, items1):
+        return self._eye.value(items0, items1)
 
     @property
     def G(self):
@@ -41,26 +45,14 @@ class Kron2SumCov(NamedClass, Function):
         return self._Cn
 
     def value(self, x0, x1):
-        Cr = self._Cr
-        Cn = self._Cn
+        id0, x0, = _input_split(x0)
+        id1, x1 = _input_split(x1)
 
-        x0 = stack(x0, axis=0)
-        id0 = x0[..., 0].astype(int)
-        x0 = x0[..., 1:]
-
-        x1 = stack(x1, axis=0)
-        id1 = x1[..., 0].astype(int)
-        x1 = x1[..., 1:]
-
-        p = Cr.L.shape[0]
-        item0 = arange(p)
-        item1 = arange(p)
+        I = self._I(id0, id1)
         X = x0.dot(x1.T)
-        I = EyeCov().value(id0, id1)
-        shape = (1,) * X.ndim + (p, p)
 
-        Cr = Cr.value(item0, item1).reshape(shape)
-        Cn = Cn.value(item0, item1).reshape(shape)
+        Cr = _prepend_dims(self._Cr.feed().value(), X.ndim)
+        Cn = _prepend_dims(self._Cn.feed().value(), X.ndim)
 
         return kron(X, Cr.T).T + kron(I, Cn.T).T
 
@@ -70,28 +62,19 @@ class Kron2SumCov(NamedClass, Function):
         return K.transpose((2, 0, 3, 1)).reshape(d, d)
 
     def gradient(self, x0, x1):
+        id0, x0, = _input_split(x0)
+        id1, x1 = _input_split(x1)
+
         Cr = self._Cr
         Cn = self._Cn
-
-        x0 = stack(x0, axis=0)
-        id0 = x0[..., 0].astype(int)
-        x0 = x0[..., 1:]
-
-        x1 = stack(x1, axis=0)
-        id1 = x1[..., 0].astype(int)
-        x1 = x1[..., 1:]
-
-        p = Cr.L.shape[0]
-        item0 = arange(p)
-        item1 = arange(p)
+        I = self._I(id0, id1)
         X = x0.dot(x1.T)
-        I = EyeCov().value(id0, id1)
 
-        Cr_Lu = Cr.gradient(item0, item1)["Lu"]
-        Cr_Lu = Cr_Lu.reshape((1,) * X.ndim + Cr_Lu.shape)
+        Cr_Lu = Cr.feed().gradient()["Lu"]
+        Cr_Lu = _prepend_dims(Cr_Lu, X.ndim)
 
-        Cn_Lu = Cn.gradient(item0, item1)["Lu"]
-        Cn_Lu = Cn_Lu.reshape((1,) * X.ndim + Cn_Lu.shape)
+        Cn_Lu = Cn.feed().gradient()["Lu"]
+        Cn_Lu = _prepend_dims(Cn_Lu, X.ndim)
 
         return {"Cr_Lu": kron(X, Cr_Lu.T).T, "Cn_Lu": kron(I, Cn_Lu.T).T}
 
@@ -128,3 +111,14 @@ class Kron2SumCov(NamedClass, Function):
 
         # breakpoint()
         return rv
+
+
+def _input_split(x):
+    x = stack(x, axis=0)
+    ids = x[..., 0].astype(int)
+    x = x[..., 1:]
+    return ids, x
+
+
+def _prepend_dims(x, ndims):
+    return x.reshape((1,) * ndims + x.shape)
