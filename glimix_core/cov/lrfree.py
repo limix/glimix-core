@@ -2,6 +2,7 @@ from __future__ import division
 
 from numpy import asarray, dot, ones, stack, zeros_like
 
+from numpy_sugar.linalg import economic_qs
 from optimix import Function, Vector
 
 from ..util.classes import NamedClass
@@ -66,9 +67,8 @@ class LRFreeFormCov(NamedClass, Function):
         Function.__init__(self, Lu=Vector(self._L.ravel()))
         NamedClass.__init__(self)
 
-    @property
-    def size(self):
-        return self._L.shape[0]
+    def economic_qs(self):
+        return economic_qs(self.feed().value())
 
     @property
     def rank(self):

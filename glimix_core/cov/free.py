@@ -3,6 +3,7 @@ from __future__ import division
 from numpy import dot, ones, stack, tril_indices_from, zeros, zeros_like
 
 from optimix import Function, Vector
+from numpy_sugar.linalg import economic_qs
 
 from ..util.classes import NamedClass
 
@@ -68,6 +69,9 @@ class FreeFormCov(NamedClass, Function):
         self._L[self._tril] = 1
         Function.__init__(self, Lu=Vector(ones(tsize)))
         NamedClass.__init__(self)
+
+    def economic_qs(self):
+        return economic_qs(self.feed().value())
 
     @property
     def L(self):
