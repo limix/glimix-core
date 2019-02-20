@@ -30,3 +30,4 @@ def test_kron2sumcov_optimix():
     value_example = zeros((2, 2))
     a = Assertion(lambda: cov, item0, item1, value_example)
     a.assert_layout()
+    a.assert_gradient()
