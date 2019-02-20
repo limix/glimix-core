@@ -1,9 +1,24 @@
-from numpy import arange, asarray, atleast_2d, dot, kron, stack
+from numpy import arange, asarray, atleast_2d, dot, kron, stack, eye, sqrt, log, newaxis
+from scipy.linalg import svd, eigh
 
 from glimix_core.util.classes import NamedClass
 from optimix import Function
+from numpy_sugar.linalg import ddot, economic_qs, economic_svd
 
 from .eye import EyeCov
+
+
+def svd_reduce(X, tol=1e-9):
+    U, Sh, V = svd(X, full_matrices=0)
+    I = Sh < tol
+    if I.any():
+        # warnings.warn('G has dependent columns, dimensionality reduced')
+        Sh = Sh[~I]
+        U = U[:, ~I]
+        V = eye(Sh.shape[0])
+        X = U * Sh[newaxis, :]
+    S = Sh ** 2
+    return X, U, S, V
 
 
 class Kron2SumCov(NamedClass, Function):
@@ -22,6 +37,9 @@ class Kron2SumCov(NamedClass, Function):
 
     def set_data_G(self, G):
         self._G = atleast_2d(asarray(G, float))
+        self._G = svd_reduce(self._G)[0]
+        self._dim_r = self._G.shape[0]
+        self._rank_r = self._G.shape[1]
         self.set_data((self._G, self._G))
 
     @property
@@ -88,21 +106,35 @@ class Kron2SumCov(NamedClass, Function):
         return {"Cr_Lu": kron(X, Cr_Lu.T).T, "Cn_Lu": kron(I, Cn_Lu.T).T}
 
     def logdet(self):
-        import numpy as np
+        breakpoint()
+        Cr = self._Cr
+        Cn = self._Cn
+        E = self.Cr.L
+        p = Cr.size
+        item0 = arange(p)
+        item1 = arange(p)
+        C = Cn.value(item0, item1)
+        C = C + eye(C.shape[0]) * 1e-4
+        QS = economic_qs(C)
+        Lc = ddot(QS[0][0], 1 / sqrt(QS[1])).T
+        Estar = dot(Lc, E)
 
-        # E = self.Cr.X
-        # Lc = self.Lc()
-        # Estar = dot(Lc, E)
+        rank_c = Cr.rank
 
-        # Ue, Seh, Ve = nla.svd(Estar, full_matrices=0)
-        # Se = Seh ** 2
-        # SpI = kron(1.0 / Se, 1.0 / self._Sg) + 1
-        # logdetSg = sp.log(self._Sg).sum()
+        Ue, Seh, Ve = svd(Estar, full_matrices=0)
+        Se = Seh ** 2
+        _, _Sg, _ = economic_svd(self.G)
+        SpI = kron(1.0 / Se, 1.0 / _Sg) + 1
 
-        # rv = sp.sum(sp.log(self.Cn.S())) * self.dim_r
-        # rv += sp.log(SpI).sum()
-        # rv += sp.log(Se).sum() * self.rank_r
-        # rv += logdetSg * self.rank_c
+        logdetSg = log(_Sg).sum()
+
+        # dim_r: rank of G after is has been reduced by svd
+
+        CnS = eigh(C)[0]
+        rv = sum(log(CnS)) * self._dim_r
+        rv += log(SpI).sum()
+        rv += log(Se).sum() * self._rank_r
+        rv += logdetSg * rank_c
 
         # breakpoint()
         return rv

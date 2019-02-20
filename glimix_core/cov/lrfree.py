@@ -1,6 +1,6 @@
 from __future__ import division
 
-from numpy import dot, ones, stack, zeros_like, asarray
+from numpy import asarray, dot, ones, stack, zeros_like
 
 from optimix import Function, Vector
 
@@ -65,6 +65,14 @@ class LRFreeFormCov(NamedClass, Function):
         self._L = ones((m, n))
         Function.__init__(self, Lu=Vector(self._L.ravel()))
         NamedClass.__init__(self)
+
+    @property
+    def size(self):
+        return self._L.shape[0]
+
+    @property
+    def rank(self):
+        return self._L.shape[1]
 
     @property
     def L(self):
