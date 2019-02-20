@@ -1,4 +1,4 @@
-from numpy import arange, kron, stack
+from numpy import arange, asarray, atleast_2d, kron, stack
 
 from glimix_core.util.classes import NamedClass
 from optimix import Function
@@ -10,6 +10,7 @@ class Kron2SumCov(NamedClass, Function):
     def __init__(self, Cr, Cn):
         self._Cr = Cr
         self._Cn = Cn
+        self._G = None
         Cr_Lu = Cr.variables().get("Lu")
         Cn_Lu = Cn.variables().get("Lu")
         Function.__init__(self, Cr_Lu=Cr_Lu, Cn_Lu=Cn_Lu)
@@ -18,6 +19,10 @@ class Kron2SumCov(NamedClass, Function):
     @property
     def G(self):
         return self._G
+
+    def set_data_G(self, G):
+        self._G = atleast_2d(asarray(G, float))
+        self.set_data((self._G, self._G))
 
     @property
     def Cr(self):
