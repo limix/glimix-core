@@ -1,3 +1,53 @@
+from glimix_core.util.classes import NamedClass
+from optimix import Function
+from numpy import stack, kron, arange
+from .eye import EyeCov
+
+
+class Kron2SumCov(NamedClass, Function):
+    def __init__(self, Cr, Cn):
+        self._Cr = Cr
+        self._Cn = Cn
+        Function.__init__(self)
+        NamedClass.__init__(self)
+
+    @property
+    def G(self):
+        return self._G
+
+    @property
+    def Cr(self):
+        return self._Cr
+
+    @property
+    def Cn(self):
+        return self._Cn
+
+    def value(self, x0, x1):
+        Cr = self._Cr
+        Cn = self._Cn
+
+        x0 = stack(x0, axis=0)
+        id0 = x0[..., 0].astype(int)
+        x0 = x0[..., 1:]
+
+        x1 = stack(x1, axis=0)
+        id1 = x1[..., 0].astype(int)
+        x1 = x1[..., 1:]
+
+        p = Cr.size
+        item0 = arange(p)
+        item1 = arange(p)
+        X = x0.dot(x1.T)
+
+        L = kron(Cr.value(item0, item1), X)
+        eye = EyeCov()
+        R = kron(Cn.value(item0, item1), eye.value(id0, id1))
+
+        shape = tuple([1] * X.ndim) + L.shape
+        return L.reshape(shape) + R.reshape(shape)
+
+
 # from __future__ import division
 #
 # from numpy import add, dot, tensordot

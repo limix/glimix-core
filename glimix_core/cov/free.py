@@ -66,8 +66,13 @@ class FreeFormCov(NamedClass, Function):
         self._L = zeros((size, size))
         self._tril = tril_indices_from(self._L)
         self._L[self._tril] = 1
+        self._size = size
         Function.__init__(self, Lu=Vector(ones(tsize)))
         NamedClass.__init__(self)
+
+    @property
+    def size(self):
+        return self._size
 
     @property
     def L(self):

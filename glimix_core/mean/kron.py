@@ -1,6 +1,6 @@
 from __future__ import division
 
-from numpy import asarray, atleast_2d, dot, kron, ones, stack, zeros
+from numpy import asarray, atleast_2d, concatenate, dot, kron, ones, stack, zeros
 
 from optimix import Function, Vector
 
@@ -27,11 +27,36 @@ class KronMean(NamedClass, Function):
         vecB = zeros((c, p)).ravel()
         self._c = c
         self._p = p
+        self._A = None
+        self._F = None
         Function.__init__(self, vecB=Vector(vecB))
         NamedClass.__init__(self)
 
-    def value_AF(self, A, F):
-        r""" Kronecker mean function. """
+    def set_data_AF(self, A, F):
+        item = concatenate((A.ravel(), F.ravel()))
+        c = self._c
+        p = self._p
+        self._A = item[: p * p].reshape((p, p))
+        self._F = item[p * p :].reshape((-1, c))
+        assert self._A.base is item
+        assert self._F.base is item
+        self.set_data(item)
+
+    @property
+    def A(self):
+        return self._A
+
+    @property
+    def F(self):
+        return self._F
+
+    @property
+    def AF(self):
+        r""" A ⊗ F. """
+        return kron(self.A, self.F)
+
+    def _value(self, A, F):
+        r""" reshape((A ⊗ F) vec(B), n, p) """
         b = self.variables().get("vecB").value
         n = F.shape[0]
         p = A.shape[0]
@@ -49,7 +74,7 @@ class KronMean(NamedClass, Function):
         As = [i[: p * p].reshape((p, p)) for i in x]
         Fs = [i[p * p :].reshape((n, c)) for i in x]
         h = x.ndim - orig_ndim
-        r = stack([self.value_AF(A, F) for A, F in zip(As, Fs)])
+        r = stack([self._value(A, F) for A, F in zip(As, Fs)])
         return r.reshape(r.shape[h:])
 
     def gradient(self, x):
