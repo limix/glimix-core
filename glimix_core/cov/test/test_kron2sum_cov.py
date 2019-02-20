@@ -52,6 +52,18 @@ def test_kron2sumcov_solve():
     cov.G = G
     assert_allclose(cov.solve(cov.compact_value()), eye(2 * G.shape[0]), atol=1e-7)
 
+    item0 = array([0, -1.5, 1.0])
+    item1 = array([1, +1.24, 1.0])
+    item2 = array([2, -1.5, 1.4])
+
+    cov = Kron2SumCov(2, 1)
+    cov.Cr.L = [[1], [2]]
+    cov.Cn.L = [[3, 0], [2, 1]]
+
+    G = stack([i[1:] for i in [item0, item1, item2]], axis=0)
+    cov.G = G
+    assert_allclose(cov.solve(cov.compact_value()), eye(2 * G.shape[0]), atol=1e-7)
+
 
 #     # ld = slogdet(cov.compact_value())
 #     # assert_(ld[0] == 1)

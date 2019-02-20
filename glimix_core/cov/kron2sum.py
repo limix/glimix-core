@@ -35,7 +35,8 @@ class Kron2SumCov(NamedClass, Function):
     @G.setter
     def G(self, G):
         self._G = atleast_2d(asarray(G, float))
-        Q, S, V = svd(G, full_matrices=False)
+        Q, S, V = svd(G)
+        S = concatenate((S, [0.] * (Q.shape[0] - S.shape[0])))
         self._QSg = Q, S * S
         ids = arange(G.shape[0])[:, newaxis]
         X = concatenate((ids, G), axis=1)
