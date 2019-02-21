@@ -1,6 +1,6 @@
 from __future__ import division
 
-import collections
+from collections.abc import Sequence
 
 from numpy import (
     all as npall,
@@ -362,8 +362,8 @@ def _check_outcome(y):
         else:
             raise ValueError("Unrecognized number of dimensions of the outcome array.")
     else:
-        if isinstance(y, collections.Sequence):
-            if not hasattr(y[0], "ndim") and not isinstance(y[0], collections.Sequence):
+        if isinstance(y, Sequence):
+            if not hasattr(y[0], "ndim") and not isinstance(y[0], Sequence):
                 y = [asarray(y, float)]
         else:
             y = [y]
@@ -387,10 +387,8 @@ def _check_covariates(X, SVD):
                     "Unrecognized number of dimensions of the covariates array."
                 )
         else:
-            if isinstance(X, collections.Sequence):
-                if not hasattr(X[0], "ndim") and not isinstance(
-                    X[0], collections.Sequence
-                ):
+            if isinstance(X, Sequence):
+                if not hasattr(X[0], "ndim") and not isinstance(X[0], Sequence):
                     X = [asarray(X, float)]
             else:
                 X = [X]
