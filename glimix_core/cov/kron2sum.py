@@ -116,7 +116,7 @@ class Kron2SumCov(NamedClass, Function):
         return L.T @ ddot(D, L @ v)
 
     def logdet(self):
-        """ log|K| = - log|D| + N log|Cₙ| """
+        """ Implements log|K| = - log|D| + N log|Cₙ| """
         from numpy.linalg import slogdet
 
         Sn, Un = self.Cn.eigh()
@@ -132,6 +132,12 @@ class Kron2SumCov(NamedClass, Function):
         return -log(D).sum() + N * logdetC[1]
 
     def logdet_gradient(self):
+        """ Implements ∂log|K| = Tr[K⁻¹ ∂K].
+
+        We have
+
+            ∂log|K| = diag(D)ᵗ diag(L ∂K Lᵗ).
+        """
         Sn, Un = self.Cn.eigh()
         Cr = self.Cr.feed().value()
         UnSn = ddot(Un, 1 / sqrt(Sn))
