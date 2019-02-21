@@ -3,6 +3,7 @@ from numpy import (
     asarray,
     atleast_2d,
     concatenate,
+    diagonal,
     kron,
     log,
     newaxis,
@@ -130,6 +131,29 @@ class Kron2SumCov(NamedClass, Function):
         assert logdetC[0] == 1
         return -log(D).sum() + N * logdetC[1]
 
+    def logdet_gradient(self):
+        Sn, Un = self.Cn.eigh()
+        Cr = self.Cr.feed().value()
+        UnSn = ddot(Un, 1 / sqrt(Sn))
+        Crs = UnSn.T @ Cr @ UnSn
+        Srs, Urs = eigh(Crs)
+        Qx, Sx = self._USx
+        D = 1 / (kron(Srs, Sx) + 1)
+        Lc = (UnSn @ Urs).T
+        Lg = Qx.T
+        L = kron(Lc, Lg)
+
+        ids = arange(self.G.shape[0])[:, newaxis]
+        Gids = concatenate((ids, self.G), axis=1)
+
+        Kgrad = self.gradient(Gids, Gids)
+        Kgrad["Cr_Lu"] = _compact_form_grad(Kgrad["Cr_Lu"])
+        Kgrad["Cn_Lu"] = _compact_form_grad(Kgrad["Cn_Lu"])
+
+        r0 = (D * diagonal(L @ Kgrad["Cr_Lu"] @ L.T, axis1=1, axis2=2)).sum(1)
+        r1 = (D * diagonal(L @ Kgrad["Cn_Lu"] @ L.T, axis1=1, axis2=2)).sum(1)
+        return concatenate([r0, r1])
+
 
 def _input_split(x):
     x = stack(x, axis=0)
@@ -145,3 +169,11 @@ def _prepend_dims(x, ndims):
 def _compact_form(K):
     d = K.shape[0] * K.shape[2]
     return K.transpose((2, 0, 3, 1)).reshape(d, d)
+
+
+def _compact_form_grad(K):
+    K = K.transpose([4, 0, 1, 2, 3])
+    mats = []
+    for M in K:
+        mats.append(_compact_form(M))
+    return stack(mats, axis=0)

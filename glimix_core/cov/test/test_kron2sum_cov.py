@@ -107,3 +107,25 @@ def test_kron2sumcov_logdet():
     # Cn ill conditioned, therefore cov.logdet approaches -inf
     # So the smaller its value the better is the approximation
     assert_(cov.logdet() < -179)
+
+
+def test_kron2sumcov_logdet_gradient():
+    from scipy.optimize import check_grad
+
+    cov = Kron2SumCov(2, 1)
+    cov.Cr.L = [[1], [2]]
+    cov.Cn.L = [[3, 0], [2, 1]]
+    random = RandomState(0)
+    cov.G = random.randn(3, 2)
+
+    def func(x):
+        cov.Cr.Lu = x[:2]
+        cov.Cn.Lu = x[2:]
+        return cov.logdet()
+
+    def grad(x):
+        cov.Cr.Lu = x[:2]
+        cov.Cn.Lu = x[2:]
+        return cov.logdet_gradient()
+
+    assert_allclose(check_grad(func, grad, random.randn(5)), 0, atol=1e-5)

@@ -68,7 +68,7 @@ class FreeFormCov(NamedClass, Function):
         self._L = zeros((dim, dim))
         self._tril = tril_indices_from(self._L)
         self._L[self._tril] = 1
-        self._jitter = epsilon.small
+        self._jitter = epsilon.tiny
         Function.__init__(self, Lu=Vector(ones(tsize)))
         NamedClass.__init__(self)
 
