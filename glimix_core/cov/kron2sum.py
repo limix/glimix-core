@@ -77,6 +77,15 @@ class Kron2SumCov(NamedClass, Function):
     def compact_value(self):
         return _compact_form(self.feed().value())
 
+    def compact_gradient(self):
+        Gids = _input_join(self.G)
+
+        Kgrad = self.gradient(Gids, Gids)
+        Kgrad["Cr_Lu"] = _compact_form_grad(Kgrad["Cr_Lu"])
+        Kgrad["Cn_Lu"] = _compact_form_grad(Kgrad["Cn_Lu"])
+
+        return Kgrad
+
     def gradient(self, x0, x1):
         id0, x0, = _input_split(x0)
         id1, x1 = _input_split(x1)
@@ -149,12 +158,7 @@ class Kron2SumCov(NamedClass, Function):
         Lg = Qx.T
         L = kron(Lc, Lg)
 
-        ids = arange(self.G.shape[0])[:, newaxis]
-        Gids = concatenate((ids, self.G), axis=1)
-
-        Kgrad = self.gradient(Gids, Gids)
-        Kgrad["Cr_Lu"] = _compact_form_grad(Kgrad["Cr_Lu"])
-        Kgrad["Cn_Lu"] = _compact_form_grad(Kgrad["Cn_Lu"])
+        Kgrad = self.compact_gradient()
 
         r0 = (D * diagonal(L @ Kgrad["Cr_Lu"] @ L.T, axis1=1, axis2=2)).sum(1)
         r1 = (D * diagonal(L @ Kgrad["Cn_Lu"] @ L.T, axis1=1, axis2=2)).sum(1)
@@ -166,6 +170,11 @@ def _input_split(x):
     ids = x[..., 0].astype(int)
     x = x[..., 1:]
     return ids, x
+
+
+def _input_join(G):
+    ids = arange(G.shape[0])[:, newaxis]
+    return concatenate((ids, G), axis=1)
 
 
 def _prepend_dims(x, ndims):
