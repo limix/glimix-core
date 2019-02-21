@@ -2,8 +2,9 @@ from __future__ import division
 
 from numpy import dot, ones, stack, tril_indices_from, zeros, zeros_like
 
-from optimix import Function, Vector
 from numpy_sugar.linalg import economic_qs
+from numpy_sugar import epsilon
+from optimix import Function, Vector
 
 from ..util.classes import NamedClass
 
@@ -72,6 +73,13 @@ class FreeFormCov(NamedClass, Function):
 
     def economic_qs(self):
         return economic_qs(self.feed().value())
+
+    def eigh(self):
+        from numpy.linalg import eigh
+
+        Sn, Un = eigh(self.feed().value())
+        Sn += epsilon.small
+        return Sn, Un
 
     @property
     def L(self):

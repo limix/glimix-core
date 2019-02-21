@@ -118,7 +118,7 @@ class Kron2SumCov(NamedClass, Function):
         """ log|K| = - log|D| + N log|Cₙ| """
         from numpy.linalg import slogdet
 
-        Sn, Un = eigh(self.Cn.feed().value())
+        Sn, Un = self.Cn.eigh()
         Cr = self.Cr.feed().value()
         UnSn = ddot(Un, 1 / sqrt(Sn))
         Crs = UnSn.T @ Cr @ UnSn

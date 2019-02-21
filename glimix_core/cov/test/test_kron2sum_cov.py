@@ -1,7 +1,10 @@
-from numpy import array, eye, kron, stack, zeros
-from numpy.random import RandomState
-from numpy.testing import assert_allclose, assert_
+import os
+from os.path import join
+
+from numpy import array, eye, kron, load, stack, zeros
 from numpy.linalg import slogdet
+from numpy.random import RandomState
+from numpy.testing import assert_, assert_allclose
 
 from glimix_core.cov import Kron2SumCov
 from optimix import Assertion
@@ -38,6 +41,7 @@ def test_kron2sumcov_optimix():
         cov.compact_value(),
         kron(cov.Cr.feed().value(), cov.G @ cov.G.T) + kron(cov.Cn.feed().value(), I),
     )
+
 
 def test_kron2sumcov_compact_value():
     item0 = array([0, -1.5, 1.0, -2.5])
@@ -91,3 +95,15 @@ def test_kron2sumcov_logdet():
     test_for_G(stack((g, g), axis=1))
     test_for_G(stack((g, g, g), axis=1))
     test_for_G(stack((g, g, g, g), axis=1))
+    folder = os.path.dirname(os.path.realpath(__file__))
+
+    G = load(join(folder, "G.npy"))
+    Cr_Lu = load(join(folder, "Cr_Lu.npy"))
+    Cn_Lu = load(join(folder, "Cn_Lu.npy"))
+    cov = Kron2SumCov(2, 1)
+    cov.G = G
+    cov.Cr.Lu = Cr_Lu
+    cov.Cn.Lu = Cn_Lu
+    # Cn ill conditioned, therefore cov.logdet approaches -inf
+    # So the smaller its value the better is the approximation
+    assert_(cov.logdet() < -179)
