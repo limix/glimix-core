@@ -20,6 +20,7 @@ from .lrfree import LRFreeFormCov
 
 
 class Kron2SumCov(NamedClass, Function):
+    """ Implements K = Cᵣ ⊗ GGᵗ + Cₙ ⊗ I. """
     def __init__(self, dim, rank):
         items = arange(dim)
         self._Cr = LRFreeFormCov(dim, rank)
@@ -43,12 +44,12 @@ class Kron2SumCov(NamedClass, Function):
     @G.setter
     def G(self, G):
         self._G = atleast_2d(asarray(G, float))
-        Q, S, V = svd(G)
-        S = concatenate((S, [0.0] * (Q.shape[0] - S.shape[0])))
-        self._QSg = Q, S * S
+        U, S, _ = svd(G)
+        S = concatenate((S, [0.0] * (U.shape[0] - S.shape[0])))
+        self._USx = U, S * S
         ids = arange(G.shape[0])[:, newaxis]
-        X = concatenate((ids, G), axis=1)
-        self.set_data((X, X))
+        Gids = concatenate((ids, G), axis=1)
+        self.set_data((Gids, Gids))
 
     @property
     def Cr(self):
@@ -89,15 +90,25 @@ class Kron2SumCov(NamedClass, Function):
         return {"Cr_Lu": kron(X, Cr_Lu.T).T, "Cn_Lu": kron(I, Cn_Lu.T).T}
 
     def solve(self, v):
-        Sn, Qn = eigh(self.Cn.feed().value())
+        """ Implements the product K⁻¹v.
+
+        Let X = GGᵗ, K = Cᵣ ⊗ X + Cₙ ⊗ I, and let us use the notation M = Uₘ Sₘ Uₘᵗ for
+        eigen decomposition. Let Cᵣ* = Sₙ⁻½ Uₙᵗ Cᵣ Uₙ Sₙ⁻½. We then define
+        Lₙ = Uᵣᵗ* Sₙ⁻½ Uₙᵗ* and Lᵣ = Uₓᵗ. The inverse of the covariance matrix is
+        
+            K⁻¹ = Lᵗ D L,
+
+        for which D = (Sᵣ* ⊗ Sₓ + I)⁻¹ is a block diagonal matrix and L = Lₙ ⊗ Lᵣ.
+        """
+        Sn, Un = eigh(self.Cn.feed().value())
         Cr = self.Cr.feed().value()
-        QnSn = ddot(Qn, 1 / sqrt(Sn))
-        Crs = QnSn.T @ Cr @ QnSn
-        Srs, Qrs = eigh(Crs)
-        Qg, Sg = self._QSg
-        D = 1 / (kron(Srs, Sg) + 1)
-        Lc = (QnSn @ Qrs).T
-        Lg = Qg.T
+        UnSn = ddot(Un, 1 / sqrt(Sn))
+        Crs = UnSn.T @ Cr @ UnSn
+        Srs, Urs = eigh(Crs)
+        Qx, Sx = self._USx
+        D = 1 / (kron(Srs, Sx) + 1)
+        Lc = (UnSn @ Urs).T
+        Lg = Qx.T
         L = kron(Lc, Lg)
         return L.T @ ddot(D, L @ v)
 

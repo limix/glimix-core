@@ -38,7 +38,6 @@ def test_kron2sumcov_optimix():
         kron(cov.Cr.feed().value(), cov.G @ cov.G.T) + kron(cov.Cn.feed().value(), I),
     )
 
-
 def test_kron2sumcov_compact_value():
     item0 = array([0, -1.5, 1.0, -2.5])
     item1 = array([1, +1.24, 1.0, -1.3])
@@ -62,6 +61,7 @@ def test_kron2sumcov_solve():
         assert_allclose(cov.solve(cov.compact_value()), eye(2 * G.shape[0]), atol=1e-7)
 
     random = RandomState(0)
+    test_for_G(random.randn(3, 1))
     test_for_G(random.randn(3, 3))
     test_for_G(random.randn(3, 2))
     test_for_G(random.randn(3, 4))
