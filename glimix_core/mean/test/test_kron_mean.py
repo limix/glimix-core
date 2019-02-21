@@ -42,7 +42,8 @@ def test_kron_optimix():
         ],
     )
 
-    mean.set_data_AF(A, F)
+    mean.A = A
+    mean.F = F
     assert_allclose(
         mean.feed().value(),
         [

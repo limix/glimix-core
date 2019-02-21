@@ -32,8 +32,10 @@ class KronMean(NamedClass, Function):
         Function.__init__(self, vecB=Vector(vecB))
         NamedClass.__init__(self)
 
-    def set_data_AF(self, A, F):
-        item = concatenate((A.ravel(), F.ravel()))
+    def _set_data(self):
+        if self._A is None or self._F is None:
+            return
+        item = concatenate((self._A.ravel(), self._F.ravel()))
         c = self._c
         p = self._p
         self._A = item[: p * p].reshape((p, p))
@@ -46,9 +48,19 @@ class KronMean(NamedClass, Function):
     def A(self):
         return self._A
 
+    @A.setter
+    def A(self, A):
+        self._A = A
+        self._set_data()
+
     @property
     def F(self):
         return self._F
+
+    @F.setter
+    def F(self, F):
+        self._F = F
+        self._set_data()
 
     @property
     def AF(self):

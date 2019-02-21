@@ -62,6 +62,18 @@ class Kron2SumCov(NamedClass, Function):
     def Cn(self):
         return self._Cn
 
+    @property
+    def L(self):
+        Sn, Un = self.Cn.eigh()
+        Cr = self.Cr.feed().value()
+        UnSn = ddot(Un, 1 / sqrt(Sn))
+        Crs = UnSn.T @ Cr @ UnSn
+        Srs, Urs = eigh(Crs)
+        Qx, Sx = self._USx
+        Lc = (UnSn @ Urs).T
+        Lg = Qx.T
+        return kron(Lc, Lg)
+
     def value(self, x0, x1):
         id0, x0, = _input_split(x0)
         id1, x1 = _input_split(x1)
@@ -122,7 +134,7 @@ class Kron2SumCov(NamedClass, Function):
         Lc = (UnSn @ Urs).T
         Lg = Qx.T
         L = kron(Lc, Lg)
-        return L.T @ ddot(D, L @ v)
+        return L.T @ ddot(D, L @ v, left=True)
 
     def logdet(self):
         """ Implements log|K| = - log|D| + N log|Cₙ| """
