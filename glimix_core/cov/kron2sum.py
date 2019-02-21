@@ -174,7 +174,7 @@ class Kron2SumCov(NamedClass, Function):
 
         r0 = (D * diagonal(L @ Kgrad["Cr_Lu"] @ L.T, axis1=1, axis2=2)).sum(1)
         r1 = (D * diagonal(L @ Kgrad["Cn_Lu"] @ L.T, axis1=1, axis2=2)).sum(1)
-        return concatenate([r0, r1])
+        return {"Cr_Lu": r0, "Cn_Lu": r1}
 
 
 def _input_split(x):

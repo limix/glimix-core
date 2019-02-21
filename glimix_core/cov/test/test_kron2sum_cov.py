@@ -1,7 +1,7 @@
 import os
 from os.path import join
 
-from numpy import array, eye, kron, load, stack, zeros
+from numpy import array, eye, kron, load, stack, zeros, concatenate
 from numpy.linalg import slogdet
 from numpy.random import RandomState
 from numpy.testing import assert_, assert_allclose
@@ -126,6 +126,8 @@ def test_kron2sumcov_logdet_gradient():
     def grad(x):
         cov.Cr.Lu = x[:2]
         cov.Cn.Lu = x[2:]
-        return cov.logdet_gradient()
+        D = cov.logdet_gradient()
+        return concatenate((D["Cr_Lu"], D["Cn_Lu"]))
+
 
     assert_allclose(check_grad(func, grad, random.randn(5)), 0, atol=1e-5)

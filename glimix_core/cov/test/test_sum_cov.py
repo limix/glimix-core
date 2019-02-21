@@ -35,4 +35,4 @@ def test_gradient():
 
     cov = SumCov([cov_left, cov_right])
 
-    assert_allclose(check_grad(cov.feed()), 0, atol=6)
+    assert_allclose(check_grad(cov.feed()), 0, atol=1e-4)
