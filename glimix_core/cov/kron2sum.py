@@ -1,9 +1,17 @@
-from numpy import arange, asarray, atleast_2d, dot, eye, kron, log, newaxis, sqrt, stack, concatenate
-# from scipy.linalg import eigh
+from numpy import (
+    arange,
+    asarray,
+    atleast_2d,
+    concatenate,
+    kron,
+    newaxis,
+    sqrt,
+    stack,
+)
 from numpy.linalg import eigh, svd
 
 from glimix_core.util.classes import NamedClass
-from numpy_sugar.linalg import ddot, economic_qs, economic_svd
+from numpy_sugar.linalg import ddot
 from optimix import Function
 
 from .eye import EyeCov
@@ -36,7 +44,7 @@ class Kron2SumCov(NamedClass, Function):
     def G(self, G):
         self._G = atleast_2d(asarray(G, float))
         Q, S, V = svd(G)
-        S = concatenate((S, [0.] * (Q.shape[0] - S.shape[0])))
+        S = concatenate((S, [0.0] * (Q.shape[0] - S.shape[0])))
         self._QSg = Q, S * S
         ids = arange(G.shape[0])[:, newaxis]
         X = concatenate((ids, G), axis=1)
@@ -91,10 +99,6 @@ class Kron2SumCov(NamedClass, Function):
         Lc = (QnSn @ Qrs).T
         Lg = Qg.T
         L = kron(Lc, Lg)
-        Ki = L.T @ ddot(D, L)
-        K0 = _compact_form(self.feed().value())
-        I = eye(self.G.shape[0])
-        K1 = kron(Cr, self.G @ self.G.T) + kron(self.Cn.feed().value(), I)
         return L.T @ ddot(D, L @ v)
 
 
@@ -107,6 +111,7 @@ def _input_split(x):
 
 def _prepend_dims(x, ndims):
     return x.reshape((1,) * ndims + x.shape)
+
 
 def _compact_form(K):
     d = K.shape[0] * K.shape[2]

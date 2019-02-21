@@ -1,8 +1,8 @@
 from numpy import array, eye, kron, stack, zeros
-from numpy.linalg import slogdet
-from numpy.testing import assert_, assert_allclose
+from numpy.random import RandomState
+from numpy.testing import assert_allclose
 
-from glimix_core.cov import FreeFormCov, Kron2SumCov, LRFreeFormCov
+from glimix_core.cov import Kron2SumCov
 from optimix import Assertion
 
 
@@ -39,7 +39,7 @@ def test_kron2sumcov_optimix():
     )
 
 
-def test_kron2sumcov_solve():
+def test_kron2sumcov_compact_value():
     item0 = array([0, -1.5, 1.0, -2.5])
     item1 = array([1, +1.24, 1.0, -1.3])
     item2 = array([2, -1.5, 1.4, 0.0])
@@ -52,19 +52,20 @@ def test_kron2sumcov_solve():
     cov.G = G
     assert_allclose(cov.solve(cov.compact_value()), eye(2 * G.shape[0]), atol=1e-7)
 
-    item0 = array([0, -1.5, 1.0])
-    item1 = array([1, +1.24, 1.0])
-    item2 = array([2, -1.5, 1.4])
 
-    cov = Kron2SumCov(2, 1)
-    cov.Cr.L = [[1], [2]]
-    cov.Cn.L = [[3, 0], [2, 1]]
+def test_kron2sumcov_solve():
+    def test_for_G(G):
+        cov = Kron2SumCov(2, 1)
+        cov.Cr.L = [[1], [2]]
+        cov.Cn.L = [[3, 0], [2, 1]]
+        cov.G = G
+        assert_allclose(cov.solve(cov.compact_value()), eye(2 * G.shape[0]), atol=1e-7)
 
-    G = stack([i[1:] for i in [item0, item1, item2]], axis=0)
-    cov.G = G
-    assert_allclose(cov.solve(cov.compact_value()), eye(2 * G.shape[0]), atol=1e-7)
-
-
-#     # ld = slogdet(cov.compact_value())
-#     # assert_(ld[0] == 1)
-#     # assert_allclose(cov.logdet(), ld[1])
+    random = RandomState(0)
+    test_for_G(random.randn(3, 3))
+    test_for_G(random.randn(3, 2))
+    test_for_G(random.randn(3, 4))
+    g = random.randn(3)
+    test_for_G(stack((g, g), axis=1))
+    test_for_G(stack((g, g, g), axis=1))
+    test_for_G(stack((g, g, g, g), axis=1))
