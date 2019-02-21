@@ -1,6 +1,7 @@
 from numpy import array, eye, kron, stack, zeros
 from numpy.random import RandomState
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_
+from numpy.linalg import slogdet
 
 from glimix_core.cov import Kron2SumCov
 from optimix import Assertion
@@ -59,6 +60,27 @@ def test_kron2sumcov_solve():
         cov.Cn.L = [[3, 0], [2, 1]]
         cov.G = G
         assert_allclose(cov.solve(cov.compact_value()), eye(2 * G.shape[0]), atol=1e-7)
+
+    random = RandomState(0)
+    test_for_G(random.randn(3, 1))
+    test_for_G(random.randn(3, 3))
+    test_for_G(random.randn(3, 2))
+    test_for_G(random.randn(3, 4))
+    g = random.randn(3)
+    test_for_G(stack((g, g), axis=1))
+    test_for_G(stack((g, g, g), axis=1))
+    test_for_G(stack((g, g, g, g), axis=1))
+
+
+def test_kron2sumcov_logdet():
+    def test_for_G(G):
+        cov = Kron2SumCov(2, 1)
+        cov.Cr.L = [[1], [2]]
+        cov.Cn.L = [[3, 0], [2, 1]]
+        cov.G = G
+        K = cov.compact_value()
+        assert_(slogdet(K)[0] == 1)
+        assert_allclose(cov.logdet(), slogdet(K)[1], atol=1e-7)
 
     random = RandomState(0)
     test_for_G(random.randn(3, 1))

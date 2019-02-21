@@ -4,6 +4,7 @@ from numpy import (
     atleast_2d,
     concatenate,
     kron,
+    log,
     newaxis,
     sqrt,
     stack,
@@ -21,6 +22,7 @@ from .lrfree import LRFreeFormCov
 
 class Kron2SumCov(NamedClass, Function):
     """ Implements K = Cᵣ ⊗ GGᵗ + Cₙ ⊗ I. """
+
     def __init__(self, dim, rank):
         items = arange(dim)
         self._Cr = LRFreeFormCov(dim, rank)
@@ -95,7 +97,7 @@ class Kron2SumCov(NamedClass, Function):
         Let X = GGᵗ, K = Cᵣ ⊗ X + Cₙ ⊗ I, and let us use the notation M = Uₘ Sₘ Uₘᵗ for
         eigen decomposition. Let Cᵣ* = Sₙ⁻½ Uₙᵗ Cᵣ Uₙ Sₙ⁻½. We then define
         Lₙ = Uᵣᵗ* Sₙ⁻½ Uₙᵗ* and Lᵣ = Uₓᵗ. The inverse of the covariance matrix is
-        
+
             K⁻¹ = Lᵗ D L,
 
         for which D = (Sᵣ* ⊗ Sₓ + I)⁻¹ is a block diagonal matrix and L = Lₙ ⊗ Lᵣ.
@@ -111,6 +113,22 @@ class Kron2SumCov(NamedClass, Function):
         Lg = Qx.T
         L = kron(Lc, Lg)
         return L.T @ ddot(D, L @ v)
+
+    def logdet(self):
+        """ log|K| = - log|D| + N log|Cₙ| """
+        from numpy.linalg import slogdet
+
+        Sn, Un = eigh(self.Cn.feed().value())
+        Cr = self.Cr.feed().value()
+        UnSn = ddot(Un, 1 / sqrt(Sn))
+        Crs = UnSn.T @ Cr @ UnSn
+        Srs, Urs = eigh(Crs)
+        Qx, Sx = self._USx
+        D = 1 / (kron(Srs, Sx) + 1)
+        N = self.G.shape[0]
+        logdetC = slogdet(self.Cn.feed().value())
+        assert logdetC[0] == 1
+        return -log(D).sum() + N * logdetC[1]
 
 
 def _input_split(x):
