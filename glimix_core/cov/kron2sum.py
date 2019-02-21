@@ -102,7 +102,7 @@ class Kron2SumCov(NamedClass, Function):
 
         for which D = (Sᵣ* ⊗ Sₓ + I)⁻¹ is a block diagonal matrix and L = Lₙ ⊗ Lᵣ.
         """
-        Sn, Un = eigh(self.Cn.feed().value())
+        Sn, Un = self.Cn.eigh()
         Cr = self.Cr.feed().value()
         UnSn = ddot(Un, 1 / sqrt(Sn))
         Crs = UnSn.T @ Cr @ UnSn
