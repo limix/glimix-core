@@ -67,6 +67,17 @@ class KronMean(NamedClass, Function):
         r""" A ⊗ F. """
         return kron(self.A, self.F)
 
+    def compact_value(self):
+        return self.AF @ self.variables().get("vecB").value
+
+    def compact_gradient(self):
+        # grad = self.feed().gradient()
+        # assert grad["vecB"].shape[0] == 1
+        # grad["vecB"] = _compact_form_grad(grad["vecB"])
+        return {"vecB": self.AF}
+        # grad["vecB"] = grad["vecB"][0, :]
+        # return grad
+
     def _value(self, A, F):
         r""" reshape((A ⊗ F) vec(B), n, p) """
         b = self.variables().get("vecB").value
@@ -136,3 +147,21 @@ class KronMean(NamedClass, Function):
         mat = format(self.B)
         msg += "  B: " + "\n     ".join(mat.split("\n"))
         return msg
+
+
+# def _compact_form(x):
+#     d = x.shape[0] * x.shape[2]
+#     return x.transpose((2, 0, 3, 1)).reshape(d, d)
+
+
+# def _compact_form_grad(x):
+#     breakpoint()
+#     assert x.shape[0] == 1
+#     x = x[0, ...]
+#     nparams = x.shape[2]
+#     return x.ravel(order="F").reshape((-1, nparams), )
+#     # x = x.transpose([2, 0, 1])
+#     # mats = []
+#     # for i in x:
+#     #     mats.append(_compact_form(i))
+#     # return stack(mats, axis=0)

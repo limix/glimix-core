@@ -5,13 +5,14 @@ from numpy import (
     diag_indices_from,
     dot,
     exp,
+    eye,
     inf,
     log,
     ones,
     stack,
     tril_indices_from,
     zeros,
-    zeros_like,eye
+    zeros_like,
 )
 from numpy.linalg import cholesky
 
@@ -56,9 +57,6 @@ class FreeFormCov(NamedClass, Function):
         self.variables().get("Llogd").bounds = [(log(epsilon.small * 1000), +15)] * dim
         NamedClass.__init__(self)
 
-    # def economic_qs(self):
-    #     return economic_qs(self.feed().value())
-
     def eigh(self):
         from numpy.linalg import eigh
 
@@ -85,6 +83,7 @@ class FreeFormCov(NamedClass, Function):
 
     def logdet(self):
         from numpy.linalg import slogdet
+
         K = self.feed().value()
         ldet = slogdet(K)
         assert ldet[0] == 1.0
