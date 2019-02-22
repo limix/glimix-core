@@ -11,7 +11,7 @@ from numpy import (
     stack,
     tril_indices_from,
     zeros,
-    zeros_like,
+    zeros_like,eye
 )
 
 from numpy_sugar import epsilon
@@ -49,7 +49,7 @@ class FreeFormCov(NamedClass, Function):
         self._L[self._tril1] = 1
         self._L[self._diag] = 0
         self._min_eigval = epsilon.small
-        # self._min_eigval = 1e-4
+        self._epsilon = epsilon.small
         Function.__init__(
             self, Llow=Vector(ones(tsize - dim)), Llogd=Vector(zeros(dim))
         )
@@ -62,13 +62,13 @@ class FreeFormCov(NamedClass, Function):
     def eigh(self):
         from numpy.linalg import eigh
 
+        # TODO: speed this up
         Sn, Un = eigh(self.feed().value())
-        Sn = clip(Sn, self._min_eigval, inf)
+        # Sn = clip(Sn, self._min_eigval, inf)
         return Sn, Un
 
     @property
     def L(self):
-        """Cholesky decomposition of the covariance matrix."""
         self._L[self._tril1] = self.variables().get("Llow").value
         self._L[self._diag] = exp(self.variables().get("Llogd").value)
         return self._L
@@ -80,7 +80,12 @@ class FreeFormCov(NamedClass, Function):
         self.variables().get("Llogd").value = log(self._L[self._diag])
 
     def logdet(self):
-        return 2 * self.variables().get("Llogd").value.sum()
+        from numpy.linalg import slogdet
+        K = self.feed().value()
+        ldet = slogdet(K)
+        assert ldet[0] == 1.0
+        # ldet = 2 * self.variables().get("Llogd").value.sum()
+        return ldet[1]
 
     def value(self, x0, x1):
         r"""Covariance function evaluated at ``(x0, x1)``.
@@ -98,7 +103,11 @@ class FreeFormCov(NamedClass, Function):
             Submatrix of :math:`\mathrm L\mathrm L^\intercal`, row and
             column-indexed by ``x0`` and ``x1``.
         """
-        return dot(self.L, self.L.T)[x0, ...][..., x1]
+        K = dot(self.L, self.L.T)[x0, ...][..., x1]
+        if K.ndim == 2 and K.shape[0] == K.shape[1]:
+            # TODO: fix this hacky
+            return K + self._epsilon * eye(K.shape[0])
+        return K
 
     def gradient(self, x0, x1):
         r"""Derivative of the covariance function evaluated at ``(x0, x1)``.
