@@ -53,7 +53,7 @@ class FreeFormCov(NamedClass, Function):
         Function.__init__(
             self, Llow=Vector(ones(tsize - dim)), Llogd=Vector(zeros(dim))
         )
-        self.variables().get("Llogd").bounds = [(log(epsilon.small * 1000), +10)] * dim
+        self.variables().get("Llogd").bounds = [(log(epsilon.small * 1000), +15)] * dim
         NamedClass.__init__(self)
 
     # def economic_qs(self):
