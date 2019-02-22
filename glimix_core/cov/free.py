@@ -1,9 +1,19 @@
 from __future__ import division
 
-from numpy import dot, ones, stack, tril_indices_from, zeros, zeros_like, diag_indices_from
+from numpy import (
+    diag_indices_from,
+    dot,
+    exp,
+    log,
+    ones,
+    stack,
+    tril_indices_from,
+    zeros,
+    zeros_like,
+)
 
-from numpy_sugar.linalg import economic_qs
 from numpy_sugar import epsilon
+from numpy_sugar.linalg import economic_qs
 from optimix import Function, Vector
 
 from ..util.classes import NamedClass
@@ -67,9 +77,13 @@ class FreeFormCov(NamedClass, Function):
         tsize = ((dim + 1) * dim) // 2
         self._L = zeros((dim, dim))
         self._tril = tril_indices_from(self._L)
-        self._L[self._tril] = 1
+        self._tril1 = tril_indices_from(self._L, k=-1)
+        self._diag = diag_indices_from(self._L)
+        self._L[self._tril1] = 1
+        self._L[self._diag] = 0
         self._jitter = epsilon.tiny
-        Function.__init__(self, Lu=Vector(ones(tsize)))
+        Function.__init__(self, Llow=Vector(ones(tsize - dim)), Llogd=Vector(zeros(dim)))
+        self.variables().get("Llogd").bounds = (-20.0, +10)
         NamedClass.__init__(self)
 
     def economic_qs(self):
@@ -85,22 +99,23 @@ class FreeFormCov(NamedClass, Function):
     @property
     def L(self):
         """Cholesky decomposition of the covariance matrix."""
-        self._L[self._tril] = self.variables().get("Lu").value
+        self._L[self._tril1] = self.variables().get("Llow").value
+        self._L[self._diag] = exp(self.variables().get("Llogd").value)
         return self._L
 
     @L.setter
     def L(self, value):
         self._L[:] = value
-        self.variables().get("Lu").value = self._L[self._tril]
+        self.variables().get("Llow").value = self._L[self._tril1]
+        self.variables().get("Llogd").value = log(self._L[self._diag])
 
-    @property
-    def Lu(self):
-        """Cholesky decomposition of the covariance matrix in flat form."""
-        return self.variables().get("Lu").value
+    # @property
+    # def Lu(self):
+    #     return self.variables().get("Lu").value
 
-    @Lu.setter
-    def Lu(self, value):
-        self.variables().get("Lu").value = value
+    # @Lu.setter
+    # def Lu(self, value):
+    #     self.variables().get("Lu").value = value
 
     def value(self, x0, x1):
         r"""Covariance function evaluated at ``(x0, x1)``.
@@ -141,16 +156,22 @@ class FreeFormCov(NamedClass, Function):
         """
         L = self.L
         Lo = zeros_like(L)
-        grad = []
+        grad = {"Llow": [], "Llogd": []}
         for ii in range(len(self._tril[0])):
             row = self._tril[0][ii]
             col = self._tril[1][ii]
-            Lo[row, col] = 1
-            grad.append(dot(Lo, L.T) + dot(L, Lo.T))
+            if row == col:
+                Lo[row, col] = L[row, col]
+                grad["Llogd"].append(dot(Lo, L.T) + dot(L, Lo.T))
+            else:
+                Lo[row, col] = 1
+                grad["Llow"].append(dot(Lo, L.T) + dot(L, Lo.T))
             Lo[row, col] = 0
 
-        grad = [g[x0, ...][..., x1] for g in grad]
-        return dict(Lu=stack(grad, axis=-1))
+        grad["Llow"] = [g[x0, ...][..., x1] for g in grad["Llow"]]
+        grad["Llogd"] = [g[x0, ...][..., x1] for g in grad["Llogd"]]
+        return dict(Llow=stack(grad["Llow"], axis=-1),
+                    Llogd=stack(grad["Llogd"], axis=-1))
 
     def __str__(self):
         tname = type(self).__name__

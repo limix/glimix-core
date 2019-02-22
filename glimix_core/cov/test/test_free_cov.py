@@ -1,6 +1,6 @@
 from __future__ import division
 
-from numpy import zeros
+from numpy import exp, ones, zeros, log
 from numpy.testing import assert_allclose
 
 from glimix_core.cov import FreeFormCov
@@ -14,11 +14,14 @@ def test_freeform_optimix():
     cov = FreeFormCov(2)
     cov.L = [[1, 0], [2, 1]]
 
-    a = Assertion(lambda: cov, item0, item1, 0.0, Lu=zeros(3))
+    a = Assertion(lambda: cov, item0, item1, 0.0, Llow=ones(2), Llogd=zeros(1))
 
     a.assert_layout()
     a.assert_gradient()
 
-    assert_allclose(cov.Lu, [1, 2, 1])
-    cov.Lu = [1, 1, 1]
-    assert_allclose(cov.Lu, [1, 1, 1])
+    cov.variables().get("Llow").value = [2]
+    cov.variables().get("Llogd").value = [log(0.5), log(1.5)]
+    assert_allclose(cov.L, [[0.5, 0], [2, 1.5]])
+
+    cov.L = [[3, 0], [2, 1]]
+    assert_allclose(cov.L, [[3, 0], [2, 1]])
