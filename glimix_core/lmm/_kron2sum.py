@@ -23,7 +23,6 @@ class Kron2Sum(Function):
         guaranteed by our implementation to be full rank.
         The parameters of this model are the matrices 𝐁, Cᵣ, and Cₙ.
         """
-        Function.__init__(self)
         Y = asfortranarray(Y)
         self._Y = Y
         self._y = Y.ravel(order="F")
@@ -34,6 +33,9 @@ class Kron2Sum(Function):
         self._mean = KronMean(F.shape[1], Y.shape[1])
         self._mean.A = A
         self._mean.F = F
+        Cr_Lu = self._cov.variables().get("Cr_Lu")
+        Cn_Lu = self._cov.variables().get("Cn_Lu")
+        Function.__init__(self, Cr_Lu=Cr_Lu, Cn_Lu=Cn_Lu)
         self.set_nodata()
 
     @property
@@ -59,6 +61,13 @@ class Kron2Sum(Function):
         """ Number of covariates. """
         return self._F.shape[1]
 
+    def value(self):
+        return self.lml()
+
+    def gradient(self):
+        grad = self.lml_gradient()
+        return grad
+
     def lml(self):
         r"""Log of the marginal likelihood.
 
@@ -67,6 +76,7 @@ class Kron2Sum(Function):
         float
             Log of the marginal likelihood.
         """
+        breakpoint()
         np = self.nsamples * self.ntraits
         lml = -np * log2pi - self._cov.logdet()
 

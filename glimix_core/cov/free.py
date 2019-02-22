@@ -1,6 +1,6 @@
 from __future__ import division
 
-from numpy import dot, ones, stack, tril_indices_from, zeros, zeros_like
+from numpy import dot, ones, stack, tril_indices_from, zeros, zeros_like, diag_indices_from
 
 from numpy_sugar.linalg import economic_qs
 from numpy_sugar import epsilon

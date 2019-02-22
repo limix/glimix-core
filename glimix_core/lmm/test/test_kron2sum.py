@@ -71,4 +71,5 @@ def test_kron2sum_lmm_gradient():
 #     F = random.randn(5, 2)
 #     G = random.randn(5, 4)
 #     lmm = Kron2Sum(Y, A, F, G)
+#     lml0 = lmm.lml()
 #     lmm.fit()
