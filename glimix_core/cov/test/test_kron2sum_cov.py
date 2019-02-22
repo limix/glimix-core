@@ -1,7 +1,7 @@
 import os
 from os.path import join
 
-from numpy import array, eye, kron, load, stack, zeros, concatenate
+from numpy import array, concatenate, eye, kron, load, log, stack, zeros
 from numpy.linalg import slogdet
 from numpy.random import RandomState
 from numpy.testing import assert_, assert_allclose
@@ -58,7 +58,7 @@ def test_kron2sumcov_compact_value():
 
 
 def test_kron2sumcov_solve():
-    def test_for_G(G):
+    def check_for_G(G):
         cov = Kron2SumCov(2, 1)
         cov.Cr.L = [[1], [2]]
         cov.Cn.L = [[3, 0], [2, 1]]
@@ -66,18 +66,18 @@ def test_kron2sumcov_solve():
         assert_allclose(cov.solve(cov.compact_value()), eye(2 * G.shape[0]), atol=1e-7)
 
     random = RandomState(0)
-    test_for_G(random.randn(3, 1))
-    test_for_G(random.randn(3, 3))
-    test_for_G(random.randn(3, 2))
-    test_for_G(random.randn(3, 4))
+    check_for_G(random.randn(3, 1))
+    check_for_G(random.randn(3, 3))
+    check_for_G(random.randn(3, 2))
+    check_for_G(random.randn(3, 4))
     g = random.randn(3)
-    test_for_G(stack((g, g), axis=1))
-    test_for_G(stack((g, g, g), axis=1))
-    test_for_G(stack((g, g, g, g), axis=1))
+    check_for_G(stack((g, g), axis=1))
+    check_for_G(stack((g, g, g), axis=1))
+    check_for_G(stack((g, g, g, g), axis=1))
 
 
 def test_kron2sumcov_logdet():
-    def test_for_G(G):
+    def check_for_G(G):
         cov = Kron2SumCov(2, 1)
         cov.Cr.L = [[1], [2]]
         cov.Cn.L = [[3, 0], [2, 1]]
@@ -87,23 +87,26 @@ def test_kron2sumcov_logdet():
         assert_allclose(cov.logdet(), slogdet(K)[1], atol=1e-7)
 
     random = RandomState(0)
-    test_for_G(random.randn(3, 1))
-    test_for_G(random.randn(3, 3))
-    test_for_G(random.randn(3, 2))
-    test_for_G(random.randn(3, 4))
+    check_for_G(random.randn(3, 1))
+    check_for_G(random.randn(3, 3))
+    check_for_G(random.randn(3, 2))
+    check_for_G(random.randn(3, 4))
     g = random.randn(3)
-    test_for_G(stack((g, g), axis=1))
-    test_for_G(stack((g, g, g), axis=1))
-    test_for_G(stack((g, g, g, g), axis=1))
+    check_for_G(stack((g, g), axis=1))
+    check_for_G(stack((g, g, g), axis=1))
+    check_for_G(stack((g, g, g, g), axis=1))
     folder = os.path.dirname(os.path.realpath(__file__))
 
     G = load(join(folder, "G.npy"))
     Cr_Lu = load(join(folder, "Cr_Lu.npy"))
     Cn_Lu = load(join(folder, "Cn_Lu.npy"))
+    Cn_Llow = [Cn_Lu[1]]
+    Cn_Llogd = [log(Cn_Lu[0]), log(Cn_Lu[2])]
     cov = Kron2SumCov(2, 1)
     cov.G = G
-    cov.Cr.Lu = Cr_Lu
-    cov.Cn.Lu = Cn_Lu
+    cov.Cr.variables().get("Lu").value = Cr_Lu
+    cov.Cn.variables().get("Llow").value = Cn_Llow
+    cov.Cn.variables().get("Llogd").value = Cn_Llogd
     # Cn ill conditioned, therefore cov.logdet approaches -inf
     # So the smaller its value the better is the approximation
     assert_(cov.logdet() < -179)
@@ -119,15 +122,16 @@ def test_kron2sumcov_logdet_gradient():
     cov.G = random.randn(3, 2)
 
     def func(x):
-        cov.Cr.Lu = x[:2]
-        cov.Cn.Lu = x[2:]
+        cov.Cr.variables().get("Lu").value = x[:2]
+        cov.Cn.variables().get("Llow").value = x[2:3]
+        cov.Cn.variables().get("Llogd").value = x[3:]
         return cov.logdet()
 
     def grad(x):
-        cov.Cr.Lu = x[:2]
-        cov.Cn.Lu = x[2:]
+        cov.Cr.variables().get("Lu").value = x[:2]
+        cov.Cn.variables().get("Llow").value = x[2:3]
+        cov.Cn.variables().get("Llogd").value = x[3:]
         D = cov.logdet_gradient()
-        return concatenate((D["Cr_Lu"], D["Cn_Lu"]))
-
+        return concatenate((D["Cr_Lu"], D["Cn_Llow"], D["Cn_Llogd"]))
 
     assert_allclose(check_grad(func, grad, random.randn(5)), 0, atol=1e-5)

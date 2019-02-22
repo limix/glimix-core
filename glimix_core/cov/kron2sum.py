@@ -33,8 +33,9 @@ class Kron2SumCov(NamedClass, Function):
         self._G = None
         self._eye = EyeCov()
         Cr_Lu = self._Cr.variables().get("Lu")
-        Cn_Lu = self._Cn.variables().get("Lu")
-        Function.__init__(self, Cr_Lu=Cr_Lu, Cn_Lu=Cn_Lu)
+        Cn_Llow = self._Cn.variables().get("Llow")
+        Cn_Llogd = self._Cn.variables().get("Llogd")
+        Function.__init__(self, Cr_Lu=Cr_Lu, Cn_Llow=Cn_Llow, Cn_Llogd=Cn_Llogd)
         NamedClass.__init__(self)
 
     def _I(self, items0, items1):
@@ -94,7 +95,8 @@ class Kron2SumCov(NamedClass, Function):
 
         Kgrad = self.gradient(Gids, Gids)
         Kgrad["Cr_Lu"] = _compact_form_grad(Kgrad["Cr_Lu"])
-        Kgrad["Cn_Lu"] = _compact_form_grad(Kgrad["Cn_Lu"])
+        Kgrad["Cn_Llow"] = _compact_form_grad(Kgrad["Cn_Llow"])
+        Kgrad["Cn_Llogd"] = _compact_form_grad(Kgrad["Cn_Llogd"])
 
         return Kgrad
 
@@ -108,10 +110,14 @@ class Kron2SumCov(NamedClass, Function):
         Cr_Lu = self._Cr.feed().gradient()["Lu"]
         Cr_Lu = _prepend_dims(Cr_Lu, X.ndim)
 
-        Cn_Lu = self._Cn.feed().gradient()["Lu"]
-        Cn_Lu = _prepend_dims(Cn_Lu, X.ndim)
+        Cn_Llow = self._Cn.feed().gradient()["Llow"]
+        Cn_Llow = _prepend_dims(Cn_Llow, X.ndim)
 
-        return {"Cr_Lu": kron(X, Cr_Lu.T).T, "Cn_Lu": kron(I, Cn_Lu.T).T}
+        Cn_Llogd = self._Cn.feed().gradient()["Llogd"]
+        Cn_Llogd = _prepend_dims(Cn_Llogd, X.ndim)
+
+        return {"Cr_Lu": kron(X, Cr_Lu.T).T, "Cn_Llow": kron(I, Cn_Llow.T).T,
+                "Cn_Llogd": kron(I, Cn_Llogd.T).T}
 
     def solve(self, v):
         """ Implements the product K⁻¹v.
@@ -173,8 +179,9 @@ class Kron2SumCov(NamedClass, Function):
         Kgrad = self.compact_gradient()
 
         r0 = (D * diagonal(L @ Kgrad["Cr_Lu"] @ L.T, axis1=1, axis2=2)).sum(1)
-        r1 = (D * diagonal(L @ Kgrad["Cn_Lu"] @ L.T, axis1=1, axis2=2)).sum(1)
-        return {"Cr_Lu": r0, "Cn_Lu": r1}
+        r1 = (D * diagonal(L @ Kgrad["Cn_Llow"] @ L.T, axis1=1, axis2=2)).sum(1)
+        r2 = (D * diagonal(L @ Kgrad["Cn_Llogd"] @ L.T, axis1=1, axis2=2)).sum(1)
+        return {"Cr_Lu": r0, "Cn_Llow": r1, "Cn_Llogd": r2}
 
 
 def _input_split(x):
