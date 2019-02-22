@@ -26,11 +26,15 @@ def test_kron2sum_lmm():
     m = vec(lmm._mean.feed().value())
     assert_allclose(lmm.lml(), st.multivariate_normal(m, K).logpdf(y))
 
-    lmm.cov.Cr.Lu = random.randn(3)
+    lmm.variables().get("Cr_Lu").value = random.randn(3)
     K = lmm.cov.compact_value()
     assert_allclose(lmm.lml(), st.multivariate_normal(m, K).logpdf(y))
 
-    lmm.cov.Cn.Lu = random.randn(6)
+    lmm.variables().get("Cn_Llow").value = random.randn(3)
+    K = lmm.cov.compact_value()
+    assert_allclose(lmm.lml(), st.multivariate_normal(m, K).logpdf(y))
+
+    lmm.variables().get("Cn_Llogd").value = random.randn(3)
     K = lmm.cov.compact_value()
     assert_allclose(lmm.lml(), st.multivariate_normal(m, K).logpdf(y))
 
@@ -44,23 +48,24 @@ def test_kron2sum_lmm_gradient():
     G = random.randn(5, 4)
     lmm = Kron2Sum(Y, A, F, G)
     lmm.mean.B = random.randn(2, 3)
-    lmm.cov.Cr.Lu = random.randn(3)
-    lmm.cov.Cn.Lu = random.randn(6)
+    lmm.variables().get("Cr_Lu").value = random.randn(3)
+    lmm.variables().get("Cn_Llow").value = random.randn(3)
+    lmm.variables().get("Cn_Llogd").value = random.randn(3)
 
     def func(x):
-        n = lmm.cov.Cr.Lu.shape[0]
-        lmm.cov.Cr.Lu = x[:n]
-        lmm.cov.Cn.Lu = x[n:]
+        lmm.variables().get("Cr_Lu").value = x[:3]
+        lmm.variables().get("Cn_Llow").value = x[3:6]
+        lmm.variables().get("Cn_Llogd").value = x[6:]
         return lmm.lml()
 
     def grad(x):
-        n = lmm.cov.Cr.Lu.shape[0]
-        lmm.cov.Cr.Lu = x[:n]
-        lmm.cov.Cn.Lu = x[n:]
+        lmm.variables().get("Cr_Lu").value = x[:3]
+        lmm.variables().get("Cn_Llow").value = x[3:6]
+        lmm.variables().get("Cn_Llogd").value = x[6:]
         D = lmm.lml_gradient()
-        return concatenate((D["Cr_Lu"], D["Cn_Lu"]))
+        return concatenate((D["Cr_Lu"], D["Cn_Llow"], D["Cn_Llogd"]))
 
-    assert_allclose(check_grad(func, grad, random.randn(9), epsilon=1e-7), 0, atol=1e-3)
+    assert_allclose(check_grad(func, grad, random.randn(9), epsilon=1e-8), 0, atol=1e-2)
 
 
 # def test_kron2sum_lmm_fit():

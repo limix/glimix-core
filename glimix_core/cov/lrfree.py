@@ -24,42 +24,7 @@ class LRFreeFormCov(NamedClass, Function):
     Example
     -------
 
-    .. doctest::
-
-        >>> from glimix_core.cov import FreeFormCov
-        >>>
-        >>> cov = FreeFormCov(2)
-        >>> print(cov.value([0, 1], [0, 1]))
-        [[1. 1.]
-         [1. 2.]]
-        >>> print(cov.L)
-        [[1. 0.]
-         [1. 1.]]
-        >>> print(cov.Lu)
-        [1. 1. 1.]
-        >>> g = cov.gradient([0, 1], [0, 1])
-        >>> print(g['Lu'].shape)
-        (2, 2, 3)
-        >>> print(g['Lu'])
-        [[[2. 0. 0.]
-          [1. 1. 0.]]
-        <BLANKLINE>
-         [[1. 1. 0.]
-          [0. 2. 2.]]]
-        >>> cov.Lu[1] = -2
-        >>> print(cov.L)
-        [[ 1.  0.]
-         [-2.  1.]]
-        >>> print(cov.value([0, 1], [0, 1]))
-        [[ 1. -2.]
-         [-2.  5.]]
-        >>> print(cov)
-        FreeFormCov()
-          Lu: [ 1. -2.  1.]
-        >>> cov.name = "covname"
-        >>> print(cov)
-        FreeFormCov(): covname
-          Lu: [ 1. -2.  1.]
+    TODO: get example from lrfree.py
     """
 
     def __init__(self, m, n):
@@ -149,3 +114,38 @@ class LRFreeFormCov(NamedClass, Function):
         msg += "\n"
         msg += "  Lu: {}".format(self.Lu)
         return msg
+
+    # .. doctest::
+
+    #     >>> from glimix_core.cov import FreeFormCov
+    #     >>>
+    #     >>> cov = FreeFormCov(2)
+    #     >>> print(cov.value([0, 1], [0, 1]))
+    #     [[1. 1.]
+    #      [1. 2.]]
+    #     >>> print(cov.L)
+    #     [[1. 0.]
+    #      [1. 1.]]
+    #     >>> g = cov.gradient([0, 1], [0, 1])
+    #     >>> print(g['Lu'].shape)
+    #     (2, 2, 3)
+    #     >>> print(g['Lu'])
+    #     [[[2. 0. 0.]
+    #       [1. 1. 0.]]
+    #     <BLANKLINE>
+    #      [[1. 1. 0.]
+    #       [0. 2. 2.]]]
+    #     >>> cov.Lu[1] = -2
+    #     >>> print(cov.L)
+    #     [[ 1.  0.]
+    #      [-2.  1.]]
+    #     >>> print(cov.value([0, 1], [0, 1]))
+    #     [[ 1. -2.]
+    #      [-2.  5.]]
+    #     >>> print(cov)
+    #     FreeFormCov()
+    #       Lu: [ 1. -2.  1.]
+    #     >>> cov.name = "covname"
+    #     >>> print(cov)
+    #     FreeFormCov(): covname
+    #       Lu: [ 1. -2.  1.]

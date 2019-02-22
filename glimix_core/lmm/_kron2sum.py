@@ -34,8 +34,9 @@ class Kron2Sum(Function):
         self._mean.A = A
         self._mean.F = F
         Cr_Lu = self._cov.variables().get("Cr_Lu")
-        Cn_Lu = self._cov.variables().get("Cn_Lu")
-        Function.__init__(self, Cr_Lu=Cr_Lu, Cn_Lu=Cn_Lu)
+        Cn_Llow = self._cov.variables().get("Cn_Llow")
+        Cn_Llogd = self._cov.variables().get("Cn_Llogd")
+        Function.__init__(self, Cr_Lu=Cr_Lu, Cn_Llow=Cn_Llow, Cn_Llogd=Cn_Llogd)
         self.set_nodata()
 
     @property
@@ -76,7 +77,6 @@ class Kron2Sum(Function):
         float
             Log of the marginal likelihood.
         """
-        breakpoint()
         np = self.nsamples * self.ntraits
         lml = -np * log2pi - self._cov.logdet()
 
@@ -94,7 +94,7 @@ class Kron2Sum(Function):
         m = vec(self._mean.feed().value())
         Kim = self._cov.solve(m)
         grad = {}
-        for var in ["Cr_Lu", "Cn_Lu"]:
+        for var in ["Cr_Lu", "Cn_Llow", "Cn_Llogd"]:
             grad[var] = -ld_grad[var]
             grad[var] += Kiy.T @ dK[var] @ Kiy
             grad[var] -= 2 * (Kim.T @ dK[var] @ Kiy)

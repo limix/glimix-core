@@ -34,42 +34,7 @@ class FreeFormCov(NamedClass, Function):
     Example
     -------
 
-    .. doctest::
-
-        >>> from glimix_core.cov import FreeFormCov
-        >>>
-        >>> cov = FreeFormCov(2)
-        >>> print(cov.value([0, 1], [0, 1]))
-        [[1. 1.]
-         [1. 2.]]
-        >>> print(cov.L)
-        [[1. 0.]
-         [1. 1.]]
-        >>> print(cov.Lu)
-        [1. 1. 1.]
-        >>> g = cov.gradient([0, 1], [0, 1])
-        >>> print(g['Lu'].shape)
-        (2, 2, 3)
-        >>> print(g['Lu'])
-        [[[2. 0. 0.]
-          [1. 1. 0.]]
-        <BLANKLINE>
-         [[1. 1. 0.]
-          [0. 2. 2.]]]
-        >>> cov.Lu[1] = -2
-        >>> print(cov.L)
-        [[ 1.  0.]
-         [-2.  1.]]
-        >>> print(cov.value([0, 1], [0, 1]))
-        [[ 1. -2.]
-         [-2.  5.]]
-        >>> print(cov)
-        FreeFormCov()
-          Lu: [ 1. -2.  1.]
-        >>> cov.name = "covname"
-        >>> print(cov)
-        FreeFormCov(): covname
-          Lu: [ 1. -2.  1.]
+    TODO: get  example from free.py
     """
 
     def __init__(self, dim):
@@ -82,7 +47,9 @@ class FreeFormCov(NamedClass, Function):
         self._L[self._tril1] = 1
         self._L[self._diag] = 0
         self._jitter = epsilon.tiny
-        Function.__init__(self, Llow=Vector(ones(tsize - dim)), Llogd=Vector(zeros(dim)))
+        Function.__init__(
+            self, Llow=Vector(ones(tsize - dim)), Llogd=Vector(zeros(dim))
+        )
         self.variables().get("Llogd").bounds = (-20.0, +10)
         NamedClass.__init__(self)
 
@@ -108,14 +75,6 @@ class FreeFormCov(NamedClass, Function):
         self._L[:] = value
         self.variables().get("Llow").value = self._L[self._tril1]
         self.variables().get("Llogd").value = log(self._L[self._diag])
-
-    # @property
-    # def Lu(self):
-    #     return self.variables().get("Lu").value
-
-    # @Lu.setter
-    # def Lu(self, value):
-    #     self.variables().get("Lu").value = value
 
     def value(self, x0, x1):
         r"""Covariance function evaluated at ``(x0, x1)``.
@@ -170,8 +129,9 @@ class FreeFormCov(NamedClass, Function):
 
         grad["Llow"] = [g[x0, ...][..., x1] for g in grad["Llow"]]
         grad["Llogd"] = [g[x0, ...][..., x1] for g in grad["Llogd"]]
-        return dict(Llow=stack(grad["Llow"], axis=-1),
-                    Llogd=stack(grad["Llogd"], axis=-1))
+        return dict(
+            Llow=stack(grad["Llow"], axis=-1), Llogd=stack(grad["Llogd"], axis=-1)
+        )
 
     def __str__(self):
         tname = type(self).__name__
@@ -181,3 +141,40 @@ class FreeFormCov(NamedClass, Function):
         msg += "\n"
         msg += "  Lu: {}".format(self.Lu)
         return msg
+
+    # .. doctest::
+
+    #     >>> from glimix_core.cov import FreeFormCov
+    #     >>>
+    #     >>> cov = FreeFormCov(2)
+    #     >>> print(cov.value([0, 1], [0, 1]))
+    #     [[1. 1.]
+    #      [1. 2.]]
+    #     >>> print(cov.L)
+    #     [[1. 0.]
+    #      [1. 1.]]
+    #     >>> print(cov.Lu)
+    #     [1. 1. 1.]
+    #     >>> g = cov.gradient([0, 1], [0, 1])
+    #     >>> print(g['Lu'].shape)
+    #     (2, 2, 3)
+    #     >>> print(g['Lu'])
+    #     [[[2. 0. 0.]
+    #       [1. 1. 0.]]
+    #     <BLANKLINE>
+    #      [[1. 1. 0.]
+    #       [0. 2. 2.]]]
+    #     >>> cov.Lu[1] = -2
+    #     >>> print(cov.L)
+    #     [[ 1.  0.]
+    #      [-2.  1.]]
+    #     >>> print(cov.value([0, 1], [0, 1]))
+    #     [[ 1. -2.]
+    #      [-2.  5.]]
+    #     >>> print(cov)
+    #     FreeFormCov()
+    #       Lu: [ 1. -2.  1.]
+    #     >>> cov.name = "covname"
+    #     >>> print(cov)
+    #     FreeFormCov(): covname
+    #       Lu: [ 1. -2.  1.]
