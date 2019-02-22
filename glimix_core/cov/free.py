@@ -49,13 +49,11 @@ class FreeFormCov(NamedClass, Function):
         self._diag = diag_indices_from(self._L)
         self._L[self._tril1] = 1
         self._L[self._diag] = 0
-        # self._min_eigval = epsilon.small
-        # self._epsilon = epsilon.small
-        self._epsilon = 1e-4
+        self._epsilon = epsilon.small * 1000
         Function.__init__(
             self, Llow=Vector(ones(tsize - dim)), Llogd=Vector(zeros(dim))
         )
-        self.variables().get("Llogd").bounds = [(log(1e-8), +10)] * dim
+        self.variables().get("Llogd").bounds = [(log(epsilon.small * 1000), +10)] * dim
         NamedClass.__init__(self)
 
     # def economic_qs(self):

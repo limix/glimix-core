@@ -24,7 +24,7 @@ def test_kron2sumcov_optimix():
     assert_allclose(K, [[-7.74, -5.16], [-5.16, -3.44]])
 
     K = cov.value(item0, item0)
-    assert_allclose(K, [[30.25, 21.5], [21.5, 18.0]])
+    assert_allclose(K, [[30.250014901161194, 21.5], [21.5, 18.000014901161194]])
 
     K = cov.value(item0, item2)
     assert_allclose(K, [[29.25, 19.5], [19.5, 13.0]])
@@ -107,10 +107,7 @@ def test_kron2sumcov_logdet():
     cov.Cr.variables().get("Lu").value = Cr_Lu
     cov.Cn.variables().get("Llow").value = Cn_Llow
     cov.Cn.variables().get("Llogd").value = Cn_Llogd
-    # Cn ill conditioned, therefore cov.logdet approaches -inf
-    # So the smaller its value the better is the approximation
-    # assert_(cov.logdet() < -179)
-    assert_(cov.logdet() < -80)
+    assert_allclose(cov.logdet(), -47.892601354188976)
 
 
 def test_kron2sumcov_logdet_gradient():

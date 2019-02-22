@@ -68,10 +68,7 @@ def test_kron2sum_lmm_gradient():
     assert_allclose(check_grad(func, grad, random.randn(9), epsilon=1e-8), 0, atol=1e-2)
 
 
-def test_kron2sum_lmm_fit():
-    from numpy import exp
-    from numpy.linalg import eigvalsh
-
+def test_kron2sum_lmm_fit_ill_conditioned():
     random = RandomState(0)
     Y = random.randn(5, 3)
     A = random.randn(3, 3)
@@ -80,9 +77,26 @@ def test_kron2sum_lmm_fit():
     G = random.randn(5, 4)
     lmm = Kron2Sum(Y, A, F, G)
     lml0 = lmm.lml()
-    lmm.fit()
-    print("------------------------------------------")
-    print(lmm.cov.Cn.variables().get("Llow"), exp(lmm.cov.Cn.variables().get("Llogd")))
-    print(lmm.cov.Cn.feed().value())
-    print(sorted(eigvalsh(lmm.cov.Cn.feed().value())))
-    pass
+    lmm.fit(verbose=False)
+    lml1 = lmm.lml()
+    assert_allclose([lml0, lml1], [-26.65532748835924, -13.870685577153672])
+    grad = lmm.lml_gradient()
+    vars = grad.keys()
+    assert_allclose(concatenate([grad[var] for var in vars]), [0] * 9, atol=1e-3)
+
+
+def test_kron2sum_lmm_fit_Cn_well_conditioned():
+    random = RandomState(0)
+    Y = random.randn(5, 2)
+    A = random.randn(2, 2)
+    A = A @ A.T
+    F = random.randn(5, 2)
+    G = random.randn(5, 6)
+    lmm = Kron2Sum(Y, A, F, G)
+    lml0 = lmm.lml()
+    lmm.fit(verbose=False)
+    lml1 = lmm.lml()
+    assert_allclose([lml0, lml1], [-21.459910525411757, -16.059333723514342])
+    grad = lmm.lml_gradient()
+    vars = grad.keys()
+    assert_allclose(concatenate([grad[var] for var in vars]), [0] * 5, atol=1e-6)
