@@ -13,6 +13,7 @@ from numpy import (
     zeros,
     zeros_like,eye
 )
+from numpy.linalg import cholesky
 
 from numpy_sugar import epsilon
 from numpy_sugar.linalg import economic_qs
@@ -48,16 +49,17 @@ class FreeFormCov(NamedClass, Function):
         self._diag = diag_indices_from(self._L)
         self._L[self._tril1] = 1
         self._L[self._diag] = 0
-        self._min_eigval = epsilon.small
-        self._epsilon = epsilon.small
+        # self._min_eigval = epsilon.small
+        # self._epsilon = epsilon.small
+        self._epsilon = 1e-4
         Function.__init__(
             self, Llow=Vector(ones(tsize - dim)), Llogd=Vector(zeros(dim))
         )
         self.variables().get("Llogd").bounds = [(log(1e-8), +10)] * dim
         NamedClass.__init__(self)
 
-    def economic_qs(self):
-        return economic_qs(self.feed().value())
+    # def economic_qs(self):
+    #     return economic_qs(self.feed().value())
 
     def eigh(self):
         from numpy.linalg import eigh
@@ -78,6 +80,10 @@ class FreeFormCov(NamedClass, Function):
         self._L[:] = value
         self.variables().get("Llow").value = self._L[self._tril1]
         self.variables().get("Llogd").value = log(self._L[self._diag])
+
+    @property
+    def LK(self):
+        return cholesky(self.feed().value())
 
     def logdet(self):
         from numpy.linalg import slogdet

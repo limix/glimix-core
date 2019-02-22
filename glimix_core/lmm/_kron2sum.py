@@ -64,10 +64,10 @@ class Kron2Sum(Function):
         return self._F.shape[1]
 
     def value(self):
-        # print(self.variables().get("Cr_Lu").value, self.variables().get("Cn_Llow").value, self.variables().get("Cn_Llogd").value)
-        # print(self.lml())
-        # print("npy_eig", sorted(eigvalsh(self._cov.Cn.feed().value())))
-        # print("us_eig", sorted(self._cov.Cn.eigh()[0]))
+        print(self.variables().get("Cr_Lu").value, self.variables().get("Cn_Llow").value, self.variables().get("Cn_Llogd").value)
+        print(self.lml())
+        print("npy_eig", sorted(eigvalsh(self._cov.Cn.feed().value())))
+        print("us_eig", sorted(self._cov.Cn.eigh()[0]))
         return self.lml()
 
     def gradient(self):
