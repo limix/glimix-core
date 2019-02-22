@@ -1,12 +1,8 @@
-from __future__ import division
-
 from numpy import (
-    clip,
     diag_indices_from,
     dot,
     exp,
     eye,
-    inf,
     log,
     ones,
     stack,
@@ -17,7 +13,6 @@ from numpy import (
 from numpy.linalg import cholesky
 
 from numpy_sugar import epsilon
-from numpy_sugar.linalg import economic_qs
 from optimix import Function, Vector
 
 from ..util.classes import NamedClass

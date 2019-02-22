@@ -1,3 +1,4 @@
+import pytest
 import scipy.stats as st
 from numpy import concatenate
 from numpy.random import RandomState
@@ -5,7 +6,6 @@ from numpy.testing import assert_allclose
 from scipy.optimize import check_grad
 
 from glimix_core.lmm import Kron2Sum
-from glimix_core.util import vec
 
 
 def test_kron2sum_lmm():
@@ -176,19 +176,15 @@ def test_kron2sum_lmm_fit_Cn_well_cond_redutant_F():
     assert_allclose(concatenate([grad[var] for var in vars]), [0] * 13, atol=1e-2)
 
 
-# def test_kron2sum_lmm_fit_Cn_well_cond_redutant_Y():
-#     random = RandomState(0)
-#     Y = random.randn(5, 2)
-#     Y = concatenate((Y, Y), axis=1)
-#     A = random.randn(4, 4)
-#     A = A @ A.T
-#     F = random.randn(5, 2)
-#     G = random.randn(5, 2)
-#     lmm = Kron2Sum(Y, A, F, G)
-#     lml0 = lmm.lml()
-#     lmm.fit(verbose=False)
-#     lml1 = lmm.lml()
-#     assert_allclose([lml0, lml1], [-43.906141655466485, 26.855864863521624])
-#     grad = lmm.lml_gradient()
-#     vars = grad.keys()
-#     assert_allclose(concatenate([grad[var] for var in vars]), [0] * 14, atol=1e-2)
+def test_kron2sum_lmm_fit_Cn_well_cond_redundant_Y():
+    random = RandomState(0)
+    Y = random.randn(5, 2)
+    Y = concatenate((Y, Y), axis=1)
+    A = random.randn(4, 4)
+    A = A @ A.T
+    F = random.randn(5, 2)
+    G = random.randn(5, 2)
+    with pytest.warns(UserWarning):
+        lmm = Kron2Sum(Y, A, F, G)
+    lml = lmm.lml()
+    assert_allclose(lml, -43.906141655466485)

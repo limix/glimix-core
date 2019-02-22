@@ -1,7 +1,6 @@
 from __future__ import division
 
-from numpy import exp, ones, zeros, log
-from numpy.testing import assert_allclose
+from numpy import ones, zeros
 
 from glimix_core.cov import FreeFormCov
 from optimix import Assertion

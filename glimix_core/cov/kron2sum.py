@@ -116,8 +116,11 @@ class Kron2SumCov(NamedClass, Function):
         Cn_Llogd = self._Cn.feed().gradient()["Llogd"]
         Cn_Llogd = _prepend_dims(Cn_Llogd, X.ndim)
 
-        return {"Cr_Lu": kron(X, Cr_Lu.T).T, "Cn_Llow": kron(I, Cn_Llow.T).T,
-                "Cn_Llogd": kron(I, Cn_Llogd.T).T}
+        return {
+            "Cr_Lu": kron(X, Cr_Lu.T).T,
+            "Cn_Llow": kron(I, Cn_Llow.T).T,
+            "Cn_Llogd": kron(I, Cn_Llogd.T).T,
+        }
 
     def solve(self, v):
         """ Implements the product K⁻¹v.
@@ -144,8 +147,6 @@ class Kron2SumCov(NamedClass, Function):
 
     def logdet(self):
         """ Implements log|K| = - log|D| + N log|Cₙ| """
-        from numpy.linalg import slogdet
-
         Sn, Un = self.Cn.eigh()
         Cr = self.Cr.feed().value()
         UnSn = ddot(Un, 1 / sqrt(Sn))
@@ -154,8 +155,6 @@ class Kron2SumCov(NamedClass, Function):
         Qx, Sx = self._USx
         D = 1 / (kron(Srs, Sx) + 1)
         N = self.G.shape[0]
-        # logdetC = slogdet(self.Cn.feed().value())
-        # assert logdetC[0] == 1
         logdetC = self.Cn.logdet()
         return -log(D).sum() + N * logdetC
 

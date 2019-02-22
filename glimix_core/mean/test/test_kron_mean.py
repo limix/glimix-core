@@ -1,6 +1,6 @@
-from numpy import arange, concatenate, zeros
+from numpy import concatenate, zeros
 from numpy.random import RandomState
-from numpy.testing import assert_allclose, assert_string_equal
+from numpy.testing import assert_allclose
 
 from glimix_core.mean import KronMean
 from optimix import Assertion

@@ -1,9 +1,11 @@
-from numpy import asfortranarray, log, sqrt
-from numpy.linalg import eigvalsh
+import warnings
+
+from numpy import asfortranarray
+from numpy.linalg import matrix_rank
 
 from glimix_core.cov import Kron2SumCov
 from glimix_core.mean import KronMean
-from glimix_core.util import log2pi, vec
+from glimix_core.util import log2pi
 from optimix import Function
 
 
@@ -25,6 +27,14 @@ class Kron2Sum(Function):
         The parameters of this model are the matrices 𝐁, Cᵣ, and Cₙ.
         """
         Y = asfortranarray(Y)
+        yrank = matrix_rank(Y)
+        if Y.shape[1] > yrank:
+            warnings.warn(
+                f"Y is not full column rank: rank(Y)={yrank}. "
+                + "Convergence might be problematic.",
+                UserWarning,
+            )
+
         self._Y = Y
         self._y = Y.ravel(order="F")
         self._A = A
@@ -67,16 +77,9 @@ class Kron2Sum(Function):
         return self._F.shape[1]
 
     def value(self):
-        # print(self.variables().get("Cr_Lu").value, self.variables().get("Cn_Llow").value, self.variables().get("Cn_Llogd").value)
-        # print(self.lml())
-        # print("npy_eig", sorted(eigvalsh(self._cov.Cn.feed().value())))
-        # print("us_eig", sorted(self._cov.Cn.eigh()[0]))
         return self.lml()
 
     def gradient(self):
-        # print(self.lml())
-        # print("npy_eig", sorted(eigvalsh(self._cov.Cn.feed().value())))
-        # print("us_eig", sorted(self._cov.Cn.eigh()[0]))
         return self.lml_gradient()
 
     def lml(self):
@@ -94,7 +97,6 @@ class Kron2Sum(Function):
         d = self._y - m
         dKid = d @ self._cov.solve(d)
         lml -= dKid
-        print(lml / 2)
 
         return lml / 2
 
