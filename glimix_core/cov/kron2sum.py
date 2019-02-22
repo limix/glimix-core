@@ -154,9 +154,10 @@ class Kron2SumCov(NamedClass, Function):
         Qx, Sx = self._USx
         D = 1 / (kron(Srs, Sx) + 1)
         N = self.G.shape[0]
-        logdetC = slogdet(self.Cn.feed().value())
-        assert logdetC[0] == 1
-        return -log(D).sum() + N * logdetC[1]
+        # logdetC = slogdet(self.Cn.feed().value())
+        # assert logdetC[0] == 1
+        logdetC = self.Cn.logdet()
+        return -log(D).sum() + N * logdetC
 
     def logdet_gradient(self):
         """ Implements ∂log|K| = Tr[K⁻¹ ∂K].

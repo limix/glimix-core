@@ -1,9 +1,11 @@
 from __future__ import division
 
 from numpy import (
+    clip,
     diag_indices_from,
     dot,
     exp,
+    inf,
     log,
     ones,
     stack,
@@ -46,11 +48,12 @@ class FreeFormCov(NamedClass, Function):
         self._diag = diag_indices_from(self._L)
         self._L[self._tril1] = 1
         self._L[self._diag] = 0
-        self._jitter = epsilon.tiny
+        self._min_eigval = epsilon.small
+        # self._min_eigval = 1e-4
         Function.__init__(
             self, Llow=Vector(ones(tsize - dim)), Llogd=Vector(zeros(dim))
         )
-        self.variables().get("Llogd").bounds = (-20.0, +10)
+        self.variables().get("Llogd").bounds = [(log(1e-8), +10)] * dim
         NamedClass.__init__(self)
 
     def economic_qs(self):
@@ -60,7 +63,7 @@ class FreeFormCov(NamedClass, Function):
         from numpy.linalg import eigh
 
         Sn, Un = eigh(self.feed().value())
-        Sn += self._jitter
+        Sn = clip(Sn, self._min_eigval, inf)
         return Sn, Un
 
     @property
@@ -75,6 +78,9 @@ class FreeFormCov(NamedClass, Function):
         self._L[:] = value
         self.variables().get("Llow").value = self._L[self._tril1]
         self.variables().get("Llogd").value = log(self._L[self._diag])
+
+    def logdet(self):
+        return 2 * self.variables().get("Llogd").value.sum()
 
     def value(self, x0, x1):
         r"""Covariance function evaluated at ``(x0, x1)``.
