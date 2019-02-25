@@ -16,15 +16,15 @@ class Kron2Sum(Function):
         Let n, c, and p be the number of samples, covariates, and traits, respectively.
         The outcome variable is a n×p matrix distributed according to
 
-            vec(Y) ~ N((𝐀 ⊗ 𝐅) vec(𝐁), Cᵣ ⊗ GGᵗ + Cₙ ⊗ I).
+            vec(Y) ~ N((A ⊗ F) vec(B), Cᵣ ⊗ GGᵗ + Cₙ ⊗ I).
 
-        𝐀 and 𝐅 are design matrices of dimensions p×p and n×c provided by the user,
+        A and 𝐅 are design matrices of dimensions p×p and n×c provided by the user,
         where 𝐅 is the usual matrix of covariates.
-        𝐁 is a p×c matrix of fixed-effect sizes.
+        B is a p×c matrix of fixed-effect sizes.
         G is a n×r matrix provided by the user and I is a n×n identity matrices.
         Cᵣ and Cₙ are both symmetric matrices of dimensions p×p, for which Cₙ is
         guaranteed by our implementation to be full rank.
-        The parameters of this model are the matrices 𝐁, Cᵣ, and Cₙ.
+        The parameters of this model are the matrices B, Cᵣ, and Cₙ.
         """
         Y = asfortranarray(Y)
         yrank = matrix_rank(Y)
@@ -85,6 +85,11 @@ class Kron2Sum(Function):
     def lml(self):
         r"""Log of the marginal likelihood.
 
+        Let y = vec(Y), b = vec(B), and m = (A ⊗ F) vec(B). The log of the marginal
+        likelihood is given by
+
+            log(p(Y)) = -n p log(2π) / 2 - log(|K|) / 2 - (y-m)ᵗ K⁻¹ (y-m) / 2
+
         Returns
         -------
         float
@@ -101,6 +106,18 @@ class Kron2Sum(Function):
         return lml / 2
 
     def lml_gradient(self):
+        r"""Gradient of the log of the marginal likelihood.
+
+        Let y = vec(Y), b = vec(B), m = (A ⊗ F) vec(B), and 𝕂 = K⁻¹∂(K)K⁻¹. The
+        gradient is given by
+
+            2⋅∂log(p(Y)) = -tr(K⁻¹∂K) + yᵗ𝕂y + (mᵗ-2⋅yᵗ)𝕂m - 2⋅yᵗK⁻¹∂(m)
+
+        Returns
+        -------
+        float
+            Log of the marginal likelihood.
+        """
         ld_grad = self._cov.logdet_gradient()
         dK = self._cov.compact_gradient()
         Kiy = self._cov.solve(self._y)

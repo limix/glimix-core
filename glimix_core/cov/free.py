@@ -10,20 +10,24 @@ from numpy import (
     zeros,
     zeros_like,
 )
-from numpy.linalg import cholesky
-
 from numpy_sugar import epsilon
 from optimix import Function, Vector
 
 from ..util.classes import NamedClass
+from ..util import format_function, format_named_arr
 
 
 class FreeFormCov(NamedClass, Function):
-    r"""General semi-definite positive matrix.
+    r"""
+    General definite positive matrix.
 
-    A :math:`d`-by-:math:`d` covariance matrix :math:`\mathrm K` will have
-    ``((d + 1) * d) / 2`` parameters defining the lower triangular part of
-    the Cholesky matrix ``L``: :math:`\mathrm L\mathrm L^\intercal=\mathrm K`.
+    A d×d covariance matrix K will have ((d+1)⋅d)/2 parameters defining the lower
+    triangular elements of a Cholesky matrix L such that:
+
+        K = LLᵗ + ϵI,
+
+    for a very small positive number ϵ. That additional term is necessary to avoid
+    singular and ill conditioned covariance matrices.
 
     Parameters
     ----------
@@ -33,7 +37,30 @@ class FreeFormCov(NamedClass, Function):
     Example
     -------
 
-    TODO: get  example from free.py
+    .. doctest::
+
+        >>> from glimix_core.cov import FreeFormCov
+        >>>
+        >>> cov = FreeFormCov(2)
+        >>> print(cov.value([0, 1], [0, 1]))
+        [[1.0000149 1.       ]
+            [1.        2.0000149]]
+        >>> print(cov.L)
+        [[1. 0.]
+         [1. 1.]]
+        >>> g = cov.gradient([0, 1], [0, 1])
+        >>> print(cov.value([0, 1], [0, 1]))
+        [[1.0000149 1.       ]
+         [1.        2.0000149]]
+        >>> print(cov)
+        FreeFormCov(dim=2)
+        L: [[1. 0.]
+            [1. 1.]]
+        >>> cov.name = "covname"
+        >>> print(cov)
+        FreeFormCov(dim=2): covname
+        L: [[1. 0.]
+            [1. 1.]]
     """
 
     def __init__(self, dim):
@@ -53,15 +80,33 @@ class FreeFormCov(NamedClass, Function):
         NamedClass.__init__(self)
 
     def eigh(self):
-        from numpy.linalg import eigh
+        """
+        Eigen decomposition of K.
 
-        # TODO: speed this up
-        Sn, Un = eigh(self.feed().value())
-        # Sn = clip(Sn, self._min_eigval, inf)
-        return Sn, Un
+        Returns
+        -------
+        S : ndarray
+            The eigenvalues in ascending order, each repeated according to its multiplicity.
+        U : ndarray
+            Normalized eigenvectors.
+        """
+        from numpy.linalg import svd
+
+        U, S = svd(self.L)[:2]
+        S *= S
+        S += self._epsilon
+        return S, U
 
     @property
     def L(self):
+        """
+        Lower-triangular matrix L such that K = LLᵗ + ϵI.
+
+        Returns
+        -------
+        L : (d, d) ndarray
+            Lower-triangular matrix.
+        """
         self._L[self._tril1] = self.variables().get("Llow").value
         self._L[self._diag] = exp(self.variables().get("Llogd").value)
         return self._L
@@ -72,21 +117,29 @@ class FreeFormCov(NamedClass, Function):
         self.variables().get("Llow").value = self._L[self._tril1]
         self.variables().get("Llogd").value = log(self._L[self._diag])
 
-    @property
-    def LK(self):
-        return cholesky(self.feed().value())
-
     def logdet(self):
+        r"""
+        Log of \|K\|.
+
+        Returns
+        -------
+        float
+            Log-determinant of K.
+        """
         from numpy.linalg import slogdet
 
         K = self.feed().value()
-        ldet = slogdet(K)
-        assert ldet[0] == 1.0
-        # ldet = 2 * self.variables().get("Llogd").value.sum()
-        return ldet[1]
+
+        sign, logdet = slogdet(K)
+        if sign != 1.0:
+
+            raise RuntimeError("The estimated determinant of K is not positive: "
+                               + f" ({sign}, {logdet}).")
+        return logdet
 
     def value(self, x0, x1):
-        r"""Covariance function evaluated at ``(x0, x1)``.
+        """
+        Covariance function evaluated at (x₀,x₁).
 
         Parameters
         ----------
@@ -97,9 +150,8 @@ class FreeFormCov(NamedClass, Function):
 
         Returns
         -------
-        array_like
-            Submatrix of :math:`\mathrm L\mathrm L^\intercal`, row and
-            column-indexed by ``x0`` and ``x1``.
+        ndarray
+            Submatrix of K, row and column-indexed by ``x0`` and ``x1``.
         """
         K = dot(self.L, self.L.T)[x0, ...][..., x1]
         if K.ndim == 2 and K.shape[0] == K.shape[1]:
@@ -108,9 +160,10 @@ class FreeFormCov(NamedClass, Function):
         return K
 
     def gradient(self, x0, x1):
-        r"""Derivative of the covariance function evaluated at ``(x0, x1)``.
+        r"""
+        Derivative of the covariance function evaluated at ``(x0, x1)``.
 
-        Derivative over the lower triangular part of :math:`\mathrm L`.
+        Derivative over the lower-triangular part of :math:`\mathrm L`.
 
         Parameters
         ----------
@@ -122,7 +175,7 @@ class FreeFormCov(NamedClass, Function):
         Returns
         -------
         dict
-            Dictionary having the `Lu` key for the lower triangular part
+            Dictionary having the `Lu` key for the lower-triangular part
             of the derivative of :math:`\mathrm L\mathrm L^\intercal`, row and
             column-indexed by ``x0`` and ``x1``.
         """
@@ -147,47 +200,6 @@ class FreeFormCov(NamedClass, Function):
         )
 
     def __str__(self):
-        tname = type(self).__name__
-        msg = "{}()".format(tname)
-        if self.name is not None:
-            msg += ": {}".format(self.name)
-        msg += "\n"
-        msg += "  Lu: {}".format(self.Lu)
+        msg = format_function(self, dim=self._L.shape[0]) + "\n"
+        msg += format_named_arr("L", self.L)
         return msg
-
-    # .. doctest::
-
-    #     >>> from glimix_core.cov import FreeFormCov
-    #     >>>
-    #     >>> cov = FreeFormCov(2)
-    #     >>> print(cov.value([0, 1], [0, 1]))
-    #     [[1. 1.]
-    #      [1. 2.]]
-    #     >>> print(cov.L)
-    #     [[1. 0.]
-    #      [1. 1.]]
-    #     >>> print(cov.Lu)
-    #     [1. 1. 1.]
-    #     >>> g = cov.gradient([0, 1], [0, 1])
-    #     >>> print(g['Lu'].shape)
-    #     (2, 2, 3)
-    #     >>> print(g['Lu'])
-    #     [[[2. 0. 0.]
-    #       [1. 1. 0.]]
-    #     <BLANKLINE>
-    #      [[1. 1. 0.]
-    #       [0. 2. 2.]]]
-    #     >>> cov.Lu[1] = -2
-    #     >>> print(cov.L)
-    #     [[ 1.  0.]
-    #      [-2.  1.]]
-    #     >>> print(cov.value([0, 1], [0, 1]))
-    #     [[ 1. -2.]
-    #      [-2.  5.]]
-    #     >>> print(cov)
-    #     FreeFormCov()
-    #       Lu: [ 1. -2.  1.]
-    #     >>> cov.name = "covname"
-    #     >>> print(cov)
-    #     FreeFormCov(): covname
-    #       Lu: [ 1. -2.  1.]
