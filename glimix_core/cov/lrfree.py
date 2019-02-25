@@ -9,10 +9,11 @@ from ..util.classes import NamedClass
 
 
 class LRFreeFormCov(NamedClass, Function):
-    r""" General semi-definite positive matrix of low rank.
+    r"""
+    General semi-definite positive matrix of low rank.
 
     The covariance matrix K is given by LLᵗ, where L is a m×n matrix and m≥n. Therefore,
-    K will have rank(A) ≤ n.
+    K will have rank(K) ≤ n.
 
     Parameters
     ----------
@@ -32,9 +33,6 @@ class LRFreeFormCov(NamedClass, Function):
         Function.__init__(self, Lu=Vector(self._L.ravel()))
         NamedClass.__init__(self)
 
-    def economic_qs(self):
-        return economic_qs(self.feed().value())
-
     @property
     def rank(self):
         return self._L.shape[1]
@@ -46,17 +44,16 @@ class LRFreeFormCov(NamedClass, Function):
 
     @L.setter
     def L(self, value):
-        # self._L[:] = value
-        self.Lu = asarray(value, float).ravel()
+        self.variables().get("Lu").value = asarray(value, float).ravel()
 
-    @property
-    def Lu(self):
-        """ Matrix L in flat form."""
-        return self.variables().get("Lu").value
+    # @property
+    # def Lu(self):
+    #     """ Matrix L in flat form."""
+    #     return self.variables().get("Lu").value
 
-    @Lu.setter
-    def Lu(self, value):
-        self.variables().get("Lu").value = value
+    # @Lu.setter
+    # def Lu(self, value):
+    #     self.variables().get("Lu").value = value
 
     def value(self, x0, x1):
         r""" Covariance function evaluated at ``(x0, x1)``.

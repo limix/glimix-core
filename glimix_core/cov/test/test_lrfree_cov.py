@@ -1,6 +1,6 @@
 from __future__ import division
 
-from numpy import zeros
+from numpy import zeros, tril_indices_from
 from numpy.testing import assert_allclose
 
 from glimix_core.cov import LRFreeFormCov
@@ -19,6 +19,5 @@ def test_lrfreeform_optimix():
     a.assert_layout()
     a.assert_gradient()
 
-    assert_allclose(cov.Lu, [1.0, 0.0, 2.0, 1.0, -1.0, 3.0])
-    cov.Lu = [1] * 3 * 2
-    assert_allclose(cov.Lu, [1] * 3 * 2)
+    Lu = cov.L[tril_indices_from(cov.L)]
+    assert_allclose(Lu, [1.0, 2.0, 1.0, -1.0, 3.0])
