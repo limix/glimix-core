@@ -11,7 +11,7 @@ from glimix_core.random import GGPSampler
 from numpy_sugar.linalg import economic_qs_linear
 
 
-def test_lmm_fix_unfix():
+def test_lmm_mt_lmm_fix_unfix():
     random = RandomState(9458)
     n = 30
     X = _covariates_sample(random, n, n + 1)
@@ -87,7 +87,7 @@ def test_lmm_fix_unfix():
     assert_allclose(lmm.lml(), -51.84505787833422)
 
 
-def test_lmm_unique_outcome():
+def test_lmm_mt_lmm_unique_outcome():
     random = RandomState(9458)
     N = 5
     X = random.randn(N, N + 1)
@@ -106,7 +106,7 @@ def test_lmm_unique_outcome():
     assert_allclose(lmm.v1, 0, atol=1e-5)
 
 
-def test_lmm_nonfinite_outcome():
+def test_lmm_mt_lmm_nonfinite_outcome():
     random = RandomState(9458)
     N = 5
     QS = economic_qs_linear(random.randn(N, N + 1))
@@ -125,7 +125,7 @@ def test_lmm_nonfinite_outcome():
         MTLMM(y, ones((N, 1)), QS)
 
 
-def test_lmm_redundant_covariates_fullrank():
+def test_lmm_mt_lmm_redundant_covariates_fullrank():
     random = RandomState(9458)
     n = 30
     X = _covariates_sample(random, n, n + 1)
@@ -152,7 +152,7 @@ def test_lmm_redundant_covariates_fullrank():
     assert_allclose(lmm.beta, 0.070655980685, rtol=1e-5)
 
 
-def test_lmm_redundant_covariates_lowrank():
+def test_lmm_mt_lmm_redundant_covariates_lowrank():
     random = RandomState(9458)
     n = 30
     X = _covariates_sample(random, n, n - 1)
@@ -179,7 +179,7 @@ def test_lmm_redundant_covariates_lowrank():
     assert_allclose(lmm.beta, 0.0932326853301, rtol=1e-5)
 
 
-def test_lmm_mt():
+def test_lmm_mt_lmm():
     random = RandomState(9458)
     n = 30
     X0 = _covariates_sample(random, n, 2)
@@ -283,7 +283,7 @@ def test_lmm_mt():
     assert_allclose(lmm.lml(), -143.9577716707082)
 
 
-def test_lmm_iid_prior():
+def test_lmm_mt_lmm_iid_prior():
     random = RandomState(9458)
     n = 30
     X = _covariates_sample(random, n, n + 1)
@@ -305,7 +305,7 @@ def test_lmm_iid_prior():
     assert_allclose(lmm.lml(), -52.29638826846388)
 
 
-def test_lmm_zero_rank_covariates():
+def test_lmm_mt_lmm_zero_rank_covariates():
     random = RandomState(9458)
     n = 30
     X = _covariates_sample(random, n, n + 1)
