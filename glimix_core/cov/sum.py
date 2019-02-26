@@ -56,12 +56,7 @@ class SumCov(Func):
         Func.__init__(self, "SumCov", composite=self._covariances)
 
     def value(self):
-        r"""Sum covariance function evaluated at ``(f_0, f_1, ...)``.
-
-        Parameters
-        ----------
-        values : dict
-            A value for each function involved in the summation.
+        r"""Sum of covariance matrices.
 
         Returns
         -------
@@ -71,15 +66,8 @@ class SumCov(Func):
         return add.reduce([cov.value() for cov in self._covariances])
 
     def gradient(self):
-        r"""Sum of covariance function derivatives.
-
-        Parameters
-        ----------
-        values : dict
-            Its value is not used in this particular function. We suggest you to simply
-            pass ``None``.
-        gradients : dict
-            A gradient for each function involved in the summation.
+        r"""
+        Sum of covariance function derivatives.
 
         Returns
         -------

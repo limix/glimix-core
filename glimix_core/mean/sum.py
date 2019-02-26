@@ -1,18 +1,17 @@
 from numpy import add
 
-from optimix import FunctionReduce
-
-from ..util.classes import NamedClass
+from optimix import Func
 
 
-class SumMean(NamedClass, FunctionReduce):
-    r"""Sum mean function.
+class SumMean(Func):
+    """
+    Sum mean function.
 
     The mathematical representation is
 
-    .. math::
+        F₀ + F₁ + …
 
-        f(f_0, f_1, \dots) = f_0 + f_1 + \dots
+    In other words, it is a sum of mean vectors.
 
     Parameters
     ----------
@@ -66,45 +65,32 @@ class SumMean(NamedClass, FunctionReduce):
 
     def __init__(self, means):
         self._means = [c for c in means]
-        FunctionReduce.__init__(self, self._means, "sum")
-        NamedClass.__init__(self)
+        Func.__init__(self, "SumMean", composite=self._means)
 
-    def value_reduce(self, values):
-        r"""Sum mean function evaluated at :math:`(f_0, f_1, \dots)`.
+    def value(self):
+        """
+        Sum mean function., F₀ + F₁ + ….
 
-        Parameters
-        ----------
-        values : dict
-            A value for each function involved in the summation.
+        Returns
+        -------
+        M : ndarray
+            F₀ + F₁ + ….
+        """
+        return add.reduce([mean.value() for mean in self._means])
+
+    def gradient(self):
+        """
+        Sum of mean function derivatives.
 
         Returns
         -------
         dict
-            :math:`f_0 + f_1 + \dots`
+            ∂F₀ + ∂F₁ + ….
         """
-        return add.reduce(list(values.values()))
-
-    def gradient_reduce(self, values, gradients):
-        r"""Sum of mean function derivatives.
-
-        Parameters
-        ----------
-        values : dict
-            Its value is not used in this particular function. We suggest you to simply
-            pass ``None``.
-        gradients : dict
-            A gradient for each function involved in the summation.
-
-        Returns
-        -------
-        dict
-            Dictionary having a key for each parameter of the underlying
-            mean functions.
-        """
-        grad = dict()
-        for (gn, gv) in iter(gradients.items()):
-            for n, v in iter(gv.items()):
-                grad[gn + "." + n] = v
+        grad = {}
+        for i, f in enumerate(self._means):
+            for varname, g in f.gradient().items():
+                grad[f"{self._name}[{i}].{varname}"] = g
         return grad
 
     def __str__(self):

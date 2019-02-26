@@ -1,4 +1,4 @@
-from numpy import ascontiguousarray, zeros
+from numpy import ascontiguousarray, zeros, asarray
 
 from optimix import Func, Vector
 
@@ -52,7 +52,7 @@ class LinearMean(Func):
 
     @X.setter
     def X(self, X):
-        self._X = X
+        self._X = asarray(X, float)
 
     def value(self):
         """
