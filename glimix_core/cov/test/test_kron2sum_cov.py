@@ -1,7 +1,4 @@
-import os
-from os.path import join
-
-from numpy import array, concatenate, eye, kron, load, log, stack, zeros
+from numpy import array, concatenate, eye, kron, log, stack, zeros
 from numpy.linalg import slogdet
 from numpy.random import RandomState
 from numpy.testing import assert_, assert_allclose
@@ -95,11 +92,14 @@ def test_kron2sumcov_logdet():
     check_for_G(stack((g, g), axis=1))
     check_for_G(stack((g, g, g), axis=1))
     check_for_G(stack((g, g, g, g), axis=1))
-    folder = os.path.dirname(os.path.realpath(__file__))
 
-    G = load(join(folder, "G.npy"))
-    Cr_Lu = load(join(folder, "Cr_Lu.npy"))
-    Cn_Lu = load(join(folder, "Cn_Lu.npy"))
+    G = array([[0.44386323, 0.33367433, 1.49407907],
+               [-0.20515826, 0.3130677, -0.85409574],
+               [-2.55298982, 0.6536186, 0.8644362],
+               [-0.74216502, 2.26975462, -1.45436567],
+               [0.04575852, -0.18718385, 1.53277921]])
+    Cn_Lu = array([7.07106781e-01, 7.07106781e-01, 9.41547446e-09])
+    Cr_Lu = array([1., 1.])
     Cn_Llow = [Cn_Lu[1]]
     Cn_Llogd = [log(Cn_Lu[0]), log(Cn_Lu[2])]
     cov = Kron2SumCov(2, 1)

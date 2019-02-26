@@ -1,4 +1,6 @@
-"""Covariance functions.
+"""
+Covariance functions
+--------------------
 
 EyeCov       Indentity covariance function.
 FreeFormCov  Free-form covariance based on Cholesky decomposition.

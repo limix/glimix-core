@@ -18,7 +18,7 @@ from ..util import format_function, format_named_arr
 
 
 class FreeFormCov(NamedClass, Function):
-    r"""
+    """
     General definite positive matrix.
 
     A d×d covariance matrix K will have ((d+1)⋅d)/2 parameters defining the lower
@@ -161,7 +161,7 @@ class FreeFormCov(NamedClass, Function):
 
     def gradient(self, x0, x1):
         r"""
-        Derivative of the covariance function evaluated at ``(x0, x1)``.
+        Derivative of the covariance function evaluated at (x₀,x₁).
 
         Derivative over the lower-triangular part of :math:`\mathrm L`.
 

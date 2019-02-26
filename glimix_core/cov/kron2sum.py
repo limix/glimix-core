@@ -22,7 +22,36 @@ from .lrfree import LRFreeFormCov
 
 
 class Kron2SumCov(NamedClass, Function):
-    """ Implements K = Cᵣ ⊗ GGᵗ + Cₙ ⊗ I. """
+    """
+    Implements K = Cᵣ ⊗ GGᵗ + Cₙ ⊗ I.
+
+    Cᵣ and Cₙ are d×d symmetric matrices. Cᵣ is a semi-definite positive matrix while Cₙ
+    is positive definite one. G is a m×n matrix and I is a m×m identity matrix. Let
+    M = Uₘ Sₘ Uₘᵗ be the eigen decomposition for any matrix M. The documentation and
+    implementation of this class make use of the following definitions:
+
+    - X = GGᵗ = Uₓ Sₓ Uₓᵗ
+    - Cₙ = Uₙ Sₙ Uₙᵗ
+    - Cₕ = Sₙ⁻½ Uₙᵗ Cᵣ Uₙ Sₙ⁻½
+    - Cₕ = Uₕ Sₕ Uₕᵗ
+    - D = (Sₕ ⊗ Sₓ + Iₕₓ)⁻¹
+    - Lₓ = Uₓᵗ
+    - Lₙ = Uₕᵗ Sₙ⁻½ Uₙᵗ
+    - L = Lₙ ⊗ Lₓ
+
+    The above definitions allows us to write the inverse of the covariance matrix as:
+
+        K⁻¹ = LᵗDL,
+
+    where D is a diagonal matrix.
+
+    Parameters
+    ----------
+    dim : int
+        Dimension d for the square matrices Cᵣ and Cₙ.
+    rank : int
+        Maximum rank of the Cₙ matrix.
+    """
 
     def __init__(self, dim, rank):
         items = arange(dim)
@@ -43,6 +72,9 @@ class Kron2SumCov(NamedClass, Function):
 
     @property
     def G(self):
+        """
+        User-provided matrix G used to evaluate this covariance function.
+        """
         return self._G
 
     @G.setter
@@ -57,10 +89,12 @@ class Kron2SumCov(NamedClass, Function):
 
     @property
     def Cr(self):
+        """ Semi-definite positive matrix Cᵣ. """
         return self._Cr
 
     @property
     def Cn(self):
+        """ Definite positive matrix Cᵣ. """
         return self._Cn
 
     @property
@@ -76,6 +110,9 @@ class Kron2SumCov(NamedClass, Function):
         return kron(Lc, Lg)
 
     def value(self, x0, x1):
+        """
+        Covariance matrix K.
+        """
         id0, x0, = _input_split(x0)
         id1, x1 = _input_split(x1)
 
@@ -88,9 +125,24 @@ class Kron2SumCov(NamedClass, Function):
         return kron(X, Cr.T).T + kron(I, Cn.T).T
 
     def compact_value(self):
+        """
+        Covariance matrix K as a bi-dimensional array.
+        """
         return _compact_form(self.feed().value())
 
     def compact_gradient(self):
+        """
+        Gradient of K as a bi-dimensional array.
+
+        Returns
+        -------
+        Cr_Lu : ndarray
+            Derivative over the array Lu of Cᵣ.
+        Cn_Llow : ndarray
+            Derivative over the array Llow of Cₙ.
+        Cn_Llogd : ndarray
+            Derivative over the array Llogd of Cₙ.
+        """
         Gids = _input_join(self.G)
 
         Kgrad = self.gradient(Gids, Gids)
@@ -101,6 +153,18 @@ class Kron2SumCov(NamedClass, Function):
         return Kgrad
 
     def gradient(self, x0, x1):
+        """
+        Gradient of K.
+
+        Returns
+        -------
+        Cr_Lu : ndarray
+            Derivative over the array Lu of Cᵣ.
+        Cn_Llow : ndarray
+            Derivative over the array Llow of Cₙ.
+        Cn_Llogd : ndarray
+            Derivative over the array Llogd of Cₙ.
+        """
         id0, x0, = _input_split(x0)
         id1, x1 = _input_split(x1)
 
@@ -125,24 +189,26 @@ class Kron2SumCov(NamedClass, Function):
     def solve(self, v):
         """ Implements the product K⁻¹v.
 
-        Let X = GGᵗ, K = Cᵣ ⊗ X + Cₙ ⊗ I, and let us use the notation M = Uₘ Sₘ Uₘᵗ for
-        eigen decomposition. Let Cᵣ* = Sₙ⁻½ Uₙᵗ Cᵣ Uₙ Sₙ⁻½. We then define
-        Lₙ = Uᵣᵗ* Sₙ⁻½ Uₙᵗ* and Lᵣ = Uₓᵗ. The inverse of the covariance matrix is
+        Parameters
+        ----------
+        v : array_like
+            Array to be multiplied.
 
-            K⁻¹ = Lᵗ D L,
-
-        for which D = (Sᵣ* ⊗ Sₓ + I)⁻¹ is a block diagonal matrix and L = Lₙ ⊗ Lᵣ.
+        Returns
+        -------
+        x : ndarray
+            Solution x of the equation K x = y.
         """
         Sn, Un = self.Cn.eigh()
         Cr = self.Cr.feed().value()
         UnSn = ddot(Un, 1 / sqrt(Sn))
-        Crs = UnSn.T @ Cr @ UnSn
-        Srs, Urs = eigh(Crs)
-        Qx, Sx = self._USx
-        D = 1 / (kron(Srs, Sx) + 1)
-        Lc = (UnSn @ Urs).T
-        Lg = Qx.T
-        L = kron(Lc, Lg)
+        Ch = UnSn.T @ Cr @ UnSn
+        Sh, Uh = eigh(Ch)
+        Ux, Sx = self._USx
+        D = 1 / (kron(Sh, Sx) + 1)
+        Ln = (UnSn @ Uh).T
+        Lx = Ux.T
+        L = kron(Ln, Lx)
         return L.T @ ddot(D, L @ v, left=True)
 
     def logdet(self):
@@ -150,10 +216,10 @@ class Kron2SumCov(NamedClass, Function):
         Sn, Un = self.Cn.eigh()
         Cr = self.Cr.feed().value()
         UnSn = ddot(Un, 1 / sqrt(Sn))
-        Crs = UnSn.T @ Cr @ UnSn
-        Srs, Urs = eigh(Crs)
+        Ch = UnSn.T @ Cr @ UnSn
+        Sh, Urs = eigh(Ch)
         Qx, Sx = self._USx
-        D = 1 / (kron(Srs, Sx) + 1)
+        D = 1 / (kron(Sh, Sx) + 1)
         N = self.G.shape[0]
         logdetC = self.Cn.logdet()
         return -log(D).sum() + N * logdetC
@@ -161,18 +227,27 @@ class Kron2SumCov(NamedClass, Function):
     def logdet_gradient(self):
         """ Implements ∂log|K| = Tr[K⁻¹ ∂K].
 
-        We have
+        It can be shown that
 
             ∂log|K| = diag(D)ᵗ diag(L ∂K Lᵗ).
+
+        Returns
+        -------
+        Cr_Lu : ndarray
+            Derivative over the array Lu of Cᵣ.
+        Cn_Llow : ndarray
+            Derivative over the array Llow of Cₙ.
+        Cn_Llogd : ndarray
+            Derivative over the array Llogd of Cₙ.
         """
         Sn, Un = self.Cn.eigh()
         Cr = self.Cr.feed().value()
         UnSn = ddot(Un, 1 / sqrt(Sn))
-        Crs = UnSn.T @ Cr @ UnSn
-        Srs, Urs = eigh(Crs)
+        Ch = UnSn.T @ Cr @ UnSn
+        Sh, Uh = eigh(Ch)
         Qx, Sx = self._USx
-        D = 1 / (kron(Srs, Sx) + 1)
-        Lc = (UnSn @ Urs).T
+        D = 1 / (kron(Sh, Sx) + 1)
+        Lc = (UnSn @ Uh).T
         Lg = Qx.T
         L = kron(Lc, Lg)
 

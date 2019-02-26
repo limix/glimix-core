@@ -2,14 +2,14 @@ from __future__ import division
 
 from numpy import asarray, dot, ones, stack, zeros_like
 
-from numpy_sugar.linalg import economic_qs
 from optimix import Function, Vector
 
 from ..util.classes import NamedClass
+from ..util import format_function, format_named_arr
 
 
 class LRFreeFormCov(NamedClass, Function):
-    r"""
+    """
     General semi-definite positive matrix of low rank.
 
     The covariance matrix K is given by LLᵗ, where L is a m×n matrix and m≥n. Therefore,
@@ -25,7 +25,45 @@ class LRFreeFormCov(NamedClass, Function):
     Example
     -------
 
-    TODO: get example from lrfree.py
+    .. doctest::
+
+        >>> from glimix_core.cov import LRFreeFormCov
+        >>> cov = LRFreeFormCov(3, 2)
+        >>> cov.L
+        array([[1., 1.],
+            [1., 1.],
+            [1., 1.]])
+
+        >>> cov.L = [[1, 2], [0, 3], [1, 3]]
+        >>> cov.L
+        array([[1., 2.],
+            [0., 3.],
+            [1., 3.]])
+        >>> cov.gradient([0, 1, 2], [0, 1, 2])
+        {'Lu': array([[[2., 4., 0., 0., 0., 0.],
+                [0., 3., 1., 2., 0., 0.],
+                [1., 3., 0., 0., 1., 2.]],
+        <BLANKLINE>
+            [[0., 3., 1., 2., 0., 0.],
+                [0., 0., 0., 6., 0., 0.],
+                [0., 0., 1., 3., 0., 3.]],
+        <BLANKLINE>
+            [[1., 3., 0., 0., 1., 2.],
+                [0., 0., 1., 3., 0., 3.],
+                [0., 0., 0., 0., 2., 6.]]])}
+        >>> cov.gradient([0, 1, 2], [0, 1, 2])["Lu"].shape
+        (3, 3, 6)
+        >>> print(cov)
+        LRFreeFormCov(m=3, n=2)
+        L: [[1. 2.]
+            [0. 3.]
+            [1. 3.]]
+        >>> cov.name = "covname"
+        >>> print(cov)
+        LRFreeFormCov(m=3, n=2): covname
+        L: [[1. 2.]
+            [0. 3.]
+            [1. 3.]]
     """
 
     def __init__(self, m, n):
@@ -34,29 +72,24 @@ class LRFreeFormCov(NamedClass, Function):
         NamedClass.__init__(self)
 
     @property
-    def rank(self):
-        return self._L.shape[1]
-
-    @property
     def L(self):
-        """ Matrix L from K=LLᵗ. """
+        """
+        Matrix L from K=LLᵗ.
+
+        Returns
+        -------
+        L : (m, n) ndarray
+            Parametric matrix.
+        """
         return self._L
 
     @L.setter
     def L(self, value):
         self.variables().get("Lu").value = asarray(value, float).ravel()
 
-    # @property
-    # def Lu(self):
-    #     """ Matrix L in flat form."""
-    #     return self.variables().get("Lu").value
-
-    # @Lu.setter
-    # def Lu(self, value):
-    #     self.variables().get("Lu").value = value
-
     def value(self, x0, x1):
-        r""" Covariance function evaluated at ``(x0, x1)``.
+        """
+        Covariance function evaluated at (x₀,x₁).
 
         Parameters
         ----------
@@ -67,15 +100,16 @@ class LRFreeFormCov(NamedClass, Function):
 
         Returns
         -------
-        array_like
-            Submatrix of LLᵗ, row and column-indexed by x₀ and x₁.
+        ndarray
+            Submatrix of K, row and column-indexed by x₀ and x₁.
         """
         return dot(self.L, self.L.T)[x0, ...][..., x1]
 
     def gradient(self, x0, x1):
-        r""" Derivative of the covariance function evaluated at ``(x0, x1)``.
+        """
+        Derivative of the covariance function evaluated at (x₀,x₁).
 
-        Derivative over L.
+        Derivative of K over L.
 
         Parameters
         ----------
@@ -86,9 +120,8 @@ class LRFreeFormCov(NamedClass, Function):
 
         Returns
         -------
-        dict
-            Dictionary having the `Lu` key for the derivative of LLᵗ, row and
-            column-indexed by x₀ and x₁.
+        Lu : ndarray
+            Derivative of K over the flattened L, row and column-indexed by x₀ and x₁.
         """
         L = self.L
         Lo = zeros_like(L)
@@ -104,45 +137,7 @@ class LRFreeFormCov(NamedClass, Function):
         return dict(Lu=stack(grad, axis=-1))
 
     def __str__(self):
-        tname = type(self).__name__
-        msg = "{}()".format(tname)
-        if self.name is not None:
-            msg += ": {}".format(self.name)
-        msg += "\n"
-        msg += "  Lu: {}".format(self.Lu)
+        L = self._L
+        msg = format_function(self, m=L.shape[0], n=L.shape[1]) + "\n"
+        msg += format_named_arr("L", L)
         return msg
-
-    # .. doctest::
-
-    #     >>> from glimix_core.cov import FreeFormCov
-    #     >>>
-    #     >>> cov = FreeFormCov(2)
-    #     >>> print(cov.value([0, 1], [0, 1]))
-    #     [[1. 1.]
-    #      [1. 2.]]
-    #     >>> print(cov.L)
-    #     [[1. 0.]
-    #      [1. 1.]]
-    #     >>> g = cov.gradient([0, 1], [0, 1])
-    #     >>> print(g['Lu'].shape)
-    #     (2, 2, 3)
-    #     >>> print(g['Lu'])
-    #     [[[2. 0. 0.]
-    #       [1. 1. 0.]]
-    #     <BLANKLINE>
-    #      [[1. 1. 0.]
-    #       [0. 2. 2.]]]
-    #     >>> cov.Lu[1] = -2
-    #     >>> print(cov.L)
-    #     [[ 1.  0.]
-    #      [-2.  1.]]
-    #     >>> print(cov.value([0, 1], [0, 1]))
-    #     [[ 1. -2.]
-    #      [-2.  5.]]
-    #     >>> print(cov)
-    #     FreeFormCov()
-    #       Lu: [ 1. -2.  1.]
-    #     >>> cov.name = "covname"
-    #     >>> print(cov)
-    #     FreeFormCov(): covname
-    #       Lu: [ 1. -2.  1.]
