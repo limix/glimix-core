@@ -1,20 +1,32 @@
-from __future__ import division
-
 from numpy import exp, log
 
 from optimix import Func, Scalar
 
 
 class LinearCov(Func):
-    r"""Linear covariance function.
+    """
+    Linear covariance function.
 
-    The mathematical representation is
+    The mathematical representation is s⋅XXᵀ, for an n×r matrix provided by the user
+    and a scalar parameter s.
 
-    .. math::
+    Example
+    -------
 
-        f(\mathrm x_0, \mathrm x_1) = s \mathrm x_0^\intercal \mathrm x_1,
+    .. doctest::
 
-    where :math:`s` is the scale parameter.
+        >>> from glimix_core.cov import LinearCov
+        >>> from numpy import dot
+        >>> from numpy.random import RandomState
+        >>>
+        >>> X = RandomState(0).randn(2, 3)
+        >>> cov = LinearCov()
+        >>> cov.X = X
+        >>> cov.scale = 1.3
+        >>> cov.name = "K"
+        >>> print(cov)
+        LinearCov(): K
+          scale: 1.3
     """
 
     def __init__(self):
@@ -25,6 +37,9 @@ class LinearCov(Func):
 
     @property
     def X(self):
+        """
+        Matrix X from K = s⋅XXᵀ.
+        """
         return self._X
 
     @X.setter
@@ -33,7 +48,9 @@ class LinearCov(Func):
 
     @property
     def scale(self):
-        r"""Scale parameter."""
+        """
+        Scale parameter.
+        """
         return exp(self._logscale.value)
 
     @scale.setter
@@ -44,43 +61,25 @@ class LinearCov(Func):
         self._logscale.value = log(scale)
 
     def value(self):
-        r"""Covariance function evaluated at ``(x0, x1)``.
-
-        Parameters
-        ----------
-        x0 : array_like
-            Left-hand side sample or samples.
-        x1 : array_like
-            Right-hand side sample or samples.
+        """
+        Covariance matrix.
 
         Returns
         -------
-        array_like
-            :math:`s \mathrm x_0^\intercal \mathrm x_1`.
+        ndarray
+            s⋅XXᵀ.
         """
         X = self.X
         return self.scale * (X @ X.T)
 
     def gradient(self):
-        r"""Derivative of the covariance function evaluated at ``(x0, x1)``.
-
-        Derivative of the covariance function over :math:`\log(s)`:
-
-        .. math::
-
-            s \mathrm x_0^\intercal \mathrm x_1.
-
-        Parameters
-        ----------
-        x0 : array_like
-            Left-hand side sample or samples.
-        x1 : array_like
-            Right-hand side sample or samples.
+        """
+        Derivative of the covariance matrix over log(s).
 
         Returns
         -------
-        dict
-            Dictionary having the `logscale` key for the derivative.
+        logscale
+            s⋅XXᵀ.
         """
         return dict(logscale=self.value())
 

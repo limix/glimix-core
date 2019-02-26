@@ -24,6 +24,10 @@ def test_kron2sumcov():
     assert_allclose(cov._check_grad(), 0, atol=1e-5)
     assert_allclose(cov.solve(cov.value()), eye(2 * G.shape[0]), atol=1e-7)
     assert_allclose(cov.logdet(), slogdet(cov.value())[1], atol=1e-7)
+    assert_allclose(
+        [cov.L[0, 0], cov.L[2, 3], cov.L[2, 1]],
+        [0.23093921294934955, -5.2536114062217535e-17, 0.2828416166629259],
+    )
 
     def func(x):
         cov.Cr.Lu = x[:2]
