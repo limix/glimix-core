@@ -1,11 +1,10 @@
 from glimix_core.mean import OffsetMean
-from optimix import Assertion
+from numpy.testing import assert_allclose
 
 
-def test_offsetmean_optimix():
-    item0 = 5
-    item1 = 10
-
-    a = Assertion(OffsetMean, item0, item1, 0.0, offset=0.5)
-    a.assert_layout()
-    a.assert_gradient()
+def test_mean_offset():
+    mean = OffsetMean(2)
+    mean.offset = 1.5
+    assert_allclose(mean.value(), [1.5, 1.5])
+    assert_allclose(mean.offset, 1.5)
+    assert_allclose(mean._check_grad(), 0, atol=1e-5)

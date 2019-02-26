@@ -39,7 +39,8 @@ class OffsetMean(Func):
     def __init__(self, n):
         self._offset = Scalar(0.0)
         self._offset.bounds = (-200.0, +200)
-        Func.__init__(self, offset=self._offset)
+        self._n = n
+        Func.__init__(self, "OffsetMean", offset=self._offset)
 
     def value(self):
         """
