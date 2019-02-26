@@ -1,4 +1,5 @@
-from numpy import arange, array, concatenate, newaxis, ones, sqrt
+import pytest
+from numpy import array, concatenate, inf, nan, newaxis, ones, sqrt
 from numpy.random import RandomState
 from numpy.testing import assert_allclose
 
@@ -402,3 +403,31 @@ def test_lmm_scan_lmm_iid_prior():
     fast_scanner = lmm.get_fast_scanner()
     lmls = fast_scanner.fast_scan(markers, verbose=False)[0]
     assert_allclose(lmls[:2], [-63.16019973550036, -62.489358539276715])
+
+
+def test_lmm_scan_interface():
+    y = array([-1.0449132, 1.15229426, 0.79595129])
+    low_rank_K = array([[5.0, 14.0, 23.0], [14.0, 50.0, 86.0], [23.0, 86.0, 149.0]])
+    QS = economic_qs(low_rank_K)
+    X = ones((3, 1))
+
+    y[0] = nan
+    with pytest.raises(ValueError):
+        FastScanner(y, X, QS, 0.5)
+
+    y[0] = inf
+    with pytest.raises(ValueError):
+        FastScanner(y, X, QS, 0.5)
+
+    y[0] = 1
+    X[0, 0] = nan
+    with pytest.raises(ValueError):
+        FastScanner(y, X, QS, 0.5)
+
+    y[0] = 1
+    X[0, 0] = 1
+    with pytest.raises(ValueError):
+        FastScanner(y, X, QS, -1)
+
+    with pytest.raises(ValueError):
+        FastScanner(y, X, QS, nan)
