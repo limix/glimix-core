@@ -20,12 +20,11 @@ class LinearMean(Func):
 
     .. doctest::
 
-        >>> from numpy import array
         >>> from glimix_core.mean import LinearMean
         >>>
         >>> mean = LinearMean(2)
         >>> mean.effsizes = [1.0, -1.0]
-        >>> mean.X = array([[1.5, 0.2], [0.5, 0.4]])
+        >>> mean.X = [[1.5, 0.2], [0.5, 0.4]]
         >>> print(mean.value())
         [1.3 0.1]
         >>> print(mean.gradient()["effsizes"])

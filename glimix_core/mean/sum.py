@@ -23,41 +23,34 @@ class SumMean(Func):
 
     .. doctest::
 
-        >>> from numpy import arange
         >>> from glimix_core.mean import OffsetMean, LinearMean, SumMean
         >>>
         >>> X = [[5.1, 1.0],
         ...      [2.1, -0.2]]
         >>>
         >>> mean0 = LinearMean(2)
-        >>> mean0.set_data((X, ))
+        >>> mean0.X = X
         >>> mean0.effsizes = [-1.0, 0.5]
         >>>
-        >>> mean1 = OffsetMean()
-        >>> mean1.set_data((arange(2), ))
+        >>> mean1 = OffsetMean(2)
         >>> mean1.offset = 2.0
         >>>
         >>> mean = SumMean([mean0, mean1])
         >>>
-        >>> print(mean.feed().value())
+        >>> print(mean.value())
         [-2.6 -0.2]
-        >>> g = mean.feed().gradient()
-        >>> print(g['sum[0].effsizes'])
-        [[5.1, 1.0], [2.1, -0.2]]
-        >>> print(g['sum[1].offset'])
+        >>> g = mean.gradient()
+        >>> print(g["SumMean[0].effsizes"])
+        [[ 5.1  1. ]
+         [ 2.1 -0.2]]
+        >>> print(g["SumMean[1].offset"])
         [1. 1.]
-        >>> print(mean)
-        SumMean(means=...)
-          LinearMean(size=2)
-            effsizes: [-1.   0.5]
-          OffsetMean()
-            offset: 2.0
         >>> mean0.name = "A"
         >>> mean1.name = "B"
         >>> mean.name = "A+B"
         >>> print(mean)
         SumMean(means=...): A+B
-          LinearMean(size=2): A
+          LinearMean(m=2): A
             effsizes: [-1.   0.5]
           OffsetMean(): B
             offset: 2.0
