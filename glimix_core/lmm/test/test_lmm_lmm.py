@@ -3,28 +3,27 @@ from __future__ import division
 from numpy import arange, corrcoef, dot, ones, sqrt
 from numpy.random import RandomState
 from numpy.testing import assert_allclose
-from numpy_sugar.linalg import economic_qs_linear
 
 from glimix_core.cov import EyeCov, LinearCov, SumCov
 from glimix_core.lik import DeltaProdLik
 from glimix_core.lmm import LMM
 from glimix_core.mean import OffsetMean
 from glimix_core.random import GGPSampler
+from numpy_sugar.linalg import economic_qs_linear
 
 
 def _outcome_sample(random, offset, X):
     n = X.shape[0]
-    mean = OffsetMean()
+    mean = OffsetMean(n)
     mean.offset = offset
-    mean.set_data(arange(n), purpose="sample")
 
     cov_left = LinearCov()
     cov_left.scale = 1.5
-    cov_left.set_data((X, X), purpose="sample")
+    cov_left.X = X
 
     cov_right = EyeCov()
+    cov_right.dim = n
     cov_right.scale = 1.5
-    cov_right.set_data((arange(n), arange(n)), purpose="sample")
 
     cov = SumCov([cov_left, cov_right])
 
@@ -41,7 +40,7 @@ def _covariates_sample(random, n, p):
     return X
 
 
-def test_lmm_prediction():
+def test_lmm_lmm_prediction():
     random = RandomState(9458)
     n = 30
     X = _covariates_sample(random, n, n + 1)

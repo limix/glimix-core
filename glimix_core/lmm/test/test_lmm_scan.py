@@ -1,5 +1,3 @@
-from __future__ import division
-
 from numpy import arange, array, concatenate, newaxis, ones, sqrt
 from numpy.random import RandomState
 from numpy.testing import assert_allclose
@@ -12,7 +10,7 @@ from glimix_core.random import GGPSampler
 from numpy_sugar.linalg import economic_qs, economic_qs_linear
 
 
-def test_scan_fix_unfix():
+def test_lmm_scan_fix_unfix():
     random = RandomState(12)
     n = 100
     X = _covariates_sample(random, n, n + 1)
@@ -59,7 +57,7 @@ def test_scan_fix_unfix():
     assert_allclose(lmm.lml(), -615.1757214529657)
 
 
-def test_scan_fast_scan():
+def test_lmm_scan_fast_scan():
     random = RandomState(9458)
     n = 30
     X = _covariates_sample(random, n, n + 1)
@@ -93,7 +91,7 @@ def test_scan_fast_scan():
     assert_allclose(lmls, [lml0, lml1])
 
 
-def test_scan_fastlmm_redundant_candidates():
+def test_lmm_scan_fastlmm_redundant_candidates():
     random = RandomState(9458)
     n = 10
     X = _covariates_sample(random, n, n + 1)
@@ -116,7 +114,7 @@ def test_scan_fastlmm_redundant_candidates():
     assert_allclose(lmls, [-9.929912871392519] * 5, rtol=1e-5)
 
 
-def test_scan_fastlmm_set_scale_1covariate():
+def test_lmm_scan_fastlmm_set_scale_1covariate():
     random = RandomState(9458)
     n = 10
     X = _covariates_sample(random, n, n + 1)
@@ -152,7 +150,7 @@ def test_scan_fastlmm_set_scale_1covariate():
     assert_allclose(effsizes, [1.412239], rtol=1e-6)
 
 
-def test_scan_fastlmm_set_scale_1covariate_redundant():
+def test_lmm_scan_fastlmm_set_scale_1covariate_redundant():
     random = RandomState(9458)
     n = 10
     X = _covariates_sample(random, n, n + 1)
@@ -184,7 +182,7 @@ def test_scan_fastlmm_set_scale_1covariate_redundant():
     assert_allclose(effsizes[0], 0.02998562491058301, rtol=1e-6, atol=1e-6)
 
 
-def test_scan_fastlmm_set_scale_multicovariates():
+def test_lmm_scan_fastlmm_set_scale_multicovariates():
     random = RandomState(9458)
     n = 10
     X = _covariates_sample(random, n, n + 1)
@@ -223,7 +221,7 @@ def test_scan_fastlmm_set_scale_multicovariates():
     assert_allclose(effsizes, want, rtol=1e-6, atol=1e-6)
 
 
-def test_scan_difficult_settings_offset():
+def test_lmm_scan_difficult_settings_offset():
     y = array([-1.0449132, 1.15229426, 0.79595129])
     low_rank_K = array([[5.0, 14.0, 23.0], [14.0, 50.0, 86.0], [23.0, 86.0, 149.0]])
     full_rank_K = array([[6.0, 14.0, 23.0], [14.0, 51.0, 86.0], [23.0, 86.0, 150.0]])
@@ -289,7 +287,7 @@ def test_scan_difficult_settings_offset():
     assert_allclose(effsizes[1], 0.86994164292)
 
 
-def test_scan_difficult_settings_multicovariates():
+def test_lmm_scan_difficult_settings_multicovariates():
     y = array([-1.0449132, 1.15229426, 0.79595129])
     low_rank_K = array([[5.0, 14.0, 23.0], [14.0, 50.0, 86.0], [23.0, 86.0, 149.0]])
     full_rank_K = array([[6.0, 14.0, 23.0], [14.0, 51.0, 86.0], [23.0, 86.0, 150.0]])
@@ -362,17 +360,16 @@ def test_scan_difficult_settings_multicovariates():
 
 def _outcome_sample(random, offset, X):
     n = X.shape[0]
-    mean = OffsetMean()
+    mean = OffsetMean(n)
     mean.offset = offset
-    mean.set_data(arange(n), purpose="sample")
 
     cov_left = LinearCov()
     cov_left.scale = 1.5
-    cov_left.set_data((X, X), purpose="sample")
+    cov_left.X = X
 
     cov_right = EyeCov()
+    cov_right.dim = n
     cov_right.scale = 1.5
-    cov_right.set_data((arange(n), arange(n)), purpose="sample")
 
     cov = SumCov([cov_left, cov_right])
 
@@ -389,7 +386,7 @@ def _covariates_sample(random, n, p):
     return X
 
 
-def test_scan_lmm_iid_prior():
+def test_lmm_scan_lmm_iid_prior():
     random = RandomState(9458)
     n = 30
     X = _covariates_sample(random, n, n + 1)
