@@ -1,5 +1,5 @@
 from . import classes, numbers
-from ._array import vec
+from ._array import vec, unvec
 from .check import check_covariates, check_economic_qs, check_outcome
 from .eigen import economic_qs_zeros
 from .hsolve import hsolve
@@ -20,6 +20,7 @@ __all__ = [
     "normalise_outcome",
     "numbers",
     "vec",
+    "unvec",
     "format_function",
-    "format_named_arr"
+    "format_named_arr",
 ]
