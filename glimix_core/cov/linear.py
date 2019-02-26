@@ -46,6 +46,12 @@ class LinearCov(Func):
     def X(self, X):
         self._X = X
 
+    def fix_scale(self):
+        self._fix("logscale")
+
+    def unfix_scale(self):
+        self._unfix("logscale")
+
     @property
     def scale(self):
         """

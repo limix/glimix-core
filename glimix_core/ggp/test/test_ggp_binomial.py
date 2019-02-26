@@ -20,17 +20,12 @@ def test_ggp_binomial_tobi():
 
     lik = BinomialProdLik(ntrials=ntrials, link=LogitLink())
 
-    mean = OffsetMean()
-    mean.set_data(np.ones(n), purpose="sample")
-    mean.set_data(np.ones(n), purpose="learn")
+    mean = OffsetMean(n)
 
     cov2 = EyeCov()
-    cov2.set_data((np.arange(n), np.arange(n)), purpose="sample")
-    cov2.set_data((np.arange(n), np.arange(n)))
+    cov2.dim = n
 
     y = GGPSampler(lik, mean, cov2).sample(random)
-
-    mean.value(np.ones(n))
 
     ggp = ExpFamGP(y, ("binomial", ntrials), mean, cov2)
     assert_allclose(ggp.lml(), -67.84095700542488)

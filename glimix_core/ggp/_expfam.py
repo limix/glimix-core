@@ -1,18 +1,16 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import warnings
 
 from liknorm import LikNormMachine
 from numpy import ascontiguousarray, sign
 from numpy.linalg import LinAlgError
 
-from optimix import FunctionReduce
+from optimix import Func
 
 from ..ep import EP
 from ..util import check_outcome
 
 
-class ExpFamGP(FunctionReduce):
+class ExpFamGP(Func):
     r"""Expectation Propagation for Generalised Gaussian Processes.
 
     Parameters
@@ -61,7 +59,7 @@ class ExpFamGP(FunctionReduce):
             n = len(y[0])
         else:
             n = len(y)
-        FunctionReduce.__init__(self, [mean, cov], name="ExpFamGP")
+        Func.__init__(self, "ExpFamGP", composite=[mean, cov])
 
         if not isinstance(lik, (tuple, list)):
             lik = (lik,)
@@ -104,7 +102,7 @@ class ExpFamGP(FunctionReduce):
         Please, refer to :func:`scipy.optimize.fmin_l_bfgs_b` for further information
         about ``factr`` and ``pgtol``.
         """
-        self.feed().maximize(verbose=verbose, factr=factr, pgtol=pgtol)
+        self.maximize(verbose=verbose, factr=factr, pgtol=pgtol)
 
     def lml(self):
         r"""Log of the marginal likelihood.
@@ -114,18 +112,18 @@ class ExpFamGP(FunctionReduce):
         float
             :math:`\log p(\mathbf y)`
         """
-        return self.feed().value()
+        return self.value()
 
     def compute_moments(self, eta, tau, moments):
         y = (self._y,) + self._lik[1:]
         self._machine.moments(y, eta, tau, moments)
 
-    def value_reduce(self, values):
+    def value(self):
         from numpy_sugar import epsilon
         from numpy_sugar.linalg import economic_qs
 
-        mean = values["ExpFamGP[0]"]
-        cov = values["ExpFamGP[1]"]
+        mean = self._mean.value()
+        cov = self._cov.value()
         try:
             self._ep.set_prior(mean, dict(QS=economic_qs(cov)))
             lml = self._ep.lml()
@@ -134,14 +132,14 @@ class ExpFamGP(FunctionReduce):
             lml = -1 / epsilon.small
         return lml
 
-    def gradient_reduce(self, values, gradients):
+    def gradient(self):
         from numpy_sugar import epsilon
         from numpy_sugar.linalg import economic_qs
 
-        mean = values["ExpFamGP[0]"]
-        cov = values["ExpFamGP[1]"]
-        gmean = gradients["ExpFamGP[0]"]
-        gcov = gradients["ExpFamGP[1]"]
+        mean = self._mean.value()
+        cov = self._cov.value()
+        gmean = self._mean.gradient()
+        gcov = self._cov.gradient()
 
         try:
             self._ep.set_prior(mean, dict(QS=economic_qs(cov)))

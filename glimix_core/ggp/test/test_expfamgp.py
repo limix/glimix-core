@@ -22,20 +22,16 @@ def _get_data():
     X /= sqrt(X.shape[1])
     offset = 1.0
 
-    mean = OffsetMean()
+    mean = OffsetMean(N)
     mean.offset = offset
-    mean.set_data(arange(N), purpose="sample")
-    mean.set_data(arange(N), purpose="learn")
 
     cov_left = LinearCov()
     cov_left.scale = 1.5
-    cov_left.set_data((X, X), purpose="sample")
-    cov_left.set_data((X, X), purpose="learn")
+    cov_left.X = X
 
     cov_right = EyeCov()
     cov_right.scale = 1.5
-    cov_right.set_data((arange(N), arange(N)), purpose="sample")
-    cov_right.set_data((arange(N), arange(N)), purpose="learn")
+    cov_right.dim = N
 
     cov = SumCov([cov_left, cov_right])
 
@@ -51,20 +47,20 @@ def _get_data():
 def test_expfam_ep():
     data = _get_data()
     ep = ExpFamGP((data["y"],), "bernoulli", data["mean"], data["cov"])
-    assert_allclose(ep.feed().value(), -5.031838893222976)
+    assert_allclose(ep.value(), -5.031838893222976)
 
 
 def test_expfam_ep_function():
     data = _get_data()
     ep = ExpFamGP((data["y"],), "bernoulli", data["mean"], data["cov"])
 
-    assert_allclose(check_grad(ep.feed()), 0, atol=1e-4)
+    assert_allclose(ep._check_grad(), 0, atol=1e-4)
 
 
 def test_expfam_ep_optimize():
     data = _get_data()
     ep = ExpFamGP((data["y"],), "bernoulli", data["mean"], data["cov"])
-    data["cov_left"].fix("logscale")
-    ep.feed().maximize(verbose=False)
-    assert_allclose(data["cov_right"].scale, 0.38152460884420397, atol=1e-5)
-    assert_allclose(data["mean"].offset, 2.833961965438454, rtol=1e-6)
+    data["cov_left"].fix_scale()
+    ep.maximize(verbose=False)
+    assert_allclose(data["cov_right"].scale, 0.38162494996579965, atol=1e-5)
+    assert_allclose(data["mean"].offset, 2.8339908366727267, rtol=1e-6)
