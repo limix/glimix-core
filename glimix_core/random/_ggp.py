@@ -71,8 +71,8 @@ class GGPSampler(object):
         if random_state is None:
             random_state = RandomState()
 
-        m = self._mean.feed("sample").value()
-        K = self._cov.feed("sample").value().copy()
+        m = self._mean.value()
+        K = self._cov.value().copy()
 
         sum2diag(K, +epsilon.small, out=K)
 

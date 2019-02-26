@@ -15,7 +15,7 @@ def test_glmmnormal_copy():
     random = RandomState(0)
 
     X = random.randn(nsamples(), 5)
-    QS = economic_qs(linear_eye_cov().feed().value())
+    QS = economic_qs(linear_eye_cov().value())
 
     eta = random.randn(nsamples())
     tau = random.rand(nsamples()) * 10
@@ -175,7 +175,7 @@ def test_glmmnormal():
     random = RandomState(0)
     X = random.randn(nsamples(), 5)
     M = random.randn(nsamples(), 3)
-    K = linear_eye_cov().feed().value()
+    K = linear_eye_cov().value()
     QS = economic_qs(K)
 
     eta = random.randn(nsamples())

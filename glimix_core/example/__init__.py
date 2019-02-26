@@ -9,10 +9,8 @@ def nsamples():
 
 
 def offset_mean():
-    mean = OffsetMean()
+    mean = OffsetMean(nsamples())
     mean.offset = 0.5
-    mean.set_data(arange(nsamples()), purpose="sample")
-    mean.set_data(arange(nsamples()), purpose="learn")
 
     return mean
 
@@ -26,13 +24,10 @@ def linear_eye_cov():
 
     cov_left = LinearCov()
     cov_left.scale = 1.0
-    cov_left.set_data((X, X), purpose="sample")
-    cov_left.set_data((X, X), purpose="learn")
+    cov_left.X = X
 
     cov_right = EyeCov()
+    cov_right.dim = nsamples()
     cov_right.scale = 1.0
-    n = nsamples()
-    cov_right.set_data((arange(n), arange(n)), purpose="sample")
-    cov_right.set_data((arange(n), arange(n)), purpose="learn")
 
     return SumCov([cov_left, cov_right])

@@ -40,7 +40,7 @@ def test_glmmexpfam_layout():
 def test_glmmexpfam_copy():
     random = RandomState(0)
     X = random.randn(nsamples(), 5)
-    K = linear_eye_cov().feed().value()
+    K = linear_eye_cov().value()
     z = random.multivariate_normal(0.2 * ones(nsamples()), K)
     QS = economic_qs(K)
 
@@ -76,7 +76,7 @@ def test_glmmexpfam_copy():
 def test_glmmexpfam_precise():
     random = RandomState(0)
     X = random.randn(nsamples(), 5)
-    K = linear_eye_cov().feed().value()
+    K = linear_eye_cov().value()
     QS = economic_qs(K)
 
     ntri = random.randint(1, 30, nsamples())
@@ -106,7 +106,7 @@ def test_glmmexpfam_precise():
 def test_glmmexpfam_glmmnormal_get_fast_scanner():
     random = RandomState(0)
     X = random.randn(nsamples(), 5)
-    K = linear_eye_cov().feed().value()
+    K = linear_eye_cov().value()
     QS = economic_qs(K)
 
     eta = random.randn(nsamples())
@@ -132,7 +132,7 @@ def test_glmmexpfam_glmmnormal_get_fast_scanner():
 def test_glmmexpfam_delta0():
     random = RandomState(0)
     X = random.randn(nsamples(), 5)
-    K = linear_eye_cov().feed().value()
+    K = linear_eye_cov().value()
     QS = economic_qs(K)
 
     ntri = random.randint(1, 30, nsamples())
@@ -150,7 +150,7 @@ def test_glmmexpfam_delta0():
 def test_glmmexpfam_delta1():
     random = RandomState(0)
     X = random.randn(nsamples(), 5)
-    K = linear_eye_cov().feed().value()
+    K = linear_eye_cov().value()
     QS = economic_qs(K)
 
     ntri = random.randint(1, 30, nsamples())
@@ -168,7 +168,7 @@ def test_glmmexpfam_delta1():
 def test_glmmexpfam_wrong_qs():
     random = RandomState(0)
     X = random.randn(10, 15)
-    linear_eye_cov().feed().value()
+    linear_eye_cov().value()
     QS = [0, 1]
 
     ntri = random.randint(1, 30, 10)
@@ -181,7 +181,7 @@ def test_glmmexpfam_wrong_qs():
 def test_glmmexpfam_optimize():
     random = RandomState(0)
     X = random.randn(nsamples(), 5)
-    K = linear_eye_cov().feed().value()
+    K = linear_eye_cov().value()
     z = random.multivariate_normal(0.2 * ones(nsamples()), K)
     QS = economic_qs(K)
 
@@ -385,7 +385,7 @@ def test_glmmexpfam_binomial_large_ntrials():
 def test_glmmexpfam_scale_very_low():
     random = RandomState(0)
     X = random.randn(nsamples(), 5)
-    K = linear_eye_cov().feed().value()
+    K = linear_eye_cov().value()
     QS = economic_qs(K)
 
     ntri = random.randint(1, 30, nsamples())
@@ -403,7 +403,7 @@ def test_glmmexpfam_scale_very_low():
 def test_glmmexpfam_scale_very_high():
     random = RandomState(0)
     X = random.randn(nsamples(), 5)
-    K = linear_eye_cov().feed().value()
+    K = linear_eye_cov().value()
     QS = economic_qs(K)
 
     ntri = random.randint(1, 30, nsamples())
@@ -507,7 +507,7 @@ def test_glmmexpfam_predict():
 def test_glmmexpfam_qs_none():
     random = RandomState(0)
     X = random.randn(nsamples(), 5)
-    K = linear_eye_cov().feed().value()
+    K = linear_eye_cov().value()
     z = random.multivariate_normal(0.2 * ones(nsamples()), K)
 
     ntri = random.randint(1, 30, nsamples())

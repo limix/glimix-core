@@ -172,17 +172,14 @@ def _mean_cov(offset, G, heritability, causal_variants, causal_variance, random_
 
     G /= sqrt(G.shape[1])
 
-    mean1 = OffsetMean()
+    mean1 = OffsetMean(nsamples)
     mean1.offset = offset
 
     cov1 = LinearCov()
+    cov1.X = G
     cov2 = EyeCov()
+    cov2.dim = nsamples
     cov = SumCov([cov1, cov2])
-
-    mean1.set_data(arange(nsamples), "sample")
-    cov1.set_data((G, G), "sample")
-    a = arange(nsamples)
-    cov2.set_data((a, a), "sample")
 
     cov1.scale = heritability - causal_variance
     cov2.scale = 1 - heritability - causal_variance
