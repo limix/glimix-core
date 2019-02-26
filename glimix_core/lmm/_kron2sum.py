@@ -6,10 +6,10 @@ from numpy.linalg import matrix_rank
 from glimix_core.cov import Kron2SumCov
 from glimix_core.mean import KronMean
 from glimix_core.util import log2pi
-from optimix import Function
+from optimix import Func
 
 
-class Kron2Sum(Function):
+class Kron2Sum(Func):
     def __init__(self, Y, A, F, G, rank=1):
         """ LMM for multiple multiple traits.
 
@@ -44,14 +44,11 @@ class Kron2Sum(Function):
         self._mean = KronMean(F.shape[1], Y.shape[1])
         self._mean.A = A
         self._mean.F = F
-        vecB = self._mean.variables().get("vecB")
-        Cr_Lu = self._cov.variables().get("Cr_Lu")
-        Cn_L0 = self._cov.variables().get("Cn_L0")
-        Cn_L1 = self._cov.variables().get("Cn_L1")
-        Function.__init__(
-            self, vecB=vecB, Cr_Lu=Cr_Lu, Cn_L0=Cn_L0, Cn_L1=Cn_L1
+        Func.__init__(
+            self,
+            "Kron2Sum",
+            composite=[("M", self._mean), ("Cr", self._cov.Cr), ("Cn", self._cov.Cn)],
         )
-        self.set_nodata()
 
     @property
     def mean(self):
@@ -98,7 +95,7 @@ class Kron2Sum(Function):
         np = self.nsamples * self.ntraits
         lml = -np * log2pi - self._cov.logdet()
 
-        m = self._mean.compact_value()
+        m = self._mean.value()
         d = self._y - m
         dKid = d @ self._cov.solve(d)
         lml -= dKid
@@ -119,14 +116,14 @@ class Kron2Sum(Function):
             Log of the marginal likelihood.
         """
         ld_grad = self._cov.logdet_gradient()
-        dK = self._cov.compact_gradient()
+        dK = {n: g.transpose([2, 0, 1]) for (n, g) in self._cov.gradient().items()}
         Kiy = self._cov.solve(self._y)
-        m = self._mean.compact_value()
+        m = self._mean.value()
         Kim = self._cov.solve(m)
         grad = {}
-        dm = self._mean.compact_gradient()["vecB"]
-        grad["vecB"] = dm.T @ Kiy - dm.T @ Kim
-        for var in ["Cr_Lu", "Cn_L0", "Cn_L1"]:
+        dm = self._mean.gradient()["vecB"]
+        grad["M.vecB"] = dm.T @ Kiy - dm.T @ Kim
+        for var in ["Cr.Lu", "Cn.L0", "Cn.L1"]:
             grad[var] = -ld_grad[var]
             grad[var] += Kiy.T @ dK[var] @ Kiy
             grad[var] -= 2 * (Kim.T @ dK[var] @ Kiy)
@@ -148,7 +145,7 @@ class Kron2Sum(Function):
             Defaults to ``True``.
         """
         # self._verbose = verbose
-        self.feed().maximize(verbose=verbose)
+        self.maximize(verbose=verbose)
         # self.delta = self._get_delta()
         # self._update_fixed_effects()
         # self._verbose = False

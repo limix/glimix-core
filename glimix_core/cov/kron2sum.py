@@ -1,4 +1,4 @@
-from numpy import asarray, atleast_2d, concatenate, eye, diagonal, kron, log, sqrt
+from numpy import asarray, atleast_2d, concatenate, diagonal, eye, kron, log, sqrt
 from numpy.linalg import eigh, svd
 
 from numpy_sugar.linalg import ddot
@@ -45,7 +45,9 @@ class Kron2SumCov(Func):
         self._Cn = FreeFormCov(dim)
         self._G = None
         self._I = None
-        Func.__init__(self, "Kron2SumCov", composite=[self._Cr, self._Cn])
+        Func.__init__(
+            self, "Kron2SumCov", composite=[("Cr", self._Cr), ("Cn", self._Cn)]
+        )
 
     @property
     def G(self):
@@ -122,9 +124,9 @@ class Kron2SumCov(Func):
         Cn_L1 = Cn_grad["L1"].transpose([2, 0, 1])
 
         return {
-            "Kron2SumCov[0].Lu": kron(Cr_Lu, X).transpose([1, 2, 0]),
-            "Kron2SumCov[1].L0": kron(Cn_L0, I).transpose([1, 2, 0]),
-            "Kron2SumCov[1].L1": kron(Cn_L1, I).transpose([1, 2, 0]),
+            "Cr.Lu": kron(Cr_Lu, X).transpose([1, 2, 0]),
+            "Cn.L0": kron(Cn_L0, I).transpose([1, 2, 0]),
+            "Cn.L1": kron(Cn_L1, I).transpose([1, 2, 0]),
         }
 
     def solve(self, v):
@@ -200,30 +202,14 @@ class Kron2SumCov(Func):
 
         r0 = (
             D
-            * diagonal(
-                L @ Kgrad["Kron2SumCov[0].Lu"].transpose([2, 0, 1]) @ L.T,
-                axis1=1,
-                axis2=2,
-            )
+            * diagonal(L @ Kgrad["Cr.Lu"].transpose([2, 0, 1]) @ L.T, axis1=1, axis2=2)
         ).sum(1)
         r1 = (
             D
-            * diagonal(
-                L @ Kgrad["Kron2SumCov[1].L0"].transpose([2, 0, 1]) @ L.T,
-                axis1=1,
-                axis2=2,
-            )
+            * diagonal(L @ Kgrad["Cn.L0"].transpose([2, 0, 1]) @ L.T, axis1=1, axis2=2)
         ).sum(1)
         r2 = (
             D
-            * diagonal(
-                L @ Kgrad["Kron2SumCov[1].L1"].transpose([2, 0, 1]) @ L.T,
-                axis1=1,
-                axis2=2,
-            )
+            * diagonal(L @ Kgrad["Cn.L1"].transpose([2, 0, 1]) @ L.T, axis1=1, axis2=2)
         ).sum(1)
-        return {
-            "Kron2SumCov[0].Lu": r0,
-            "Kron2SumCov[1].L0": r1,
-            "Kron2SumCov[1].L1": r2,
-        }
+        return {"Cr.Lu": r0, "Cn.L0": r1, "Cn.L1": r2}

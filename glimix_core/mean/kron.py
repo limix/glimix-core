@@ -1,5 +1,6 @@
 from numpy import asarray, atleast_2d, concatenate, dot, kron, ones, stack, zeros
-from glimix_core.util import vec, unvec
+
+from glimix_core.util import unvec, vec
 from optimix import Func, Vector
 
 
@@ -83,6 +84,10 @@ class KronMean(Func):
         Effect-sizes parameter.
         """
         return unvec(self._vecB.value, (self._c, self._p))
+
+    # @property
+    # def vecB(self):
+    #     return self._vecB
 
     @B.setter
     def B(self, v):

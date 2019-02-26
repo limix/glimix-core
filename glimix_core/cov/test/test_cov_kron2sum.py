@@ -1,8 +1,8 @@
-from scipy.optimize import check_grad
 from numpy import array, concatenate, eye, kron
 from numpy.linalg import slogdet
 from numpy.random import RandomState
 from numpy.testing import assert_allclose
+from scipy.optimize import check_grad
 
 from glimix_core.cov import Kron2SumCov
 
@@ -40,9 +40,7 @@ def test_kron2sumcov():
         cov.Cn.L0 = x[2:3]
         cov.Cn.L1 = x[3:]
         D = cov.logdet_gradient()
-        return concatenate(
-            (D["Kron2SumCov[0].Lu"], D["Kron2SumCov[1].L0"], D["Kron2SumCov[1].L1"])
-        )
+        return concatenate((D["Cr.Lu"], D["Cn.L0"], D["Cn.L1"]))
 
     random = RandomState(0)
     assert_allclose(check_grad(func, grad, random.randn(5)), 0, atol=1e-5)
