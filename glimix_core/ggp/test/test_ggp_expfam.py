@@ -1,16 +1,13 @@
-from __future__ import division
-
-from numpy import arange, sqrt
+from numpy import matmul, sqrt
 from numpy.random import RandomState
 from numpy.testing import assert_allclose
 
 from glimix_core.cov import EyeCov, LinearCov, SumCov
 from glimix_core.ggp import ExpFamGP
-from glimix_core.lik import BernoulliProdLik
+from glimix_core.lik import BernoulliProdLik, BinomialProdLik
 from glimix_core.link import LogitLink
 from glimix_core.mean import OffsetMean
 from glimix_core.random import GGPSampler
-from optimix import check_grad
 
 
 def _get_data():
@@ -44,23 +41,37 @@ def _get_data():
     )
 
 
-def test_expfam_ep():
+def test_ggp_expfam():
     data = _get_data()
     ep = ExpFamGP((data["y"],), "bernoulli", data["mean"], data["cov"])
     assert_allclose(ep.value(), -5.031838893222976)
-
-
-def test_expfam_ep_function():
-    data = _get_data()
-    ep = ExpFamGP((data["y"],), "bernoulli", data["mean"], data["cov"])
-
     assert_allclose(ep._check_grad(), 0, atol=1e-4)
-
-
-def test_expfam_ep_optimize():
-    data = _get_data()
-    ep = ExpFamGP((data["y"],), "bernoulli", data["mean"], data["cov"])
     data["cov_left"].fix_scale()
     ep.maximize(verbose=False)
     assert_allclose(data["cov_right"].scale, 0.38162494996579965, atol=1e-5)
     assert_allclose(data["mean"].offset, 2.8339908366727267, rtol=1e-6)
+
+
+def test_ggp_expfam_tobi():
+    random = RandomState(2)
+
+    n = 30
+
+    ntrials = random.randint(30, size=n)
+    K = random.randn(n, n)
+    K = matmul(K, K.T)
+
+    lik = BinomialProdLik(ntrials=ntrials, link=LogitLink())
+
+    mean = OffsetMean(n)
+
+    cov2 = EyeCov()
+    cov2.dim = n
+
+    y = GGPSampler(lik, mean, cov2).sample(random)
+
+    ggp = ExpFamGP(y, ("binomial", ntrials), mean, cov2)
+    assert_allclose(ggp.lml(), -67.84095700542488)
+
+    ggp.fit(verbose=False)
+    assert_allclose(ggp.lml(), -64.26701904994792)
