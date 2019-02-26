@@ -20,19 +20,15 @@ class OffsetMean(Func):
 
         >>> from glimix_core.mean import OffsetMean
         >>>
-        >>> mean = OffsetMean()
+        >>> mean = OffsetMean(3)
         >>> mean.offset = 2.0
-        >>> x = [0, 1, 2]
-        >>> print(mean.value(x))
+        >>> print(mean.value())
         [2. 2. 2.]
-        >>> print(mean.gradient(x))
+        >>> print(mean.gradient())
         {'offset': array([1., 1., 1.])}
+        >>> mean.name = "M"
         >>> print(mean)
-        OffsetMean()
-          offset: 2.0
-        >>> mean.name = "mean-name"
-        >>> print(mean)
-        OffsetMean(): mean-name
+        OffsetMean(): M
           offset: 2.0
     """
 

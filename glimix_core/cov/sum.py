@@ -30,16 +30,10 @@ class SumCov(Func):
         >>> X0 = random.randn(4, 20)
         >>> X1 = random.randn(4, 15)
         >>>
-        >>> cov_left.set_data((X0, X0))
-        >>> cov_right.set_data((X1, X1))
+        >>> cov_left.X = X0
+        >>> cov_right.X = X1
         >>>
         >>> cov = SumCov([cov_left, cov_right])
-        >>> print(cov)
-        SumCov(covariances=...)
-          LinearCov()
-            scale: 0.5
-          LinearCov()
-            scale: 1.0
         >>> cov_left.name = "A"
         >>> cov_right.name = "B"
         >>> cov.name = "A+B"
