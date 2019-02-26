@@ -2,12 +2,10 @@ from __future__ import division
 
 from numpy import exp, log
 
-from optimix import Function, Scalar
-
-from ..util.classes import NamedClass
+from optimix import Func, Scalar
 
 
-class GivenCov(NamedClass, Function):
+class GivenCov(Func):
     r"""Given covariance function.
 
     The mathematical representation is
@@ -43,24 +41,24 @@ class GivenCov(NamedClass, Function):
     """
 
     def __init__(self, K):
-        Function.__init__(self, logscale=Scalar(0.0))
-        self.variables().get("logscale").bounds = (-20.0, +10)
+        self._logscale = Scalar(0.0)
+        Func.__init__(self, "GivenCov", logscale=self._logscale)
+        self._logscale.bounds = (-20.0, +10)
         self._K = K
-        NamedClass.__init__(self)
 
     @property
     def scale(self):
         r"""Scale parameter."""
-        return exp(self.variables().get("logscale").value)
+        return exp(self._logscale.value)
 
     @scale.setter
     def scale(self, scale):
         from numpy_sugar import epsilon
 
         scale = max(scale, epsilon.tiny)
-        self.variables().get("logscale").value = log(scale)
+        self._logscale.value = log(scale)
 
-    def value(self, x0, x1):
+    def value(self):
         r"""Covariance function evaluated at ``(x0, x1)``.
 
         Parameters
@@ -76,9 +74,9 @@ class GivenCov(NamedClass, Function):
             Submatrix of :math:`s \mathrm K`, row and column-indexed by
             ``x0`` and ``x1``.
         """
-        return self.scale * self._K[x0, :][..., x1]
+        return self.scale * self._K
 
-    def gradient(self, x0, x1):
+    def gradient(self):
         r"""Derivative of the covariance function evaluated at ``(x0, x1)``.
 
         Derivative of the covariance function over :math:`\log(s)`.
@@ -96,7 +94,7 @@ class GivenCov(NamedClass, Function):
             Dictionary having the `logscale` key for the derivative, row and
             column-indexed by ``x0`` and ``x1``.
         """
-        return dict(logscale=self.scale * self._K[x0, :][..., x1])
+        return dict(logscale=self.scale * self._K)
 
     def __str__(self):
         tname = type(self).__name__

@@ -5,19 +5,17 @@ from numpy import (
     eye,
     log,
     ones,
-    stack,
     tril_indices_from,
     zeros,
     zeros_like,
 )
 from numpy_sugar import epsilon
-from optimix import Function, Vector
+from optimix import Func, Vector
 
-from ..util.classes import NamedClass
 from ..util import format_function, format_named_arr
 
 
-class FreeFormCov(NamedClass, Function):
+class FreeFormCov(Func):
     """
     General definite positive matrix.
 
@@ -73,11 +71,10 @@ class FreeFormCov(NamedClass, Function):
         self._L[self._tril1] = 1
         self._L[self._diag] = 0
         self._epsilon = epsilon.small * 1000
-        Function.__init__(
-            self, Llow=Vector(ones(tsize - dim)), Llogd=Vector(zeros(dim))
-        )
-        self.variables().get("Llogd").bounds = [(log(epsilon.small * 1000), +15)] * dim
-        NamedClass.__init__(self)
+        self._Llow = Vector(ones(tsize - dim))
+        self._Llogd = Vector(zeros(dim))
+        Func.__init__(self, "FreeCov", Llow=self._Llow, Llogd=self._Llogd)
+        self._Llogd.bounds = [(log(epsilon.small * 1000), +15)] * dim
 
     def eigh(self):
         """
@@ -98,6 +95,22 @@ class FreeFormCov(NamedClass, Function):
         return S, U
 
     @property
+    def Llow(self):
+        return self._Llow.value
+
+    @Llow.setter
+    def Llow(self, v):
+        self._Llow.value = v
+
+    @property
+    def Llogd(self):
+        return self._Llogd.value
+
+    @Llogd.setter
+    def Llogd(self, v):
+        self._Llogd.value = v
+
+    @property
     def L(self):
         """
         Lower-triangular matrix L such that K = LLᵗ + ϵI.
@@ -107,15 +120,15 @@ class FreeFormCov(NamedClass, Function):
         L : (d, d) ndarray
             Lower-triangular matrix.
         """
-        self._L[self._tril1] = self.variables().get("Llow").value
-        self._L[self._diag] = exp(self.variables().get("Llogd").value)
+        self._L[self._tril1] = self._Llow.value
+        self._L[self._diag] = exp(self._Llogd.value)
         return self._L
 
     @L.setter
     def L(self, value):
         self._L[:] = value
-        self.variables().get("Llow").value = self._L[self._tril1]
-        self.variables().get("Llogd").value = log(self._L[self._diag])
+        self._Llow.value = self._L[self._tril1]
+        self._Llogd.value = log(self._L[self._diag])
 
     def logdet(self):
         r"""
@@ -128,16 +141,18 @@ class FreeFormCov(NamedClass, Function):
         """
         from numpy.linalg import slogdet
 
-        K = self.feed().value()
+        K = self.value()
 
         sign, logdet = slogdet(K)
         if sign != 1.0:
 
-            raise RuntimeError("The estimated determinant of K is not positive: "
-                               + f" ({sign}, {logdet}).")
+            raise RuntimeError(
+                "The estimated determinant of K is not positive: "
+                + f" ({sign}, {logdet})."
+            )
         return logdet
 
-    def value(self, x0, x1):
+    def value(self):
         """
         Covariance function evaluated at (x₀,x₁).
 
@@ -153,13 +168,10 @@ class FreeFormCov(NamedClass, Function):
         ndarray
             Submatrix of K, row and column-indexed by ``x0`` and ``x1``.
         """
-        K = dot(self.L, self.L.T)[x0, ...][..., x1]
-        if K.ndim == 2 and K.shape[0] == K.shape[1]:
-            # TODO: fix this hacky
-            return K + self._epsilon * eye(K.shape[0])
-        return K
+        K = dot(self.L, self.L.T)
+        return K + self._epsilon * eye(K.shape[0])
 
-    def gradient(self, x0, x1):
+    def gradient(self):
         r"""
         Derivative of the covariance function evaluated at (x₀,x₁).
 
@@ -179,25 +191,30 @@ class FreeFormCov(NamedClass, Function):
             of the derivative of :math:`\mathrm L\mathrm L^\intercal`, row and
             column-indexed by ``x0`` and ``x1``.
         """
+
         L = self.L
         Lo = zeros_like(L)
-        grad = {"Llow": [], "Llogd": []}
+        n = self.L.shape[0]
+        grad = {
+            "Llow": zeros((n, n, self._Llow.shape[0])),
+            "Llogd": zeros((n, n, self._Llogd.shape[0])),
+        }
+        i = 0
+        j = 0
         for ii in range(len(self._tril[0])):
             row = self._tril[0][ii]
             col = self._tril[1][ii]
             if row == col:
                 Lo[row, col] = L[row, col]
-                grad["Llogd"].append(dot(Lo, L.T) + dot(L, Lo.T))
+                grad["Llogd"][..., i] = dot(Lo, L.T) + dot(L, Lo.T)
+                i += 1
             else:
                 Lo[row, col] = 1
-                grad["Llow"].append(dot(Lo, L.T) + dot(L, Lo.T))
+                grad["Llow"][..., j] = dot(Lo, L.T) + dot(L, Lo.T)
+                j += 1
             Lo[row, col] = 0
 
-        grad["Llow"] = [g[x0, ...][..., x1] for g in grad["Llow"]]
-        grad["Llogd"] = [g[x0, ...][..., x1] for g in grad["Llogd"]]
-        return dict(
-            Llow=stack(grad["Llow"], axis=-1), Llogd=stack(grad["Llogd"], axis=-1)
-        )
+        return grad
 
     def __str__(self):
         msg = format_function(self, dim=self._L.shape[0]) + "\n"

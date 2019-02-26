@@ -1,14 +1,13 @@
 from __future__ import division
 
-from numpy import asarray, dot, ones, stack, zeros_like
+from numpy import asarray, dot, ones, zeros_like, zeros
 
-from optimix import Function, Vector
+from optimix import Func, Vector
 
-from ..util.classes import NamedClass
 from ..util import format_function, format_named_arr
 
 
-class LRFreeFormCov(NamedClass, Function):
+class LRFreeFormCov(Func):
     """
     General semi-definite positive matrix of low rank.
 
@@ -68,8 +67,16 @@ class LRFreeFormCov(NamedClass, Function):
 
     def __init__(self, m, n):
         self._L = ones((m, n))
-        Function.__init__(self, Lu=Vector(self._L.ravel()))
-        NamedClass.__init__(self)
+        self._Lu = Vector(self._L.ravel())
+        Func.__init__(self, "LRFreeFormCov", Lu=self._Lu)
+
+    @property
+    def Lu(self):
+        return self._Lu.value
+
+    @Lu.setter
+    def Lu(self, v):
+        self._Lu.value = v
 
     @property
     def L(self):
@@ -85,9 +92,9 @@ class LRFreeFormCov(NamedClass, Function):
 
     @L.setter
     def L(self, value):
-        self.variables().get("Lu").value = asarray(value, float).ravel()
+        self._Lu.value = asarray(value, float).ravel()
 
-    def value(self, x0, x1):
+    def value(self):
         """
         Covariance function evaluated at (x₀,x₁).
 
@@ -103,9 +110,9 @@ class LRFreeFormCov(NamedClass, Function):
         ndarray
             Submatrix of K, row and column-indexed by x₀ and x₁.
         """
-        return dot(self.L, self.L.T)[x0, ...][..., x1]
+        return dot(self.L, self.L.T)
 
-    def gradient(self, x0, x1):
+    def gradient(self):
         """
         Derivative of the covariance function evaluated at (x₀,x₁).
 
@@ -124,17 +131,17 @@ class LRFreeFormCov(NamedClass, Function):
             Derivative of K over the flattened L, row and column-indexed by x₀ and x₁.
         """
         L = self.L
+        n = self.L.shape[0]
         Lo = zeros_like(L)
-        grad = []
+        grad = {"Lu": zeros((n, n, n * self._L.shape[1]))}
         for ii in range(self._L.shape[0] * self._L.shape[1]):
             row = ii // self._L.shape[1]
             col = ii % self._L.shape[1]
             Lo[row, col] = 1
-            grad.append(dot(Lo, L.T) + dot(L, Lo.T))
+            grad["Lu"][..., ii] = dot(Lo, L.T) + dot(L, Lo.T)
             Lo[row, col] = 0
 
-        grad = [g[x0, ...][..., x1] for g in grad]
-        return dict(Lu=stack(grad, axis=-1))
+        return grad
 
     def __str__(self):
         L = self._L

@@ -1,13 +1,11 @@
 from __future__ import division
 
-from numpy import exp, log, stack
+from numpy import exp, log
 
-from optimix import Function, Scalar
-
-from ..util.classes import NamedClass
+from optimix import Func, Scalar
 
 
-class LinearCov(NamedClass, Function):
+class LinearCov(Func):
     r"""Linear covariance function.
 
     The mathematical representation is
@@ -20,23 +18,32 @@ class LinearCov(NamedClass, Function):
     """
 
     def __init__(self):
-        Function.__init__(self, logscale=Scalar(0.0))
-        self.variables().get("logscale").bounds = (-20.0, +10)
-        NamedClass.__init__(self)
+        self._logscale = Scalar(0.0)
+        self._X = None
+        Func.__init__(self, "LinearCov", logscale=self._logscale)
+        self._logscale.bounds = (-20.0, +10)
+
+    @property
+    def X(self):
+        return self._X
+
+    @X.setter
+    def X(self, X):
+        self._X = X
 
     @property
     def scale(self):
         r"""Scale parameter."""
-        return exp(self.variables().get("logscale").value)
+        return exp(self._logscale.value)
 
     @scale.setter
     def scale(self, scale):
         from numpy_sugar import epsilon
 
         scale = max(scale, epsilon.tiny)
-        self.variables().get("logscale").value = log(scale)
+        self._logscale.value = log(scale)
 
-    def value(self, x0, x1):
+    def value(self):
         r"""Covariance function evaluated at ``(x0, x1)``.
 
         Parameters
@@ -51,11 +58,10 @@ class LinearCov(NamedClass, Function):
         array_like
             :math:`s \mathrm x_0^\intercal \mathrm x_1`.
         """
-        x0 = stack(x0, axis=0)
-        x1 = stack(x1, axis=0)
-        return self.scale * x0.dot(x1.T)
+        X = self.X
+        return self.scale * (X @ X.T)
 
-    def gradient(self, x0, x1):
+    def gradient(self):
         r"""Derivative of the covariance function evaluated at ``(x0, x1)``.
 
         Derivative of the covariance function over :math:`\log(s)`:
@@ -76,9 +82,7 @@ class LinearCov(NamedClass, Function):
         dict
             Dictionary having the `logscale` key for the derivative.
         """
-        x0 = stack(x0, axis=0)
-        x1 = stack(x1, axis=0)
-        return dict(logscale=self.scale * x0.dot(x1.T))
+        return dict(logscale=self.value())
 
     def __str__(self):
         tname = type(self).__name__

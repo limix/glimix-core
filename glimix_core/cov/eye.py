@@ -1,13 +1,9 @@
-from __future__ import division
+from numpy import exp, log, eye
 
-from numpy import asarray, atleast_1d, exp, log, newaxis
-
-from optimix import Function, Scalar
-
-from ..util.classes import NamedClass
+from optimix import Func, Scalar
 
 
-class EyeCov(NamedClass, Function):
+class EyeCov(Func):
     r"""Identity covariance function.
 
     The mathematical representation is
@@ -57,23 +53,32 @@ class EyeCov(NamedClass, Function):
     """
 
     def __init__(self):
-        Function.__init__(self, logscale=Scalar(0.0))
-        self.variables().get("logscale").bounds = (-20.0, +10)
-        NamedClass.__init__(self)
+        self._logscale = Scalar(0.0)
+        Func.__init__(self, "EyeCov", logscale=self._logscale)
+        self._logscale.bounds = (-20.0, +10)
+        self._I = None
 
     @property
     def scale(self):
         r"""Scale parameter."""
-        return exp(self.variables().get("logscale").value)
+        return exp(self._logscale)
 
     @scale.setter
     def scale(self, scale):
         from numpy_sugar import epsilon
 
         scale = max(scale, epsilon.tiny)
-        self.variables().get("logscale").value = log(scale)
+        self._logscale.value = log(scale)
 
-    def value(self, x0, x1):
+    @property
+    def dim(self):
+        return self._I.shape[0]
+
+    @dim.setter
+    def dim(self, dim):
+        self._I = eye(dim)
+
+    def value(self):
         r"""Covariance function evaluated at `(x0, x1)`.
 
         Parameters
@@ -88,14 +93,9 @@ class EyeCov(NamedClass, Function):
         array_like
             :math:`s \delta[\mathrm x_0 = \mathrm x_1]`.
         """
-        x0 = asarray(x0)
-        x1 = asarray(x1)
-        x0_ = atleast_1d(x0).ravel()[:, newaxis]
-        x1_ = atleast_1d(x1).ravel()[newaxis, :]
-        v = self.scale * (x0_ == x1_)
-        return v.reshape(x0.shape + x1.shape)
+        return self.scale * self._I
 
-    def gradient(self, x0, x1):
+    def gradient(self):
         r"""Derivative of the covariance function evaluated at `(x0, x1)`.
 
         Derivative of the covariance function over :math:`\log(s)`.
@@ -113,7 +113,7 @@ class EyeCov(NamedClass, Function):
             Dictionary having the `logscale` key for
             :math:`s \delta[\mathrm x_0 = \mathrm x_1]`.
         """
-        return dict(logscale=self.value(x0, x1))
+        return dict(logscale=self.value())
 
     def __str__(self):
         tname = type(self).__name__

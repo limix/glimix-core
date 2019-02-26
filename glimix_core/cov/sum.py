@@ -2,12 +2,10 @@ from __future__ import division
 
 from numpy import add
 
-from optimix import FunctionReduce
-
-from ..util.classes import NamedClass
+from optimix import Func
 
 
-class SumCov(NamedClass, FunctionReduce):
+class SumCov(Func):
     r"""Sum covariance function.
 
     The mathematical representation is
@@ -55,10 +53,9 @@ class SumCov(NamedClass, FunctionReduce):
 
     def __init__(self, covariances):
         self._covariances = [c for c in covariances]
-        FunctionReduce.__init__(self, self._covariances, "sum")
-        NamedClass.__init__(self)
+        Func.__init__(self, "SumCov", composite=self._covariances)
 
-    def value_reduce(self, values):
+    def value(self):
         r"""Sum covariance function evaluated at ``(f_0, f_1, ...)``.
 
         Parameters
@@ -71,9 +68,9 @@ class SumCov(NamedClass, FunctionReduce):
         dict
             :math:`f_0 + f_1 + \dots`
         """
-        return add.reduce(list(values.values()))
+        return add.reduce([cov.value() for cov in self._covariances])
 
-    def gradient_reduce(self, values, gradients):
+    def gradient(self):
         r"""Sum of covariance function derivatives.
 
         Parameters
@@ -89,10 +86,10 @@ class SumCov(NamedClass, FunctionReduce):
         dict
             :math:`f_0' + f_1' + \dots`
         """
-        grad = dict()
-        for (gn, gv) in iter(gradients.items()):
-            for n, v in iter(gv.items()):
-                grad[gn + "." + n] = v
+        grad = {}
+        for i, f in enumerate(self._covariances):
+            for varname, g in f.gradient().items():
+                grad[f"{self._name}[{i}].{varname}"] = g
         return grad
 
     def __str__(self):
