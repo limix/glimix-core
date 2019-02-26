@@ -61,13 +61,6 @@ class KronMean(Func):
         r""" A ⊗ F. """
         return kron(self.A, self.F)
 
-    # def _value(self, A, F):
-    #     """ reshape((A ⊗ F) vec(B), n, p) """
-    #     b = self._vecB.value
-    #     n = F.shape[0]
-    #     p = A.shape[0]
-    #     return dot(kron(A, F), b).reshape((n, p))
-
     def value(self):
         """
         Kronecker mean function.
@@ -83,18 +76,6 @@ class KronMean(Func):
             Dictionary having the `effsizes` key for :math:`\mathbf x`.
         """
         return {"vecB": self.AF}
-        # from numpy import diag
-
-        # x = atleast_2d(asarray(x, float))
-        # p = self._p
-        # c = self._c
-        # n = (len(x[0]) - p * p) // c
-        # As = [i[: p * p].reshape((p, p)) for i in x]
-        # Fs = [i[p * p :].reshape((n, c)) for i in x]
-        # one = diag(ones(p * c))
-        # AF1s = [dot(kron(A, F), one).reshape((n, p, p * c)) for A, F in zip(As, Fs)]
-        # r = stack(AF1s)
-        # return dict(vecB=r)
 
     @property
     def B(self):
@@ -118,21 +99,3 @@ class KronMean(Func):
         mat = format(self.B)
         msg += "  B: " + "\n     ".join(mat.split("\n"))
         return msg
-
-
-# def _compact_form(x):
-#     d = x.shape[0] * x.shape[2]
-#     return x.transpose((2, 0, 3, 1)).reshape(d, d)
-
-
-# def _compact_form_grad(x):
-#     breakpoint()
-#     assert x.shape[0] == 1
-#     x = x[0, ...]
-#     nparams = x.shape[2]
-#     return x.ravel(order="F").reshape((-1, nparams), )
-#     # x = x.transpose([2, 0, 1])
-#     # mats = []
-#     # for i in x:
-#     #     mats.append(_compact_form(i))
-#     # return stack(mats, axis=0)
