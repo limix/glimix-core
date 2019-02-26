@@ -38,6 +38,9 @@ class OffsetMean(Func):
         self._n = n
         Func.__init__(self, "OffsetMean", offset=self._offset)
 
+    def fix_offset(self):
+        self._fix("offset")
+
     def value(self):
         """
         Offset mean.

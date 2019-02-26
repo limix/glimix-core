@@ -42,24 +42,21 @@ def test_GGPSampler_poisson():
     link = LogLink()
     lik = PoissonProdLik(link)
 
-    mean = OffsetMean()
+    mean = OffsetMean(10)
     mean.offset = 1.2
-    mean.set_data(arange(10), "sample")
     cov = LinearCov()
-    cov.set_data((X, X), "sample")
+    cov.X = X
     sampler = GGPSampler(lik, mean, cov)
     assert_equal(sampler.sample(random), [0, 289, 0, 11, 0, 0, 176, 0, 228, 82])
 
-    mean = OffsetMean()
+    mean = OffsetMean(10)
     mean.offset = 0.0
-    mean.set_data(arange(10), "sample")
 
     cov1 = LinearCov()
-    cov1.set_data((X, X), "sample")
+    cov1.X = X
 
     cov2 = EyeCov()
-    a = arange(10)
-    cov2.set_data((a, a), "sample")
+    cov2.dim = 10
 
     cov1.scale = 1e-4
     cov2.scale = 1e-4
@@ -83,27 +80,24 @@ def test_GGPSampler_binomial():
     link = LogitLink()
     lik = BinomialProdLik(5, link)
 
-    mean = OffsetMean()
+    mean = OffsetMean(10)
     mean.offset = 1.2
-    mean.set_data(arange(10), "sample")
     cov = LinearCov()
-    cov.set_data((X, X), "sample")
+    cov.X = X
     sampler = GGPSampler(lik, mean, cov)
     assert_equal(sampler.sample(random), [0, 5, 0, 5, 1, 1, 5, 0, 5, 5])
 
     mean.offset = 0.0
     assert_equal(sampler.sample(random), [5, 4, 1, 0, 0, 1, 4, 5, 5, 0])
 
-    mean = OffsetMean()
+    mean = OffsetMean(10)
     mean.offset = 0.0
-    mean.set_data(arange(10), "sample")
 
     cov1 = LinearCov()
-    cov1.set_data((X, X), "sample")
+    cov1.X = X
 
     cov2 = EyeCov()
-    a = arange(10)
-    cov2.set_data((a, a), "sample")
+    cov2.dim = 10
 
     cov1.scale = 1e-4
     cov2.scale = 1e-4
@@ -159,11 +153,10 @@ def test_GPSampler():
     random = RandomState(4503)
     X = random.randn(10, 15)
 
-    mean = OffsetMean()
+    mean = OffsetMean(10)
     mean.offset = 1.2
-    mean.set_data(arange(10), "sample")
     cov = LinearCov()
-    cov.set_data((X, X), "sample")
+    cov.X = X
     sampler = GPSampler(mean, cov)
 
     x = [

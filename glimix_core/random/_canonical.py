@@ -160,7 +160,7 @@ def _causal_mean(causal_variants, causal_variance, random):
     directions *= sqrt(causal_variance)
     directions -= directions.mean()
     mean = LinearMean(p)
-    mean.set_data((causal_variants,), "sample")
+    mean.X = causal_variants
     mean.effsizes = directions
     return mean
 

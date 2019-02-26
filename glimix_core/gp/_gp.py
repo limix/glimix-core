@@ -3,10 +3,10 @@ from __future__ import division
 from numpy import log, pi
 from numpy.linalg import slogdet, solve
 
-from optimix import FunctionReduce
+from optimix import Func
 
 
-class GP(FunctionReduce):
+class GP(Func):
     r"""Gaussian Process inference via maximum likelihood.
 
     Parameters
@@ -46,19 +46,20 @@ class GP(FunctionReduce):
         >>> print(gp)  # doctest: +FLOAT_CMP
         GP(...)
           lml: -13.47907874997517
-          OffsetMean()
-            offset: 0.775580366877228
-          SumCov(covariances=...)
-            LinearCov()
+          OffsetMean(): OffsetMean
+            offset: 0.7755803668772308
+          SumCov(covariances=...): SumCov
+            LinearCov(): LinearCov
               scale: 2.061153622438558e-09
-            EyeCov()
-              scale: 0.8675680523425118
+            EyeCov(): EyeCov
+              scale: 0.8675680523425126
+              dim: 10
     """
 
     def __init__(self, y, mean, cov):
         from numpy_sugar import is_all_finite
 
-        super(GP, self).__init__([mean, cov], name="GP")
+        super(GP, self).__init__("GP", composite=[mean, cov])
 
         if not is_all_finite(y):
             raise ValueError("There are non-finite values in the phenotype.")
@@ -88,7 +89,7 @@ class GP(FunctionReduce):
         Please, refer to :func:`scipy.optimize.fmin_l_bfgs_b` for further information
         about ``factr`` and ``pgtol``.
         """
-        self.feed().maximize(verbose=verbose, factr=factr, pgtol=pgtol)
+        self.maximize(verbose=verbose, factr=factr, pgtol=pgtol)
 
     def lml(self):
         r"""Log of the marginal likelihood.
@@ -98,7 +99,7 @@ class GP(FunctionReduce):
         float
             :math:`\log p(\mathbf y)`
         """
-        return self.feed().value()
+        return self.value()
 
     def _lml_gradient_mean(self, mean, cov, gmean):
         Kiym = solve(cov, self._y - mean)
@@ -108,9 +109,9 @@ class GP(FunctionReduce):
         Kiym = solve(cov, self._y - mean)
         return (-solve(cov, gcov).diagonal().sum() + Kiym.dot(gcov.dot(Kiym))) / 2
 
-    def value_reduce(self, values):
-        mean = values["GP[0]"]
-        cov = values["GP[1]"]
+    def value(self):
+        mean = self._mean.value()
+        cov = self._cov.value()
         ym = self._y - mean
         Kiym = solve(cov, ym)
 
@@ -121,11 +122,11 @@ class GP(FunctionReduce):
         n = len(self._y)
         return -(logdet + ym.dot(Kiym) + n * log(2 * pi)) / 2
 
-    def gradient_reduce(self, values, gradients):
-        mean = values["GP[0]"]
-        cov = values["GP[1]"]
-        gmean = gradients["GP[0]"]
-        gcov = gradients["GP[1]"]
+    def gradient(self):
+        mean = self._mean.value()
+        cov = self._cov.value()
+        gmean = self._mean.gradient()
+        gcov = self._cov.gradient()
 
         grad = dict()
         for n, g in iter(gmean.items()):
