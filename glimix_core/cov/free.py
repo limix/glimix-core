@@ -30,7 +30,7 @@ class FreeFormCov(Func):
     Parameters
     ----------
     dim : int
-        Dimension :math:`d` of the free-form covariance matrix.
+        Dimension d of the free-form covariance matrix.
 
     Example
     -------
@@ -96,6 +96,9 @@ class FreeFormCov(Func):
 
     @property
     def Llow(self):
+        """
+        Strictly lower-triangular, flat part of L.
+        """
         return self._Llow.value
 
     @Llow.setter
@@ -104,6 +107,9 @@ class FreeFormCov(Func):
 
     @property
     def Llogd(self):
+        """
+        Diagonal of L in log-space.
+        """
         return self._Llogd.value
 
     @Llogd.setter
@@ -154,44 +160,27 @@ class FreeFormCov(Func):
 
     def value(self):
         """
-        Covariance function evaluated at (x₀,x₁).
-
-        Parameters
-        ----------
-        x0 : array_like
-            Left-hand side sample indices.
-        x1 : array_like
-            Right-hand side sample indices.
+        Covariance matrix.
 
         Returns
         -------
         ndarray
-            Submatrix of K, row and column-indexed by ``x0`` and ``x1``.
+            Matrix K = LLᵗ + ϵI.
         """
         K = dot(self.L, self.L.T)
         return K + self._epsilon * eye(K.shape[0])
 
     def gradient(self):
         r"""
-        Derivative of the covariance function evaluated at (x₀,x₁).
-
-        Derivative over the lower-triangular part of :math:`\mathrm L`.
-
-        Parameters
-        ----------
-        x0 : array_like
-            Left-hand side sample indices.
-        x1 : array_like
-            Right-hand side sample indices.
+        Derivative of the covariance matrix over Llow and Llogd.
 
         Returns
         -------
-        dict
-            Dictionary having the `Lu` key for the lower-triangular part
-            of the derivative of :math:`\mathrm L\mathrm L^\intercal`, row and
-            column-indexed by ``x0`` and ``x1``.
+        Llow : ndarray
+            Derivative of K over Llow.
+        Llogd : ndarray
+            Derivative of K over Llogd.
         """
-
         L = self.L
         Lo = zeros_like(L)
         n = self.L.shape[0]

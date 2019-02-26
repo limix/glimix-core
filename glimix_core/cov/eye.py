@@ -4,16 +4,13 @@ from optimix import Func, Scalar
 
 
 class EyeCov(Func):
-    r"""Identity covariance function.
+    r"""
+    Identity covariance function.
 
-    The mathematical representation is
-
-    .. math::
-
-        f(\mathrm x_0, \mathrm x_1) = s \delta[\mathrm x_0 = \mathrm x_1]
-
-    where :math:`s` is the scale parameter and :math:`\delta` is the Kronecker
-    delta.
+    The mathematical representation is given by f(x₀, x₁), which takes value s when
+    x₀ and x₁ are arrays of the same sample and 0 otherwise. Note that it is possible to
+    have two different samples for which the arrays x₀ and x₁ are identical. The
+    parameter s is the scale of the matrix.
 
     Example
     -------
@@ -24,32 +21,19 @@ class EyeCov(Func):
         >>>
         >>> cov = EyeCov()
         >>> cov.scale = 2.5
-        >>>
-        >>> item0 = 0
-        >>> item1 = 1
-        >>> print(cov.value(item0, item1))
-        0.0
-        >>> g = cov.gradient(item0, item1)
+        >>> cov.dim = 2
+        >>> print(cov.value())
+        [[2.5 0. ]
+         [0.  2.5]]
+        >>> g = cov.gradient()
         >>> print(g['logscale'])
-        0.0
-        >>> item0 = [0, 1, 2]
-        >>> item1 = [0, 1, 2]
-        >>> print(cov.value(item0, item1))
-        [[2.5 0.  0. ]
-         [0.  2.5 0. ]
-         [0.  0.  2.5]]
-        >>> g = cov.gradient(item0, item1)
-        >>> print(g['logscale'])
-        [[2.5 0.  0. ]
-         [0.  2.5 0. ]
-         [0.  0.  2.5]]
+        [[2.5 0. ]
+         [0.  2.5]]
+        >>> cov.name = "I"
         >>> print(cov)
-        EyeCov()
+        EyeCov(): I
           scale: 2.5
-        >>> cov.name = "identity"
-        >>> print(cov)
-        EyeCov(): identity
-          scale: 2.5
+          dim: 2
     """
 
     def __init__(self):
@@ -60,7 +44,9 @@ class EyeCov(Func):
 
     @property
     def scale(self):
-        r"""Scale parameter."""
+        """
+        Scale parameter.
+        """
         return exp(self._logscale)
 
     @scale.setter
@@ -72,6 +58,10 @@ class EyeCov(Func):
 
     @property
     def dim(self):
+        """ Dimension of the matrix, d.
+
+        It corresponds to the number of rows and to the number of columns.
+        """
         return self._I.shape[0]
 
     @dim.setter
@@ -79,39 +69,25 @@ class EyeCov(Func):
         self._I = eye(dim)
 
     def value(self):
-        r"""Covariance function evaluated at `(x0, x1)`.
-
-        Parameters
-        ----------
-        x0 : array_like
-            Left-hand side sample or samples.
-        x1 : array_like
-            Right-hand side sample or samples.
+        """
+        Covariance matrix.
 
         Returns
         -------
-        array_like
-            :math:`s \delta[\mathrm x_0 = \mathrm x_1]`.
+        ndarray
+            s⋅I, for scale s and an d×d identity matrix I.
         """
         return self.scale * self._I
 
     def gradient(self):
-        r"""Derivative of the covariance function evaluated at `(x0, x1)`.
+        r"""Derivative of the covariance matrix.
 
-        Derivative of the covariance function over :math:`\log(s)`.
-
-        Parameters
-        ----------
-        x0 : array_like
-            Left-hand side sample or samples.
-        x1 : array_like
-            Right-hand side sample or samples.
+        Derivative is taking over log(s), therefore it is equal to s⋅I.
 
         Returns
         -------
-        dict
-            Dictionary having the `logscale` key for
-            :math:`s \delta[\mathrm x_0 = \mathrm x_1]`.
+        logscale : ndarray
+            s⋅I, for scale s and an d×d identity matrix I.
         """
         return dict(logscale=self.value())
 
@@ -121,5 +97,6 @@ class EyeCov(Func):
         if self.name is not None:
             msg += ": {}".format(self.name)
         msg += "\n"
-        msg += "  scale: {}".format(self.scale)
+        msg += "  scale: {}\n".format(self.scale)
+        msg += "  dim: {}".format(self.dim)
         return msg
