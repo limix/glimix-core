@@ -1,110 +1,92 @@
-from __future__ import division
+from numpy import ascontiguousarray, zeros
 
-from numpy import ascontiguousarray, dot, zeros
-
-from optimix import Function, Vector
-
-from ..util.classes import NamedClass
+from optimix import Func, Vector
 
 
-class LinearMean(NamedClass, Function):
-    r"""Linear mean function.
+class LinearMean(Func):
+    """
+    Linear mean function.
 
-    The mathematical representation is
-
-    .. math::
-
-        f(\mathbf x) = \mathbf x^\intercal \boldsymbol\alpha
-
-    where :math:`\boldsymbol\alpha` is a vector of effect sizes.
+    It defines Xα, for which X is a n×m matrix provided by the user and α is a vector
+    of size m.
 
     Parameters
     ----------
     size : int
-        Number of effects.
+        Size m of α.
 
     Example
     -------
 
     .. doctest::
 
-        >>> from numpy import asarray
+        >>> from numpy import array
         >>> from glimix_core.mean import LinearMean
         >>>
         >>> mean = LinearMean(2)
         >>> mean.effsizes = [1.0, -1.0]
-        >>> x = [5.1, 1.0]
-        >>> print(mean.value(x))
-        4.1
-        >>> print(mean.gradient(x))
-        {'effsizes': [5.1, 1.0]}
+        >>> mean.X = array([[1.5, 0.2], [0.5, 0.4]])
+        >>> print(mean.value())
+        [1.3 0.1]
+        >>> print(mean.gradient()["effsizes"])
+        [[1.5 0.2]
+         [0.5 0.4]]
+        >>> mean.name = "M"
         >>> print(mean)
-        LinearMean(size=2)
+        LinearMean(m=2): M
           effsizes: [ 1. -1.]
-        >>> mean.name = "covariates"
-        >>> print(mean)
-        LinearMean(size=2): covariates
-          effsizes: [ 1. -1.]
-        >>> X = asarray([[5.1,  1.0],
-        ...              [0.3, -9.0]])
-        >>> mean.set_data(X)
-        >>> print(mean.feed().value())
-        [4.1 9.3]
-        >>> X = asarray([[5.1,  1.0],
-        ...              [0.3, -9.0],
-        ...              [4.9,  0.0]])
-        >>> mean.set_data(X, "dataB")
-        >>> print(mean.feed("dataB").value())
-        [4.1 9.3 4.9]
     """
 
-    def __init__(self, size):
-        Function.__init__(self, effsizes=Vector(zeros(size)))
-        self.variables().get("effsizes").bounds = [(-200.0, +200)] * size
-        NamedClass.__init__(self)
+    def __init__(self, m):
+        self._effsizes = Vector(zeros(m))
+        self._effsizes.bounds = [(-200.0, +200)] * m
+        self._X = None
+        Func.__init__(self, "LinearMean", effsizes=self._effsizes)
 
-    def value(self, x):
-        r"""Linear mean function.
+    @property
+    def X(self):
+        return self._X
 
-        Parameters
-        ----------
-        x : array_like
-            Covariates.
+    @X.setter
+    def X(self, X):
+        self._X = X
+
+    def value(self):
+        """
+        Linear mean function.
 
         Returns
         -------
-        float
-            :math:`\mathbf x^\intercal \boldsymbol\alpha`.
+        ndarray
+            Xα.
         """
-        return dot(x, self.variables().get("effsizes").value)
+        return self._X @ self._effsizes
 
-    def gradient(self, x):
-        r"""Gradient of the linear mean function.
-
-        Parameters
-        ----------
-        x : array_like
-            Covariates.
+    def gradient(self):
+        """
+        Gradient of the linear mean function over the effect sizes.
 
         Returns
         -------
-        dict
-            Dictionary having the `effsizes` key for :math:`\mathbf x`.
+        effsizes
+            X.
         """
-        return dict(effsizes=x)
+        return dict(effsizes=self._X)
 
     @property
     def effsizes(self):
-        r"""Effect-sizes parameter."""
-        return self.variables().get("effsizes").value
+        """
+        Effect-sizes parameter, α, of size m.
+        """
+        return self._effsizes.value
 
     @effsizes.setter
     def effsizes(self, v):
-        self.variables().get("effsizes").value = ascontiguousarray(v)
+        self._effsizes.value = ascontiguousarray(v)
 
     def __str__(self):
         tname = type(self).__name__
-        msg = "{}(size={})".format(tname, len(self.effsizes))
+        msg = "{}(m={})".format(tname, len(self.effsizes))
         if self.name is not None:
             msg += ": {}".format(self.name)
         msg += "\n"
