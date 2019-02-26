@@ -41,28 +41,23 @@ class FreeFormCov(Func):
         >>>
         >>> cov = FreeFormCov(2)
         >>> cov.L = [[1., .0], [0.5, 2.]]
-        [[1.0000149 1.       ]
-            [1.        2.0000149]]
-        >>> print(cov.L)
-        [[1.0000149 0.5      ]
-         [0.5       4.2500149]]
         >>> print(cov.gradient()["L0"])
         [[[0.]
           [1.]]
-
+        <BLANKLINE>
          [[1.]
           [1.]]]
         >>> print(cov.gradient()["L1"])
         [[[2.  0. ]
           [0.5 0. ]]
-
+        <BLANKLINE>
          [[0.5 0. ]
           [0.  8. ]]]
         >>> cov.name = "K"
         >>> print(cov)
         FreeFormCov(dim=2): K
-        L: [[1. 0.]
-            [1. 1.]]
+          L: [[1.  0. ]
+              [0.5 2. ]]
     """
 
     def __init__(self, dim):
@@ -87,7 +82,8 @@ class FreeFormCov(Func):
         Returns
         -------
         S : ndarray
-            The eigenvalues in ascending order, each repeated according to its multiplicity.
+            The eigenvalues in ascending order, each repeated according to its
+            multiplicity.
         U : ndarray
             Normalized eigenvectors.
         """
@@ -169,7 +165,7 @@ class FreeFormCov(Func):
         Returns
         -------
         ndarray
-            Matrix K = LLᵗ + ϵI.
+            Matrix K = LLᵗ + ϵI, for a very small positive number ϵ.
         """
         K = dot(self.L, self.L.T)
         return K + self._epsilon * eye(K.shape[0])
