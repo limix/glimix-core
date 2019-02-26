@@ -45,6 +45,9 @@ class LinearMean(Func):
 
     @property
     def X(self):
+        """
+        An n×m matrix of covariates.
+        """
         return self._X
 
     @X.setter
@@ -57,7 +60,7 @@ class LinearMean(Func):
 
         Returns
         -------
-        ndarray
+        M : (n,) ndarray
             Xα.
         """
         return self._X @ self._effsizes
@@ -68,7 +71,7 @@ class LinearMean(Func):
 
         Returns
         -------
-        effsizes
+        effsizes : (n, m) ndarray
             X.
         """
         return dict(effsizes=self._X)

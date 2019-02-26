@@ -1,22 +1,17 @@
-from __future__ import division
+from numpy import full, ones
 
-from numpy import asarray, full, ones
-
-from optimix import Function, Scalar
-
-from ..util.classes import NamedClass
+from optimix import Func, Scalar
 
 
-class OffsetMean(NamedClass, Function):
-    r"""Offset mean function.
+class OffsetMean(Func):
+    r"""
+    Offset mean function.
 
-    The mathematical representation is
+    It represents a mean vector
 
-    .. math::
+        o⋅𝟏
 
-        f(n) = o \mathbf 1
-
-    where :math:`\mathbf 1` is a :math:`n`-sized vector of ones.
+    of size n. The offset is given by the parameter o.
 
     Example
     -------
@@ -41,51 +36,43 @@ class OffsetMean(NamedClass, Function):
           offset: 2.0
     """
 
-    def __init__(self):
-        Function.__init__(self, offset=Scalar(0.0))
-        self.variables().get("offset").bounds = (-200.0, +200)
-        NamedClass.__init__(self)
+    def __init__(self, n):
+        self._offset = Scalar(0.0)
+        self._offset.bounds = (-200.0, +200)
+        Func.__init__(self, offset=self._offset)
 
-    def value(self, x):
-        r"""Offset function evaluated at ``x``.
-
-        Parameters
-        ----------
-        x : array_like
-            Sample ids.
+    def value(self):
+        """
+        Offset mean.
 
         Returns
         -------
-        float
-            :math:`o \mathbf 1`.
+        M : (n,) ndarray
+            o⋅𝟏.
         """
-        x = asarray(x)
-        return full(x.shape, self.variables().get("offset").value)
+        return full(self._n, self._offset.value)
 
-    def gradient(self, x):
-        r"""Offset function gradient.
-
-        Parameters
-        ----------
-        x : array_like
-            Sample ids.
+    def gradient(self):
+        """
+        Gradient of the offset function.
 
         Returns
         -------
-        dict
-            Dictionary having the `offset` key for :math:`\mathbf 1`.
+        offset : (n,) ndarray
+            𝟏.
         """
-        x = asarray(x)
-        return dict(offset=ones(x.shape))
+        return dict(offset=ones(self._n))
 
     @property
     def offset(self):
-        r"""Offset parameter."""
-        return self.variables().get("offset").value
+        """
+        Offset parameter.
+        """
+        return self._offset.value
 
     @offset.setter
     def offset(self, v):
-        self.variables().get("offset").value = v
+        self._offset.value = v
 
     def __str__(self):
         tname = type(self).__name__
