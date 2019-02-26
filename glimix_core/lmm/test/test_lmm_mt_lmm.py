@@ -1,5 +1,5 @@
 import pytest
-from numpy import arange, concatenate, inf, nan, ones, sqrt, zeros
+from numpy import concatenate, inf, nan, ones, sqrt, zeros
 from numpy.random import RandomState
 from numpy.testing import assert_, assert_allclose
 
@@ -333,17 +333,16 @@ def _covariates_sample(random, n, p):
 
 def _outcome_sample(random, offset, X):
     n = X.shape[0]
-    mean = OffsetMean()
+    mean = OffsetMean(n)
     mean.offset = offset
-    mean.set_data(arange(n), purpose="sample")
 
     cov_left = LinearCov()
     cov_left.scale = 1.5
-    cov_left.set_data((X, X), purpose="sample")
+    cov_left.X = X
 
     cov_right = EyeCov()
+    cov_right.dim = n
     cov_right.scale = 1.5
-    cov_right.set_data((arange(n), arange(n)), purpose="sample")
 
     cov = SumCov([cov_left, cov_right])
 
