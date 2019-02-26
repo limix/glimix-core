@@ -46,10 +46,10 @@ class Kron2Sum(Function):
         self._mean.F = F
         vecB = self._mean.variables().get("vecB")
         Cr_Lu = self._cov.variables().get("Cr_Lu")
-        Cn_Llow = self._cov.variables().get("Cn_Llow")
-        Cn_Llogd = self._cov.variables().get("Cn_Llogd")
+        Cn_L0 = self._cov.variables().get("Cn_L0")
+        Cn_L1 = self._cov.variables().get("Cn_L1")
         Function.__init__(
-            self, vecB=vecB, Cr_Lu=Cr_Lu, Cn_Llow=Cn_Llow, Cn_Llogd=Cn_Llogd
+            self, vecB=vecB, Cr_Lu=Cr_Lu, Cn_L0=Cn_L0, Cn_L1=Cn_L1
         )
         self.set_nodata()
 
@@ -126,7 +126,7 @@ class Kron2Sum(Function):
         grad = {}
         dm = self._mean.compact_gradient()["vecB"]
         grad["vecB"] = dm.T @ Kiy - dm.T @ Kim
-        for var in ["Cr_Lu", "Cn_Llow", "Cn_Llogd"]:
+        for var in ["Cr_Lu", "Cn_L0", "Cn_L1"]:
             grad[var] = -ld_grad[var]
             grad[var] += Kiy.T @ dK[var] @ Kiy
             grad[var] -= 2 * (Kim.T @ dK[var] @ Kiy)

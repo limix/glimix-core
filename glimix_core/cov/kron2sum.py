@@ -101,23 +101,23 @@ class Kron2SumCov(Func):
         -------
         Cr_Lu : ndarray
             Derivative over the array Lu of Cᵣ.
-        Cn_Llow : ndarray
-            Derivative over the array Llow of Cₙ.
-        Cn_Llogd : ndarray
-            Derivative over the array Llogd of Cₙ.
+        Cn_L0 : ndarray
+            Derivative over the array L0 of Cₙ.
+        Cn_L1 : ndarray
+            Derivative over the array L1 of Cₙ.
         """
         I = self._I
         X = self.G @ self.G.T
 
         Cr_Lu = self._Cr.gradient()["Lu"].transpose([2, 0, 1])
         Cn_grad = self._Cn.gradient()
-        Cn_Llow = Cn_grad["Llow"].transpose([2, 0, 1])
-        Cn_Llogd = Cn_grad["Llogd"].transpose([2, 0, 1])
+        Cn_L0 = Cn_grad["L0"].transpose([2, 0, 1])
+        Cn_L1 = Cn_grad["L1"].transpose([2, 0, 1])
 
         return {
             "Kron2SumCov[0].Lu": kron(Cr_Lu, X).transpose([1, 2, 0]),
-            "Kron2SumCov[1].Llow": kron(Cn_Llow, I).transpose([1, 2, 0]),
-            "Kron2SumCov[1].Llogd": kron(Cn_Llogd, I).transpose([1, 2, 0]),
+            "Kron2SumCov[1].L0": kron(Cn_L0, I).transpose([1, 2, 0]),
+            "Kron2SumCov[1].L1": kron(Cn_L1, I).transpose([1, 2, 0]),
         }
 
     def solve(self, v):
@@ -169,10 +169,10 @@ class Kron2SumCov(Func):
         -------
         Cr_Lu : ndarray
             Derivative over the array Lu of Cᵣ.
-        Cn_Llow : ndarray
-            Derivative over the array Llow of Cₙ.
-        Cn_Llogd : ndarray
-            Derivative over the array Llogd of Cₙ.
+        Cn_L0 : ndarray
+            Derivative over the array L0 of Cₙ.
+        Cn_L1 : ndarray
+            Derivative over the array L1 of Cₙ.
         """
         Sn, Un = self.Cn.eigh()
         Cr = self.Cr.value()
@@ -198,7 +198,7 @@ class Kron2SumCov(Func):
         r1 = (
             D
             * diagonal(
-                L @ Kgrad["Kron2SumCov[1].Llow"].transpose([2, 0, 1]) @ L.T,
+                L @ Kgrad["Kron2SumCov[1].L0"].transpose([2, 0, 1]) @ L.T,
                 axis1=1,
                 axis2=2,
             )
@@ -206,13 +206,13 @@ class Kron2SumCov(Func):
         r2 = (
             D
             * diagonal(
-                L @ Kgrad["Kron2SumCov[1].Llogd"].transpose([2, 0, 1]) @ L.T,
+                L @ Kgrad["Kron2SumCov[1].L1"].transpose([2, 0, 1]) @ L.T,
                 axis1=1,
                 axis2=2,
             )
         ).sum(1)
         return {
             "Kron2SumCov[0].Lu": r0,
-            "Kron2SumCov[1].Llow": r1,
-            "Kron2SumCov[1].Llogd": r2,
+            "Kron2SumCov[1].L0": r1,
+            "Kron2SumCov[1].L1": r2,
         }

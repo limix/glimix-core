@@ -30,11 +30,11 @@ def test_kron2sum_lmm():
     K = lmm.cov.compact_value()
     assert_allclose(lmm.lml(), st.multivariate_normal(m, K).logpdf(y))
 
-    lmm.variables().get("Cn_Llow").value = random.randn(3)
+    lmm.variables().get("Cn_L0").value = random.randn(3)
     K = lmm.cov.compact_value()
     assert_allclose(lmm.lml(), st.multivariate_normal(m, K).logpdf(y))
 
-    lmm.variables().get("Cn_Llogd").value = random.randn(3)
+    lmm.variables().get("Cn_L1").value = random.randn(3)
     K = lmm.cov.compact_value()
     assert_allclose(lmm.lml(), st.multivariate_normal(m, K).logpdf(y))
 
@@ -50,23 +50,23 @@ def test_kron2sum_lmm_gradient():
     lmm.mean.B = random.randn(2, 3)
     lmm.variables().get("vecB").value = random.randn(6)
     lmm.variables().get("Cr_Lu").value = random.randn(3)
-    lmm.variables().get("Cn_Llow").value = random.randn(3)
-    lmm.variables().get("Cn_Llogd").value = random.randn(3)
+    lmm.variables().get("Cn_L0").value = random.randn(3)
+    lmm.variables().get("Cn_L1").value = random.randn(3)
 
     def func(x):
         lmm.variables().get("Cr_Lu").value = x[:3]
-        lmm.variables().get("Cn_Llow").value = x[3:6]
-        lmm.variables().get("Cn_Llogd").value = x[6:9]
+        lmm.variables().get("Cn_L0").value = x[3:6]
+        lmm.variables().get("Cn_L1").value = x[6:9]
         lmm.variables().get("vecB").value = x[9:]
         return lmm.lml()
 
     def grad(x):
         lmm.variables().get("Cr_Lu").value = x[:3]
-        lmm.variables().get("Cn_Llow").value = x[3:6]
-        lmm.variables().get("Cn_Llogd").value = x[6:9]
+        lmm.variables().get("Cn_L0").value = x[3:6]
+        lmm.variables().get("Cn_L1").value = x[6:9]
         lmm.variables().get("vecB").value = x[9:]
         D = lmm.lml_gradient()
-        return concatenate((D["Cr_Lu"], D["Cn_Llow"], D["Cn_Llogd"], D["vecB"]))
+        return concatenate((D["Cr_Lu"], D["Cn_L0"], D["Cn_L1"], D["vecB"]))
 
     assert_allclose(
         check_grad(func, grad, random.randn(15), epsilon=1e-7), 0, atol=1e-3

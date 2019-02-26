@@ -40,23 +40,27 @@ class FreeFormCov(Func):
         >>> from glimix_core.cov import FreeFormCov
         >>>
         >>> cov = FreeFormCov(2)
-        >>> print(cov.value([0, 1], [0, 1]))
+        >>> cov.L = [[1., .0], [0.5, 2.]]
         [[1.0000149 1.       ]
             [1.        2.0000149]]
         >>> print(cov.L)
-        [[1. 0.]
-         [1. 1.]]
-        >>> g = cov.gradient([0, 1], [0, 1])
-        >>> print(cov.value([0, 1], [0, 1]))
-        [[1.0000149 1.       ]
-         [1.        2.0000149]]
+        [[1.0000149 0.5      ]
+         [0.5       4.2500149]]
+        >>> print(cov.gradient()["L0"])
+        [[[0.]
+          [1.]]
+
+         [[1.]
+          [1.]]]
+        >>> print(cov.gradient()["L1"])
+        [[[2.  0. ]
+          [0.5 0. ]]
+
+         [[0.5 0. ]
+          [0.  8. ]]]
+        >>> cov.name = "K"
         >>> print(cov)
-        FreeFormCov(dim=2)
-        L: [[1. 0.]
-            [1. 1.]]
-        >>> cov.name = "covname"
-        >>> print(cov)
-        FreeFormCov(dim=2): covname
+        FreeFormCov(dim=2): K
         L: [[1. 0.]
             [1. 1.]]
     """
@@ -71,10 +75,10 @@ class FreeFormCov(Func):
         self._L[self._tril1] = 1
         self._L[self._diag] = 0
         self._epsilon = epsilon.small * 1000
-        self._Llow = Vector(ones(tsize - dim))
-        self._Llogd = Vector(zeros(dim))
-        Func.__init__(self, "FreeCov", Llow=self._Llow, Llogd=self._Llogd)
-        self._Llogd.bounds = [(log(epsilon.small * 1000), +15)] * dim
+        self._L0 = Vector(ones(tsize - dim))
+        self._L1 = Vector(zeros(dim))
+        Func.__init__(self, "FreeCov", L0=self._L0, L1=self._L1)
+        self._L1.bounds = [(log(epsilon.small * 1000), +15)] * dim
 
     def eigh(self):
         """
@@ -95,26 +99,26 @@ class FreeFormCov(Func):
         return S, U
 
     @property
-    def Llow(self):
+    def L0(self):
         """
         Strictly lower-triangular, flat part of L.
         """
-        return self._Llow.value
+        return self._L0.value
 
-    @Llow.setter
-    def Llow(self, v):
-        self._Llow.value = v
+    @L0.setter
+    def L0(self, v):
+        self._L0.value = v
 
     @property
-    def Llogd(self):
+    def L1(self):
         """
         Diagonal of L in log-space.
         """
-        return self._Llogd.value
+        return self._L1.value
 
-    @Llogd.setter
-    def Llogd(self, v):
-        self._Llogd.value = v
+    @L1.setter
+    def L1(self, v):
+        self._L1.value = v
 
     @property
     def L(self):
@@ -126,15 +130,15 @@ class FreeFormCov(Func):
         L : (d, d) ndarray
             Lower-triangular matrix.
         """
-        self._L[self._tril1] = self._Llow.value
-        self._L[self._diag] = exp(self._Llogd.value)
+        self._L[self._tril1] = self._L0.value
+        self._L[self._diag] = exp(self._L1.value)
         return self._L
 
     @L.setter
     def L(self, value):
         self._L[:] = value
-        self._Llow.value = self._L[self._tril1]
-        self._Llogd.value = log(self._L[self._diag])
+        self._L0.value = self._L[self._tril1]
+        self._L1.value = log(self._L[self._diag])
 
     def logdet(self):
         r"""
@@ -172,21 +176,21 @@ class FreeFormCov(Func):
 
     def gradient(self):
         r"""
-        Derivative of the covariance matrix over Llow and Llogd.
+        Derivative of the covariance matrix over L₀ and L₁.
 
         Returns
         -------
-        Llow : ndarray
-            Derivative of K over Llow.
-        Llogd : ndarray
-            Derivative of K over Llogd.
+        L0 : ndarray
+            Derivative of K over L0.
+        L1 : ndarray
+            Derivative of K over L1.
         """
         L = self.L
         Lo = zeros_like(L)
         n = self.L.shape[0]
         grad = {
-            "Llow": zeros((n, n, self._Llow.shape[0])),
-            "Llogd": zeros((n, n, self._Llogd.shape[0])),
+            "L0": zeros((n, n, self._L0.shape[0])),
+            "L1": zeros((n, n, self._L1.shape[0])),
         }
         i = 0
         j = 0
@@ -195,11 +199,11 @@ class FreeFormCov(Func):
             col = self._tril[1][ii]
             if row == col:
                 Lo[row, col] = L[row, col]
-                grad["Llogd"][..., i] = dot(Lo, L.T) + dot(L, Lo.T)
+                grad["L1"][..., i] = dot(Lo, L.T) + dot(L, Lo.T)
                 i += 1
             else:
                 Lo[row, col] = 1
-                grad["Llow"][..., j] = dot(Lo, L.T) + dot(L, Lo.T)
+                grad["L0"][..., j] = dot(Lo, L.T) + dot(L, Lo.T)
                 j += 1
             Lo[row, col] = 0
 
