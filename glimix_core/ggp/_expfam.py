@@ -156,5 +156,5 @@ class ExpFamGP(Function):
             return grad
         except (ValueError, LinAlgError) as e:
             warnings.warn(str(e), RuntimeWarning)
-            v = self.variables().select(fixed=False)
+            v = self._variables.select(fixed=False)
             return {i: -sign(v.get(i).value) / epsilon.small for i in v}

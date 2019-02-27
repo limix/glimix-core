@@ -32,7 +32,7 @@ except ImportError:
 
 class MTLMMCore(Function):
     def __init__(self, y, X=None, QS=None, SVD=None):
-        Function.__init__(self, logistic=Scalar(0.0))
+        Function.__init__(self, name="MTLMMCore", logistic=Scalar(0.0))
 
         y = _check_outcome(y)
         X, n, ntraits = _check_covariates(X, SVD)
@@ -41,13 +41,13 @@ class MTLMMCore(Function):
         if QS is None:
             QS = economic_qs_zeros(n)
             self.delta = 1.0
-            super(MTLMMCore, self).fix("logistic")
+            super(MTLMMCore, self)._fix("logistic")
         else:
             self.delta = 0.5
 
         _check_qs(QS, y)
 
-        self.variables().get("logistic").bounds = (-numbers.logmax, +numbers.logmax)
+        self._variables.get("logistic").bounds = (-numbers.logmax, +numbers.logmax)
         self._QS = QS
         self._y = y
         self._scale = 1.0
@@ -285,7 +285,7 @@ class MTLMMCore(Function):
         r"""Variance ratio between ``K`` and ``I``."""
         from numpy_sugar import epsilon
 
-        v = float(self.variables().get("logistic").value)
+        v = float(self._variables.get("logistic").value)
         with errstate(over="ignore", under="ignore"):
             v = 1 / (1 + exp(-v))
         return clip(v, epsilon.tiny, 1 - epsilon.tiny)
@@ -295,7 +295,7 @@ class MTLMMCore(Function):
         from numpy_sugar import epsilon
 
         delta = clip(delta, epsilon.tiny, 1 - epsilon.tiny)
-        self.variables().set(dict(logistic=log(delta / (1 - delta))))
+        self._variables.set(dict(logistic=log(delta / (1 - delta))))
 
     @property
     def mean(self):

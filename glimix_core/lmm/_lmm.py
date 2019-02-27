@@ -74,12 +74,10 @@ class LMM(LMMCore):
         if not is_all_finite(y):
             raise ValueError("There are non-finite values in the outcome.")
 
-        self.set_nodata()
-
     def _get_delta(self):
         from numpy_sugar import epsilon
 
-        v = clip(self.variables().get("logistic").value, -20, 20)
+        v = clip(self._variables.get("logistic").value, -20, 20)
         x = 1 / (1 + exp(-v))
         return clip(x, epsilon.tiny, 1 - epsilon.tiny)
 
@@ -116,7 +114,6 @@ class LMM(LMMCore):
         setattr(o, "_fix_beta", self._fix_beta)
         setattr(o, "_verbose", self._verbose)
 
-        o.set_nodata()
         return o
 
     def isfixed(self, var_name):
@@ -136,7 +133,7 @@ class LMM(LMMCore):
             msg = "Possible values are 'delta', 'scale', and 'beta'."
             raise ValueError(msg)
         if var_name == "delta":
-            return super(LMM, self).isfixed("logistic")
+            return super(LMM, self)._isfixed("logistic")
         if var_name == "beta":
             return self._fix_beta
         return self._fix_scale
@@ -174,7 +171,7 @@ class LMM(LMMCore):
         """
         self._verbose = verbose
         if not self.isfixed("delta"):
-            self.feed().maximize_scalar(verbose=verbose)
+            self.maximize_scalar(verbose=verbose)
         self.delta = self._get_delta()
         self._update_fixed_effects()
         self._verbose = False
@@ -192,7 +189,7 @@ class LMM(LMMCore):
             raise ValueError(msg)
 
         if var_name == "delta":
-            super(LMM, self).fix("logistic")
+            super(LMM, self)._fix("logistic")
         elif var_name == "beta":
             self._fix_beta = True
         else:

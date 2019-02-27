@@ -63,7 +63,7 @@ class LMMCore(Function):
                 "Number of samples differs between outcome and covariates."
             )
 
-        self.variables().get("logistic").bounds = (-numbers.logmax, +numbers.logmax)
+        self._variables.get("logistic").bounds = (-numbers.logmax, +numbers.logmax)
 
         self._QS = QS
         self._y = y
@@ -276,7 +276,7 @@ class LMMCore(Function):
         r"""Variance ratio between ``K`` and ``I``."""
         from numpy_sugar import epsilon
 
-        v = float(self.variables().get("logistic").value)
+        v = float(self._variables.get("logistic").value)
         with errstate(over="ignore", under="ignore"):
             v = 1 / (1 + exp(-v))
         return clip(v, epsilon.tiny, 1 - epsilon.tiny)
@@ -286,7 +286,7 @@ class LMMCore(Function):
         from numpy_sugar import epsilon
 
         delta = clip(delta, epsilon.tiny, 1 - epsilon.tiny)
-        self.variables().set(dict(logistic=log(delta / (1 - delta))))
+        self._variables.set(dict(logistic=log(delta / (1 - delta))))
 
     @property
     def scale(self):
