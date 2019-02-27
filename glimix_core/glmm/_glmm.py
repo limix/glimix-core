@@ -168,7 +168,7 @@ class GLMM(Function):
         var_name : str
             Variable name.
         """
-        Function.fix(self, _to_internal_name(var_name))
+        Function._fix(self, _to_internal_name(var_name))
 
     def fit(self, verbose=True, factr=1e5, pgtol=1e-7):
         r"""Maximise the marginal likelihood.
@@ -192,7 +192,7 @@ class GLMM(Function):
         about ``factr`` and ``pgtol``.
         """
         self._verbose = verbose
-        self.maximize(verbose=verbose, factr=factr, pgtol=pgtol)
+        self._maximize(verbose=verbose, factr=factr, pgtol=pgtol)
         self._verbose = False
 
     def lml(self):
@@ -275,7 +275,7 @@ class GLMM(Function):
         var_name : str
             Variable name.
         """
-        Function.unfix(self, _to_internal_name(var_name))
+        Function._unfix(self, _to_internal_name(var_name))
 
     @property
     def v0(self):

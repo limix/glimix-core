@@ -89,7 +89,7 @@ class GP(Function):
         Please, refer to :func:`scipy.optimize.fmin_l_bfgs_b` for further information
         about ``factr`` and ``pgtol``.
         """
-        self.maximize(verbose=verbose, factr=factr, pgtol=pgtol)
+        self._maximize(verbose=verbose, factr=factr, pgtol=pgtol)
 
     def lml(self):
         r"""Log of the marginal likelihood.

@@ -43,7 +43,7 @@ class LMMCore(Function):
         if QS is None:
             QS = economic_qs_zeros(n)
             self.delta = 1.0
-            super(LMMCore, self).fix("logistic")
+            super(LMMCore, self)._fix("logistic")
         else:
             self.delta = 0.5
 

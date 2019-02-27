@@ -145,7 +145,7 @@ class Kron2Sum(Function):
             Defaults to ``True``.
         """
         # self._verbose = verbose
-        self.maximize(verbose=verbose)
+        self._maximize(verbose=verbose)
         # self.delta = self._get_delta()
         # self._update_fixed_effects()
         # self._verbose = False

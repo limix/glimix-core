@@ -171,7 +171,7 @@ class LMM(LMMCore):
         """
         self._verbose = verbose
         if not self.isfixed("delta"):
-            self.maximize_scalar(verbose=verbose)
+            self._maximize_scalar(desc="LMM", verbose=verbose)
         self.delta = self._get_delta()
         self._update_fixed_effects()
         self._verbose = False
@@ -260,7 +260,7 @@ class LMM(LMMCore):
             msg = "Possible values are 'delta', 'scale', and 'beta'."
             raise ValueError(msg)
         if var_name == "delta":
-            super(LMM, self).unfix("logistic")
+            super(LMM, self)._unfix("logistic")
         elif var_name == "beta":
             self._fix_beta = False
         else:

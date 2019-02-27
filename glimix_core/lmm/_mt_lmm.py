@@ -167,7 +167,7 @@ class MTLMM(MTLMMCore):
         """
         self._verbose = verbose
         if not self.isfixed("delta"):
-            self.maximize_scalar(verbose=verbose)
+            self._maximize_scalar(verbose=verbose)
         self.delta = self._get_delta()
         self._update_fixed_effects()
         self._verbose = False

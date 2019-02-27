@@ -314,7 +314,7 @@ def test_glmmexpfam_bernoulli_probit_assure_delta_fixed():
 
     assert_allclose(model.lml(), -6.108751595773174, rtol=RTOL)
     assert_allclose(model.delta, 1.4901161193847673e-08, atol=1e-5)
-    assert_(model.isfixed("logitdelta"))
+    assert_(model._isfixed("logitdelta"))
 
 
 def _stdnorm(X, axis=None, out=None):
