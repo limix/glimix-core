@@ -11,13 +11,13 @@ LMM inference is implemented by the :mod:`glimix_core.lmm` module and described 
    Please refer to the Variables_ section for the definition of the
    otherwise-unspecified mathematical symbols.
 
-.. include:: lmm/intro.rst
+.. include:: lmm/intro.inc
 
-.. include:: lmm/scan.rst
+.. include:: lmm/scan.inc
 
-.. include:: lmm/api.rst
+.. include:: lmm/api.inc
 
-.. include:: lmm/impl.rst
+.. include:: lmm/impl.inc
 
 .. _Variables:
 

@@ -11,7 +11,7 @@ from optimix import Function
 
 class Kron2Sum(Function):
     """
-    LMM for multiple multiple traits.
+    LMM for multiple traits.
 
     Let n, c, and p be the number of samples, covariates, and traits, respectively.
     The outcome variable Y is a n×p matrix distributed according to
@@ -142,7 +142,7 @@ class Kron2Sum(Function):
         """
         Gradient of the log of the marginal likelihood.
 
-        Let 𝐲 = vec(Y) and 𝐦 = (A ⊗ F) vec(B), and 𝕂 = K⁻¹∂(K)K⁻¹. The gradient is
+        Let 𝐲 = vec(Y), 𝐦 = (A ⊗ F) vec(B), and 𝕂 = K⁻¹∂(K)K⁻¹. The gradient is
         given by
 
             2⋅∂log(p(𝐲)) = -tr(K⁻¹∂K) + 𝐲ᵗ𝕂𝐲 + (𝐦ᵗ-2⋅𝐲ᵗ)𝕂𝐦 - 2⋅𝐲ᵗK⁻¹∂(𝐦)
