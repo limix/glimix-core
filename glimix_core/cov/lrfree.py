@@ -14,13 +14,6 @@ class LRFreeFormCov(Function):
     The covariance matrix K is given by LLᵗ, where L is a n×m matrix and n≥m. Therefore,
     K will have rank(K) ≤ m.
 
-    Parameters
-    ----------
-    n : int
-        Covariance dimension.
-    m : int
-        Upper limit of the covariance matrix rank.
-
     Example
     -------
 
@@ -46,6 +39,16 @@ class LRFreeFormCov(Function):
     """
 
     def __init__(self, n, m):
+        """
+        Constructor.
+
+        Parameters
+        ----------
+        n : int
+            Covariance dimension.
+        m : int
+            Upper limit of the covariance matrix rank.
+        """
         self._L = ones((n, m))
         self._Lu = Vector(self._L.ravel())
         Function.__init__(self, "LRFreeFormCov", Lu=self._Lu)
@@ -64,7 +67,7 @@ class LRFreeFormCov(Function):
     @property
     def L(self):
         """
-        Matrix L from K=LLᵗ.
+        Matrix L from K = LLᵗ.
 
         Returns
         -------
@@ -83,16 +86,16 @@ class LRFreeFormCov(Function):
 
         Returns
         -------
-        ndarray : (n, n)
+        K : (n, n) ndarray
             K = LLᵀ.
         """
         return dot(self.L, self.L.T)
 
     def gradient(self):
         """
-        Derivative of the covariance matrix over L.
+        Derivative of the covariance matrix over the lower triangular, flat part of L.
 
-        Derivative of K over the lower triangular, flat part of L:
+        It is equal to
 
             ∂K/∂Lᵢⱼ = ALᵀ + LAᵀ,
 

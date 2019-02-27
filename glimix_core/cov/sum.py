@@ -7,8 +7,6 @@ class SumCov(Function):
     """
     Sum of covariance functions, K = K₀ + K₁ + ⋯.
 
-    The mathematical representation is K = K₀ + K₁ + ⋯.
-
     Example
     -------
 
@@ -35,6 +33,14 @@ class SumCov(Function):
     """
 
     def __init__(self, covariances):
+        """
+        Constructor.
+
+        Parameters
+        ----------
+        covariances : list
+            List of covariance functions.
+        """
         self._covariances = [c for c in covariances]
         Function.__init__(self, "SumCov", composite=self._covariances)
 
@@ -44,19 +50,19 @@ class SumCov(Function):
 
         Returns
         -------
-        dict
-            :math:`f_0 + f_1 + \dots`
+        K : ndarray
+            K₀ + K₁ + ⋯
         """
         return add.reduce([cov.value() for cov in self._covariances])
 
     def gradient(self):
-        r"""
+        """
         Sum of covariance function derivatives.
 
         Returns
         -------
         dict
-            :math:`f_0' + f_1' + \dots`
+            ∂K₀ + ∂K₁ + ⋯
         """
         grad = {}
         for i, f in enumerate(self._covariances):

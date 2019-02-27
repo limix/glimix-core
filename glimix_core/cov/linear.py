@@ -9,8 +9,8 @@ class LinearCov(Function):
     """
     Linear covariance function, K = s⋅XXᵀ.
 
-    The mathematical representation is s⋅XXᵀ, for an n×r matrix provided by the user
-    and a scalar parameter s.
+    The mathematical representation is s⋅XXᵀ, for a n×r matrix X provided by the user
+    and a scaling parameter s.
 
     Example
     -------
@@ -52,9 +52,15 @@ class LinearCov(Function):
         return self._X
 
     def fix_scale(self):
+        """
+        Prevent s update during optimization.
+        """
         self._fix("logscale")
 
     def unfix_scale(self):
+        """
+        Enable s update during optimization.
+        """
         self._unfix("logscale")
 
     @property
@@ -77,7 +83,7 @@ class LinearCov(Function):
 
         Returns
         -------
-        ndarray
+        K : ndarray
             s⋅XXᵀ.
         """
         X = self.X
@@ -89,7 +95,7 @@ class LinearCov(Function):
 
         Returns
         -------
-        logscale
+        logscale : ndarray
             s⋅XXᵀ.
         """
         return dict(logscale=self.value())
