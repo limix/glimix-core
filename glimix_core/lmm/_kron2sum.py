@@ -3,28 +3,46 @@ import warnings
 from numpy import asfortranarray
 from numpy.linalg import matrix_rank
 
+from glimix_core._util import log2pi
 from glimix_core.cov import Kron2SumCov
 from glimix_core.mean import KronMean
-from glimix_core._util import log2pi
 from optimix import Function
 
 
 class Kron2Sum(Function):
+    """
+    LMM for multiple multiple traits.
+
+    Let n, c, and p be the number of samples, covariates, and traits, respectively.
+    The outcome variable Y is a n×p matrix distributed according to
+
+        vec(Y) ~ N((A ⊗ F) vec(B), Cᵣ ⊗ GGᵗ + Cₙ ⊗ I).
+
+    A and F are design matrices of dimensions p×p and n×c provided by the user,
+    where F is the usual matrix of covariates commonly used in single-trait models.
+    B is a p×c matrix of fixed-effect sizes.
+    G is a n×r matrix provided by the user and I is a n×n identity matrices.
+    Cᵣ and Cₙ are both symmetric matrices of dimensions p×p, for which Cₙ is
+    guaranteed by our implementation to be of full rank.
+    The parameters of this model are the matrices B, Cᵣ, and Cₙ.
+    """
+
     def __init__(self, Y, A, F, G, rank=1):
-        """ LMM for multiple multiple traits.
+        """
+        Constructor.
 
-        Let n, c, and p be the number of samples, covariates, and traits, respectively.
-        The outcome variable is a n×p matrix distributed according to
-
-            vec(Y) ~ N((A ⊗ F) vec(B), Cᵣ ⊗ GGᵗ + Cₙ ⊗ I).
-
-        A and 𝐅 are design matrices of dimensions p×p and n×c provided by the user,
-        where 𝐅 is the usual matrix of covariates.
-        B is a p×c matrix of fixed-effect sizes.
-        G is a n×r matrix provided by the user and I is a n×n identity matrices.
-        Cᵣ and Cₙ are both symmetric matrices of dimensions p×p, for which Cₙ is
-        guaranteed by our implementation to be full rank.
-        The parameters of this model are the matrices B, Cᵣ, and Cₙ.
+        Parameters
+        ----------
+        Y : (n, p) array_like
+            Outcome matrix.
+        A : (n, n) array_like
+            Trait-by-trait design matrix.
+        F : (n, c) array_like
+            Covariates design matrix.
+        G : (n, r) array_like
+            Matrix G from the GGᵗ term.
+        rank : int
+            Maximum rank of matrix Cᵣ.
         """
         Y = asfortranarray(Y)
         yrank = matrix_rank(Y)
@@ -44,33 +62,50 @@ class Kron2Sum(Function):
         self._mean = KronMean(F.shape[1], Y.shape[1])
         self._mean.A = A
         self._mean.F = F
-        Function.__init__(
-            self,
-            "Kron2Sum",
-            composite=[("M", self._mean), ("Cr", self._cov.Cr), ("Cn", self._cov.Cn)],
-        )
+        composite = [("M", self._mean), ("Cr", self._cov.Cr), ("Cn", self._cov.Cn)]
+        Function.__init__(self, "Kron2Sum", composite=composite)
 
     @property
     def mean(self):
+        """
+        Mean (A ⊗ F) vec(B).
+
+        Returns
+        -------
+        mean : KronMean
+        """
         return self._mean
 
     @property
     def cov(self):
+        """
+        Covariance Cᵣ ⊗ GGᵗ + Cₙ ⊗ I.
+
+        Returns
+        -------
+        covariance : Kron2SumCov
+        """
         return self._cov
 
     @property
     def nsamples(self):
-        """ Number of samples. """
+        """
+        Number of samples, n.
+        """
         return self._Y.shape[0]
 
     @property
     def ntraits(self):
-        """ Number of traits. """
+        """
+        Number of traits, p.
+        """
         return self._Y.shape[1]
 
     @property
     def ncovariates(self):
-        """ Number of covariates. """
+        """
+        Number of covariates, c.
+        """
         return self._F.shape[1]
 
     def value(self):
@@ -80,16 +115,17 @@ class Kron2Sum(Function):
         return self.lml_gradient()
 
     def lml(self):
-        r"""Log of the marginal likelihood.
+        r"""
+        Log of the marginal likelihood.
 
-        Let y = vec(Y), b = vec(B), and m = (A ⊗ F) vec(B). The log of the marginal
+        Let 𝐲 = vec(Y) and 𝐦 = (A ⊗ F) vec(B). The log of the marginal
         likelihood is given by
 
-            log(p(Y)) = -n p log(2π) / 2 - log(|K|) / 2 - (y-m)ᵗ K⁻¹ (y-m) / 2
+            log(p(𝐲)) = -n p log(2π) / 2 - log(\|K\|) / 2 - (𝐲-𝐦)ᵗ K⁻¹ (𝐲-𝐦) / 2.
 
         Returns
         -------
-        float
+        lml : float
             Log of the marginal likelihood.
         """
         np = self.nsamples * self.ntraits
@@ -103,17 +139,24 @@ class Kron2Sum(Function):
         return lml / 2
 
     def lml_gradient(self):
-        r"""Gradient of the log of the marginal likelihood.
+        """
+        Gradient of the log of the marginal likelihood.
 
-        Let y = vec(Y), b = vec(B), m = (A ⊗ F) vec(B), and 𝕂 = K⁻¹∂(K)K⁻¹. The
-        gradient is given by
+        Let 𝐲 = vec(Y) and 𝐦 = (A ⊗ F) vec(B), and 𝕂 = K⁻¹∂(K)K⁻¹. The gradient is
+        given by
 
-            2⋅∂log(p(Y)) = -tr(K⁻¹∂K) + yᵗ𝕂y + (mᵗ-2⋅yᵗ)𝕂m - 2⋅yᵗK⁻¹∂(m)
+            2⋅∂log(p(𝐲)) = -tr(K⁻¹∂K) + 𝐲ᵗ𝕂𝐲 + (𝐦ᵗ-2⋅𝐲ᵗ)𝕂𝐦 - 2⋅𝐲ᵗK⁻¹∂(𝐦)
 
         Returns
         -------
-        float
-            Log of the marginal likelihood.
+        M.vecB : ndarray
+            Gradient of the log of the marginal likelihood over vec(B).
+        Cr.Lu : ndarray
+            Gradient of the log of the marginal likelihood over Cᵣ parameters.
+        Cn.L0 : ndarray
+            Gradient of the log of the marginal likelihood over Cₙ parameter L₀.
+        Cn.L1 : ndarray
+            Gradient of the log of the marginal likelihood over Cₙ parameter L₁.
         """
         ld_grad = self._cov.logdet_gradient()
         dK = {n: g.transpose([2, 0, 1]) for (n, g) in self._cov.gradient().items()}
@@ -136,7 +179,8 @@ class Kron2Sum(Function):
         return self._cov.L @ self._y
 
     def fit(self, verbose=True):
-        r"""Maximise the marginal likelihood.
+        """
+        Maximise the marginal likelihood.
 
         Parameters
         ----------
@@ -144,8 +188,4 @@ class Kron2Sum(Function):
             ``True`` for progress output; ``False`` otherwise.
             Defaults to ``True``.
         """
-        # self._verbose = verbose
         self._maximize(verbose=verbose)
-        # self.delta = self._get_delta()
-        # self._update_fixed_effects()
-        # self._verbose = False

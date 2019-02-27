@@ -135,12 +135,32 @@ For example:
 API
 ===
 
+LMM
+---
+
 .. autoclass:: glimix_core.lmm.LMM
   :members:
   :exclude-members: value
 
+FastScanner
+-----------
+
 .. autoclass:: glimix_core.lmm.FastScanner
   :members:
+
+MTLMM
+-----
+
+.. autoclass:: glimix_core.lmm.MTLMM
+  :members:
+  :exclude-members: value, gradient
+
+Kron2Sum
+--------
+
+.. autoclass:: glimix_core.lmm.Kron2Sum
+  :members:
+  :exclude-members: value, gradient
 
 Implementation
 ==============
@@ -273,8 +293,8 @@ likelihood:
 
 .. _mtlmm-impl:
 
-Multi-trait
------------
+Uncorrelated multi-trait
+------------------------
 
 The extension to multiple traits becomes easy under the assumption that the traits are
 uncorrelated, as assumed in this section.
@@ -432,6 +452,11 @@ marginal likelihood:
 .. |d| replace:: :math:`d`
 .. |k| replace:: :math:`k`
 .. |r| replace:: :math:`r`
+
+Multi-trait
+-----------
+
+TODO:
 
 .. rubric:: References
 
