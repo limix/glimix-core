@@ -10,7 +10,7 @@ Fast inference for Generalised Linear Mixed Models.
 .. toctree::
     :caption: Table of contents
     :name: mastertoc
-    :maxdepth: 3
+    :maxdepth: 4
 
     install
     mean
