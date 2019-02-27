@@ -33,13 +33,6 @@ class Kron2SumCov(Function):
 
     where D is a diagonal matrix.
 
-    Parameters
-    ----------
-    dim : int
-        Dimension d for the square matrices Cᵣ and Cₙ.
-    rank : int
-        Maximum rank of the Cₙ matrix.
-
     Example
     -------
 
@@ -67,6 +60,16 @@ class Kron2SumCov(Function):
     """
 
     def __init__(self, dim, rank):
+        """
+        Constructor.
+
+        Parameters
+        ----------
+        dim : int
+            Dimension d for the square matrices Cᵣ and Cₙ.
+        rank : int
+            Maximum rank of the Cₙ matrix.
+        """
         self._Cr = LRFreeFormCov(dim, rank)
         self._Cr.name = "Cᵣ"
         self._Cn = FreeFormCov(dim)
@@ -80,7 +83,7 @@ class Kron2SumCov(Function):
     @property
     def G(self):
         """
-        User-provided matrix G, n×m, used to evaluate this covariance function.
+        User-provided matrix G, n×m.
         """
         return self._G
 
@@ -95,14 +98,14 @@ class Kron2SumCov(Function):
     @property
     def Cr(self):
         """
-        Semi-definite positive matrix Cᵣ, .
+        Semi-definite positive matrix Cᵣ.
         """
         return self._Cr
 
     @property
     def Cn(self):
         """
-        Definite positive matrix Cᵣ.
+        Definite positive matrix Cₙ.
         """
         return self._Cn
 
@@ -124,6 +127,11 @@ class Kron2SumCov(Function):
     def value(self):
         """
         Covariance matrix K = Cᵣ ⊗ GGᵗ + Cₙ ⊗ I.
+
+        Returns
+        -------
+        K : ndarray
+            Cᵣ ⊗ GGᵗ + Cₙ ⊗ I.
         """
         X = self.G @ self.G.T
         Cr = self._Cr.value()
@@ -137,11 +145,11 @@ class Kron2SumCov(Function):
         Returns
         -------
         Cr_Lu : ndarray
-            Derivative over the array Lu of Cᵣ.
+            Derivative of Cᵣ over the array Lu.
         Cn_L0 : ndarray
-            Derivative over the array L0 of Cₙ.
+            Derivative of Cₙ over the array L0.
         Cn_L1 : ndarray
-            Derivative over the array L1 of Cₙ.
+            Derivative of Cₙ over the array L1.
         """
         I = self._I
         X = self.G @ self.G.T
@@ -186,6 +194,11 @@ class Kron2SumCov(Function):
     def logdet(self):
         """
         Implements log|K| = - log|D| + N log|Cₙ|.
+
+        Returns
+        -------
+        logdet : float
+            Log-determinant of K.
         """
         Sn, Un = self.Cn.eigh()
         Cr = self.Cr.value()
@@ -209,11 +222,11 @@ class Kron2SumCov(Function):
         Returns
         -------
         Cr_Lu : ndarray
-            Derivative over the array Lu of Cᵣ.
+            Derivative of Cᵣ over the array Lu.
         Cn_L0 : ndarray
-            Derivative over the array L0 of Cₙ.
+            Derivative of Cₙ over the array L0.
         Cn_L1 : ndarray
-            Derivative over the array L1 of Cₙ.
+            Derivative of Cₙ over the array L1.
         """
         Sn, Un = self.Cn.eigh()
         Cr = self.Cr.value()

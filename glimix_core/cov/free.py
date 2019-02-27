@@ -28,11 +28,6 @@ class FreeFormCov(Function):
     for a very small positive number ϵ. That additional term is necessary to avoid
     singular and ill conditioned covariance matrices.
 
-    Parameters
-    ----------
-    dim : int
-        Dimension d of the free-form covariance matrix.
-
     Example
     -------
 
@@ -62,6 +57,14 @@ class FreeFormCov(Function):
     """
 
     def __init__(self, dim):
+        """
+        Constructor.
+
+        Parameters
+        ----------
+        dim : int
+            Dimension d of the free-form covariance matrix.
+        """
         dim = int(dim)
         tsize = ((dim + 1) * dim) // 2
         self._L = zeros((dim, dim))
@@ -165,7 +168,7 @@ class FreeFormCov(Function):
 
         Returns
         -------
-        ndarray
+        K : ndarray
             Matrix K = LLᵗ + ϵI, for a very small positive number ϵ.
         """
         K = dot(self.L, self.L.T)

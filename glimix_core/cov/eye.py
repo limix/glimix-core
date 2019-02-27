@@ -34,9 +34,22 @@ class EyeCov(Function):
         >>> print(cov)
         EyeCov(dim=2): I
           scale: 2.5
+
+    Parameters
+    ----------
+    dim : int
+        Matrix dimension, d.
     """
 
     def __init__(self, dim):
+        """
+        Constructor.
+
+        Parameters
+        ----------
+        dim : int
+            Matrix dimension, d.
+        """
         self._dim = dim
         self._I = eye(dim)
         self._logscale = Scalar(0.0)
@@ -72,21 +85,19 @@ class EyeCov(Function):
 
         Returns
         -------
-        ndarray
-            s⋅I, for scale s and an d×d identity matrix I.
+        K : ndarray
+            s⋅I, for scale s and a d×d identity matrix I.
         """
         return self.scale * self._I
 
     def gradient(self):
         """
-        Derivative of the covariance matrix.
-
-        Derivative is taking over log(s), therefore it is equal to s⋅I.
+        Derivative of the covariance matrix over log(s), s⋅I.
 
         Returns
         -------
         logscale : ndarray
-            s⋅I, for scale s and an d×d identity matrix I.
+            s⋅I, for scale s and a d×d identity matrix I.
         """
         return dict(logscale=self.value())
 

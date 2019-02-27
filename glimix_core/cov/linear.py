@@ -32,6 +32,14 @@ class LinearCov(Function):
     """
 
     def __init__(self):
+        """
+        Constructor.
+
+        Parameters
+        ----------
+        X : array_like
+            Matrix X from K = s⋅XXᵀ.
+        """
         self._logscale = Scalar(0.0)
         self._X = None
         Function.__init__(self, "LinearCov", logscale=self._logscale)

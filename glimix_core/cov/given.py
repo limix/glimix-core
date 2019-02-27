@@ -11,11 +11,6 @@ class GivenCov(Function):
 
     The covariance matrix is the provided matrix K₀ scaled by s: K = s⋅K₀.
 
-    Parameters
-    ----------
-    K0 : array_like
-        A semi-definite positive matrix.
-
     Example
     -------
 
@@ -36,6 +31,14 @@ class GivenCov(Function):
     """
 
     def __init__(self, K0):
+        """
+        Constructor.
+
+        Parameters
+        ----------
+        K0 : array_like
+            A semi-definite positive matrix.
+        """
         self._logscale = Scalar(0.0)
         Function.__init__(self, "GivenCov", logscale=self._logscale)
         self._logscale.bounds = (-20.0, +10)
@@ -61,7 +64,7 @@ class GivenCov(Function):
 
         Returns
         -------
-        array_like
+        K : ndarray
             s⋅K₀.
         """
         return self.scale * self._K0
@@ -72,7 +75,7 @@ class GivenCov(Function):
 
         Returns
         -------
-        logscale
+        logscale : float
             s⋅K₀.
         """
         return dict(logscale=self.scale * self._K0)
