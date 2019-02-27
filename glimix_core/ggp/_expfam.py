@@ -6,7 +6,7 @@ from numpy.linalg import LinAlgError
 
 from optimix import Function
 
-from ..ep import EP
+from .._ep import EP
 from .._util import check_outcome
 
 

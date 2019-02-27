@@ -1,4 +1,4 @@
-from numpy import asarray, atleast_2d, concatenate, dot, kron, ones, stack, zeros
+from numpy import asarray, kron, zeros
 
 from glimix_core._util import unvec, vec
 from optimix import Function, Vector

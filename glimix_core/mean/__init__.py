@@ -1,4 +1,7 @@
-"""Mean functions."""
+"""
+Mean functions
+--------------
+"""
 from .kron import KronMean
 from .linear import LinearMean
 from .offset import OffsetMean

@@ -6,7 +6,7 @@ from liknorm import LikNormMachine
 from numpy import asarray, dot, exp
 from numpy.linalg import solve
 
-from glimix_core.ep import EPLinearKernel
+from glimix_core._ep import EPLinearKernel
 
 from ._glmm import GLMM
 

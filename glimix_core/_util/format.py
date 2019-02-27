@@ -16,8 +16,7 @@ def format_named_arr(name, arr):
     wrapper = TextWrapper(initial_indent=prefix)
     msg = wrapper.fill(str(arr).split("\n")[0]) + "\n"
     prefix = "     "
-    wrapper = TextWrapper(initial_indent=prefix,
-                          subsequent_indent=prefix)
+    wrapper = TextWrapper(initial_indent=prefix, subsequent_indent=prefix)
     for s in str(arr).split("\n")[1:]:
         msg += wrapper.fill(s) + "\n"
     return msg[:-1]
