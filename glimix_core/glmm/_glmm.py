@@ -12,7 +12,6 @@ from ..util import (
     check_economic_qs,
     check_outcome,
     economic_qs_zeros,
-    normalise_outcome,
     numbers,
 )
 
@@ -60,7 +59,7 @@ class GLMM(Function):
     """
 
     def __init__(self, y, lik, X, QS=None):
-        y = ascontiguousarray(normalise_outcome(y), float)
+        y = ascontiguousarray(y, float)
         X = asarray(X, float)
 
         Function.__init__(
