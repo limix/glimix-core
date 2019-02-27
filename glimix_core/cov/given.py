@@ -1,8 +1,8 @@
-from __future__ import division
-
 from numpy import exp, log
 
 from optimix import Function, Scalar
+
+from .._util import format_function
 
 
 class GivenCov(Function):
@@ -31,7 +31,7 @@ class GivenCov(Function):
         >>> cov.scale = 1.3
         >>> cov.name = "K"
         >>> print(cov)
-        GivenCov(K=...): K
+        GivenCov(K0=...): K
           scale: 1.3
     """
 
@@ -78,10 +78,4 @@ class GivenCov(Function):
         return dict(logscale=self.scale * self._K0)
 
     def __str__(self):
-        tname = type(self).__name__
-        msg = "{}(K=...)".format(tname)
-        if self.name is not None:
-            msg += ": {}".format(self.name)
-        msg += "\n"
-        msg += "  scale: {}".format(self.scale)
-        return msg
+        return format_function(self, {"K0": "..."}, [("scale", self.scale)])

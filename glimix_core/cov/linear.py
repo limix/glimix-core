@@ -2,6 +2,8 @@ from numpy import exp, log
 
 from optimix import Function, Scalar
 
+from .._util import format_function
+
 
 class LinearCov(Function):
     """
@@ -90,10 +92,4 @@ class LinearCov(Function):
         return dict(logscale=self.value())
 
     def __str__(self):
-        tname = type(self).__name__
-        msg = "{}()".format(tname)
-        if self.name is not None:
-            msg += ": {}".format(self.name)
-        msg += "\n"
-        msg += "  scale: {}".format(self.scale)
-        return msg
+        return format_function(self, {}, [("scale", self.scale)])

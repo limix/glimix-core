@@ -1,15 +1,6 @@
-# def format_function(func, **kwargs):
-#     tname = type(func).__name__
-#     name = func.name
-#     kwargs_input = [f"{arg}={val}" for arg, val in kwargs.items()]
-#     input = ", ".join(kwargs_input)
-#     msg = f"{tname}({input})"
-#     if name is not None:
-#         msg += f": {name}"
-#     return msg
-
-
-def format_function(func, params, attrs):
+def format_function(func, params, attrs=None):
+    if attrs is None:
+        attrs = []
     tname = type(func).__name__
     name = func.name
     kwargs_input = [f"{arg}={val}" for arg, val in params.items()]

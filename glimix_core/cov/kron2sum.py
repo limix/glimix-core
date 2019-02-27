@@ -4,6 +4,7 @@ from numpy.linalg import eigh, svd
 from numpy_sugar.linalg import ddot
 from optimix import Function
 
+from .._util import format_function
 from .free import FreeFormCov
 from .lrfree import LRFreeFormCov
 
@@ -38,11 +39,38 @@ class Kron2SumCov(Function):
         Dimension d for the square matrices Cᵣ and Cₙ.
     rank : int
         Maximum rank of the Cₙ matrix.
+
+    Example
+    -------
+
+    .. doctest::
+
+        >>> from numpy import array
+        >>> from glimix_core.cov import Kron2SumCov
+        >>>
+        >>> G = array([[-1.5, 1.0], [-1.5, 1.0], [-1.5, 1.0]])
+        >>> Lr = array([[3], [2]], float)
+        >>> Ln = array([[1, 0], [2, 1]], float)
+        >>>
+        >>> cov = Kron2SumCov(2, 1)
+        >>> cov.G = G
+        >>> cov.Cr.L = Lr
+        >>> cov.Cn.L = Ln
+        >>> print(cov)
+        Kron2SumCov(dim=2, rank=1): Kron2SumCov
+          LRFreeFormCov(n=2, m=1): Cᵣ
+            L: [[3.]
+                [2.]]
+          FreeFormCov(dim=2): Cₙ
+            L: [[1. 0.]
+                [2. 1.]]
     """
 
     def __init__(self, dim, rank):
         self._Cr = LRFreeFormCov(dim, rank)
+        self._Cr.name = "Cᵣ"
         self._Cn = FreeFormCov(dim)
+        self._Cn.name = "Cₙ"
         self._G = None
         self._I = None
         Function.__init__(
@@ -213,3 +241,11 @@ class Kron2SumCov(Function):
             * diagonal(L @ Kgrad["Cn.L1"].transpose([2, 0, 1]) @ L.T, axis1=1, axis2=2)
         ).sum(1)
         return {"Cr.Lu": r0, "Cn.L0": r1, "Cn.L1": r2}
+
+    def __str__(self):
+        dim = self._Cr.L.shape[0]
+        rank = self._Cr.L.shape[1]
+        msg0 = format_function(self, {"dim": dim, "rank": rank})
+        msg1 = str(self._Cr) + "\n" + str(self._Cn)
+        msg1 = "  " + "\n  ".join(msg1.split("\n"))
+        return (msg0 + msg1).rstrip()
