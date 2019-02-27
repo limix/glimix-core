@@ -1,9 +1,9 @@
 from numpy import full, ones
 
-from optimix import Func, Scalar
+from optimix import Function, Scalar
 
 
-class OffsetMean(Func):
+class OffsetMean(Function):
     r"""
     Offset mean function.
 
@@ -36,7 +36,7 @@ class OffsetMean(Func):
         self._offset = Scalar(0.0)
         self._offset.bounds = (-200.0, +200)
         self._n = n
-        Func.__init__(self, "OffsetMean", offset=self._offset)
+        Function.__init__(self, "OffsetMean", offset=self._offset)
 
     def fix_offset(self):
         self._fix("offset")

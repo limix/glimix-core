@@ -4,13 +4,13 @@ from liknorm import LikNormMachine
 from numpy import ascontiguousarray, sign
 from numpy.linalg import LinAlgError
 
-from optimix import Func
+from optimix import Function
 
 from ..ep import EP
 from ..util import check_outcome
 
 
-class ExpFamGP(Func):
+class ExpFamGP(Function):
     r"""Expectation Propagation for Generalised Gaussian Processes.
 
     Parameters
@@ -59,7 +59,7 @@ class ExpFamGP(Func):
             n = len(y[0])
         else:
             n = len(y)
-        Func.__init__(self, "ExpFamGP", composite=[mean, cov])
+        Function.__init__(self, "ExpFamGP", composite=[mean, cov])
 
         if not isinstance(lik, (tuple, list)):
             lik = (lik,)

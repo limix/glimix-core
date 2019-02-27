@@ -65,6 +65,7 @@ class GLMM(Function):
 
         Function.__init__(
             self,
+            "GLMM",
             beta=Vector(zeros(X.shape[1])),
             logscale=Scalar(0.0),
             logitdelta=Scalar(0.0),
@@ -97,11 +98,9 @@ class GLMM(Function):
             self.delta = 0.0
             self.fix("delta")
 
-        self.set_nodata()
-
     def _copy_to(self, to):
-        d = to.variables()
-        s = self.variables()
+        d = to._variables
+        s = self._variables
 
         d.get("beta").value = asarray(s.get("beta").value, float)
         d.get("beta").bounds = s.get("beta").bounds
@@ -119,11 +118,11 @@ class GLMM(Function):
         :class:`numpy.ndarray`
             :math:`\boldsymbol\beta`.
         """
-        return asarray(self.variables().get("beta").value, float)
+        return asarray(self._variables.get("beta").value, float)
 
     @beta.setter
     def beta(self, v):
-        self.variables().get("beta").value = v
+        self._variables.get("beta").value = v
 
     def copy(self):
         r"""Create a copy of this object."""
@@ -192,9 +191,8 @@ class GLMM(Function):
         Please, refer to :func:`scipy.optimize.fmin_l_bfgs_b` for further information
         about ``factr`` and ``pgtol``.
         """
-        f = self.feed()
         self._verbose = verbose
-        f.maximize(verbose=verbose, factr=factr, pgtol=pgtol)
+        self.maximize(verbose=verbose, factr=factr, pgtol=pgtol)
         self._verbose = False
 
     def lml(self):
@@ -209,19 +207,19 @@ class GLMM(Function):
 
     @property
     def logitdelta(self):
-        return float(self.variables().get("logitdelta").value)
+        return float(self._variables.get("logitdelta").value)
 
     @logitdelta.setter
     def logitdelta(self, v):
-        self.variables().get("logitdelta").value = v
+        self._variables.get("logitdelta").value = v
 
     @property
     def logscale(self):
-        return float(self.variables().get("logscale").value)
+        return float(self._variables.get("logscale").value)
 
     @logscale.setter
     def logscale(self, v):
-        self.variables().get("logscale").value = v
+        self._variables.get("logscale").value = v
 
     def posteriori_mean(self):
         r""" Mean of the estimated posteriori.
@@ -263,11 +261,11 @@ class GLMM(Function):
 
     @scale.setter
     def scale(self, v):
-        b = self.variables().get("logscale").bounds
+        b = self._variables.get("logscale").bounds
         self.logscale = clip(log(v), b[0], b[1])
 
     def set_variable_bounds(self, var_name, bounds):
-        self.variables().get(var_name).bounds = bounds
+        self._variables.get(var_name).bounds = bounds
 
     def unfix(self, var_name):
         r"""Let a variable be adjusted.

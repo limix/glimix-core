@@ -10,12 +10,12 @@ from numpy import (
     zeros_like,
 )
 from numpy_sugar import epsilon
-from optimix import Func, Vector
+from optimix import Function, Vector
 
 from ..util import format_function, format_named_arr
 
 
-class FreeFormCov(Func):
+class FreeFormCov(Function):
     """
     General definite positive matrix.
 
@@ -72,7 +72,7 @@ class FreeFormCov(Func):
         self._epsilon = epsilon.small * 1000
         self._L0 = Vector(ones(tsize - dim))
         self._L1 = Vector(zeros(dim))
-        Func.__init__(self, "FreeCov", L0=self._L0, L1=self._L1)
+        Function.__init__(self, "FreeCov", L0=self._L0, L1=self._L1)
         self._L1.bounds = [(log(epsilon.small * 1000), +15)] * dim
 
     def eigh(self):

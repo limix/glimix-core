@@ -2,13 +2,13 @@ from numpy import asarray, atleast_2d, concatenate, diagonal, eye, kron, log, sq
 from numpy.linalg import eigh, svd
 
 from numpy_sugar.linalg import ddot
-from optimix import Func
+from optimix import Function
 
 from .free import FreeFormCov
 from .lrfree import LRFreeFormCov
 
 
-class Kron2SumCov(Func):
+class Kron2SumCov(Function):
     """
     Implements K = Cᵣ ⊗ GGᵗ + Cₙ ⊗ I.
 
@@ -45,7 +45,7 @@ class Kron2SumCov(Func):
         self._Cn = FreeFormCov(dim)
         self._G = None
         self._I = None
-        Func.__init__(
+        Function.__init__(
             self, "Kron2SumCov", composite=[("Cr", self._Cr), ("Cn", self._Cn)]
         )
 

@@ -2,12 +2,12 @@ from __future__ import division
 
 from numpy import asarray, dot, ones, zeros_like, zeros
 
-from optimix import Func, Vector
+from optimix import Function, Vector
 
 from ..util import format_function, format_named_arr
 
 
-class LRFreeFormCov(Func):
+class LRFreeFormCov(Function):
     """
     General semi-definite positive matrix of low rank.
 
@@ -48,7 +48,7 @@ class LRFreeFormCov(Func):
     def __init__(self, n, m):
         self._L = ones((n, m))
         self._Lu = Vector(self._L.ravel())
-        Func.__init__(self, "LRFreeFormCov", Lu=self._Lu)
+        Function.__init__(self, "LRFreeFormCov", Lu=self._Lu)
 
     @property
     def Lu(self):

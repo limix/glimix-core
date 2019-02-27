@@ -1,9 +1,9 @@
 from numpy import add
 
-from optimix import Func
+from optimix import Function
 
 
-class SumMean(Func):
+class SumMean(Function):
     """
     Sum mean function.
 
@@ -58,7 +58,7 @@ class SumMean(Func):
 
     def __init__(self, means):
         self._means = [c for c in means]
-        Func.__init__(self, "SumMean", composite=self._means)
+        Function.__init__(self, "SumMean", composite=self._means)
 
     def value(self):
         """

@@ -12,12 +12,11 @@ from numpy import (
 )
 from numpy.random import RandomState
 from numpy.testing import assert_, assert_allclose
-from numpy_sugar.linalg import economic_qs, economic_qs_linear
 
 from glimix_core.example import linear_eye_cov, nsamples
 from glimix_core.glmm import GLMMExpFam, GLMMNormal
 from glimix_core.random import bernoulli_sample
-from optimix import check_grad
+from numpy_sugar.linalg import economic_qs, economic_qs_linear
 
 ATOL = 1e-3
 RTOL = 1e-3
@@ -100,7 +99,7 @@ def test_glmmexpfam_precise():
     glmm.delta = 0.1
     assert_allclose(glmm.lml(), -30.09977907145003, atol=ATOL, rtol=RTOL)
 
-    assert_allclose(check_grad(glmm), 0, atol=1e-3, rtol=RTOL)
+    assert_allclose(glmm._check_grad(), 0, atol=1e-3, rtol=RTOL)
 
 
 def test_glmmexpfam_glmmnormal_get_fast_scanner():
@@ -144,7 +143,7 @@ def test_glmmexpfam_delta0():
     glmm.delta = 0
 
     assert_allclose(glmm.lml(), -43.154282363439364, atol=ATOL, rtol=RTOL)
-    assert_allclose(check_grad(glmm, step=2e-5), 0, atol=1e-2)
+    assert_allclose(glmm._check_grad(step=2e-5), 0, atol=1e-2)
 
 
 def test_glmmexpfam_delta1():
@@ -162,7 +161,7 @@ def test_glmmexpfam_delta1():
     glmm.delta = 1
 
     assert_allclose(glmm.lml(), -47.09677870648636, atol=ATOL, rtol=RTOL)
-    assert_allclose(check_grad(glmm), 0, atol=1e-4)
+    assert_allclose(glmm._check_grad(), 0, atol=1e-4)
 
 
 def test_glmmexpfam_wrong_qs():
@@ -397,7 +396,7 @@ def test_glmmexpfam_scale_very_low():
     glmm.scale = 1e-3
     assert_allclose(glmm.lml(), -145.01170823743104, atol=ATOL, rtol=RTOL)
 
-    assert_allclose(check_grad(glmm), 0, atol=1e-2)
+    assert_allclose(glmm._check_grad(), 0, atol=1e-2)
 
 
 def test_glmmexpfam_scale_very_high():
@@ -415,7 +414,7 @@ def test_glmmexpfam_scale_very_high():
     glmm.scale = 30.0
     assert_allclose(glmm.lml(), -29.632791380478736, atol=ATOL, rtol=RTOL)
 
-    assert_allclose(check_grad(glmm), 0, atol=1e-3)
+    assert_allclose(glmm._check_grad(), 0, atol=1e-3)
 
 
 def test_glmmexpfam_delta_one_zero():
@@ -434,7 +433,7 @@ def test_glmmexpfam_delta_one_zero():
 
     glmm.delta = 0
     assert_allclose(glmm.lml(), -113.24570457063275)
-    assert_allclose(check_grad(glmm, step=1e-4), 0, atol=1e-2)
+    assert_allclose(glmm._check_grad(step=1e-4), 0, atol=1e-2)
 
     glmm.fit(verbose=False)
     assert_allclose(glmm.lml(), -98.21144899310399, atol=ATOL, rtol=RTOL)
@@ -442,7 +441,7 @@ def test_glmmexpfam_delta_one_zero():
 
     glmm.delta = 1
     assert_allclose(glmm.lml(), -98.00058169240869, atol=ATOL, rtol=RTOL)
-    assert_allclose(check_grad(glmm, step=1e-4), 0, atol=1e-1)
+    assert_allclose(glmm._check_grad(step=1e-4), 0, atol=1e-1)
 
     glmm.fit(verbose=False)
 

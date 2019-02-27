@@ -1,9 +1,9 @@
 from numpy import exp, log, eye
 
-from optimix import Func, Scalar
+from optimix import Function, Scalar
 
 
-class EyeCov(Func):
+class EyeCov(Function):
     r"""
     Identity covariance function.
 
@@ -38,7 +38,7 @@ class EyeCov(Func):
 
     def __init__(self):
         self._logscale = Scalar(0.0)
-        Func.__init__(self, "EyeCov", logscale=self._logscale)
+        Function.__init__(self, "EyeCov", logscale=self._logscale)
         self._logscale.bounds = (-20.0, +10)
         self._I = None
 

@@ -10,7 +10,8 @@ from ._glmm import GLMM
 
 
 class GLMMNormal(GLMM):
-    r"""LMM with heterogeneous Normal likelihoods.
+    r"""
+    LMM with heterogeneous Normal likelihoods.
 
     We model
 
@@ -42,9 +43,9 @@ class GLMMNormal(GLMM):
     def __init__(self, eta, tau, X, QS=None):
         self._cache = dict(value=None, grad=None)
         GLMM.__init__(self, eta, ("normal", tau), X, QS)
-        self.variables().get("beta").listen(self.clear_cache)
-        self.variables().get("logscale").listen(self.clear_cache)
-        self.variables().get("logitdelta").listen(self.clear_cache)
+        self._variables.get("beta").listen(self.clear_cache)
+        self._variables.get("logscale").listen(self.clear_cache)
+        self._variables.get("logitdelta").listen(self.clear_cache)
 
     def __copy__(self):
         gef = GLMMNormal(self.eta, self.tau, self._X, self._QS)

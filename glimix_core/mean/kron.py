@@ -1,10 +1,10 @@
 from numpy import asarray, atleast_2d, concatenate, dot, kron, ones, stack, zeros
 
 from glimix_core.util import unvec, vec
-from optimix import Func, Vector
+from optimix import Function, Vector
 
 
-class KronMean(Func):
+class KronMean(Function):
     r""" Kronecker mean function.
 
     Let
@@ -27,7 +27,7 @@ class KronMean(Func):
         self._A = None
         self._F = None
         self._vecB = Vector(vecB)
-        Func.__init__(self, "KronMean", vecB=self._vecB)
+        Function.__init__(self, "KronMean", vecB=self._vecB)
 
     # def _set_data(self):
     #     if self._A is None or self._F is None:

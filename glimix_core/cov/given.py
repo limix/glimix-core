@@ -2,10 +2,10 @@ from __future__ import division
 
 from numpy import exp, log
 
-from optimix import Func, Scalar
+from optimix import Function, Scalar
 
 
-class GivenCov(Func):
+class GivenCov(Function):
     r"""Given covariance function.
 
     The covariance matrix is the provided matrix K₀ scaled by s: K = s⋅K₀.
@@ -36,7 +36,7 @@ class GivenCov(Func):
 
     def __init__(self, K0):
         self._logscale = Scalar(0.0)
-        Func.__init__(self, "GivenCov", logscale=self._logscale)
+        Function.__init__(self, "GivenCov", logscale=self._logscale)
         self._logscale.bounds = (-20.0, +10)
         self._K0 = K0
 

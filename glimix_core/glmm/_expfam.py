@@ -78,9 +78,9 @@ class GLMMExpFam(GLMM):
         self._machine = LikNormMachine(self._lik[0], n_int)
         self.update_approx = True
 
-        self.variables().get("beta").listen(self.set_update_approx)
-        self.variables().get("logscale").listen(self.set_update_approx)
-        self.variables().get("logitdelta").listen(self.set_update_approx)
+        self._variables.get("beta").listen(self.set_update_approx)
+        self._variables.get("logscale").listen(self.set_update_approx)
+        self._variables.get("logitdelta").listen(self.set_update_approx)
 
     def __copy__(self):
         gef = GLMMExpFam(self._y, self._lik, self._X, self._QS)

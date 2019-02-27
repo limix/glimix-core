@@ -6,10 +6,10 @@ from numpy.linalg import matrix_rank
 from glimix_core.cov import Kron2SumCov
 from glimix_core.mean import KronMean
 from glimix_core.util import log2pi
-from optimix import Func
+from optimix import Function
 
 
-class Kron2Sum(Func):
+class Kron2Sum(Function):
     def __init__(self, Y, A, F, G, rank=1):
         """ LMM for multiple multiple traits.
 
@@ -44,7 +44,7 @@ class Kron2Sum(Func):
         self._mean = KronMean(F.shape[1], Y.shape[1])
         self._mean.A = A
         self._mean.F = F
-        Func.__init__(
+        Function.__init__(
             self,
             "Kron2Sum",
             composite=[("M", self._mean), ("Cr", self._cov.Cr), ("Cn", self._cov.Cn)],

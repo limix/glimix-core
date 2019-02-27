@@ -2,10 +2,10 @@ from __future__ import division
 
 from numpy import add
 
-from optimix import Func
+from optimix import Function
 
 
-class SumCov(Func):
+class SumCov(Function):
     r"""Sum covariance function.
 
     The mathematical representation is
@@ -47,7 +47,7 @@ class SumCov(Func):
 
     def __init__(self, covariances):
         self._covariances = [c for c in covariances]
-        Func.__init__(self, "SumCov", composite=self._covariances)
+        Function.__init__(self, "SumCov", composite=self._covariances)
 
     def value(self):
         r"""Sum of covariance matrices.

@@ -25,7 +25,7 @@ from ..util import economic_qs_zeros, numbers
 
 class LMMCore(Function):
     def __init__(self, y, X=None, QS=None, SVD=None):
-        Function.__init__(self, logistic=Scalar(0.0))
+        Function.__init__(self, "LMMCore", logistic=Scalar(0.0))
         y = asarray(y, float).ravel()
 
         if X is not None:

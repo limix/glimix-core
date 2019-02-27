@@ -1,9 +1,9 @@
 from numpy import ascontiguousarray, zeros, asarray
 
-from optimix import Func, Vector
+from optimix import Function, Vector
 
 
-class LinearMean(Func):
+class LinearMean(Function):
     """
     Linear mean function.
 
@@ -40,7 +40,7 @@ class LinearMean(Func):
         self._effsizes = Vector(zeros(m))
         self._effsizes.bounds = [(-200.0, +200)] * m
         self._X = None
-        Func.__init__(self, "LinearMean", effsizes=self._effsizes)
+        Function.__init__(self, "LinearMean", effsizes=self._effsizes)
 
     @property
     def X(self):

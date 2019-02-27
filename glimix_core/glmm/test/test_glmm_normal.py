@@ -5,7 +5,6 @@ from numpy.testing import assert_allclose
 from glimix_core.example import linear_eye_cov, nsamples
 from glimix_core.glmm import GLMMNormal
 from numpy_sugar.linalg import economic_qs
-from optimix import check_grad
 
 ATOL = 1e-3
 RTOL = 1e-2
@@ -186,7 +185,7 @@ def test_glmmnormal():
 
     assert_allclose(glmm.lml(), -19.284378946701814)
 
-    assert_allclose(check_grad(glmm), 0, atol=1e-3, rtol=RTOL)
+    assert_allclose(glmm._check_grad(), 0, atol=1e-3, rtol=RTOL)
 
     flmm = glmm.get_fast_scanner()
     lmls, effsizes = flmm.fast_scan(M, verbose=False)

@@ -1,9 +1,9 @@
 from numpy import exp, log
 
-from optimix import Func, Scalar
+from optimix import Function, Scalar
 
 
-class LinearCov(Func):
+class LinearCov(Function):
     """
     Linear covariance function.
 
@@ -32,7 +32,7 @@ class LinearCov(Func):
     def __init__(self):
         self._logscale = Scalar(0.0)
         self._X = None
-        Func.__init__(self, "LinearCov", logscale=self._logscale)
+        Function.__init__(self, "LinearCov", logscale=self._logscale)
         self._logscale.bounds = (-20.0, +10)
 
     @property
