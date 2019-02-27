@@ -41,8 +41,8 @@ class Kron2Sum(Function):
             Covariates design matrix.
         G : (n, r) array_like
             Matrix G from the GGᵗ term.
-        rank : int
-            Maximum rank of matrix Cᵣ.
+        rank : optional, int
+            Maximum rank of matrix Cᵣ. Defaults to ``1``.
         """
         Y = asfortranarray(Y)
         yrank = matrix_rank(Y)
@@ -68,7 +68,7 @@ class Kron2Sum(Function):
     @property
     def mean(self):
         """
-        Mean (A ⊗ F) vec(B).
+        Mean 𝐦 = (A ⊗ F) vec(B).
 
         Returns
         -------
@@ -79,7 +79,7 @@ class Kron2Sum(Function):
     @property
     def cov(self):
         """
-        Covariance Cᵣ ⊗ GGᵗ + Cₙ ⊗ I.
+        Covariance K = Cᵣ ⊗ GGᵗ + Cₙ ⊗ I.
 
         Returns
         -------
@@ -118,8 +118,7 @@ class Kron2Sum(Function):
         r"""
         Log of the marginal likelihood.
 
-        Let 𝐲 = vec(Y) and 𝐦 = (A ⊗ F) vec(B). The log of the marginal
-        likelihood is given by
+        Let 𝐲 = vec(Y). The log of the marginal likelihood is given by
 
             log(p(𝐲)) = -n p log(2π) / 2 - log(\|K\|) / 2 - (𝐲-𝐦)ᵗ K⁻¹ (𝐲-𝐦) / 2.
 
@@ -142,10 +141,9 @@ class Kron2Sum(Function):
         """
         Gradient of the log of the marginal likelihood.
 
-        Let 𝐲 = vec(Y), 𝐦 = (A ⊗ F) vec(B), and 𝕂 = K⁻¹∂(K)K⁻¹. The gradient is
-        given by
+        Let 𝐲 = vec(Y) and 𝕂 = K⁻¹∂(K)K⁻¹. The gradient is given by
 
-            2⋅∂log(p(𝐲)) = -tr(K⁻¹∂K) + 𝐲ᵗ𝕂𝐲 + (𝐦ᵗ-2⋅𝐲ᵗ)𝕂𝐦 - 2⋅𝐲ᵗK⁻¹∂(𝐦)
+            2⋅∂log(p(𝐲)) = -tr(K⁻¹∂K) + 𝐲ᵗ𝕂𝐲 + (𝐦-2⋅𝐲)ᵗ𝕂𝐦 - 2⋅(𝐲-𝐦)ᵗK⁻¹∂(𝐦).
 
         Returns
         -------
@@ -173,10 +171,6 @@ class Kron2Sum(Function):
             grad[var] += Kim.T @ dK[var] @ Kim
             grad[var] /= 2
         return grad
-
-    @property
-    def z(self):
-        return self._cov.L @ self._y
 
     def fit(self, verbose=True):
         """
