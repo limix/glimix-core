@@ -5,7 +5,7 @@ from numpy.linalg import matrix_rank
 
 from glimix_core.cov import Kron2SumCov
 from glimix_core.mean import KronMean
-from glimix_core.util import log2pi
+from glimix_core._util import log2pi
 from optimix import Function
 
 

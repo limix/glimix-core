@@ -7,7 +7,7 @@ from numpy.linalg import LinAlgError
 from optimix import Function
 
 from ..ep import EP
-from ..util import check_outcome
+from .._util import check_outcome
 
 
 class ExpFamGP(Function):

@@ -1,6 +1,6 @@
 from numpy import asarray, atleast_2d, concatenate, dot, kron, ones, stack, zeros
 
-from glimix_core.util import unvec, vec
+from glimix_core._util import unvec, vec
 from optimix import Function, Vector
 
 

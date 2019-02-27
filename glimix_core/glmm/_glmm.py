@@ -7,7 +7,7 @@ from numpy.linalg import pinv
 
 from optimix import Function, Scalar, Vector
 
-from ..util import (
+from .._util import (
     check_covariates,
     check_economic_qs,
     check_outcome,

@@ -4,7 +4,7 @@ from numpy import asarray, dot, ones, zeros_like, zeros
 
 from optimix import Function, Vector
 
-from ..util import format_function, format_named_arr
+from .._util import format_function, format_named_arr
 
 
 class LRFreeFormCov(Function):

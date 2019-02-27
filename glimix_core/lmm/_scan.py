@@ -21,7 +21,7 @@ from numpy import (
 )
 from numpy.linalg import LinAlgError
 
-from ..util import hsolve, log2pi
+from .._util import hsolve, log2pi
 
 
 class FastScanner(object):

@@ -12,7 +12,7 @@ from numpy import (
 from numpy_sugar import epsilon
 from optimix import Function, Vector
 
-from ..util import format_function, format_named_arr
+from .._util import format_function, format_named_arr
 
 
 class FreeFormCov(Function):

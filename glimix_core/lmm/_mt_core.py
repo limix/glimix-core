@@ -19,10 +19,10 @@ from numpy import (
     zeros,
 )
 
-from glimix_core.util import log2pi
+from glimix_core._util import log2pi
 from optimix import Function, Scalar
 
-from ..util import economic_qs_zeros, numbers
+from .._util import economic_qs_zeros, numbers
 
 try:
     from itertools import izip as zip
