@@ -21,8 +21,7 @@ def _outcome_sample(random, offset, X):
     cov_left.scale = 1.5
     cov_left.X = X
 
-    cov_right = EyeCov()
-    cov_right.dim = n
+    cov_right = EyeCov(n)
     cov_right.scale = 1.5
 
     cov = SumCov([cov_left, cov_right])

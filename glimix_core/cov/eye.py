@@ -19,9 +19,8 @@ class EyeCov(Function):
 
         >>> from glimix_core.cov import EyeCov
         >>>
-        >>> cov = EyeCov()
+        >>> cov = EyeCov(2)
         >>> cov.scale = 2.5
-        >>> cov.dim = 2
         >>> print(cov.value())
         [[2.5 0. ]
          [0.  2.5]]
@@ -36,11 +35,12 @@ class EyeCov(Function):
           dim: 2
     """
 
-    def __init__(self):
+    def __init__(self, dim):
+        self._dim = dim
+        self._I = eye(dim)
         self._logscale = Scalar(0.0)
         Function.__init__(self, "EyeCov", logscale=self._logscale)
         self._logscale.bounds = (-20.0, +10)
-        self._I = None
 
     @property
     def scale(self):
@@ -64,10 +64,6 @@ class EyeCov(Function):
         It corresponds to the number of rows and to the number of columns.
         """
         return self._I.shape[0]
-
-    @dim.setter
-    def dim(self, dim):
-        self._I = eye(dim)
 
     def value(self):
         """

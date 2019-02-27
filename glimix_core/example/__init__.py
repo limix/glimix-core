@@ -1,7 +1,8 @@
-from glimix_core.cov import EyeCov, LinearCov, SumCov
-from glimix_core.mean import OffsetMean
 from numpy import arange, sqrt
 from numpy.random import RandomState
+
+from glimix_core.cov import EyeCov, LinearCov, SumCov
+from glimix_core.mean import OffsetMean
 
 
 def nsamples():
@@ -26,8 +27,7 @@ def linear_eye_cov():
     cov_left.scale = 1.0
     cov_left.X = X
 
-    cov_right = EyeCov()
-    cov_right.dim = nsamples()
+    cov_right = EyeCov(nsamples())
     cov_right.scale = 1.0
 
     return SumCov([cov_left, cov_right])

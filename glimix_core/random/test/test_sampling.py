@@ -55,8 +55,7 @@ def test_GGPSampler_poisson():
     cov1 = LinearCov()
     cov1.X = X
 
-    cov2 = EyeCov()
-    cov2.dim = 10
+    cov2 = EyeCov(10)
 
     cov1.scale = 1e-4
     cov2.scale = 1e-4
@@ -96,8 +95,7 @@ def test_GGPSampler_binomial():
     cov1 = LinearCov()
     cov1.X = X
 
-    cov2 = EyeCov()
-    cov2.dim = 10
+    cov2 = EyeCov(10)
 
     cov1.scale = 1e-4
     cov2.scale = 1e-4

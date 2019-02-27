@@ -26,9 +26,8 @@ def _get_data():
     cov_left.scale = 1.5
     cov_left.X = X
 
-    cov_right = EyeCov()
+    cov_right = EyeCov(N)
     cov_right.scale = 1.5
-    cov_right.dim = N
 
     cov = SumCov([cov_left, cov_right])
 
@@ -65,8 +64,7 @@ def test_ggp_expfam_tobi():
 
     mean = OffsetMean(n)
 
-    cov2 = EyeCov()
-    cov2.dim = n
+    cov2 = EyeCov(n)
 
     y = GGPSampler(lik, mean, cov2).sample(random)
 
