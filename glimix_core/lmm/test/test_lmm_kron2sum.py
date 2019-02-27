@@ -72,37 +72,22 @@ def test_lmm_kron2sum_gradient():
     )
 
 
-# def test_lmm_kron2sum_fit_ill_conditioned():
-#     random = RandomState(0)
-#     Y = random.randn(5, 3)
-#     A = random.randn(3, 3)
-#     A = A @ A.T
-#     F = random.randn(5, 2)
-#     G = random.randn(5, 4)
-#     lmm = Kron2Sum(Y, A, F, G)
-#     lml0 = lmm.lml()
-#     lmm.fit(verbose=False)
-#     lml1 = lmm.lml()
-#     assert_allclose([lml0, lml1], [-26.65532748835924, -13.870685577153672])
-#     grad = lmm.lml_gradient()
-#     vars = grad.keys()
-#     assert_allclose(concatenate([grad[var] for var in vars]), [0] * 9, atol=1e-3)
-
-#     random = RandomState(0)
-#     Y = random.randn(5, 3)
-#     A = random.randn(3, 3)
-#     A = A @ A.T
-#     F = random.randn(5, 2)
-#     G = random.randn(5, 4)
-#     G = concatenate((G, G), axis=1)
-#     lmm = Kron2Sum(Y, A, F, G)
-#     lml0 = lmm.lml()
-#     lmm.fit(verbose=False)
-#     lml1 = lmm.lml()
-#     assert_allclose([lml0, lml1], [-27.165209858854023, -13.87070328181693])
-#     grad = lmm.lml_gradient()
-#     vars = grad.keys()
-#     assert_allclose(concatenate([grad[var] for var in vars]), [0] * 9, atol=1e-3)
+def test_lmm_kron2sum_fit_ill_conditioned():
+    random = RandomState(0)
+    n = 30
+    Y = random.randn(n, 3)
+    A = random.randn(3, 3)
+    A = A @ A.T
+    F = random.randn(n, 2)
+    G = random.randn(n, 4)
+    lmm = Kron2Sum(Y, A, F, G)
+    lml0 = lmm.lml()
+    lmm.fit(verbose=False)
+    lml1 = lmm.lml()
+    assert_allclose([lml0, lml1], [-161.0096475502658, -122.97307222429187])
+    grad = lmm.lml_gradient()
+    vars = grad.keys()
+    assert_allclose(concatenate([grad[var] for var in vars]), [0] * 15, atol=1e-3)
 
 
 def test_lmm_kron2sum_fit_Cn_well_cond():
