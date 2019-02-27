@@ -51,9 +51,8 @@ class GP(Function):
           SumCov(covariances=...): SumCov
             LinearCov(): LinearCov
               scale: 2.061153622438558e-09
-            EyeCov(): EyeCov
+            EyeCov(dim=10): EyeCov
               scale: 0.8675680523425126
-              dim: 10
     """
 
     def __init__(self, y, mean, cov):

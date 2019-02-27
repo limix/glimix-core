@@ -2,6 +2,8 @@ from numpy import exp, eye, log
 
 from optimix import Function, Scalar
 
+from .._util import format_function
+
 
 class EyeCov(Function):
     """
@@ -30,9 +32,8 @@ class EyeCov(Function):
          [0.  2.5]]
         >>> cov.name = "I"
         >>> print(cov)
-        EyeCov(): I
+        EyeCov(dim=2): I
           scale: 2.5
-          dim: 2
     """
 
     def __init__(self, dim):
@@ -90,11 +91,4 @@ class EyeCov(Function):
         return dict(logscale=self.value())
 
     def __str__(self):
-        tname = type(self).__name__
-        msg = "{}()".format(tname)
-        if self.name is not None:
-            msg += ": {}".format(self.name)
-        msg += "\n"
-        msg += "  scale: {}\n".format(self.scale)
-        msg += "  dim: {}".format(self.dim)
-        return msg
+        return format_function(self, {"dim": self._I.shape[0]}, [("scale", self.scale)])
