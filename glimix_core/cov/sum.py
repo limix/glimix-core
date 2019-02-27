@@ -6,13 +6,10 @@ from optimix import Function
 
 
 class SumCov(Function):
-    r"""Sum covariance function.
+    """
+    Sum of covariance functions, K = K₀ + K₁ + ⋯.
 
-    The mathematical representation is
-
-    .. math::
-
-        f(f_0, f_1, \dots) = f_0 + f_1 + \dots
+    The mathematical representation is K = K₀ + K₁ + ⋯.
 
     Example
     -------
@@ -50,7 +47,8 @@ class SumCov(Function):
         Function.__init__(self, "SumCov", composite=self._covariances)
 
     def value(self):
-        r"""Sum of covariance matrices.
+        r"""
+        Sum of covariance matrices.
 
         Returns
         -------

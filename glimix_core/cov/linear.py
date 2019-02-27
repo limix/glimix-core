@@ -5,7 +5,7 @@ from optimix import Function, Scalar
 
 class LinearCov(Function):
     """
-    Linear covariance function.
+    Linear covariance function, K = s⋅XXᵀ.
 
     The mathematical representation is s⋅XXᵀ, for an n×r matrix provided by the user
     and a scalar parameter s.

@@ -1,6 +1,6 @@
 from __future__ import division
 
-from numpy import asarray, dot, ones, zeros_like, zeros
+from numpy import asarray, dot, ones, zeros, zeros_like
 
 from optimix import Function, Vector
 
@@ -9,7 +9,7 @@ from .._util import format_function, format_named_arr
 
 class LRFreeFormCov(Function):
     """
-    General semi-definite positive matrix of low rank.
+    General semi-definite positive matrix of low rank, K = LLᵗ.
 
     The covariance matrix K is given by LLᵗ, where L is a n×m matrix and n≥m. Therefore,
     K will have rank(K) ≤ m.

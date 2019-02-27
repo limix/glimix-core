@@ -1,11 +1,11 @@
-from numpy import exp, log, eye
+from numpy import exp, eye, log
 
 from optimix import Function, Scalar
 
 
 class EyeCov(Function):
-    r"""
-    Identity covariance function.
+    """
+    Identity covariance function, K = s·I.
 
     The mathematical representation is given by f(x₀, x₁), which takes value s when
     x₀ and x₁ are arrays of the same sample and 0 otherwise. Note that it is possible to
@@ -58,7 +58,8 @@ class EyeCov(Function):
 
     @property
     def dim(self):
-        """ Dimension of the matrix, d.
+        """
+        Dimension of the matrix, d.
 
         It corresponds to the number of rows and to the number of columns.
         """
@@ -80,7 +81,8 @@ class EyeCov(Function):
         return self.scale * self._I
 
     def gradient(self):
-        r"""Derivative of the covariance matrix.
+        """
+        Derivative of the covariance matrix.
 
         Derivative is taking over log(s), therefore it is equal to s⋅I.
 

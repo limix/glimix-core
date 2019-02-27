@@ -9,6 +9,7 @@ from numpy import (
     zeros,
     zeros_like,
 )
+
 from numpy_sugar import epsilon
 from optimix import Function, Vector
 
@@ -17,7 +18,7 @@ from .._util import format_function, format_named_arr
 
 class FreeFormCov(Function):
     """
-    General definite positive matrix.
+    General definite positive matrix, K = LLᵗ + ϵI.
 
     A d×d covariance matrix K will have ((d+1)⋅d)/2 parameters defining the lower
     triangular elements of a Cholesky matrix L such that:

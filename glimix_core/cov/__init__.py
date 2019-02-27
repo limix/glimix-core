@@ -1,6 +1,5 @@
 """
-Covariance functions
---------------------
+Covariance functions.
 """
 from .eye import EyeCov
 from .free import FreeFormCov

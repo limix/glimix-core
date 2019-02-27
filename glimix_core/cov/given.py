@@ -6,7 +6,8 @@ from optimix import Function, Scalar
 
 
 class GivenCov(Function):
-    r"""Given covariance function.
+    """
+    Given covariance function, K = s⋅K₀.
 
     The covariance matrix is the provided matrix K₀ scaled by s: K = s⋅K₀.
 
@@ -66,7 +67,7 @@ class GivenCov(Function):
         return self.scale * self._K0
 
     def gradient(self):
-        r"""
+        """
         Derivative of the covariance matrix over log(s).
 
         Returns
