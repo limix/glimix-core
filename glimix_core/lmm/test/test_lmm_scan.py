@@ -364,9 +364,8 @@ def _outcome_sample(random, offset, X):
     mean = OffsetMean(n)
     mean.offset = offset
 
-    cov_left = LinearCov()
+    cov_left = LinearCov(X)
     cov_left.scale = 1.5
-    cov_left.X = X
 
     cov_right = EyeCov(n)
     cov_right.scale = 1.5

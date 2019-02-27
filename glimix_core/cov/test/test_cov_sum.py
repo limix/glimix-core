@@ -1,14 +1,13 @@
 import numpy as np
 from numpy.testing import assert_allclose
 
-from glimix_core.cov import LinearCov, SumCov, GivenCov
+from glimix_core.cov import GivenCov, LinearCov, SumCov
 
 
 def test_sumcov():
     random = np.random.RandomState(0)
     X = random.randn(3, 2)
-    cov_left = LinearCov()
-    cov_left.X = X
+    cov_left = LinearCov(X)
 
     K = random.randn(3, 3)
     cov_right = GivenCov(K)

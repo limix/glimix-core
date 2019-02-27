@@ -22,8 +22,7 @@ class LinearCov(Function):
         >>> from numpy.random import RandomState
         >>>
         >>> X = RandomState(0).randn(2, 3)
-        >>> cov = LinearCov()
-        >>> cov.X = X
+        >>> cov = LinearCov(X)
         >>> cov.scale = 1.3
         >>> cov.name = "K"
         >>> print(cov)
@@ -31,7 +30,7 @@ class LinearCov(Function):
           scale: 1.3
     """
 
-    def __init__(self):
+    def __init__(self, X):
         """
         Constructor.
 
@@ -41,7 +40,7 @@ class LinearCov(Function):
             Matrix X from K = s⋅XXᵀ.
         """
         self._logscale = Scalar(0.0)
-        self._X = None
+        self._X = X
         Function.__init__(self, "LinearCov", logscale=self._logscale)
         self._logscale.bounds = (-20.0, +10)
 
@@ -51,10 +50,6 @@ class LinearCov(Function):
         Matrix X from K = s⋅XXᵀ.
         """
         return self._X
-
-    @X.setter
-    def X(self, X):
-        self._X = X
 
     def fix_scale(self):
         self._fix("logscale")

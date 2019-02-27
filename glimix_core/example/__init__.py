@@ -23,9 +23,8 @@ def linear_eye_cov():
     X /= X.std(0)
     X /= sqrt(X.shape[1])
 
-    cov_left = LinearCov()
+    cov_left = LinearCov(X)
     cov_left.scale = 1.0
-    cov_left.X = X
 
     cov_right = EyeCov(nsamples())
     cov_right.scale = 1.0

@@ -44,16 +44,14 @@ def test_GGPSampler_poisson():
 
     mean = OffsetMean(10)
     mean.offset = 1.2
-    cov = LinearCov()
-    cov.X = X
+    cov = LinearCov(X)
     sampler = GGPSampler(lik, mean, cov)
     assert_equal(sampler.sample(random), [0, 289, 0, 11, 0, 0, 176, 0, 228, 82])
 
     mean = OffsetMean(10)
     mean.offset = 0.0
 
-    cov1 = LinearCov()
-    cov1.X = X
+    cov1 = LinearCov(X)
 
     cov2 = EyeCov(10)
 
@@ -81,8 +79,7 @@ def test_GGPSampler_binomial():
 
     mean = OffsetMean(10)
     mean.offset = 1.2
-    cov = LinearCov()
-    cov.X = X
+    cov = LinearCov(X)
     sampler = GGPSampler(lik, mean, cov)
     assert_equal(sampler.sample(random), [0, 5, 0, 5, 1, 1, 5, 0, 5, 5])
 
@@ -92,8 +89,7 @@ def test_GGPSampler_binomial():
     mean = OffsetMean(10)
     mean.offset = 0.0
 
-    cov1 = LinearCov()
-    cov1.X = X
+    cov1 = LinearCov(X)
 
     cov2 = EyeCov(10)
 
@@ -153,8 +149,7 @@ def test_GPSampler():
 
     mean = OffsetMean(10)
     mean.offset = 1.2
-    cov = LinearCov()
-    cov.X = X
+    cov = LinearCov(X)
     sampler = GPSampler(mean, cov)
 
     x = [

@@ -22,9 +22,8 @@ def _get_data():
     mean = OffsetMean(N)
     mean.offset = offset
 
-    cov_left = LinearCov()
+    cov_left = LinearCov(X)
     cov_left.scale = 1.5
-    cov_left.X = X
 
     cov_right = EyeCov(N)
     cov_right.scale = 1.5

@@ -175,8 +175,7 @@ def _mean_cov(offset, G, heritability, causal_variants, causal_variance, random_
     mean1 = OffsetMean(nsamples)
     mean1.offset = offset
 
-    cov1 = LinearCov()
-    cov1.X = G
+    cov1 = LinearCov(G)
     cov2 = EyeCov(nsamples)
     cov = SumCov([cov1, cov2])
 

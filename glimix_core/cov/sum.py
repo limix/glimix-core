@@ -18,15 +18,9 @@ class SumCov(Function):
         >>> from numpy.random import RandomState
         >>>
         >>> random = RandomState(0)
-        >>> cov_left = LinearCov()
-        >>> cov_right = LinearCov()
-        >>>
+        >>> cov_left = LinearCov(random.randn(4, 20))
+        >>> cov_right = LinearCov(random.randn(4, 15))
         >>> cov_left.scale = 0.5
-        >>> X0 = random.randn(4, 20)
-        >>> X1 = random.randn(4, 15)
-        >>>
-        >>> cov_left.X = X0
-        >>> cov_right.X = X1
         >>>
         >>> cov = SumCov([cov_left, cov_right])
         >>> cov_left.name = "A"

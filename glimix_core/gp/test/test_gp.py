@@ -20,9 +20,8 @@ def test_gp_gp_value_1():
     mean.offset = offset
     mean.fix_offset()
 
-    cov = LinearCov()
+    cov = LinearCov(X)
     cov.scale = 1.0
-    cov.X = X
 
     y = random.randn(N)
 
@@ -39,9 +38,8 @@ def test_gp_gp_value_2():
     mean = LinearMean(3)
     mean.X = X1
 
-    cov = LinearCov()
+    cov = LinearCov(X2)
     cov.scale = 1.0
-    cov.X = X2
 
     y = random.randn(N)
 
@@ -62,9 +60,8 @@ def test_gp_gp_gradient():
     mean.offset = offset
     mean.fix_offset()
 
-    cov = LinearCov()
+    cov = LinearCov(X)
     cov.scale = 1.0
-    cov.X = X
 
     y = random.randn(N)
 
@@ -83,9 +80,8 @@ def test_gp_gp_maximize():
     mean.offset = offset
     mean.fix_offset()
 
-    cov = LinearCov()
+    cov = LinearCov(X)
     cov.scale = 1.0
-    cov.X = X
 
     y = random.randn(N)
 
@@ -106,9 +102,8 @@ def test_gp_gp_nonfinite_phenotype():
     mean.offset = offset
     mean.fix_offset()
 
-    cov = LinearCov()
+    cov = LinearCov(X)
     cov.scale = 1.0
-    cov.X = X
 
     y = zeros(N)
 
