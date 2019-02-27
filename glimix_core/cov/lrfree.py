@@ -4,7 +4,7 @@ from numpy import asarray, dot, ones, zeros, zeros_like
 
 from optimix import Function, Vector
 
-from .._util import format_function, format_named_arr
+from .._util import format_function
 
 
 class LRFreeFormCov(Function):
@@ -117,7 +117,6 @@ class LRFreeFormCov(Function):
         return grad
 
     def __str__(self):
-        L = self._L
-        msg = format_function(self, n=L.shape[0], m=L.shape[1]) + "\n"
-        msg += format_named_arr("L", L)
-        return msg
+        return format_function(
+            self, {"n": self._L.shape[0], "m": self._L.shape[1]}, [("L", self._L)]
+        )

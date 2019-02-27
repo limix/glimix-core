@@ -13,7 +13,7 @@ from numpy import (
 from numpy_sugar import epsilon
 from optimix import Function, Vector
 
-from .._util import format_function, format_named_arr
+from .._util import format_function
 
 
 class FreeFormCov(Function):
@@ -207,6 +207,4 @@ class FreeFormCov(Function):
         return grad
 
     def __str__(self):
-        msg = format_function(self, dim=self._L.shape[0]) + "\n"
-        msg += format_named_arr("L", self.L)
-        return msg
+        return format_function(self, {"dim": self._L.shape[0]}, [("L", self.L)])

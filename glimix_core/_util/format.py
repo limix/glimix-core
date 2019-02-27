@@ -1,15 +1,30 @@
-def format_function(func, **kwargs):
+# def format_function(func, **kwargs):
+#     tname = type(func).__name__
+#     name = func.name
+#     kwargs_input = [f"{arg}={val}" for arg, val in kwargs.items()]
+#     input = ", ".join(kwargs_input)
+#     msg = f"{tname}({input})"
+#     if name is not None:
+#         msg += f": {name}"
+#     return msg
+
+
+def format_function(func, params, attrs):
     tname = type(func).__name__
     name = func.name
-    kwargs_input = [f"{arg}={val}" for arg, val in kwargs.items()]
+    kwargs_input = [f"{arg}={val}" for arg, val in params.items()]
     input = ", ".join(kwargs_input)
     msg = f"{tname}({input})"
     if name is not None:
         msg += f": {name}"
+
+    msg += "\n"
+    for a in attrs:
+        msg += _format_named_arr(a[0], a[1])
     return msg
 
 
-def format_named_arr(name, arr):
+def _format_named_arr(name, arr):
     from textwrap import TextWrapper
 
     prefix = f"  {name}: "
