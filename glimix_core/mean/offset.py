@@ -5,13 +5,10 @@ from optimix import Function, Scalar
 
 class OffsetMean(Function):
     r"""
-    Offset mean function.
+    Offset mean function, θ⋅𝟏.
 
-    It represents a mean vector
-
-        o⋅𝟏
-
-    of size n. The offset is given by the parameter o.
+    It represents a mean vector 𝐦 = θ⋅𝟏 of size n. The offset is given by the parameter
+    θ.
 
     Example
     -------
@@ -26,20 +23,37 @@ class OffsetMean(Function):
         [2. 2. 2.]
         >>> print(mean.gradient())
         {'offset': array([1., 1., 1.])}
-        >>> mean.name = "M"
+        >>> mean.name = "𝐦"
         >>> print(mean)
-        OffsetMean(): M
+        OffsetMean(): 𝐦
           offset: 2.0
     """
 
     def __init__(self, n):
+        """
+        Constructor.
+
+        Parameters
+        ----------
+        n : int
+            Size of the M array.
+        """
         self._offset = Scalar(0.0)
         self._offset.bounds = (-200.0, +200)
         self._n = n
         Function.__init__(self, "OffsetMean", offset=self._offset)
 
     def fix_offset(self):
+        """
+        Prevent θ update during optimization.
+        """
         self._fix("offset")
+
+    def unfix_offset(self):
+        """
+        Enable θ update during optimization.
+        """
+        self._unfix("offset")
 
     def value(self):
         """
@@ -47,8 +61,8 @@ class OffsetMean(Function):
 
         Returns
         -------
-        M : (n,) ndarray
-            o⋅𝟏.
+        𝐦 : (n,) ndarray
+            θ⋅𝟏.
         """
         return full(self._n, self._offset.value)
 
@@ -59,7 +73,7 @@ class OffsetMean(Function):
         Returns
         -------
         offset : (n,) ndarray
-            𝟏.
+            Vector 𝟏.
         """
         return dict(offset=ones(self._n))
 

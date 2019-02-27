@@ -5,18 +5,13 @@ from optimix import Function
 
 class SumMean(Function):
     """
-    Sum mean function.
+    Sum mean function, 𝐟₀ + 𝐟₁ + ….
 
     The mathematical representation is
 
-        F₀ + F₁ + …
+        𝐦 = 𝐟₀ + 𝐟₁ + …
 
     In other words, it is a sum of mean vectors.
-
-    Parameters
-    ----------
-    means : list
-        List of mean functions.
 
     Example
     -------
@@ -57,17 +52,25 @@ class SumMean(Function):
     """
 
     def __init__(self, means):
+        """
+        Constructor.
+
+        Parameters
+        ----------
+        means : list
+            List of mean functions.
+        """
         self._means = [c for c in means]
         Function.__init__(self, "SumMean", composite=self._means)
 
     def value(self):
         """
-        Sum mean function., F₀ + F₁ + ….
+        Sum of mean vectors, 𝐟₀ + 𝐟₁ + ….
 
         Returns
         -------
-        M : ndarray
-            F₀ + F₁ + ….
+        𝐦 : ndarray
+            𝐟₀ + 𝐟₁ + ….
         """
         return add.reduce([mean.value() for mean in self._means])
 
@@ -77,8 +80,8 @@ class SumMean(Function):
 
         Returns
         -------
-        dict
-            ∂F₀ + ∂F₁ + ….
+        ∂𝐦 : dict
+            ∂𝐟₀ + ∂𝐟₁ + ….
         """
         grad = {}
         for i, f in enumerate(self._means):

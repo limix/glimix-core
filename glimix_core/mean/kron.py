@@ -5,22 +5,34 @@ from optimix import Function, Vector
 
 
 class KronMean(Function):
-    r""" Kronecker mean function.
+    """
+    Kronecker mean function, (A⊗F)vec(B).
 
     Let
+
     - n be the number of samples;
-    - p the number of traits;
+    - p the number of traits; and
     - c the number of covariates.
 
     The mathematical representation is
 
-        f(𝐀,𝐅)=(𝐀⊗𝐅)vec(𝐁)
+        𝐦 = (A⊗F)vec(B)
 
-    where 𝐀 is a p×p trait design matrix of fixed effects and 𝐅 is a n×c sample design
-    matrix of fixed effects. 𝐁 is a c×p matrix of fixed-effect sizes.
+    where A is a p×p trait design matrix of fixed effects and F is a n×c sample design
+    matrix of fixed effects. B is a c×p matrix of fixed-effect sizes.
     """
 
     def __init__(self, c, p):
+        """
+        Constructor.
+
+        Parameters
+        ----------
+        c : int
+            Number of covariates.
+        p : int
+            Matrix dimension of A.
+        """
         vecB = zeros((c, p)).ravel()
         self._c = c
         self._p = p
@@ -29,20 +41,11 @@ class KronMean(Function):
         self._vecB = Vector(vecB)
         Function.__init__(self, "KronMean", vecB=self._vecB)
 
-    # def _set_data(self):
-    #     if self._A is None or self._F is None:
-    #         return
-    #     item = concatenate((self._A.ravel(), self._F.ravel()))
-    #     c = self._c
-    #     p = self._p
-    #     self._A = item[: p * p].reshape((p, p))
-    #     self._F = item[p * p :].reshape((-1, c))
-    #     assert self._A.base is item
-    #     assert self._F.base is item
-    #     self.set_data(item)
-
     @property
     def A(self):
+        """
+        Matrix A.
+        """
         return self._A
 
     @A.setter
@@ -51,6 +54,9 @@ class KronMean(Function):
 
     @property
     def F(self):
+        """
+        Matrix F.
+        """
         return self._F
 
     @F.setter
@@ -59,35 +65,39 @@ class KronMean(Function):
 
     @property
     def AF(self):
-        r""" A ⊗ F. """
+        """
+        A ⊗ F.
+        """
         return kron(self.A, self.F)
 
     def value(self):
         """
         Kronecker mean function.
+
+        Returns
+        -------
+        𝐦 : ndarray
+            (A⊗F)vec(B).
         """
         return self.AF @ self._vecB.value
 
     def gradient(self):
-        r"""Gradient of the linear mean function.
+        """
+        Gradient of the linear mean function.
 
         Returns
         -------
-        dict
-            Dictionary having the `effsizes` key for :math:`\mathbf x`.
+        vecB : ndarray
+            Derivative of M over vec(B).
         """
         return {"vecB": self.AF}
 
     @property
     def B(self):
         """
-        Effect-sizes parameter.
+        Effect-sizes parameter, B.
         """
         return unvec(self._vecB.value, (self._c, self._p))
-
-    # @property
-    # def vecB(self):
-    #     return self._vecB
 
     @B.setter
     def B(self, v):

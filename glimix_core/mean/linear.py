@@ -1,19 +1,14 @@
-from numpy import ascontiguousarray, zeros, asarray
+from numpy import asarray, ascontiguousarray, zeros
 
 from optimix import Function, Vector
 
 
 class LinearMean(Function):
     """
-    Linear mean function.
+    Linear mean function, X𝜶.
 
-    It defines Xα, for which X is a n×m matrix provided by the user and α is a vector
+    It defines X𝜶, for which X is a n×m matrix provided by the user and 𝜶 is a vector
     of size m.
-
-    Parameters
-    ----------
-    size : int
-        Size m of α.
 
     Example
     -------
@@ -30,13 +25,21 @@ class LinearMean(Function):
         >>> print(mean.gradient()["effsizes"])
         [[1.5 0.2]
          [0.5 0.4]]
-        >>> mean.name = "M"
+        >>> mean.name = "𝐦"
         >>> print(mean)
-        LinearMean(m=2): M
+        LinearMean(m=2): 𝐦
           effsizes: [ 1. -1.]
     """
 
     def __init__(self, m):
+        """
+        Constructor.
+
+        Parameters
+        ----------
+        size : int
+            Size m of 𝜶.
+        """
         self._effsizes = Vector(zeros(m))
         self._effsizes.bounds = [(-200.0, +200)] * m
         self._X = None
@@ -59,8 +62,8 @@ class LinearMean(Function):
 
         Returns
         -------
-        M : (n,) ndarray
-            Xα.
+        𝐦 : (n,) ndarray
+            X𝜶.
         """
         return self._X @ self._effsizes
 
@@ -78,7 +81,7 @@ class LinearMean(Function):
     @property
     def effsizes(self):
         """
-        Effect-sizes parameter, α, of size m.
+        Effect-sizes parameter, 𝜶, of size m.
         """
         return self._effsizes.value
 

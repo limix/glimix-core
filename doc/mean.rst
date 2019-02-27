@@ -8,6 +8,7 @@ Mean functions
   :toctree: _autosummary
   :template: class.rst
 
+  KronMean
   LinearMean
   OffsetMean
   SumMean
