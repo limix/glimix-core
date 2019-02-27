@@ -1,7 +1,7 @@
 import warnings
 
 from numpy import asfortranarray
-from numpy.linalg import matrix_rank
+from numpy.linalg import matrix_rank, slogdet, solve
 
 from glimix_core._util import log2pi
 from glimix_core.cov import Kron2SumCov
@@ -9,7 +9,7 @@ from glimix_core.mean import KronMean
 from optimix import Function
 
 
-class REMLKron2Sum(Function):
+class RKron2Sum(Function):
     """
     LMM for multiple traits.
 
@@ -62,7 +62,7 @@ class REMLKron2Sum(Function):
         self._mean = KronMean(F.shape[1], Y.shape[1])
         self._mean.A = A
         self._mean.F = F
-        composite = [("M", self._mean), ("Cr", self._cov.Cr), ("Cn", self._cov.Cn)]
+        composite = [("Cr", self._cov.Cr), ("Cn", self._cov.Cn)]
         Function.__init__(self, "Kron2Sum", composite=composite)
 
     @property
@@ -114,13 +114,21 @@ class REMLKron2Sum(Function):
     def gradient(self):
         return self.lml_gradient()
 
+    def _H(self):
+        M = self._mean.AF
+        return M.T @ self._cov.solve(M)
+
     def lml(self):
         r"""
         Log of the marginal likelihood.
 
-        Let 𝐲 = vec(Y). The log of the marginal likelihood is given by
+        Let 𝐲 = vec(Y), M = A⊗F, and H = MᵀK⁻¹M. The restricted log of the marginal
+        likelihood is given by
 
-            log(p(𝐲)) = -n p log(2π) / 2 - log(\|K\|) / 2 - (𝐲-𝐦)ᵗ K⁻¹ (𝐲-𝐦) / 2.
+            log(p(𝐲)) = -(n⋅p - c⋅p) log(2π) / 2 - log(\|K\|) / 2
+                - (𝐲-𝐦)ᵗ K⁻¹ (𝐲-𝐦) / 2 - log(\|H\|),
+
+        where 𝐦 = MH⁻¹MᵗK⁻¹𝐲.
 
         Returns
         -------
@@ -128,12 +136,19 @@ class REMLKron2Sum(Function):
             Log of the marginal likelihood.
         """
         np = self.nsamples * self.ntraits
-        lml = -np * log2pi - self._cov.logdet()
+        cp = self.ncovariates * self.ntraits
+        lml = -(np - cp) * log2pi - self._cov.logdet()
 
-        m = self._mean.value()
+        M = self._mean.AF
+        H = self._H()
+        beta = solve(H, M.T @ self._cov.solve(self._y))
+        m = M @ beta
         d = self._y - m
         dKid = d @ self._cov.solve(d)
         lml -= dKid
+        ldet = slogdet(H)
+        assert ldet[0] == 1.0
+        lml -= 2 * ldet[1]
 
         return lml / 2
 
