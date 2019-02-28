@@ -27,3 +27,10 @@ Kron2Sum
 .. autoclass:: glimix_core.lmm.Kron2Sum
   :members:
   :exclude-members: value, gradient
+
+RKron2Sum
+---------
+
+.. autoclass:: glimix_core.lmm.RKron2Sum
+  :members:
+  :exclude-members: value, gradient

@@ -21,14 +21,25 @@ LMM inference is implemented by the :mod:`glimix_core.lmm` module and described 
 
 .. _Variables:
 
-.. rubric:: Variables
+.. glossary::
 
-:|n|: Number of samples.
-:|m|: Number of traits.
-:|c|: Number of candidates.
-:|d|: Number of covariates.
-:|k|: Number of random effects.
-:|r|: Covariance-matrix rank.
+    |n|
+        Number of samples.
+
+    |m|
+        Number of traits.
+
+    |c|
+        Number of candidates.
+
+    |d|
+        Number of covariates.
+
+    |k|
+        Number of random effects.
+
+    |r|
+        Covariance-matrix rank.
 
 .. |n| replace:: :math:`n`
 .. |m| replace:: :math:`m`

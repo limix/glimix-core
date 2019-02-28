@@ -14,7 +14,7 @@ class RKron2Sum(Function):
     LMM for multiple traits.
 
     Let n, c, and p be the number of samples, covariates, and traits, respectively.
-    The outcome variable Y is a n×p matrix distributed according to
+    The outcome variable Y is a n×p matrix distributed according to::
 
         vec(Y) ~ N((A ⊗ F) vec(B), Cᵣ ⊗ GGᵗ + Cₙ ⊗ I).
 
@@ -123,17 +123,22 @@ class RKron2Sum(Function):
         Log of the marginal likelihood.
 
         Let 𝐲 = vec(Y), M = A⊗F, and H = MᵀK⁻¹M. The restricted log of the marginal
-        likelihood is given by
+        likelihood is given by [R07]_::
 
-            log(p(𝐲)) = -(n⋅p - c⋅p) log(2π) / 2 - log(\|K\|) / 2
-                - (𝐲-𝐦)ᵗ K⁻¹ (𝐲-𝐦) / 2 - log(\|H\|),
+            2⋅log(p(𝐲)) = -(n⋅p - c⋅p) log(2π) + log(\|MᵗM\|) - log(\|K\|) - log(\|H\|)
+                - (𝐲-𝐦)ᵗ K⁻¹ (𝐲-𝐦),
 
-        where 𝐦 = MH⁻¹MᵗK⁻¹𝐲.
+        where 𝐦 = M𝛃 for 𝛃 = H⁻¹MᵗK⁻¹𝐲.
 
         Returns
         -------
         lml : float
             Log of the marginal likelihood.
+
+        References
+        ----------
+        .. [R07] LaMotte, L. R. (2007). A direct derivation of the REML likelihood
+           function. Statistical Papers, 48(2), 321-327.
         """
         np = self.nsamples * self.ntraits
         cp = self.ncovariates * self.ntraits
@@ -148,7 +153,7 @@ class RKron2Sum(Function):
         lml -= dKid
         ldet = slogdet(H)
         assert ldet[0] == 1.0
-        lml -= 2 * ldet[1]
+        lml -= ldet[1]
 
         return lml / 2
 
@@ -156,7 +161,7 @@ class RKron2Sum(Function):
         """
         Gradient of the log of the marginal likelihood.
 
-        Let 𝐲 = vec(Y) and 𝕂 = K⁻¹∂(K)K⁻¹. The gradient is given by
+        Let 𝐲 = vec(Y) and 𝕂 = K⁻¹∂(K)K⁻¹. The gradient is given by::
 
             2⋅∂log(p(𝐲)) = -tr(K⁻¹∂K) + 𝐲ᵗ𝕂𝐲 + (𝐦-2⋅𝐲)ᵗ𝕂𝐦 - 2⋅(𝐲-𝐦)ᵗK⁻¹∂(𝐦).
 
