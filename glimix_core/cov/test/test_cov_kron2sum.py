@@ -31,16 +31,14 @@ def test_kron2sumcov():
 
     def func(x):
         cov.Cr.Lu = x[:2]
-        cov.Cn.L0 = x[2:3]
-        cov.Cn.L1 = x[3:]
+        cov.Cn.Lu = x[2:]
         return cov.logdet()
 
     def grad(x):
         cov.Cr.Lu = x[:2]
-        cov.Cn.L0 = x[2:3]
-        cov.Cn.L1 = x[3:]
+        cov.Cn.Lu = x[2:]
         D = cov.logdet_gradient()
-        return concatenate((D["Cr.Lu"], D["Cn.L0"], D["Cn.L1"]))
+        return concatenate((D["Cr.Lu"], D["Cn.Lu"]))
 
     random = RandomState(0)
     assert_allclose(check_grad(func, grad, random.randn(5)), 0, atol=1e-5)

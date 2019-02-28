@@ -30,11 +30,7 @@ def test_lmm_kron2sum():
     K = lmm.cov.value()
     assert_allclose(lmm.lml(), st.multivariate_normal(m, K).logpdf(y))
 
-    lmm.cov.Cn.L0 = random.randn(3)
-    K = lmm.cov.value()
-    assert_allclose(lmm.lml(), st.multivariate_normal(m, K).logpdf(y))
-
-    lmm.cov.Cn.L1 = random.randn(3)
+    lmm.cov.Cn.Lu = random.randn(6)
     K = lmm.cov.value()
     assert_allclose(lmm.lml(), st.multivariate_normal(m, K).logpdf(y))
 
@@ -49,23 +45,20 @@ def test_lmm_kron2sum_gradient():
     lmm = Kron2Sum(Y, A, F, G)
     lmm.mean.B = random.randn(2, 3)
     lmm.cov.Cr.Lu = random.randn(3)
-    lmm.cov.Cn.L0 = random.randn(3)
-    lmm.cov.Cn.L1 = random.randn(3)
+    lmm.cov.Cn.Lu = random.randn(6)
 
     def func(x):
         lmm.cov.Cr.Lu = x[:3]
-        lmm.cov.Cn.L0 = x[3:6]
-        lmm.cov.Cn.L1 = x[6:9]
+        lmm.cov.Cn.Lu = x[3:9]
         lmm.mean.B = x[9:].reshape((2, 3), order="F")
         return lmm.lml()
 
     def grad(x):
         lmm.cov.Cr.Lu = x[:3]
-        lmm.cov.Cn.L0 = x[3:6]
-        lmm.cov.Cn.L1 = x[6:9]
+        lmm.cov.Cn.Lu = x[3:9]
         lmm.mean.B = x[9:].reshape((2, 3), order="F")
         D = lmm.lml_gradient()
-        return concatenate((D["Cr.Lu"], D["Cn.L0"], D["Cn.L1"], D["M.vecB"]))
+        return concatenate((D["Cr.Lu"], D["Cn.Lu"], D["M.vecB"]))
 
     assert_allclose(
         check_grad(func, grad, random.randn(15), epsilon=1e-8), 0, atol=1e-3

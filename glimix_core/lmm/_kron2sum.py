@@ -151,10 +151,8 @@ class Kron2Sum(Function):
             Gradient of the log of the marginal likelihood over vec(B).
         Cr.Lu : ndarray
             Gradient of the log of the marginal likelihood over Cᵣ parameters.
-        Cn.L0 : ndarray
-            Gradient of the log of the marginal likelihood over Cₙ parameter L₀.
-        Cn.L1 : ndarray
-            Gradient of the log of the marginal likelihood over Cₙ parameter L₁.
+        Cn.Lu : ndarray
+            Gradient of the log of the marginal likelihood over Cₙ parameters.
         """
         ld_grad = self._cov.logdet_gradient()
         dK = {n: g.transpose([2, 0, 1]) for (n, g) in self._cov.gradient().items()}
@@ -164,7 +162,7 @@ class Kron2Sum(Function):
         grad = {}
         dm = self._mean.gradient()["vecB"]
         grad["M.vecB"] = dm.T @ Kiy - dm.T @ Kim
-        for var in ["Cr.Lu", "Cn.L0", "Cn.L1"]:
+        for var in ["Cr.Lu", "Cn.Lu"]:
             grad[var] = -ld_grad[var]
             grad[var] += Kiy.T @ dK[var] @ Kiy
             grad[var] -= 2 * (Kim.T @ dK[var] @ Kiy)

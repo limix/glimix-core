@@ -146,10 +146,8 @@ class Kron2SumCov(Function):
         -------
         Cr_Lu : ndarray
             Derivative of Cᵣ over the array Lu.
-        Cn_L0 : ndarray
-            Derivative of Cₙ over the array L0.
-        Cn_L1 : ndarray
-            Derivative of Cₙ over the array L1.
+        Cn_Lu : ndarray
+            Derivative of Cₙ over the array Lu.
         """
         I = self._I
         X = self.G @ self.G.T
@@ -158,15 +156,12 @@ class Kron2SumCov(Function):
         Cr_Lu = self._Cr.gradient()["Lu"].transpose([2, 0, 1])
         Cn_grad = self._Cn.gradient()
 
-        Cn_L1 = Cn_grad["L1"].transpose([2, 0, 1])
+        Cn_Lu = Cn_grad["Lu"].transpose([2, 0, 1])
 
         grad = {
             "Cr.Lu": kron(Cr_Lu, X).transpose([1, 2, 0]),
-            "Cn.L1": kron(Cn_L1, I).transpose([1, 2, 0]),
+            "Cn.Lu": kron(Cn_Lu, I).transpose([1, 2, 0]),
         }
-        if "L0" in Cn_grad:
-            Cn_L0 = Cn_grad["L0"].transpose([2, 0, 1])
-            grad["Cn.L0"] = kron(Cn_L0, I).transpose([1, 2, 0])
         return grad
 
     def gradient_dot(self, V, var):
@@ -176,29 +171,10 @@ class Kron2SumCov(Function):
             Cr_Lu = self._Cr.gradient()["Lu"].transpose([2, 0, 1])
             Cr_Luv = (G @ (G.T @ (V @ Cr_Lu))).transpose([1, 2, 0])
             return Cr_Luv
-        elif var == "Cn.L0":
-            Cn_L0 = self._Cn.gradient()["L0"].transpose([2, 0, 1])
-            Cn_L0v = (V @ Cn_L0).transpose([1, 2, 0])
-            return Cn_L0v
-        elif var == "Cn.L1":
-            Cn_L1 = self._Cn.gradient()["L1"].transpose([2, 0, 1])
-            Cn_L1v = (V @ Cn_L1).transpose([1, 2, 0])
-            return Cn_L1v
-
-        # Cn_grad = self._Cn.gradient()
-        # if "L0" in Cn_grad:
-        #     Cn_L0 = Cn_grad["L0"].transpose([2, 0, 1])
-        # Cn_L1 = Cn_grad["L1"].transpose([2, 0, 1])
-
-        # if "L0" in Cn_grad:
-        #     Cn_L0v = (V @ Cn_L0).reshape((self._Cr.shape[0], -1), order="F")
-        # Cn_L1v = (V @ Cn_L1).reshape((self._Cr.shape[0], -1), order="F")
-
-        # r = {"Cr.Lu": Cr_Luv, "Cn.L1": Cn_L1v}
-        # if "L0" in Cn_grad:
-        #     r["Cn.L0"] = Cn_L0v
-
-        # return r
+        elif var == "Cn.Lu":
+            Cn_Lu = self._Cn.gradient()["Lu"].transpose([2, 0, 1])
+            Cn_Luv = (V @ Cn_Lu).transpose([1, 2, 0])
+            return Cn_Luv
 
     def solve(self, v):
         """
@@ -258,10 +234,8 @@ class Kron2SumCov(Function):
         -------
         Cr_Lu : ndarray
             Derivative of Cᵣ over the array Lu.
-        Cn_L0 : ndarray
-            Derivative of Cₙ over the array L0.
-        Cn_L1 : ndarray
-            Derivative of Cₙ over the array L1.
+        Cn_Lu : ndarray
+            Derivative of Cₙ over the array Lu.
         """
         Sn, Un = self.Cn.eigh()
         Cr = self.Cr.value()
@@ -282,18 +256,10 @@ class Kron2SumCov(Function):
         ).sum(1)
         r2 = (
             D
-            * diagonal(L @ Kgrad["Cn.L1"].transpose([2, 0, 1]) @ L.T, axis1=1, axis2=2)
+            * diagonal(L @ Kgrad["Cn.Lu"].transpose([2, 0, 1]) @ L.T, axis1=1, axis2=2)
         ).sum(1)
 
-        grad = {"Cr.Lu": r0, "Cn.L1": r2}
-        if "Cn.L0" in Kgrad:
-            r1 = (
-                D
-                * diagonal(
-                    L @ Kgrad["Cn.L0"].transpose([2, 0, 1]) @ L.T, axis1=1, axis2=2
-                )
-            ).sum(1)
-            grad["Cn.L0"] = r1
+        grad = {"Cr.Lu": r0, "Cn.Lu": r2}
         return grad
 
     def __str__(self):

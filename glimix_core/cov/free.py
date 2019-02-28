@@ -38,18 +38,12 @@ class FreeFormCov(Function):
         >>>
         >>> cov = FreeFormCov(2)
         >>> cov.L = [[1., .0], [0.5, 2.]]
-        >>> print(cov.gradient()["L0"])
-        [[[0.]
-          [1.]]
+        >>> print(cov.gradient()["Lu"])
+        [[[0.  2.  0. ]
+          [1.  0.5 0. ]]
         <BLANKLINE>
-         [[1.]
-          [1.]]]
-        >>> print(cov.gradient()["L1"])
-        [[[2.  0. ]
-          [0.5 0. ]]
-        <BLANKLINE>
-         [[0.5 0. ]
-          [0.  8. ]]]
+         [[1.  0.5 0. ]
+          [1.  0.  8. ]]]
         >>> cov.name = "K"
         >>> print(cov)
         FreeFormCov(dim=2): K
@@ -76,8 +70,11 @@ class FreeFormCov(Function):
         self._L[self._diag] = 0
         self._epsilon = epsilon.small * 1000
         self._Lu = Vector(zeros(tsize))
+        self._Lu.value[: tsize - dim] = 1
         Function.__init__(self, "FreeCov", Lu=self._Lu)
-        bounds = [-inf, +inf] * (tsize - dim) + [(log(epsilon.small * 1000), +15)] * dim
+        bounds = [(-inf, +inf)] * (tsize - dim) + [
+            (log(epsilon.small * 1000), +15)
+        ] * dim
         self._Lu.bounds = bounds
 
     @property
@@ -118,6 +115,17 @@ class FreeFormCov(Function):
         S *= S
         S += self._epsilon
         return S, U
+
+    @property
+    def Lu(self):
+        """
+        Lower-triangular, flat part of L.
+        """
+        return self._Lu.value
+
+    @Lu.setter
+    def Lu(self, v):
+        self._Lu.value = v
 
     @property
     def L(self):
