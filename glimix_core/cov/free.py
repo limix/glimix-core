@@ -3,6 +3,7 @@ from numpy import (
     dot,
     exp,
     eye,
+    inf,
     log,
     ones,
     tril_indices_from,
@@ -74,13 +75,10 @@ class FreeFormCov(Function):
         self._L[self._tril1] = 1
         self._L[self._diag] = 0
         self._epsilon = epsilon.small * 1000
-        self._L0 = Vector(ones(tsize - dim))
-        self._L1 = Vector(zeros(dim))
-        Function.__init__(self, "FreeCov", L0=self._L0, L1=self._L1)
-        self._L1.bounds = [(log(epsilon.small * 1000), +15)] * dim
-        if dim == 1:
-            # To avoid concatenation of empty array.
-            self._fix("L0")
+        self._Lu = Vector(zeros(tsize))
+        Function.__init__(self, "FreeCov", Lu=self._Lu)
+        bounds = [-inf, +inf] * (tsize - dim) + [(log(epsilon.small * 1000), +15)] * dim
+        self._Lu.bounds = bounds
 
     @property
     def shape(self):
@@ -94,15 +92,13 @@ class FreeFormCov(Function):
         """
         Disable parameter optimisation.
         """
-        self._L0.fix()
-        self._L1.fix()
+        self._Lu.fix()
 
     def unfix(self):
         """
         Enable parameter optimisation.
         """
-        self._L0.unfix()
-        self._L1.unfix()
+        self._Lu.unfix()
 
     def eigh(self):
         """
@@ -124,28 +120,6 @@ class FreeFormCov(Function):
         return S, U
 
     @property
-    def L0(self):
-        """
-        Strictly lower-triangular, flat part of L.
-        """
-        return self._L0.value
-
-    @L0.setter
-    def L0(self, v):
-        self._L0.value = v
-
-    @property
-    def L1(self):
-        """
-        Diagonal of L in log-space.
-        """
-        return self._L1.value
-
-    @L1.setter
-    def L1(self, v):
-        self._L1.value = v
-
-    @property
     def L(self):
         """
         Lower-triangular matrix L such that K = LLᵗ + ϵI.
@@ -155,15 +129,17 @@ class FreeFormCov(Function):
         L : (d, d) ndarray
             Lower-triangular matrix.
         """
-        self._L[self._tril1] = self._L0.value
-        self._L[self._diag] = exp(self._L1.value)
+        m = len(self._tril1[0])
+        self._L[self._tril1] = self._Lu.value[:m]
+        self._L[self._diag] = exp(self._Lu.value[m:])
         return self._L
 
     @L.setter
     def L(self, value):
         self._L[:] = value
-        self._L0.value = self._L[self._tril1]
-        self._L1.value = log(self._L[self._diag])
+        m = len(self._tril1[0])
+        self._Lu.value[:m] = self._L[self._tril1]
+        self._Lu.value[m:] = log(self._L[self._diag])
 
     def logdet(self):
         r"""
@@ -213,10 +189,8 @@ class FreeFormCov(Function):
         L = self.L
         Lo = zeros_like(L)
         n = self.L.shape[0]
-        grad = {
-            "L0": zeros((n, n, self._L0.shape[0])),
-            "L1": zeros((n, n, self._L1.shape[0])),
-        }
+        m = len(self._tril1[0])
+        grad = {"Lu": zeros((n, n, self._Lu.shape[0]))}
         i = 0
         j = 0
         for ii in range(len(self._tril[0])):
@@ -224,17 +198,14 @@ class FreeFormCov(Function):
             col = self._tril[1][ii]
             if row == col:
                 Lo[row, col] = L[row, col]
-                grad["L1"][..., i] = dot(Lo, L.T) + dot(L, Lo.T)
+                grad["Lu"][..., m + i] = dot(Lo, L.T) + dot(L, Lo.T)
                 i += 1
             else:
                 Lo[row, col] = 1
-                grad["L0"][..., j] = dot(Lo, L.T) + dot(L, Lo.T)
+                grad["Lu"][..., j] = dot(Lo, L.T) + dot(L, Lo.T)
                 j += 1
             Lo[row, col] = 0
 
-        if self._L.shape[0] == 1:
-            # Remove L0 because it is an empty array.
-            del grad["L0"]
         return grad
 
     def __str__(self):
