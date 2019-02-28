@@ -5,7 +5,6 @@ from numpy import (
     eye,
     inf,
     log,
-    ones,
     tril_indices_from,
     zeros,
     zeros_like,
@@ -63,7 +62,7 @@ class FreeFormCov(Function):
         dim = int(dim)
         tsize = ((dim + 1) * dim) // 2
         self._L = zeros((dim, dim))
-        self._tril = tril_indices_from(self._L)
+        # self._tril = tril_indices_from(self._L)
         self._tril1 = tril_indices_from(self._L, k=-1)
         self._diag = diag_indices_from(self._L)
         self._L[self._tril1] = 1
@@ -71,10 +70,11 @@ class FreeFormCov(Function):
         self._epsilon = epsilon.small * 1000
         self._Lu = Vector(zeros(tsize))
         self._Lu.value[: tsize - dim] = 1
+        n = self.L.shape[0]
+        self._grad_Lu = zeros((n, n, self._Lu.shape[0]))
         Function.__init__(self, "FreeCov", Lu=self._Lu)
-        bounds = [(-inf, +inf)] * (tsize - dim) + [
-            (log(epsilon.small * 1000), +15)
-        ] * dim
+        bounds = [(-inf, +inf)] * (tsize - dim)
+        bounds += [(log(epsilon.small * 1000), +15)] * dim
         self._Lu.bounds = bounds
 
     @property
@@ -164,11 +164,10 @@ class FreeFormCov(Function):
 
         sign, logdet = slogdet(K)
         if sign != 1.0:
+            msg = "The estimated determinant of K is not positive: "
+            msg += f" ({sign}, {logdet})."
+            raise RuntimeError(msg)
 
-            raise RuntimeError(
-                "The estimated determinant of K is not positive: "
-                + f" ({sign}, {logdet})."
-            )
         return logdet
 
     def value(self):
@@ -196,25 +195,56 @@ class FreeFormCov(Function):
         """
         L = self.L
         Lo = zeros_like(L)
-        n = self.L.shape[0]
         m = len(self._tril1[0])
-        grad = {"Lu": zeros((n, n, self._Lu.shape[0]))}
-        i = 0
-        j = 0
-        for ii in range(len(self._tril[0])):
-            row = self._tril[0][ii]
-            col = self._tril[1][ii]
-            if row == col:
-                Lo[row, col] = L[row, col]
-                grad["Lu"][..., m + i] = dot(Lo, L.T) + dot(L, Lo.T)
-                i += 1
-            else:
-                Lo[row, col] = 1
-                grad["Lu"][..., j] = dot(Lo, L.T) + dot(L, Lo.T)
-                j += 1
+
+        for i in range(len(self._tril1[0])):
+            row = self._tril1[0][i]
+            col = self._tril1[1][i]
+            Lo[row, col] = 1
+            self._grad_Lu[..., i] = dot(Lo, L.T) + dot(L, Lo.T)
             Lo[row, col] = 0
 
-        return grad
+        for i in range(len(self._diag[0])):
+            row = self._diag[0][i]
+            col = self._diag[1][i]
+            Lo[row, col] = L[row, col]
+            self._grad_Lu[..., m + i] = dot(Lo, L.T) + dot(L, Lo.T)
+            Lo[row, col] = 0
+
+        import numpy as np
+
+        grad = {}
+        grad["Lu"] = np.zeros_like(self._grad_Lu)
+
+        for i in range(len(self._tril1[0])):
+            row = self._tril1[0][i]
+            col = self._tril1[1][i]
+            grad["Lu"][row, :, i] = L[:, col]
+            grad["Lu"][:, row, i] += L[:, col]
+
+        for i in range(len(self._diag[0])):
+            row = self._diag[0][i]
+            col = self._diag[1][i]
+            grad["Lu"][row, :, m + i] = L[row, col] * L[:, col]
+            grad["Lu"][:, row, m + i] += L[row, col] * L[:, col]
+
+        # i = 0
+        # j = 0
+        # for ii in range(self._L.shape[0] * self._L.shape[1]):
+        #     row = ii // self._L.shape[1]
+        #     col = ii % self._L.shape[1]
+        #     if row == col:
+        #         grad["Lu"][row, :, m + i] = L[row, col] * L[:, col]
+        #         grad["Lu"][:, row, m + i] += L[row, col] * L[:, col]
+        #         i += 1
+        #     else:
+        #         grad["Lu"][row, :, j] = L[:, col]
+        #         grad["Lu"][:, row, j] += L[:, col]
+        #         j += 1
+        #     # grad["Lu"][row, :, ii] = L[:, col]
+        #     # grad["Lu"][:, row, ii] += L[:, col]
+
+        return {"Lu": self._grad_Lu}
 
     def __str__(self):
         return format_function(self, {"dim": self._L.shape[0]}, [("L", self.L)])
