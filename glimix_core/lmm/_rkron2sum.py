@@ -3,7 +3,7 @@ import warnings
 from numpy import asfortranarray
 from numpy.linalg import matrix_rank, slogdet, solve
 
-from glimix_core._util import log2pi
+from glimix_core._util import log2pi, unvec
 from glimix_core.cov import Kron2SumCov
 from glimix_core.mean import KronMean
 from optimix import Function
@@ -20,7 +20,7 @@ class RKron2Sum(Function):
 
     A and F are design matrices of dimensions p×p and n×c provided by the user,
     where F is the usual matrix of covariates commonly used in single-trait models.
-    B is a p×c matrix of fixed-effect sizes.
+    B is a c×p matrix of fixed-effect sizes per trait.
     G is a n×r matrix provided by the user and I is a n×n identity matrices.
     Cᵣ and Cₙ are both symmetric matrices of dimensions p×p, for which Cₙ is
     guaranteed by our implementation to be of full rank.
@@ -118,6 +118,20 @@ class RKron2Sum(Function):
         M = self._mean.AF
         return M.T @ self._cov.solve(M)
 
+    def _logdet_MM(self):
+        M = self._mean.AF
+        ldet = slogdet(M.T @ M)
+        if ldet[0] != 1.0:
+            raise ValueError("The determinant of MᵀM should be positive.")
+        return ldet[1]
+
+    @property
+    def reml_B(self):
+        H = self._H()
+        M = self._mean.AF
+        beta = solve(H, M.T @ self._cov.solve(self._y))
+        return unvec(beta, (self.ncovariates, self.ntraits))
+
     def lml(self):
         r"""
         Log of the marginal likelihood.
@@ -142,18 +156,21 @@ class RKron2Sum(Function):
         """
         np = self.nsamples * self.ntraits
         cp = self.ncovariates * self.ntraits
-        lml = -(np - cp) * log2pi - self._cov.logdet()
+        lml = -(np - cp) * log2pi + self._logdet_MM() + self._cov.logdet()
+
+        H = self._H()
+        ldet = slogdet(H)
+        if ldet[0] != 1.0:
+            raise ValueError("The determinant of H should be positive.")
+        lml -= ldet[1]
 
         M = self._mean.AF
-        H = self._H()
         beta = solve(H, M.T @ self._cov.solve(self._y))
         m = M @ beta
         d = self._y - m
         dKid = d @ self._cov.solve(d)
+
         lml -= dKid
-        ldet = slogdet(H)
-        assert ldet[0] == 1.0
-        lml -= ldet[1]
 
         return lml / 2
 

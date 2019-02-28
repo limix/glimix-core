@@ -79,6 +79,20 @@ class FreeFormCov(Function):
         Function.__init__(self, "FreeCov", L0=self._L0, L1=self._L1)
         self._L1.bounds = [(log(epsilon.small * 1000), +15)] * dim
 
+    def fix(self):
+        """
+        Disable parameter optimisation.
+        """
+        self._L0.fix()
+        self._L1.fix()
+
+    def unfix(self):
+        """
+        Enable parameter optimisation.
+        """
+        self._L0.unfix()
+        self._L1.unfix()
+
     def eigh(self):
         """
         Eigen decomposition of K.

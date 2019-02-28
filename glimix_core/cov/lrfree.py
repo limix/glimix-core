@@ -53,6 +53,18 @@ class LRFreeFormCov(Function):
         self._Lu = Vector(self._L.ravel())
         Function.__init__(self, "LRFreeFormCov", Lu=self._Lu)
 
+    def fix(self):
+        """
+        Disable parameter optimisation.
+        """
+        self._Lu.fix()
+
+    def unfix(self):
+        """
+        Enable parameter optimisation.
+        """
+        self._Lu.unfix()
+
     @property
     def Lu(self):
         """
