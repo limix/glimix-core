@@ -152,7 +152,9 @@ class Kron2SumCov(Function):
             Derivative of Cₙ over the array L1.
         """
         I = self._I
+        # breakpoint()
         X = self.G @ self.G.T
+        # E = kron(self._Cr.L, self.G)
 
         Cr_Lu = self._Cr.gradient()["Lu"].transpose([2, 0, 1])
         Cn_grad = self._Cn.gradient()

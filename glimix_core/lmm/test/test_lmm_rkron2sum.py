@@ -1,7 +1,7 @@
 from numpy.random import RandomState
 from numpy.testing import assert_allclose
 
-from glimix_core.lmm import Kron2Sum, RKron2Sum
+from glimix_core.lmm import RKron2Sum
 
 
 def test_lmm_reml_rkron2sum():

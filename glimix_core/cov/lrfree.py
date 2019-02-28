@@ -126,7 +126,8 @@ class LRFreeFormCov(Function):
             row = ii // self._L.shape[1]
             col = ii % self._L.shape[1]
             Lo[row, col] = 1
-            grad["Lu"][..., ii] = dot(Lo, L.T) + dot(L, Lo.T)
+            grad["Lu"][row, :, ii] = L.T[col, :]
+            grad["Lu"][:, row, ii] += L[:, col]
             Lo[row, col] = 0
 
         return grad
