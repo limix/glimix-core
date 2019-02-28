@@ -14,13 +14,14 @@ def test_lmm_reml_rkron2sum():
     G = random.randn(n, 4)
     lmm = RKron2Sum(Y, A, F, G)
 
-    assert_allclose(lmm.lml(), -10.94834266175986)
+    assert_allclose(lmm.lml(), -16.580821931417503)
+    assert_allclose(lmm._check_grad(step=1e-7), 0, atol=1e-4)
 
     # lmm0 = Kron2Sum(Y, A, F, G)
     # lmm0.cov.Cr.fix()
     # lmm0.cov.Cn.fix()
     # lmm0.fit(verbose=True)
-    # # breakpoint()
+    # breakpoint()
     # print()
     # print(lmm0.lml())
     # print(lmm.lml())

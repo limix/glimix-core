@@ -1,6 +1,6 @@
 import warnings
 
-from numpy import asfortranarray
+from numpy import asfortranarray, diagonal
 from numpy.linalg import matrix_rank, slogdet, solve
 
 from glimix_core._util import log2pi, unvec
@@ -156,7 +156,7 @@ class RKron2Sum(Function):
         """
         np = self.nsamples * self.ntraits
         cp = self.ncovariates * self.ntraits
-        lml = -(np - cp) * log2pi + self._logdet_MM() + self._cov.logdet()
+        lml = -(np - cp) * log2pi + self._logdet_MM() - self._cov.logdet()
 
         H = self._H()
         ldet = slogdet(H)
@@ -178,14 +178,16 @@ class RKron2Sum(Function):
         """
         Gradient of the log of the marginal likelihood.
 
-        Let 𝐲 = vec(Y) and 𝕂 = K⁻¹∂(K)K⁻¹. The gradient is given by::
+        Let 𝐲 = vec(Y), 𝕂 = K⁻¹∂(K)K⁻¹, and H = MᵀK⁻¹M. The gradient is given by::
 
-            2⋅∂log(p(𝐲)) = -tr(K⁻¹∂K) + 𝐲ᵗ𝕂𝐲 + (𝐦-2⋅𝐲)ᵗ𝕂𝐦 - 2⋅(𝐲-𝐦)ᵗK⁻¹∂(𝐦).
+            2⋅∂log(p(𝐲)) = -tr(K⁻¹∂K) - tr(H⁻¹∂H) + 𝐲ᵗ𝕂𝐲 + 2⋅∂(𝐦)ᵗK⁻¹𝐲 - 2⋅𝐦ᵗ𝕂𝐲
+                - ∂(𝐦)ᵗK⁻¹𝐦 + 𝐦ᵗ𝕂𝐦 - 𝐦K⁻¹∂(𝐦).
+
+            2⋅∂log(p(𝐲)) = -tr(K⁻¹∂K) - tr(H⁻¹∂H) + 𝐲ᵗ𝕂𝐲 - 𝐦ᵗ𝕂(2⋅𝐲-𝐦)
+                - 2⋅(𝐦-𝐲)ᵗK⁻¹∂(𝐦).
 
         Returns
         -------
-        M.vecB : ndarray
-            Gradient of the log of the marginal likelihood over vec(B).
         Cr.Lu : ndarray
             Gradient of the log of the marginal likelihood over Cᵣ parameters.
         Cn.L0 : ndarray
@@ -194,18 +196,32 @@ class RKron2Sum(Function):
             Gradient of the log of the marginal likelihood over Cₙ parameter L₁.
         """
         ld_grad = self._cov.logdet_gradient()
-        dK = {n: g.transpose([2, 0, 1]) for (n, g) in self._cov.gradient().items()}
+
         Kiy = self._cov.solve(self._y)
+        self._mean.B = self.reml_B
         m = self._mean.value()
         Kim = self._cov.solve(m)
+        M = self._mean.AF
+        KiM = self._cov.solve(M)
         grad = {}
-        dm = self._mean.gradient()["vecB"]
-        grad["M.vecB"] = dm.T @ Kiy - dm.T @ Kim
+        dK = {n: g.transpose([2, 0, 1]) for (n, g) in self._cov.gradient().items()}
+        dH = {n: -KiM.T @ g @ KiM for n, g in dK.items()}
+        H = self._H()
+        beta = solve(H, M.T @ Kiy)
+        dbeta = {
+            n: -solve(H, (dH[n] @ beta).T) - solve(H, KiM.T @ (dK[n] @ Kiy).T)
+            for n in dK.keys()
+        }
+        dm = {n: M @ g for n, g in dbeta.items()}
+        # dm
         for var in ["Cr.Lu", "Cn.L0", "Cn.L1"]:
             grad[var] = -ld_grad[var]
+            grad[var] -= diagonal(solve(H, dH[var]), axis1=1, axis2=2).sum(1)
             grad[var] += Kiy.T @ dK[var] @ Kiy
-            grad[var] -= 2 * (Kim.T @ dK[var] @ Kiy)
-            grad[var] += Kim.T @ dK[var] @ Kim
+            # - 𝐦ᵗ𝕂(2⋅𝐲-𝐦)
+            grad[var] -= Kim.T @ dK[var] @ (2 * Kiy - Kim)
+            # - 2⋅(𝐦-𝐲)ᵗK⁻¹∂(𝐦)
+            grad[var] -= 2 * (m - self._y).T @ self._cov.solve(dm[var])
             grad[var] /= 2
         return grad
 
