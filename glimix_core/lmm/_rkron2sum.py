@@ -214,7 +214,7 @@ class RKron2Sum(Function):
         }
         dm = {n: M @ g for n, g in dbeta.items()}
         # dm
-        for var in ["Cr.Lu", "Cn.L0", "Cn.L1"]:
+        for var in dK.keys():
             grad[var] = -ld_grad[var]
             grad[var] -= diagonal(solve(H, dH[var]), axis1=1, axis2=2).sum(1)
             grad[var] += Kiy.T @ dK[var] @ Kiy

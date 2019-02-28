@@ -156,14 +156,17 @@ class Kron2SumCov(Function):
 
         Cr_Lu = self._Cr.gradient()["Lu"].transpose([2, 0, 1])
         Cn_grad = self._Cn.gradient()
-        Cn_L0 = Cn_grad["L0"].transpose([2, 0, 1])
+
         Cn_L1 = Cn_grad["L1"].transpose([2, 0, 1])
 
-        return {
+        grad = {
             "Cr.Lu": kron(Cr_Lu, X).transpose([1, 2, 0]),
-            "Cn.L0": kron(Cn_L0, I).transpose([1, 2, 0]),
             "Cn.L1": kron(Cn_L1, I).transpose([1, 2, 0]),
         }
+        if "L0" in Cn_grad:
+            Cn_L0 = Cn_grad["L0"].transpose([2, 0, 1])
+            grad["Cn.L0"] = kron(Cn_L0, I).transpose([1, 2, 0])
+        return grad
 
     def solve(self, v):
         """
@@ -245,15 +248,21 @@ class Kron2SumCov(Function):
             D
             * diagonal(L @ Kgrad["Cr.Lu"].transpose([2, 0, 1]) @ L.T, axis1=1, axis2=2)
         ).sum(1)
-        r1 = (
-            D
-            * diagonal(L @ Kgrad["Cn.L0"].transpose([2, 0, 1]) @ L.T, axis1=1, axis2=2)
-        ).sum(1)
         r2 = (
             D
             * diagonal(L @ Kgrad["Cn.L1"].transpose([2, 0, 1]) @ L.T, axis1=1, axis2=2)
         ).sum(1)
-        return {"Cr.Lu": r0, "Cn.L0": r1, "Cn.L1": r2}
+
+        grad = {"Cr.Lu": r0, "Cn.L1": r2}
+        if "Cn.L0" in Kgrad:
+            r1 = (
+                D
+                * diagonal(
+                    L @ Kgrad["Cn.L0"].transpose([2, 0, 1]) @ L.T, axis1=1, axis2=2
+                )
+            ).sum(1)
+            grad["Cn.L0"] = r1
+        return grad
 
     def __str__(self):
         dim = self._Cr.L.shape[0]

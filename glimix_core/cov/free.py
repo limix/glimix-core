@@ -78,6 +78,9 @@ class FreeFormCov(Function):
         self._L1 = Vector(zeros(dim))
         Function.__init__(self, "FreeCov", L0=self._L0, L1=self._L1)
         self._L1.bounds = [(log(epsilon.small * 1000), +15)] * dim
+        if dim == 1:
+            # To avoid concatenation of empty array.
+            self._fix("L0")
 
     def fix(self):
         """
@@ -221,6 +224,9 @@ class FreeFormCov(Function):
                 j += 1
             Lo[row, col] = 0
 
+        if self._L.shape[0] == 1:
+            # Remove L0 because it is an empty array.
+            del grad["L0"]
         return grad
 
     def __str__(self):

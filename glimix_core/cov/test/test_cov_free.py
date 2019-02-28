@@ -11,3 +11,10 @@ def test_freeformcov():
     assert_allclose(cov.value(), L @ L.T, rtol=1e-4)
     assert_allclose(cov._check_grad(), 0, atol=1e-5)
     assert_allclose(cov.logdet(), 0.00012292724603080174)
+
+    cov = FreeFormCov(1)
+    L = array([[0.5]], float)
+    cov.L = L
+    assert_allclose(cov.value(), L @ L.T, rtol=1e-4)
+    assert_allclose(cov._check_grad(), 0, atol=1e-5)
+    assert_allclose(cov.logdet(), -1.3862347582514014)
