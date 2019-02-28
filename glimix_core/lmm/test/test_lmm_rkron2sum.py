@@ -27,13 +27,3 @@ def test_lmm_reml_rkron2sum():
 
     assert_allclose(lmm.lml(), -4.5820894070095814)
     assert_allclose(lmm._check_grad(step=1e-7), 0, atol=1e-4)
-
-    # lmm0 = Kron2Sum(Y, A, F, G)
-    # lmm0.cov.Cr.fix()
-    # lmm0.cov.Cn.fix()
-    # lmm0.fit(verbose=True)
-    # breakpoint()
-    # print()
-    # print(lmm0.lml())
-    # print(lmm.lml())
-    # print(lmm0.mean.B - lmm.reml_B)
