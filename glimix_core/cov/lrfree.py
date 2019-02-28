@@ -92,6 +92,14 @@ class LRFreeFormCov(Function):
     def L(self, value):
         self._Lu.value = asarray(value, float).ravel()
 
+    @property
+    def shape(self):
+        """
+        Array shape.
+        """
+        n = self._L.shape[0]
+        return (n, n)
+
     def value(self):
         """
         Covariance matrix.
@@ -120,15 +128,12 @@ class LRFreeFormCov(Function):
         """
         L = self.L
         n = self.L.shape[0]
-        Lo = zeros_like(L)
         grad = {"Lu": zeros((n, n, n * self._L.shape[1]))}
         for ii in range(self._L.shape[0] * self._L.shape[1]):
             row = ii // self._L.shape[1]
             col = ii % self._L.shape[1]
-            Lo[row, col] = 1
-            grad["Lu"][row, :, ii] = L.T[col, :]
+            grad["Lu"][row, :, ii] = L[:, col]
             grad["Lu"][:, row, ii] += L[:, col]
-            Lo[row, col] = 0
 
         return grad
 

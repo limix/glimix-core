@@ -3,7 +3,7 @@ import warnings
 from numpy import asfortranarray, diagonal
 from numpy.linalg import matrix_rank, slogdet, solve
 
-from glimix_core._util import log2pi, unvec
+from glimix_core._util import log2pi, unvec, vec
 from glimix_core.cov import Kron2SumCov
 from glimix_core.mean import KronMean
 from optimix import Function
@@ -217,7 +217,11 @@ class RKron2Sum(Function):
         for var in dK.keys():
             grad[var] = -ld_grad[var]
             grad[var] -= diagonal(solve(H, dH[var]), axis1=1, axis2=2).sum(1)
-            grad[var] += Kiy.T @ dK[var] @ Kiy
+            # grad[var] += Kiy.T @ dK[var] @ Kiy
+            grad[var] += Kiy.T @ self._cov.gradient_dot(
+                unvec(Kiy, (self.nsamples, -1)), var
+            ).reshape((self.nsamples * self.ntraits, -1), order="F")
+            # self._cov.gradient_dot(Kiy)[var]
             # - 𝐦ᵗ𝕂(2⋅𝐲-𝐦)
             grad[var] -= Kim.T @ dK[var] @ (2 * Kiy - Kim)
             # - 2⋅(𝐦-𝐲)ᵗK⁻¹∂(𝐦)

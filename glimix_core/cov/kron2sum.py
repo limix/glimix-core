@@ -4,7 +4,7 @@ from numpy.linalg import eigh, svd
 from numpy_sugar.linalg import ddot
 from optimix import Function
 
-from .._util import format_function
+from .._util import format_function, unvec, vec
 from .free import FreeFormCov
 from .lrfree import LRFreeFormCov
 
@@ -152,7 +152,6 @@ class Kron2SumCov(Function):
             Derivative of Cₙ over the array L1.
         """
         I = self._I
-        # breakpoint()
         X = self.G @ self.G.T
         # E = kron(self._Cr.L, self.G)
 
@@ -169,6 +168,37 @@ class Kron2SumCov(Function):
             Cn_L0 = Cn_grad["L0"].transpose([2, 0, 1])
             grad["Cn.L0"] = kron(Cn_L0, I).transpose([1, 2, 0])
         return grad
+
+    def gradient_dot(self, V, var):
+        G = self.G
+
+        if var == "Cr.Lu":
+            Cr_Lu = self._Cr.gradient()["Lu"].transpose([2, 0, 1])
+            Cr_Luv = (G @ (G.T @ (V @ Cr_Lu))).transpose([1, 2, 0])
+            return Cr_Luv
+        elif var == "Cn.L0":
+            Cn_L0 = self._Cn.gradient()["L0"].transpose([2, 0, 1])
+            Cn_L0v = (V @ Cn_L0).transpose([1, 2, 0])
+            return Cn_L0v
+        elif var == "Cn.L1":
+            Cn_L1 = self._Cn.gradient()["L1"].transpose([2, 0, 1])
+            Cn_L1v = (V @ Cn_L1).transpose([1, 2, 0])
+            return Cn_L1v
+
+        # Cn_grad = self._Cn.gradient()
+        # if "L0" in Cn_grad:
+        #     Cn_L0 = Cn_grad["L0"].transpose([2, 0, 1])
+        # Cn_L1 = Cn_grad["L1"].transpose([2, 0, 1])
+
+        # if "L0" in Cn_grad:
+        #     Cn_L0v = (V @ Cn_L0).reshape((self._Cr.shape[0], -1), order="F")
+        # Cn_L1v = (V @ Cn_L1).reshape((self._Cr.shape[0], -1), order="F")
+
+        # r = {"Cr.Lu": Cr_Luv, "Cn.L1": Cn_L1v}
+        # if "L0" in Cn_grad:
+        #     r["Cn.L0"] = Cn_L0v
+
+        # return r
 
     def solve(self, v):
         """

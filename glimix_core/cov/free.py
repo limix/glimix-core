@@ -82,6 +82,14 @@ class FreeFormCov(Function):
             # To avoid concatenation of empty array.
             self._fix("L0")
 
+    @property
+    def shape(self):
+        """
+        Array shape.
+        """
+        n = self._L.shape[0]
+        return (n, n)
+
     def fix(self):
         """
         Disable parameter optimisation.
