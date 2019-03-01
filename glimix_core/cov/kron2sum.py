@@ -56,8 +56,8 @@ class Kron2SumCov(Function):
         >>> Ln = array([[1, 0], [2, 1]], float)
         >>>
         >>> cov = Kron2SumCov(G, 2, 1)
-        >>> cov.Cr.L = Lr
-        >>> cov.Cn.L = Ln
+        >>> cov.C0.L = Lr
+        >>> cov.C1.L = Ln
         >>> print(cov)
         Kron2SumCov(G=..., dim=2, rank=1): Kron2SumCov
           LRFreeFormCov(n=2, m=1): C₀
@@ -79,17 +79,17 @@ class Kron2SumCov(Function):
         rank : int
             Maximum rank of the C₁ matrix.
         """
-        self._Cr = LRFreeFormCov(dim, rank)
-        self._Cr.name = "C₀"
-        self._Cn = FreeFormCov(dim)
-        self._Cn.name = "C₁"
+        self._C0 = LRFreeFormCov(dim, rank)
+        self._C0.name = "C₀"
+        self._C1 = FreeFormCov(dim)
+        self._C1.name = "C₁"
         self._G = atleast_2d(asarray(G, float))
         U, S, _ = svd(G)
         S = concatenate((S, [0.0] * (U.shape[0] - S.shape[0])))
         self._USx = U, S * S
         self._I = eye(self.G.shape[0])
         Function.__init__(
-            self, "Kron2SumCov", composite=[("Cr", self._Cr), ("Cn", self._Cn)]
+            self, "Kron2SumCov", composite=[("C0", self._C0), ("C1", self._C1)]
         )
 
     @property
@@ -106,28 +106,28 @@ class Kron2SumCov(Function):
         return self._G
 
     @property
-    def Cr(self):
+    def C0(self):
         """
         Semi-definite positive matrix C₀.
         """
-        return self._Cr
+        return self._C0
 
     @property
-    def Cn(self):
+    def C1(self):
         """
         Definite positive matrix C₁.
         """
-        return self._Cn
+        return self._C1
 
     @property
     def L(self):
         """
         L = Lₕ ⊗ Lₓ
         """
-        Sn, Un = self.Cn.eigh()
-        Cr = self.Cr.value()
+        Sn, Un = self.C1.eigh()
+        C0 = self.C0.value()
         UnSn = ddot(Un, 1 / sqrt(Sn))
-        Ch = UnSn.T @ Cr @ UnSn
+        Ch = UnSn.T @ C0 @ UnSn
         Uh = eigh(Ch)[1]
         Ux, Sx = self._USx
         Lc = (UnSn @ Uh).T
@@ -144,9 +144,9 @@ class Kron2SumCov(Function):
             C₀ ⊗ GGᵗ + C₁ ⊗ I.
         """
         X = self.G @ self.G.T
-        Cr = self._Cr.value()
-        Cn = self._Cn.value()
-        return kron(Cr, X) + kron(Cn, self._I)
+        C0 = self._C0.value()
+        C1 = self._C1.value()
+        return kron(C0, X) + kron(C1, self._I)
 
     def gradient(self):
         """
@@ -154,22 +154,22 @@ class Kron2SumCov(Function):
 
         Returns
         -------
-        Cr_Lu : ndarray
+        C0_Lu : ndarray
             Derivative of C₀ over the array Lu.
-        Cn_Lu : ndarray
+        C1_Lu : ndarray
             Derivative of C₁ over the array Lu.
         """
         I = self._I
         X = self.G @ self.G.T
 
-        Cr_Lu = self._Cr.gradient()["Lu"].transpose([2, 0, 1])
-        Cn_grad = self._Cn.gradient()
+        C0_Lu = self._C0.gradient()["Lu"].transpose([2, 0, 1])
+        C1_grad = self._C1.gradient()
 
-        Cn_Lu = Cn_grad["Lu"].transpose([2, 0, 1])
+        C1_Lu = C1_grad["Lu"].transpose([2, 0, 1])
 
         grad = {
-            "Cr.Lu": kron(Cr_Lu, X).transpose([1, 2, 0]),
-            "Cn.Lu": kron(Cn_Lu, I).transpose([1, 2, 0]),
+            "C0.Lu": kron(C0_Lu, X).transpose([1, 2, 0]),
+            "C1.Lu": kron(C1_Lu, I).transpose([1, 2, 0]),
         }
         return grad
 
@@ -177,14 +177,14 @@ class Kron2SumCov(Function):
         G = self.G
         V = unvec(v, (self.G.shape[0], -1) + v.shape[1:])
 
-        if var == "Cr.Lu":
-            C = self._Cr.gradient()["Lu"]
+        if var == "C0.Lu":
+            C = self._C0.gradient()["Lu"]
             R = tensordot(V.T @ G @ G.T, C, axes=([-2], [0])).reshape(
                 V.shape[2:] + (-1,) + (C.shape[-1],), order="F"
             )
             return R
-        elif var == "Cn.Lu":
-            C = self._Cn.gradient()["Lu"]
+        elif var == "C1.Lu":
+            C = self._C1.gradient()["Lu"]
             R = tensordot(V.T, C, axes=([-2], [0])).reshape(
                 V.shape[2:] + (-1,) + (C.shape[-1],), order="F"
             )
@@ -204,10 +204,10 @@ class Kron2SumCov(Function):
         x : ndarray
             Solution x to the equation K x = y.
         """
-        Sn, Un = self.Cn.eigh()
-        Cr = self.Cr.value()
+        Sn, Un = self.C1.eigh()
+        C0 = self.C0.value()
         UnSn = ddot(Un, 1 / sqrt(Sn))
-        Ch = UnSn.T @ Cr @ UnSn
+        Ch = UnSn.T @ C0 @ UnSn
         Sh, Uh = eigh(Ch)
         Ux, Sx = self._USx
         D = 1 / (kron(Sh, Sx) + 1)
@@ -225,15 +225,15 @@ class Kron2SumCov(Function):
         logdet : float
             Log-determinant of K.
         """
-        Sn, Un = self.Cn.eigh()
-        Cr = self.Cr.value()
+        Sn, Un = self.C1.eigh()
+        C0 = self.C0.value()
         UnSn = ddot(Un, 1 / sqrt(Sn))
-        Ch = UnSn.T @ Cr @ UnSn
+        Ch = UnSn.T @ C0 @ UnSn
         Sh, Urs = eigh(Ch)
         Sx = self._USx[1]
         D = 1 / (kron(Sh, Sx) + 1)
         N = self.G.shape[0]
-        logdetC = self.Cn.logdet()
+        logdetC = self.C1.logdet()
         return -log(D).sum() + N * logdetC
 
     def logdet_gradient(self):
@@ -256,57 +256,57 @@ class Kron2SumCov(Function):
 
         Returns
         -------
-        Cr_Lu : ndarray
+        C0_Lu : ndarray
             Derivative of C₀ over the array Lu.
-        Cn_Lu : ndarray
+        C1_Lu : ndarray
             Derivative of C₁ over the array Lu.
         """
-        Sn, Un = self.Cn.eigh()
-        Cr = self.Cr.value()
+        Sn, Un = self.C1.eigh()
+        C0 = self.C0.value()
         UnSn = ddot(Un, 1 / sqrt(Sn))
-        Ch = UnSn.T @ Cr @ UnSn
+        Ch = UnSn.T @ C0 @ UnSn
         Sh, Uh = eigh(Ch)
         Qx, Sx = self._USx
         D = 1 / (kron(Sh, Sx) + 1)
         Lc = (UnSn @ Uh).T
         Lg = Qx.T
 
-        dE = zeros_like(self._Cr.L)
-        E = self._Cr.L
-        grad_Cr = zeros_like(self._Cr.Lu)
-        for i in range(self._Cr.Lu.shape[0]):
+        dE = zeros_like(self._C0.L)
+        E = self._C0.L
+        grad_C0 = zeros_like(self._C0.Lu)
+        for i in range(self._C0.Lu.shape[0]):
             row = i // E.shape[1]
             col = i % E.shape[1]
             dE[row, col] = 1
             UU = dotd(kron(Lc @ dE, self._LgG), kron(E.T @ Lc.T, self._LgG.T))
-            grad_Cr[i] = (2 * UU * D).sum()
+            grad_C0[i] = (2 * UU * D).sum()
             dE[row, col] = 0
 
-        dE = zeros_like(self._Cn.L)
-        E = self._Cn.L
-        grad_Cn = zeros_like(self._Cn.Lu)
-        for i in range(len(self._Cn._tril1[0])):
-            row = self._Cn._tril1[0][i]
-            col = self._Cn._tril1[1][i]
+        dE = zeros_like(self._C1.L)
+        E = self._C1.L
+        grad_C1 = zeros_like(self._C1.Lu)
+        for i in range(len(self._C1._tril1[0])):
+            row = self._C1._tril1[0][i]
+            col = self._C1._tril1[1][i]
             dE[row, col] = 1
             UU = dotd(kron(Lc @ dE, Lg), kron(E.T @ Lc.T, Lg.T))
-            grad_Cn[i] = (2 * UU * D).sum()
+            grad_C1[i] = (2 * UU * D).sum()
             dE[row, col] = 0
 
-        m = len(self._Cn._tril1[0])
-        for i in range(len(self._Cn._diag[0])):
-            row = self._Cn._diag[0][i]
-            col = self._Cn._diag[1][i]
+        m = len(self._C1._tril1[0])
+        for i in range(len(self._C1._diag[0])):
+            row = self._C1._diag[0][i]
+            col = self._C1._diag[1][i]
             dE[row, col] = E[row, col]
             UU = dotd(kron(Lc @ dE, Lg), kron(E.T @ Lc.T, Lg.T))
-            grad_Cn[m + i] = (2 * UU * D).sum()
+            grad_C1[m + i] = (2 * UU * D).sum()
             dE[row, col] = 0
-        return {"Cr.Lu": grad_Cr, "Cn.Lu": grad_Cn}
+        return {"C0.Lu": grad_C0, "C1.Lu": grad_C1}
 
     def __str__(self):
-        dim = self._Cr.L.shape[0]
-        rank = self._Cr.L.shape[1]
+        dim = self._C0.L.shape[0]
+        rank = self._C0.L.shape[1]
         msg0 = format_function(self, {"G": "...", "dim": dim, "rank": rank})
-        msg1 = str(self._Cr) + "\n" + str(self._Cn)
+        msg1 = str(self._C0) + "\n" + str(self._C1)
         msg1 = "  " + "\n  ".join(msg1.split("\n"))
         return (msg0 + msg1).rstrip()

@@ -61,7 +61,7 @@ class RKron2Sum(Function):
         self._mean = KronMean(F.shape[1], Y.shape[1])
         self._mean.A = A
         self._mean.F = F
-        composite = [("Cr", self._cov.Cr), ("Cn", self._cov.Cn)]
+        composite = [("C0", self._cov.C0), ("C1", self._cov.C1)]
         Function.__init__(self, "Kron2Sum", composite=composite)
 
     @property
@@ -187,9 +187,9 @@ class RKron2Sum(Function):
 
         Returns
         -------
-        Cr.Lu : ndarray
+        C0.Lu : ndarray
             Gradient of the log of the marginal likelihood over Cᵣ parameters.
-        Cn.Lu : ndarray
+        C1.Lu : ndarray
             Gradient of the log of the marginal likelihood over Cₙ parameters.
         """
         ld_grad = self._cov.logdet_gradient()
@@ -201,7 +201,7 @@ class RKron2Sum(Function):
         M = self._mean.AF
         KiM = self._cov.solve(M)
         grad = {}
-        varnames = ["Cr.Lu", "Cn.Lu"]
+        varnames = ["C0.Lu", "C1.Lu"]
 
         def dKdot(v, var):
             return self._cov.gradient_dot(v, var)

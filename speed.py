@@ -13,9 +13,8 @@ random = RandomState(0)
 n = 150
 # G = random.randn(n, 5)
 
-# cov = Kron2SumCov(2, 1)
-# cov.G = G
-# cov.Cr.Lu = abs(random.randn(2))
+# cov = Kron2SumCov(G, 2, 1)
+# cov.C0.Lu = abs(random.randn(2))
 
 # start = time()
 # cov.gradient()
@@ -29,7 +28,10 @@ G = random.randn(n, 5)
 lmm = RKron2Sum(Y, A, F, G)
 
 start = time()
-lmm.lml_gradient()
+# breakpoint()
+# lmm.cov.logdet()
+lmm.cov.logdet_gradient()
+# lmm.lml_gradient()
 print("Elapsed: {}s".format(time() - start))
 
 # I = eye(G.shape[0])
@@ -43,18 +45,18 @@ print("Elapsed: {}s".format(time() - start))
 
 
 # def func(x):
-#     cov.Cr.Lu = x[:2]
+#     cov.C0.Lu = x[:2]
 #     cov.Cn.L0 = x[2:3]
 #     cov.Cn.L1 = x[3:]
 #     return cov.logdet()
 
 
 # def grad(x):
-#     cov.Cr.Lu = x[:2]
+#     cov.C0.Lu = x[:2]
 #     cov.Cn.L0 = x[2:3]
 #     cov.Cn.L1 = x[3:]
 #     D = cov.logdet_gradient()
-#     return concatenate((D["Cr.Lu"], D["Cn.L0"], D["Cn.L1"]))
+#     return concatenate((D["C0.Lu"], D["Cn.L0"], D["Cn.L1"]))
 
 
 # random = RandomState(0)

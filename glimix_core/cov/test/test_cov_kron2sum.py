@@ -14,8 +14,8 @@ def test_kron2sumcov():
     Ln = array([[1, 0], [2, 1]], float)
 
     cov = Kron2SumCov(G, 2, 1)
-    cov.Cr.L = Lr
-    cov.Cn.L = Ln
+    cov.C0.L = Lr
+    cov.C1.L = Ln
 
     I = eye(G.shape[0])
     assert_allclose(
@@ -30,41 +30,41 @@ def test_kron2sumcov():
     )
 
     def func(x):
-        cov.Cr.Lu = x[:2]
-        cov.Cn.Lu = x[2:]
+        cov.C0.Lu = x[:2]
+        cov.C1.Lu = x[2:]
         return cov.logdet()
 
     def grad(x):
-        cov.Cr.Lu = x[:2]
-        cov.Cn.Lu = x[2:]
+        cov.C0.Lu = x[:2]
+        cov.C1.Lu = x[2:]
         D = cov.logdet_gradient()
-        return concatenate((D["Cr.Lu"], D["Cn.Lu"]))
+        return concatenate((D["C0.Lu"], D["C1.Lu"]))
 
     random = RandomState(0)
     assert_allclose(check_grad(func, grad, random.randn(5)), 0, atol=1e-5)
 
     V = random.randn(3, 2)
 
-    g = cov.Cr.gradient()["Lu"]
-    g0 = cov.gradient_dot(vec(V), "Cr.Lu")
+    g = cov.C0.gradient()["Lu"]
+    g0 = cov.gradient_dot(vec(V), "C0.Lu")
     for i in range(2):
         assert_allclose(g0[..., i], kron(g[..., i], G @ G.T) @ vec(V))
 
-    g = cov.Cn.gradient()["Lu"]
-    g0 = cov.gradient_dot(vec(V), "Cn.Lu")
+    g = cov.C1.gradient()["Lu"]
+    g0 = cov.gradient_dot(vec(V), "C1.Lu")
     for i in range(3):
         assert_allclose(g0[..., i], kron(g[..., i], eye(3)) @ vec(V))
 
     V = random.randn(3, 2, 4)
 
-    g = cov.Cr.gradient()["Lu"]
-    g0 = cov.gradient_dot(vec(V), "Cr.Lu")
+    g = cov.C0.gradient()["Lu"]
+    g0 = cov.gradient_dot(vec(V), "C0.Lu")
     for i in range(2):
         for j in range(4):
             assert_allclose(g0[j, ..., i], kron(g[..., i], G @ G.T) @ vec(V[..., j]))
 
-    g = cov.Cn.gradient()["Lu"]
-    g0 = cov.gradient_dot(vec(V), "Cn.Lu")
+    g = cov.C1.gradient()["Lu"]
+    g0 = cov.gradient_dot(vec(V), "C1.Lu")
     for i in range(3):
         for j in range(4):
             assert_allclose(g0[j, ..., i], kron(g[..., i], eye(3)) @ vec(V[..., j]))
@@ -77,8 +77,8 @@ def test_kron2sumcov_g_full_col_rank():
     Ln = array([[1, 0], [2, 1]], float)
 
     cov = Kron2SumCov(G, 2, 1)
-    cov.Cr.L = Lr
-    cov.Cn.L = Ln
+    cov.C0.L = Lr
+    cov.C1.L = Ln
 
     I = eye(G.shape[0])
     assert_allclose(
@@ -91,8 +91,8 @@ def test_kron2sumcov_g_full_col_rank():
     cov = Kron2SumCov(G, 2, 2)
     Lr = array([[3, 0.0], [-2, 0.4]], float)
     Ln = array([[1, 0], [2, 1]], float)
-    cov.Cr.L = Lr
-    cov.Cn.L = Ln
+    cov.C0.L = Lr
+    cov.C1.L = Ln
 
     I = eye(G.shape[0])
     assert_allclose(

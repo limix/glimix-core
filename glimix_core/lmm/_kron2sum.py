@@ -61,7 +61,7 @@ class Kron2Sum(Function):
         self._mean = KronMean(F.shape[1], Y.shape[1])
         self._mean.A = A
         self._mean.F = F
-        composite = [("M", self._mean), ("Cr", self._cov.Cr), ("Cn", self._cov.Cn)]
+        composite = [("M", self._mean), ("C0", self._cov.C0), ("C1", self._cov.C1)]
         Function.__init__(self, "Kron2Sum", composite=composite)
 
     @property
@@ -148,9 +148,9 @@ class Kron2Sum(Function):
         -------
         M.vecB : ndarray
             Gradient of the log of the marginal likelihood over vec(B).
-        Cr.Lu : ndarray
+        C0.Lu : ndarray
             Gradient of the log of the marginal likelihood over Cᵣ parameters.
-        Cn.Lu : ndarray
+        C1.Lu : ndarray
             Gradient of the log of the marginal likelihood over Cₙ parameters.
         """
         ld_grad = self._cov.logdet_gradient()
@@ -161,7 +161,7 @@ class Kron2Sum(Function):
         grad = {}
         dm = self._mean.gradient()["vecB"]
         grad["M.vecB"] = dm.T @ Kiy - dm.T @ Kim
-        for var in ["Cr.Lu", "Cn.Lu"]:
+        for var in ["C0.Lu", "C1.Lu"]:
             grad[var] = -ld_grad[var]
             grad[var] += Kiy.T @ dK[var] @ Kiy
             grad[var] -= 2 * (Kim.T @ dK[var] @ Kiy)
