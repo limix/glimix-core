@@ -2,7 +2,6 @@ from numpy import (
     asarray,
     atleast_2d,
     concatenate,
-    diagonal,
     eye,
     kron,
     log,
@@ -15,7 +14,7 @@ from numpy.linalg import eigh, svd
 from numpy_sugar.linalg import ddot, dotd
 from optimix import Function
 
-from .._util import format_function, unvec, vec
+from .._util import format_function, unvec
 from .free import FreeFormCov
 from .lrfree import LRFreeFormCov
 
@@ -56,12 +55,11 @@ class Kron2SumCov(Function):
         >>> Lr = array([[3], [2]], float)
         >>> Ln = array([[1, 0], [2, 1]], float)
         >>>
-        >>> cov = Kron2SumCov(2, 1)
-        >>> cov.G = G
+        >>> cov = Kron2SumCov(G, 2, 1)
         >>> cov.Cr.L = Lr
         >>> cov.Cn.L = Ln
         >>> print(cov)
-        Kron2SumCov(dim=2, rank=1): Kron2SumCov
+        Kron2SumCov(G=..., dim=2, rank=1): Kron2SumCov
           LRFreeFormCov(n=2, m=1): Cᵣ
             L: [[3.]
                 [2.]]
@@ -70,7 +68,7 @@ class Kron2SumCov(Function):
                 [2. 1.]]
     """
 
-    def __init__(self, dim, rank):
+    def __init__(self, G, dim, rank):
         """
         Constructor.
 
@@ -85,8 +83,11 @@ class Kron2SumCov(Function):
         self._Cr.name = "Cᵣ"
         self._Cn = FreeFormCov(dim)
         self._Cn.name = "Cₙ"
-        self._G = None
-        self._I = None
+        self._G = atleast_2d(asarray(G, float))
+        U, S, _ = svd(G)
+        S = concatenate((S, [0.0] * (U.shape[0] - S.shape[0])))
+        self._USx = U, S * S
+        self._I = eye(self.G.shape[0])
         Function.__init__(
             self, "Kron2SumCov", composite=[("Cr", self._Cr), ("Cn", self._Cn)]
         )
@@ -103,18 +104,6 @@ class Kron2SumCov(Function):
         User-provided matrix G, n×m.
         """
         return self._G
-
-    @G.setter
-    def G(self, G):
-        # from numpy_sugar.linalg import economic_svd
-
-        self._G = atleast_2d(asarray(G, float))
-        U, S, _ = svd(G)
-        S = concatenate((S, [0.0] * (U.shape[0] - S.shape[0])))
-        self._USx = U, S * S
-        # US = economic_svd(G)
-        # self._eUSx = US[0], US[1] * US[1]
-        self._I = eye(self.G.shape[0])
 
     @property
     def Cr(self):
@@ -314,7 +303,7 @@ class Kron2SumCov(Function):
     def __str__(self):
         dim = self._Cr.L.shape[0]
         rank = self._Cr.L.shape[1]
-        msg0 = format_function(self, {"dim": dim, "rank": rank})
+        msg0 = format_function(self, {"G": "...", "dim": dim, "rank": rank})
         msg1 = str(self._Cr) + "\n" + str(self._Cn)
         msg1 = "  " + "\n  ".join(msg1.split("\n"))
         return (msg0 + msg1).rstrip()

@@ -13,8 +13,7 @@ def test_kron2sumcov():
     Lr = array([[3], [2]], float)
     Ln = array([[1, 0], [2, 1]], float)
 
-    cov = Kron2SumCov(2, 1)
-    cov.G = G
+    cov = Kron2SumCov(G, 2, 1)
     cov.Cr.L = Lr
     cov.Cn.L = Ln
 
@@ -77,8 +76,7 @@ def test_kron2sumcov_g_full_col_rank():
     Lr = array([[3], [2]], float)
     Ln = array([[1, 0], [2, 1]], float)
 
-    cov = Kron2SumCov(2, 1)
-    cov.G = G
+    cov = Kron2SumCov(G, 2, 1)
     cov.Cr.L = Lr
     cov.Cn.L = Ln
 
@@ -90,8 +88,7 @@ def test_kron2sumcov_g_full_col_rank():
     assert_allclose(cov.solve(cov.value()), eye(2 * G.shape[0]), atol=1e-7)
     assert_allclose(cov.logdet(), slogdet(cov.value())[1], atol=1e-7)
 
-    cov = Kron2SumCov(2, 2)
-    cov.G = G
+    cov = Kron2SumCov(G, 2, 2)
     Lr = array([[3, 0.0], [-2, 0.4]], float)
     Ln = array([[1, 0], [2, 1]], float)
     cov.Cr.L = Lr
