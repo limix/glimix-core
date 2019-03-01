@@ -205,15 +205,15 @@ class RKron2Sum(Function):
         KiM = self._cov.solve(M)
         grad = {}
         varnames = ["Cr.Lu", "Cn.Lu"]
-        dK = {n: g.transpose([2, 0, 1]) for (n, g) in self._cov.gradient().items()}
-        # TT = -KiM.T @ dK["Cn.Lu"] @ KiM
-        # breakpoint()
-        dH = {n: -KiM.T @ g @ KiM for n, g in dK.items()}
-        H = self._H()
-        beta = solve(H, M.T @ Kiy)
+        # dK = {n: g.transpose([2, 0, 1]) for (n, g) in self._cov.gradient().items()}
 
         def gdot(v, var):
             return self._cov.gradient_dot(v, var)
+
+        # dH = {n: -KiM.T @ dK[n] @ KiM for n in varnames}
+        dH = {n: -(KiM.T @ gdot(KiM, n)).T for n in varnames}
+        H = self._H()
+        beta = solve(H, M.T @ Kiy)
 
         dbeta = {
             n: -solve(H, (dH[n] @ beta).T) - solve(H, KiM.T @ gdot(Kiy, n))
