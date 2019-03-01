@@ -57,8 +57,7 @@ class Kron2Sum(Function):
         self._y = Y.ravel(order="F")
         self._A = A
         self._F = F
-        self._cov = Kron2SumCov(Y.shape[1], rank)
-        self._cov.G = G
+        self._cov = Kron2SumCov(G, Y.shape[1], rank)
         self._mean = KronMean(F.shape[1], Y.shape[1])
         self._mean.A = A
         self._mean.F = F

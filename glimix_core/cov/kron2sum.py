@@ -21,21 +21,21 @@ from .lrfree import LRFreeFormCov
 
 class Kron2SumCov(Function):
     """
-    Implements K = Cᵣ ⊗ GGᵗ + Cₙ ⊗ I.
+    Implements K =  C₀ ⊗ GGᵗ + C₁ ⊗ I.
 
-    Cᵣ and Cₙ are d×d symmetric matrices. Cᵣ is a semi-definite positive matrix while Cₙ
+    C₀ and C₁ are d×d symmetric matrices. C₀ is a semi-definite positive matrix while C₁
     is positive definite one. G is a n×m matrix and I is a n×n identity matrix. Let
     M = Uₘ Sₘ Uₘᵗ be the eigen decomposition for any matrix M. The documentation and
     implementation of this class make use of the following definitions:
 
     - X = GGᵗ = Uₓ Sₓ Uₓᵗ
-    - Cₙ = Uₙ Sₙ Uₙᵗ
-    - Cₕ = Sₙ⁻½ Uₙᵗ Cᵣ Uₙ Sₙ⁻½
+    - C₁ = U₁ S₁ U₁ᵗ
+    - Cₕ = S₁⁻½ U₁ᵗ C₀ U₁ S₁⁻½
     - Cₕ = Uₕ Sₕ Uₕᵗ
     - D = (Sₕ ⊗ Sₓ + Iₕₓ)⁻¹
     - Lₓ = Uₓᵗ
-    - Lₙ = Uₕᵗ Sₙ⁻½ Uₙᵗ
-    - L = Lₙ ⊗ Lₓ
+    - Lₕ = Uₕᵗ S₁⁻½ U₁ᵗ
+    - L = Lₕ ⊗ Lₓ
 
     The above definitions allows us to write the inverse of the covariance matrix as:
 
@@ -60,10 +60,10 @@ class Kron2SumCov(Function):
         >>> cov.Cn.L = Ln
         >>> print(cov)
         Kron2SumCov(G=..., dim=2, rank=1): Kron2SumCov
-          LRFreeFormCov(n=2, m=1): Cᵣ
+          LRFreeFormCov(n=2, m=1): C₀
             L: [[3.]
                 [2.]]
-          FreeFormCov(dim=2): Cₙ
+          FreeFormCov(dim=2): C₁
             L: [[1. 0.]
                 [2. 1.]]
     """
@@ -75,14 +75,14 @@ class Kron2SumCov(Function):
         Parameters
         ----------
         dim : int
-            Dimension d for the square matrices Cᵣ and Cₙ.
+            Dimension d for the square matrices C₀ and C₁.
         rank : int
-            Maximum rank of the Cₙ matrix.
+            Maximum rank of the C₁ matrix.
         """
         self._Cr = LRFreeFormCov(dim, rank)
-        self._Cr.name = "Cᵣ"
+        self._Cr.name = "C₀"
         self._Cn = FreeFormCov(dim)
-        self._Cn.name = "Cₙ"
+        self._Cn.name = "C₁"
         self._G = atleast_2d(asarray(G, float))
         U, S, _ = svd(G)
         S = concatenate((S, [0.0] * (U.shape[0] - S.shape[0])))
@@ -108,21 +108,21 @@ class Kron2SumCov(Function):
     @property
     def Cr(self):
         """
-        Semi-definite positive matrix Cᵣ.
+        Semi-definite positive matrix C₀.
         """
         return self._Cr
 
     @property
     def Cn(self):
         """
-        Definite positive matrix Cₙ.
+        Definite positive matrix C₁.
         """
         return self._Cn
 
     @property
     def L(self):
         """
-        L = Lₙ ⊗ Lₓ
+        L = Lₕ ⊗ Lₓ
         """
         Sn, Un = self.Cn.eigh()
         Cr = self.Cr.value()
@@ -136,12 +136,12 @@ class Kron2SumCov(Function):
 
     def value(self):
         """
-        Covariance matrix K = Cᵣ ⊗ GGᵗ + Cₙ ⊗ I.
+        Covariance matrix K = C₀ ⊗ GGᵗ + C₁ ⊗ I.
 
         Returns
         -------
         K : ndarray
-            Cᵣ ⊗ GGᵗ + Cₙ ⊗ I.
+            C₀ ⊗ GGᵗ + C₁ ⊗ I.
         """
         X = self.G @ self.G.T
         Cr = self._Cr.value()
@@ -155,13 +155,12 @@ class Kron2SumCov(Function):
         Returns
         -------
         Cr_Lu : ndarray
-            Derivative of Cᵣ over the array Lu.
+            Derivative of C₀ over the array Lu.
         Cn_Lu : ndarray
-            Derivative of Cₙ over the array Lu.
+            Derivative of C₁ over the array Lu.
         """
         I = self._I
         X = self.G @ self.G.T
-        # E = kron(self._Cr.L, self.G)
 
         Cr_Lu = self._Cr.gradient()["Lu"].transpose([2, 0, 1])
         Cn_grad = self._Cn.gradient()
@@ -203,7 +202,7 @@ class Kron2SumCov(Function):
         Returns
         -------
         x : ndarray
-            Solution x of the equation K x = y.
+            Solution x to the equation K x = y.
         """
         Sn, Un = self.Cn.eigh()
         Cr = self.Cr.value()
@@ -219,7 +218,7 @@ class Kron2SumCov(Function):
 
     def logdet(self):
         """
-        Implements log|K| = - log|D| + N log|Cₙ|.
+        Implements log|K| = - log|D| + n⋅log|C₁|.
 
         Returns
         -------
@@ -245,18 +244,22 @@ class Kron2SumCov(Function):
 
             ∂log|K| = diag(D)ᵗ diag(L ∂K Lᵗ).
 
-        Let L = Lₙ⊗Lₓ and Cᵣ = EEᵀ. Note that::
+        Let L = Lₕ⊗Lₓ and C₀ = E₀E₀ᵀ. Note that::
 
-            L∂KLᵗ = 2 (Lₙ∂E)⊗(LₓG) (LₙE)ᵀ⊗(LₓG)ᵀ,
+            L∂KLᵗ = 2 ((Lₕ∂E₀) ⊗ (LₓG)) ((LₕE₀)ᵀ ⊗ (LₓG)ᵀ),
 
-        where the derivative is over the elements of E.
+        when the derivative is over the elements of E₀. Similarly,
+
+            L∂KLᵗ = 2 ((Lₕ∂E₁) ⊗ Lₓ) ((LₕE₁)ᵀ ⊗ Lₓᵀ),
+
+        when the derivative is over the elements of E₁, C₁ = E₁E₁ᵀ.
 
         Returns
         -------
         Cr_Lu : ndarray
-            Derivative of Cᵣ over the array Lu.
+            Derivative of C₀ over the array Lu.
         Cn_Lu : ndarray
-            Derivative of Cₙ over the array Lu.
+            Derivative of C₁ over the array Lu.
         """
         Sn, Un = self.Cn.eigh()
         Cr = self.Cr.value()
