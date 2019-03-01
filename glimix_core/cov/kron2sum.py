@@ -110,6 +110,18 @@ class Kron2SumCov(Function):
         return Lx @ self._G
 
     @property
+    @lru_cache(maxsize=None)
+    def _T0(self):
+        return dotd(self._LxG, self._LxG.T)
+
+    @property
+    @lru_cache(maxsize=None)
+    def _T1(self):
+        Qx = self._USx[0]
+        Lx = Qx.T
+        return dotd(Lx, Lx.T)
+
+    @property
     def G(self):
         """
         User-provided matrix G, n×m.
@@ -289,7 +301,7 @@ class Kron2SumCov(Function):
             row = i // E.shape[1]
             col = i % E.shape[1]
             dE[row, col] = 1
-            UU = dotd(kron(Lh @ dE, self._LxG), kron(E.T @ Lh.T, self._LxG.T))
+            UU = kron(dotd(Lh @ dE, E.T @ Lh.T), self._T0)
             grad_C0[i] = (2 * UU * D).sum()
             dE[row, col] = 0
 
@@ -301,7 +313,7 @@ class Kron2SumCov(Function):
             row = self._C1._tril1[0][i]
             col = self._C1._tril1[1][i]
             dE[row, col] = 1
-            UU = kron(dotd(Lh @ dE, (Lh @ E).T), dotd(Lx, Lx.T))
+            UU = kron(dotd(Lh @ dE, (Lh @ E).T), self._T1)
             grad_C1[i] = (2 * UU * D).sum()
             dE[row, col] = 0
 
@@ -310,7 +322,7 @@ class Kron2SumCov(Function):
             row = self._C1._diag[0][i]
             col = self._C1._diag[1][i]
             dE[row, col] = E[row, col]
-            UU = kron(dotd(Lh @ dE, (Lh @ E).T), dotd(Lx, Lx.T))
+            UU = kron(dotd(Lh @ dE, (Lh @ E).T), self._T1)
             grad_C1[m + i] = (2 * UU * D).sum()
             dE[row, col] = 0
         return {"C0.Lu": grad_C0, "C1.Lu": grad_C1}
