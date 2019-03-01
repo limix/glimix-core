@@ -179,32 +179,16 @@ class Kron2SumCov(Function):
         V = unvec(v, (self.G.shape[0], -1) + v.shape[1:])
 
         if var == "Cr.Lu":
-            # Cr_Lu = self._Cr.gradient()["Lu"].transpose([2, 0, 1])
-            # R0 = (G @ (G.T @ (V @ Cr_Lu))).transpose([1, 2, 0])
-            # R0 = R0.reshape((V.shape[0] * V.shape[1], -1), order="F")
             C = self._Cr.gradient()["Lu"]
-            R = (
-                tensordot(V.T @ G @ G.T, C, axes=([-2], [0])).reshape(
-                    V.shape[2:] + (-1,) + (C.shape[-1],), order="F"
-                )
-                # .T
+            R = tensordot(V.T @ G @ G.T, C, axes=([-2], [0])).reshape(
+                V.shape[2:] + (-1,) + (C.shape[-1],), order="F"
             )
-            # if abs(R0 - R).max() > 1e-5:
-            #     breakpoint()
             return R
         elif var == "Cn.Lu":
-            # Cn_Lu = self._Cn.gradient()["Lu"].transpose([2, 0, 1])
-            # R0 = (V @ Cn_Lu).transpose([1, 2, 0])
-            # R0 = R0.reshape((V.shape[0] * V.shape[1], -1), order="F")
             C = self._Cn.gradient()["Lu"]
-            R = (
-                tensordot(V.T, C, axes=([-2], [0])).reshape(
-                    V.shape[2:] + (-1,) + (C.shape[-1],), order="F"
-                )
-                # .T
+            R = tensordot(V.T, C, axes=([-2], [0])).reshape(
+                V.shape[2:] + (-1,) + (C.shape[-1],), order="F"
             )
-            # if abs(R0 - R).max() > 1e-5:
-            #     breakpoint()
             return R
 
     def solve(self, v):
