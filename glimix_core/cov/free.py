@@ -1,14 +1,4 @@
-from numpy import (
-    diag_indices_from,
-    dot,
-    exp,
-    eye,
-    inf,
-    log,
-    tril_indices_from,
-    zeros,
-    zeros_like,
-)
+from numpy import diag_indices_from, dot, exp, eye, inf, log, tril_indices_from, zeros
 
 from numpy_sugar import epsilon
 from optimix import Function, Vector
@@ -62,7 +52,6 @@ class FreeFormCov(Function):
         dim = int(dim)
         tsize = ((dim + 1) * dim) // 2
         self._L = zeros((dim, dim))
-        # self._tril = tril_indices_from(self._L)
         self._tril1 = tril_indices_from(self._L, k=-1)
         self._diag = diag_indices_from(self._L)
         self._L[self._tril1] = 1
@@ -194,55 +183,20 @@ class FreeFormCov(Function):
             Derivative of K over L1.
         """
         L = self.L
-        Lo = zeros_like(L)
+        self._grad_Lu[:] = 0
+
+        for i in range(len(self._tril1[0])):
+            row = self._tril1[0][i]
+            col = self._tril1[1][i]
+            self._grad_Lu[row, :, i] = L[:, col]
+            self._grad_Lu[:, row, i] += L[:, col]
+
         m = len(self._tril1[0])
-
-        for i in range(len(self._tril1[0])):
-            row = self._tril1[0][i]
-            col = self._tril1[1][i]
-            Lo[row, col] = 1
-            self._grad_Lu[..., i] = dot(Lo, L.T) + dot(L, Lo.T)
-            Lo[row, col] = 0
-
         for i in range(len(self._diag[0])):
             row = self._diag[0][i]
             col = self._diag[1][i]
-            Lo[row, col] = L[row, col]
-            self._grad_Lu[..., m + i] = dot(Lo, L.T) + dot(L, Lo.T)
-            Lo[row, col] = 0
-
-        import numpy as np
-
-        grad = {}
-        grad["Lu"] = np.zeros_like(self._grad_Lu)
-
-        for i in range(len(self._tril1[0])):
-            row = self._tril1[0][i]
-            col = self._tril1[1][i]
-            grad["Lu"][row, :, i] = L[:, col]
-            grad["Lu"][:, row, i] += L[:, col]
-
-        for i in range(len(self._diag[0])):
-            row = self._diag[0][i]
-            col = self._diag[1][i]
-            grad["Lu"][row, :, m + i] = L[row, col] * L[:, col]
-            grad["Lu"][:, row, m + i] += L[row, col] * L[:, col]
-
-        # i = 0
-        # j = 0
-        # for ii in range(self._L.shape[0] * self._L.shape[1]):
-        #     row = ii // self._L.shape[1]
-        #     col = ii % self._L.shape[1]
-        #     if row == col:
-        #         grad["Lu"][row, :, m + i] = L[row, col] * L[:, col]
-        #         grad["Lu"][:, row, m + i] += L[row, col] * L[:, col]
-        #         i += 1
-        #     else:
-        #         grad["Lu"][row, :, j] = L[:, col]
-        #         grad["Lu"][:, row, j] += L[:, col]
-        #         j += 1
-        #     # grad["Lu"][row, :, ii] = L[:, col]
-        #     # grad["Lu"][:, row, ii] += L[:, col]
+            self._grad_Lu[row, :, m + i] = L[row, col] * L[:, col]
+            self._grad_Lu[:, row, m + i] += L[row, col] * L[:, col]
 
         return {"Lu": self._grad_Lu}
 
