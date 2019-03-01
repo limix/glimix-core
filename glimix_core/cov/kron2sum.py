@@ -276,6 +276,12 @@ class Kron2SumCov(Function):
             L∂KLᵗ = 2 ((Lₕ∂E₁) ⊗ Lₓ) ((LₕE₁)ᵀ ⊗ Lₓᵀ),
 
         when the derivative is over the elements of E₁, C₁ = E₁E₁ᵀ.
+        From the property
+
+            diag(A ⊗ B) = diag(A) ⊗ diag(B),
+
+        we can rewrite the previous expressions in order to achieve computational speed
+        up.
 
         Returns
         -------
@@ -292,28 +298,28 @@ class Kron2SumCov(Function):
         Qx, Sx = self._USx
         D = 1 / (kron(Sh, Sx) + 1)
         Lh = (UnSn @ Uh).T
-        Lx = Qx.T
 
         dE = zeros_like(self._C0.L)
         E = self._C0.L
+        ELhT = E.T @ Lh.T
         grad_C0 = zeros_like(self._C0.Lu)
         for i in range(self._C0.Lu.shape[0]):
             row = i // E.shape[1]
             col = i % E.shape[1]
             dE[row, col] = 1
-            UU = kron(dotd(Lh @ dE, E.T @ Lh.T), self._T0)
+            UU = kron(dotd(Lh @ dE, ELhT), self._T0)
             grad_C0[i] = (2 * UU * D).sum()
             dE[row, col] = 0
 
         dE = zeros_like(self._C1.L)
         E = self._C1.L
+        LhET = (Lh @ E).T
         grad_C1 = zeros_like(self._C1.Lu)
-
         for i in range(len(self._C1._tril1[0])):
             row = self._C1._tril1[0][i]
             col = self._C1._tril1[1][i]
             dE[row, col] = 1
-            UU = kron(dotd(Lh @ dE, (Lh @ E).T), self._T1)
+            UU = kron(dotd(Lh @ dE, LhET), self._T1)
             grad_C1[i] = (2 * UU * D).sum()
             dE[row, col] = 0
 
@@ -322,7 +328,7 @@ class Kron2SumCov(Function):
             row = self._C1._diag[0][i]
             col = self._C1._diag[1][i]
             dE[row, col] = E[row, col]
-            UU = kron(dotd(Lh @ dE, (Lh @ E).T), self._T1)
+            UU = kron(dotd(Lh @ dE, LhET), self._T1)
             grad_C1[m + i] = (2 * UU * D).sum()
             dE[row, col] = 0
         return {"C0.Lu": grad_C0, "C1.Lu": grad_C1}
