@@ -269,8 +269,6 @@ class Kron2SumCov(Function):
         Cn_Lu : ndarray
             Derivative of Cₙ over the array Lu.
         """
-        # from numpy.testing import assert_allclose
-
         Sn, Un = self.Cn.eigh()
         Cr = self.Cr.value()
         UnSn = ddot(Un, 1 / sqrt(Sn))
@@ -280,9 +278,6 @@ class Kron2SumCov(Function):
         D = 1 / (kron(Sh, Sx) + 1)
         Lc = (UnSn @ Uh).T
         Lg = Qx.T
-        L = kron(Lc, Lg)
-
-        Kgrad = self.gradient()
 
         dE = zeros_like(self._Cr.L)
         E = self._Cr.L
@@ -291,7 +286,6 @@ class Kron2SumCov(Function):
             row = i // E.shape[1]
             col = i % E.shape[1]
             dE[row, col] = 1
-            # breakpoint()
             UU = dotd(kron(Lc @ dE, self._LgG), kron(E.T @ Lc.T, self._LgG.T))
             grad_Cr[i] = (2 * UU * D).sum()
             dE[row, col] = 0
@@ -299,7 +293,6 @@ class Kron2SumCov(Function):
         dE = zeros_like(self._Cn.L)
         E = self._Cn.L
         grad_Cn = zeros_like(self._Cn.Lu)
-        # dim = self._Cn.Lu.shape
         for i in range(len(self._Cn._tril1[0])):
             row = self._Cn._tril1[0][i]
             col = self._Cn._tril1[1][i]
@@ -316,27 +309,7 @@ class Kron2SumCov(Function):
             UU = dotd(kron(Lc @ dE, Lg), kron(E.T @ Lc.T, Lg.T))
             grad_Cn[m + i] = (2 * UU * D).sum()
             dE[row, col] = 0
-
-        # for i in range(self._Cn.Lu.shape[0]):
-        #     row = i // E.shape[1]
-        #     col = i % E.shape[1]
-        #     if row == col:
-        #         dE[row, col] = E[row, col]
-        #     else:
-        #         dE[row, col] = 1
-        #     # breakpoint()
-        #     UU = dotd(kron(Lc @ dE, Lg), kron(E.T @ Lc.T, Lg.T))
-        #     grad_Cn[i] = (2 * UU * D).sum()
-        #     dE[row, col] = 0
-
-        # r2 = (
-        #     D
-        #     * diagonal(L @ Kgrad["Cn.Lu"].transpose([2, 0, 1]) @ L.T, axis1=1, axis2=2)
-        # ).sum(1)
-
-        # assert_allclose(grad_Cr, r0)
-        grad = {"Cr.Lu": grad_Cr, "Cn.Lu": grad_Cn}
-        return grad
+        return {"Cr.Lu": grad_Cr, "Cn.Lu": grad_Cn}
 
     def __str__(self):
         dim = self._Cr.L.shape[0]
