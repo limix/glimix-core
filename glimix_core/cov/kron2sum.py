@@ -256,11 +256,11 @@ class Kron2SumCov(Function):
 
             ∂log|K| = diag(D)ᵗ diag(L ∂K Lᵗ).
 
-        Note that::
+        Let L = Lₙ⊗Lₓ and Cᵣ = EEᵀ. Note that::
 
             L∂KLᵗ = 2 (Lₙ∂E)⊗(LₓG) (LₙE)ᵀ⊗(LₓG)ᵀ,
 
-        for L = Lₙ ⊗ Lₓ.
+        where the derivative is over the elements of E.
 
         Returns
         -------
@@ -296,13 +296,46 @@ class Kron2SumCov(Function):
             grad_Cr[i] = (2 * UU * D).sum()
             dE[row, col] = 0
 
-        r2 = (
-            D
-            * diagonal(L @ Kgrad["Cn.Lu"].transpose([2, 0, 1]) @ L.T, axis1=1, axis2=2)
-        ).sum(1)
+        dE = zeros_like(self._Cn.L)
+        E = self._Cn.L
+        grad_Cn = zeros_like(self._Cn.Lu)
+        # dim = self._Cn.Lu.shape
+        for i in range(len(self._Cn._tril1[0])):
+            row = self._Cn._tril1[0][i]
+            col = self._Cn._tril1[1][i]
+            dE[row, col] = 1
+            UU = dotd(kron(Lc @ dE, Lg), kron(E.T @ Lc.T, Lg.T))
+            grad_Cn[i] = (2 * UU * D).sum()
+            dE[row, col] = 0
+
+        m = len(self._Cn._tril1[0])
+        for i in range(len(self._Cn._diag[0])):
+            row = self._Cn._diag[0][i]
+            col = self._Cn._diag[1][i]
+            dE[row, col] = E[row, col]
+            UU = dotd(kron(Lc @ dE, Lg), kron(E.T @ Lc.T, Lg.T))
+            grad_Cn[m + i] = (2 * UU * D).sum()
+            dE[row, col] = 0
+
+        # for i in range(self._Cn.Lu.shape[0]):
+        #     row = i // E.shape[1]
+        #     col = i % E.shape[1]
+        #     if row == col:
+        #         dE[row, col] = E[row, col]
+        #     else:
+        #         dE[row, col] = 1
+        #     # breakpoint()
+        #     UU = dotd(kron(Lc @ dE, Lg), kron(E.T @ Lc.T, Lg.T))
+        #     grad_Cn[i] = (2 * UU * D).sum()
+        #     dE[row, col] = 0
+
+        # r2 = (
+        #     D
+        #     * diagonal(L @ Kgrad["Cn.Lu"].transpose([2, 0, 1]) @ L.T, axis1=1, axis2=2)
+        # ).sum(1)
 
         # assert_allclose(grad_Cr, r0)
-        grad = {"Cr.Lu": grad_Cr, "Cn.Lu": r2}
+        grad = {"Cr.Lu": grad_Cr, "Cn.Lu": grad_Cn}
         return grad
 
     def __str__(self):
