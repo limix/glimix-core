@@ -190,10 +190,8 @@ class RKron2Sum(Function):
         -------
         Cr.Lu : ndarray
             Gradient of the log of the marginal likelihood over Cᵣ parameters.
-        Cn.L0 : ndarray
-            Gradient of the log of the marginal likelihood over Cₙ parameter L₀.
-        Cn.L1 : ndarray
-            Gradient of the log of the marginal likelihood over Cₙ parameter L₁.
+        Cn.Lu : ndarray
+            Gradient of the log of the marginal likelihood over Cₙ parameters.
         """
         ld_grad = self._cov.logdet_gradient()
 

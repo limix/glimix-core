@@ -8,10 +8,11 @@ from numpy import (
     log,
     sqrt,
     tensordot,
+    zeros_like,
 )
 from numpy.linalg import eigh, svd
 
-from numpy_sugar.linalg import ddot
+from numpy_sugar.linalg import ddot, dotd
 from optimix import Function
 
 from .._util import format_function, unvec, vec
@@ -99,10 +100,14 @@ class Kron2SumCov(Function):
 
     @G.setter
     def G(self, G):
+        from numpy_sugar.linalg import economic_svd
+
         self._G = atleast_2d(asarray(G, float))
         U, S, _ = svd(G)
         S = concatenate((S, [0.0] * (U.shape[0] - S.shape[0])))
         self._USx = U, S * S
+        # US = economic_svd(G)
+        # self._eUSx = US[0], US[1] * US[1]
         self._I = eye(self.G.shape[0])
 
     @property
@@ -231,7 +236,7 @@ class Kron2SumCov(Function):
         UnSn = ddot(Un, 1 / sqrt(Sn))
         Ch = UnSn.T @ Cr @ UnSn
         Sh, Urs = eigh(Ch)
-        Qx, Sx = self._USx
+        Sx = self._USx[1]
         D = 1 / (kron(Sh, Sx) + 1)
         N = self.G.shape[0]
         logdetC = self.Cn.logdet()
@@ -241,9 +246,15 @@ class Kron2SumCov(Function):
         """
         Implements ∂log|K| = Tr[K⁻¹ ∂K].
 
-        It can be shown that
+        It can be shown that::
 
             ∂log|K| = diag(D)ᵗ diag(L ∂K Lᵗ).
+
+        Note that::
+
+            L∂KLᵗ = 2 (Lₙ∂E)⊗(LₓG) (LₙE)ᵀ⊗(LₓG)ᵀ,
+
+        for L = Lₙ ⊗ Lₓ.
 
         Returns
         -------
@@ -252,6 +263,8 @@ class Kron2SumCov(Function):
         Cn_Lu : ndarray
             Derivative of Cₙ over the array Lu.
         """
+        # from numpy.testing import assert_allclose
+
         Sn, Un = self.Cn.eigh()
         Cr = self.Cr.value()
         UnSn = ddot(Un, 1 / sqrt(Sn))
@@ -265,16 +278,24 @@ class Kron2SumCov(Function):
 
         Kgrad = self.gradient()
 
-        r0 = (
-            D
-            * diagonal(L @ Kgrad["Cr.Lu"].transpose([2, 0, 1]) @ L.T, axis1=1, axis2=2)
-        ).sum(1)
+        dE = zeros_like(self._Cr.L)
+        E = self._Cr.L
+        grad_Cr = zeros_like(self._Cr.Lu)
+        for i in range(self._Cr.Lu.shape[0]):
+            row = i // E.shape[1]
+            col = i % E.shape[1]
+            dE[row, col] = 1
+            UU = kron(Lc @ dE, Lg @ self._G) @ kron(E.T @ Lc.T, self._G.T @ Lg.T)
+            grad_Cr[i] = (2 * UU.diagonal() * D).sum()
+            dE[row, col] = 0
+
         r2 = (
             D
             * diagonal(L @ Kgrad["Cn.Lu"].transpose([2, 0, 1]) @ L.T, axis1=1, axis2=2)
         ).sum(1)
 
-        grad = {"Cr.Lu": r0, "Cn.Lu": r2}
+        # assert_allclose(grad_Cr, r0)
+        grad = {"Cr.Lu": grad_Cr, "Cn.Lu": r2}
         return grad
 
     def __str__(self):
