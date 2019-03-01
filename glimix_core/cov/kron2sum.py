@@ -4,6 +4,7 @@ from numpy import (
     asarray,
     atleast_2d,
     concatenate,
+    diag,
     eye,
     kron,
     log,
@@ -295,23 +296,12 @@ class Kron2SumCov(Function):
         dE = zeros_like(self._C1.L)
         E = self._C1.L
         grad_C1 = zeros_like(self._C1.Lu)
-        from numpy import diag
 
         for i in range(len(self._C1._tril1[0])):
             row = self._C1._tril1[0][i]
             col = self._C1._tril1[1][i]
             dE[row, col] = 1
-            # UU = dotd(kron(Lh @ dE, Lx), kron(E.T @ Lh.T, Lx.T))
-            # breakpoint()
-            # UU = kron((Lh @ dE) @ (Lh @ E).T, Lx @ Lx.T).diagonal()
             UU = kron(dotd(Lh @ dE, (Lh @ E).T), dotd(Lx, Lx.T))
-            # UU2 = kron(
-            #     (Lh @ dE) @ (Lh @ E).T, self._eUSx[0].T @ self._eUSx[0].T.T
-            # ).diagonal()
-            # UU2 = kron(
-            #     (Lh @ dE) @ (Lh @ E).T, self._eUSx[0].T @ self._eUSx[0].T.T
-            # ).diagonal()
-            # D2 = 1 / (kron(Sh, self._eUSx[1]) + 1)
             grad_C1[i] = (2 * UU * D).sum()
             dE[row, col] = 0
 
@@ -320,7 +310,7 @@ class Kron2SumCov(Function):
             row = self._C1._diag[0][i]
             col = self._C1._diag[1][i]
             dE[row, col] = E[row, col]
-            UU = dotd(kron(Lh @ dE, Lx), kron(E.T @ Lh.T, Lx.T))
+            UU = kron(dotd(Lh @ dE, (Lh @ E).T), dotd(Lx, Lx.T))
             grad_C1[m + i] = (2 * UU * D).sum()
             dE[row, col] = 0
         return {"C0.Lu": grad_C0, "C1.Lu": grad_C1}
