@@ -204,26 +204,33 @@ class RKron2Sum(Function):
         M = self._mean.AF
         KiM = self._cov.solve(M)
         grad = {}
+        varnames = ["Cr.Lu", "Cn.Lu"]
         dK = {n: g.transpose([2, 0, 1]) for (n, g) in self._cov.gradient().items()}
+        # TT = -KiM.T @ dK["Cn.Lu"] @ KiM
+        # breakpoint()
         dH = {n: -KiM.T @ g @ KiM for n, g in dK.items()}
         H = self._H()
         beta = solve(H, M.T @ Kiy)
+
+        def gdot(v, var):
+            return self._cov.gradient_dot(v, var)
+
         dbeta = {
-            n: -solve(H, (dH[n] @ beta).T) - solve(H, KiM.T @ (dK[n] @ Kiy).T)
-            for n in dK.keys()
+            n: -solve(H, (dH[n] @ beta).T) - solve(H, KiM.T @ gdot(Kiy, n))
+            for n in varnames
         }
+
         dm = {n: M @ g for n, g in dbeta.items()}
         # dm
-        for var in dK.keys():
+        for var in varnames:
             grad[var] = -ld_grad[var]
             grad[var] -= diagonal(solve(H, dH[var]), axis1=1, axis2=2).sum(1)
             # grad[var] += Kiy.T @ dK[var] @ Kiy
-            grad[var] += Kiy.T @ self._cov.gradient_dot(
-                unvec(Kiy, (self.nsamples, -1)), var
-            ).reshape((self.nsamples * self.ntraits, -1), order="F")
+            grad[var] += Kiy.T @ gdot(Kiy, var)
             # self._cov.gradient_dot(Kiy)[var]
             # - 𝐦ᵗ𝕂(2⋅𝐲-𝐦)
-            grad[var] -= Kim.T @ dK[var] @ (2 * Kiy - Kim)
+            # grad[var] -= Kim.T @ dK[var] @ (2 * Kiy - Kim)
+            grad[var] -= Kim.T @ gdot(2 * Kiy - Kim, var)
             # - 2⋅(𝐦-𝐲)ᵗK⁻¹∂(𝐦)
             grad[var] -= 2 * (m - self._y).T @ self._cov.solve(dm[var])
             grad[var] /= 2

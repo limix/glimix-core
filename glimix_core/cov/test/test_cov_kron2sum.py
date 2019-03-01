@@ -4,6 +4,7 @@ from numpy.random import RandomState
 from numpy.testing import assert_allclose
 from scipy.optimize import check_grad
 
+from glimix_core._util import vec
 from glimix_core.cov import Kron2SumCov
 
 
@@ -42,3 +43,29 @@ def test_kron2sumcov():
 
     random = RandomState(0)
     assert_allclose(check_grad(func, grad, random.randn(5)), 0, atol=1e-5)
+
+    V = random.randn(3, 2)
+
+    g = cov.Cr.gradient()["Lu"]
+    g0 = cov.gradient_dot(vec(V), "Cr.Lu")
+    for i in range(2):
+        assert_allclose(g0[..., i], kron(g[..., i], G @ G.T) @ vec(V))
+
+    g = cov.Cn.gradient()["Lu"]
+    g0 = cov.gradient_dot(vec(V), "Cn.Lu")
+    for i in range(3):
+        assert_allclose(g0[..., i], kron(g[..., i], eye(3)) @ vec(V))
+
+    V = random.randn(3, 2, 4)
+
+    g = cov.Cr.gradient()["Lu"]
+    g0 = cov.gradient_dot(vec(V), "Cr.Lu")
+    for i in range(2):
+        for j in range(4):
+            assert_allclose(g0[j, ..., i], kron(g[..., i], G @ G.T) @ vec(V[..., j]))
+
+    g = cov.Cn.gradient()["Lu"]
+    g0 = cov.gradient_dot(vec(V), "Cn.Lu")
+    for i in range(3):
+        for j in range(4):
+            assert_allclose(g0[j, ..., i], kron(g[..., i], eye(3)) @ vec(V[..., j]))

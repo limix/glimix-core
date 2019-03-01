@@ -1,4 +1,14 @@
-from numpy import asarray, atleast_2d, concatenate, diagonal, eye, kron, log, sqrt
+from numpy import (
+    asarray,
+    atleast_2d,
+    concatenate,
+    diagonal,
+    eye,
+    kron,
+    log,
+    sqrt,
+    tensordot,
+)
 from numpy.linalg import eigh, svd
 
 from numpy_sugar.linalg import ddot
@@ -164,17 +174,38 @@ class Kron2SumCov(Function):
         }
         return grad
 
-    def gradient_dot(self, V, var):
+    def gradient_dot(self, v, var):
         G = self.G
+        V = unvec(v, (self.G.shape[0], -1) + v.shape[1:])
 
         if var == "Cr.Lu":
-            Cr_Lu = self._Cr.gradient()["Lu"].transpose([2, 0, 1])
-            Cr_Luv = (G @ (G.T @ (V @ Cr_Lu))).transpose([1, 2, 0])
-            return Cr_Luv
+            # Cr_Lu = self._Cr.gradient()["Lu"].transpose([2, 0, 1])
+            # R0 = (G @ (G.T @ (V @ Cr_Lu))).transpose([1, 2, 0])
+            # R0 = R0.reshape((V.shape[0] * V.shape[1], -1), order="F")
+            C = self._Cr.gradient()["Lu"]
+            R = (
+                tensordot(V.T @ G @ G.T, C, axes=([-2], [0])).reshape(
+                    V.shape[2:] + (-1,) + (C.shape[-1],), order="F"
+                )
+                # .T
+            )
+            # if abs(R0 - R).max() > 1e-5:
+            #     breakpoint()
+            return R
         elif var == "Cn.Lu":
-            Cn_Lu = self._Cn.gradient()["Lu"].transpose([2, 0, 1])
-            Cn_Luv = (V @ Cn_Lu).transpose([1, 2, 0])
-            return Cn_Luv
+            # Cn_Lu = self._Cn.gradient()["Lu"].transpose([2, 0, 1])
+            # R0 = (V @ Cn_Lu).transpose([1, 2, 0])
+            # R0 = R0.reshape((V.shape[0] * V.shape[1], -1), order="F")
+            C = self._Cn.gradient()["Lu"]
+            R = (
+                tensordot(V.T, C, axes=([-2], [0])).reshape(
+                    V.shape[2:] + (-1,) + (C.shape[-1],), order="F"
+                )
+                # .T
+            )
+            # if abs(R0 - R).max() > 1e-5:
+            #     breakpoint()
+            return R
 
     def solve(self, v):
         """
