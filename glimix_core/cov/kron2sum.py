@@ -92,6 +92,12 @@ class Kron2SumCov(Function):
         )
 
     @property
+    def _LgG(self):
+        Qx = self._USx[0]
+        Lg = Qx.T
+        return Lg @ self._G
+
+    @property
     def G(self):
         """
         User-provided matrix G, n×m.
@@ -100,7 +106,7 @@ class Kron2SumCov(Function):
 
     @G.setter
     def G(self, G):
-        from numpy_sugar.linalg import economic_svd
+        # from numpy_sugar.linalg import economic_svd
 
         self._G = atleast_2d(asarray(G, float))
         U, S, _ = svd(G)
@@ -285,8 +291,9 @@ class Kron2SumCov(Function):
             row = i // E.shape[1]
             col = i % E.shape[1]
             dE[row, col] = 1
-            UU = kron(Lc @ dE, Lg @ self._G) @ kron(E.T @ Lc.T, self._G.T @ Lg.T)
-            grad_Cr[i] = (2 * UU.diagonal() * D).sum()
+            # breakpoint()
+            UU = dotd(kron(Lc @ dE, self._LgG), kron(E.T @ Lc.T, self._LgG.T))
+            grad_Cr[i] = (2 * UU * D).sum()
             dE[row, col] = 0
 
         r2 = (
