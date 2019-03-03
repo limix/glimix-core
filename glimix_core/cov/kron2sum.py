@@ -27,7 +27,7 @@ class Kron2SumCov(Function):
     Implements K =  C₀ ⊗ GGᵗ + C₁ ⊗ I.
 
     C₀ and C₁ are d×d symmetric matrices. C₀ is a semi-definite positive matrix while C₁
-    is positive definite one. G is a n×m matrix and I is a n×n identity matrix. Let
+    is a positive definite one. G is a n×m matrix and I is a n×n identity matrix. Let
     M = Uₘ Sₘ Uₘᵗ be the eigen decomposition for any matrix M. The documentation and
     implementation of this class make use of the following definitions:
 
@@ -178,9 +178,9 @@ class Kron2SumCov(Function):
         Returns
         -------
         C0_Lu : ndarray
-            Derivative of C₀ over the array Lu.
+            Derivative of C₀ over its parameters.
         C1_Lu : ndarray
-            Derivative of C₁ over the array Lu.
+            Derivative of C₁ over its parameters.
         """
         I = self._I
         X = self.G @ self.G.T
@@ -286,9 +286,9 @@ class Kron2SumCov(Function):
         Returns
         -------
         C0_Lu : ndarray
-            Derivative of C₀ over the array Lu.
+            Derivative of C₀ over its parameters.
         C1_Lu : ndarray
-            Derivative of C₁ over the array Lu.
+            Derivative of C₁ over its parameters.
         """
         Sn, Un = self.C1.eigh()
         C0 = self.C0.value()
