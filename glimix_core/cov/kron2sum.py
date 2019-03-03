@@ -177,22 +177,22 @@ class Kron2SumCov(Function):
 
         Returns
         -------
-        C0_Lu : ndarray
+        C0 : ndarray
             Derivative of C₀ over its parameters.
-        C1_Lu : ndarray
+        C1 : ndarray
             Derivative of C₁ over its parameters.
         """
         I = self._I
         X = self.G @ self.G.T
 
-        C0_Lu = self._C0.gradient()["Lu"].transpose([2, 0, 1])
+        C0 = self._C0.gradient()["Lu"].transpose([2, 0, 1])
         C1_grad = self._C1.gradient()
 
-        C1_Lu = C1_grad["Lu"].transpose([2, 0, 1])
+        C1 = C1_grad["Lu"].transpose([2, 0, 1])
 
         grad = {
-            "C0.Lu": kron(C0_Lu, X).transpose([1, 2, 0]),
-            "C1.Lu": kron(C1_Lu, I).transpose([1, 2, 0]),
+            "C0.Lu": kron(C0, X).transpose([1, 2, 0]),
+            "C1.Lu": kron(C1, I).transpose([1, 2, 0]),
         }
         return grad
 
@@ -285,9 +285,9 @@ class Kron2SumCov(Function):
 
         Returns
         -------
-        C0_Lu : ndarray
+        C0 : ndarray
             Derivative of C₀ over its parameters.
-        C1_Lu : ndarray
+        C1 : ndarray
             Derivative of C₁ over its parameters.
         """
         Sn, Un = self.C1.eigh()
