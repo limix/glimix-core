@@ -89,10 +89,15 @@ class Kron2SumCov(Function):
         U, S, _ = svd(G)
         S = concatenate((S, [0.0] * (U.shape[0] - S.shape[0])))
         self._USx = U, S * S
+        self._Lx = U.T
         self._I = eye(self.G.shape[0])
         Function.__init__(
             self, "Kron2SumCov", composite=[("C0", self._C0), ("C1", self._C1)]
         )
+
+    @property
+    def Lx(self):
+        return self._Lx
 
     @property
     def _eUSx(self):
@@ -104,9 +109,7 @@ class Kron2SumCov(Function):
     @property
     @lru_cache(maxsize=None)
     def _LxG(self):
-        Ux = self._USx[0]
-        Lx = Ux.T
-        return Lx @ self._G
+        return self._Lx @ self._G
 
     @property
     @lru_cache(maxsize=None)
@@ -116,9 +119,7 @@ class Kron2SumCov(Function):
     @property
     @lru_cache(maxsize=None)
     def _T1(self):
-        Ux = self._USx[0]
-        Lx = Ux.T
-        return dotd(Lx, Lx.T)
+        return dotd(self._Lx, self._Lx.T)
 
     @property
     def _LD(self):
@@ -137,8 +138,26 @@ class Kron2SumCov(Function):
         S1, U1 = self.C1.eigh()
         U1S1 = ddot(U1, 1 / sqrt(S1))
         Sh, Uh = eigh(U1S1.T @ self.C0.value() @ U1S1)
-        Ux, Sx = self._USx
-        return {"Lh": (U1S1 @ Uh).T, "Lx": Ux.T, "D": 1 / (kron(Sh, Sx) + 1)}
+        Sx = self._USx[1]
+        return {"Lh": (U1S1 @ Uh).T, "Lx": self._Lx, "D": 1 / (kron(Sh, Sx) + 1)}
+
+    @property
+    def LhD(self):
+        """
+        Implements Lₕ and D.
+
+        Returns
+        -------
+        Lh : ndarray
+            Uₕᵗ S₁⁻½ U₁ᵗ.
+        D : ndarray
+            (Sₕ ⊗ Sₓ + Iₕₓ)⁻¹.
+        """
+        S1, U1 = self.C1.eigh()
+        U1S1 = ddot(U1, 1 / sqrt(S1))
+        Sh, Uh = eigh(U1S1.T @ self.C0.value() @ U1S1)
+        Sx = self._USx[1]
+        return {"Lh": (U1S1 @ Uh).T, "D": 1 / (kron(Sh, Sx) + 1)}
 
     @property
     def G(self):

@@ -1,11 +1,12 @@
 import warnings
 
-from numpy import asfortranarray, diagonal
+from numpy import asfortranarray, diagonal, kron
 from numpy.linalg import matrix_rank, slogdet, solve
 
-from glimix_core._util import log2pi, unvec
+from glimix_core._util import log2pi, unvec, vec
 from glimix_core.cov import Kron2SumCov
 from glimix_core.mean import KronMean
+from numpy_sugar.linalg import ddot
 from optimix import Function
 
 
@@ -61,8 +62,19 @@ class RKron2Sum(Function):
         self._mean = KronMean(F.shape[1], Y.shape[1])
         self._mean.A = A
         self._mean.F = F
+        self._Y0 = self._cov.Lx @ Y
+        self._M0 = self._cov.Lx @ self._mean.F
         composite = [("C0", self._cov.C0), ("C1", self._cov.C1)]
         Function.__init__(self, "Kron2Sum", composite=composite)
+
+    @property
+    def _M1(self):
+        return kron(self._cov.LhD["Lh"] @ self._mean.A, self._M0)
+
+    @property
+    def _MKiy(self):
+        y1 = vec(self._Y0 @ self._cov.LhD["Lh"].T)
+        return self._M1.T @ (self._cov.LhD["D"] * y1)
 
     @property
     def mean(self):
@@ -114,8 +126,11 @@ class RKron2Sum(Function):
         return self.lml_gradient()
 
     def _H(self):
-        M = self._mean.AF
-        return M.T @ self._cov.solve(M)
+        D = self._cov.LhD["D"]
+        M1 = self._M1
+        return M1.T @ ddot(D, M1)
+        # M = self._mean.AF
+        # return M.T @ self._cov.solve(M)
 
     def _logdet_MM(self):
         M = self._mean.AF
@@ -141,7 +156,7 @@ class RKron2Sum(Function):
             2⋅log(p(𝐲)) = -(n⋅p - c⋅p) log(2π) + log(\|MᵗM\|) - log(\|K\|) - log(\|H\|)
                 - (𝐲-𝐦)ᵗ K⁻¹ (𝐲-𝐦),
 
-        where 𝐦 = M𝛃 for 𝛃 = H⁻¹MᵗK⁻¹𝐲.
+        where 𝐦 = M𝛃 for 𝛃 = H⁻¹MᵗK⁻¹𝐲 and H = MᵗK⁻¹M.
 
         Returns
         -------
@@ -163,13 +178,20 @@ class RKron2Sum(Function):
             raise ValueError("The determinant of H should be positive.")
         lml -= ldet[1]
 
-        M = self._mean.AF
-        beta = solve(H, M.T @ self._cov.solve(self._y))
-        m = M @ beta
-        d = self._y - m
-        dKid = d @ self._cov.solve(d)
+        LhD = self._cov.LhD
 
-        lml -= dKid
+        # 𝐦 = M𝛃 for 𝛃 = H⁻¹MᵗK⁻¹𝐲 and H = MᵗK⁻¹M.
+        beta = solve(H, self._MKiy)
+
+        y1 = vec(self._Y0 @ LhD["Lh"].T)
+        shape = (self.ncovariates, self.ntraits)
+        m1 = vec(self._M0 @ unvec(beta, shape) @ self._mean.A.T @ LhD["Lh"].T)
+
+        yKiy = y1 @ (LhD["D"] * y1)
+        mKiy = m1 @ (LhD["D"] * y1)
+        mKim = m1 @ (LhD["D"] * m1)
+
+        lml -= yKiy - 2 * mKiy + mKim
 
         return lml / 2
 
@@ -193,8 +215,8 @@ class RKron2Sum(Function):
             Gradient of the log of the marginal likelihood over C₁ parameters.
         """
         ld_grad = self._cov.logdet_gradient()
-
         Kiy = self._cov.solve(self._y)
+
         self._mean.B = self.reml_B
         m = self._mean.value()
         Kim = self._cov.solve(m)
