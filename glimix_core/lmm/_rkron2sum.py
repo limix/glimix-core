@@ -26,6 +26,15 @@ class RKron2Sum(Function):
     C₀ and C₁ are both symmetric matrices of dimensions p×p, for which C₁ is
     guaranteed by our implementation to be of full rank.
     The parameters of this model are the matrices B, C₀, and C₁.
+
+    For implementation purpose, we make use of the following definitions:
+
+    - Y₀ = LₓY
+    - M₀ = LₓF
+    - M₁ = (LₕA) ⊗ M₀
+    - M₂ = M₁B
+
+    where Lₓ and Lₕ are defined in :class:`glimix_core.cov.Kron2SumCov`.
     """
 
     def __init__(self, Y, A, F, G, rank=1):
@@ -75,6 +84,38 @@ class RKron2Sum(Function):
     def _MKiy(self):
         y1 = vec(self._Y0 @ self._cov.LhD["Lh"].T)
         return self._M1.T @ (self._cov.LhD["D"] * y1)
+
+    def _quad(self):
+        LhD = self._cov.LhD
+
+        y1 = vec(self._Y0 @ self._cov.LhD["Lh"].T)
+        MKiy = self._M1.T @ (self._cov.LhD["D"] * y1)
+
+        D = self._cov.LhD["D"]
+        M1 = self._M1
+        MKiM = M1.T @ ddot(D, M1)
+
+        # 𝐦 = M𝛃 for 𝛃 = H⁻¹MᵗK⁻¹𝐲 and H = MᵗK⁻¹M.
+        beta = solve(MKiM, self._MKiy)
+
+        shape = (self.ncovariates, self.ntraits)
+        m = vec(self._M0 @ unvec(beta, shape) @ self._mean.A.T @ LhD["Lh"].T)
+
+        yKiy = y1 @ (LhD["D"] * y1)
+        mKiy = m @ (LhD["D"] * y1)
+        mKim = m @ (LhD["D"] * m)
+
+        # dC0 = self._cov.C0_gradient()
+        # dC1 = self._cov.C1_gradient()
+
+        return {
+            "MKiM": MKiM,
+            "MKiy": MKiy,
+            "yKiy": yKiy,
+            "mKiy": mKiy,
+            "mKim": mKim,
+            "beta": beta,
+        }
 
     @property
     def mean(self):
@@ -172,26 +213,14 @@ class RKron2Sum(Function):
         cp = self.ncovariates * self.ntraits
         lml = -(np - cp) * log2pi + self._logdet_MM() - self._cov.logdet()
 
-        H = self._H()
-        ldet = slogdet(H)
+        quad = self._quad()
+
+        ldet = slogdet(quad["MKiM"])
         if ldet[0] != 1.0:
             raise ValueError("The determinant of H should be positive.")
         lml -= ldet[1]
 
-        LhD = self._cov.LhD
-
-        # 𝐦 = M𝛃 for 𝛃 = H⁻¹MᵗK⁻¹𝐲 and H = MᵗK⁻¹M.
-        beta = solve(H, self._MKiy)
-
-        y1 = vec(self._Y0 @ LhD["Lh"].T)
-        shape = (self.ncovariates, self.ntraits)
-        m1 = vec(self._M0 @ unvec(beta, shape) @ self._mean.A.T @ LhD["Lh"].T)
-
-        yKiy = y1 @ (LhD["D"] * y1)
-        mKiy = m1 @ (LhD["D"] * y1)
-        mKim = m1 @ (LhD["D"] * m1)
-
-        lml -= yKiy - 2 * mKiy + mKim
+        lml -= quad["yKiy"] - 2 * quad["mKiy"] + quad["mKim"]
 
         return lml / 2
 
@@ -215,6 +244,8 @@ class RKron2Sum(Function):
             Gradient of the log of the marginal likelihood over C₁ parameters.
         """
         ld_grad = self._cov.logdet_gradient()
+        quad = self._quad()
+
         Kiy = self._cov.solve(self._y)
 
         self._mean.B = self.reml_B
@@ -229,12 +260,12 @@ class RKron2Sum(Function):
         dH = {n: -(KiM.T @ t[n]).T for n in varnames}
 
         H = self._H()
-        beta = solve(H, M.T @ Kiy)
 
         dK0 = self._cov.gradient_dot(Kiy)
         dK1 = self._cov.gradient_dot(Kim)
         dbeta = {
-            n: -solve(H, (dH[n] @ beta).T) - solve(H, KiM.T @ dK0[n]) for n in varnames
+            n: -solve(H, (dH[n] @ quad["beta"]).T) - solve(H, KiM.T @ dK0[n])
+            for n in varnames
         }
 
         dm = {n: M @ g for n, g in dbeta.items()}
