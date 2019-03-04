@@ -7,6 +7,7 @@ from numpy import (
     eye,
     kron,
     log,
+    newaxis,
     sqrt,
     tensordot,
     zeros_like,
@@ -16,7 +17,7 @@ from numpy.linalg import eigh, svd
 from numpy_sugar.linalg import ddot, dotd
 from optimix import Function
 
-from .._util import format_function, unvec
+from .._util import format_function, unvec, vec
 from .free import FreeFormCov
 from .lrfree import LRFreeFormCov
 
@@ -90,6 +91,9 @@ class Kron2SumCov(Function):
         S = concatenate((S, [0.0] * (U.shape[0] - S.shape[0])))
         self._USx = U, S * S
         self._Lx = U.T
+        LxG = self._Lx @ G
+        self._LXL = LxG @ LxG.T
+        self._LL = self._Lx @ self._Lx.T
         self._I = eye(self.G.shape[0])
         Function.__init__(
             self, "Kron2SumCov", composite=[("C0", self._C0), ("C1", self._C1)]
@@ -98,6 +102,14 @@ class Kron2SumCov(Function):
     @property
     def Lx(self):
         return self._Lx
+
+    @property
+    def LL(self):
+        return self._LL
+
+    @property
+    def LXL(self):
+        return self._LXL
 
     @property
     def _eUSx(self):
@@ -335,6 +347,86 @@ class Kron2SumCov(Function):
             grad_C1[m + i] = (2 * kron(dotd(Lh @ dE, LhET), self._T1) * D).sum()
             dE[row, col] = 0
         return {"C0.Lu": grad_C0, "C1.Lu": grad_C1}
+
+    def LdKL_dot(self, v):
+        """
+        Let::
+
+            L∂KLᵗ = 2 ((Lₕ∂E₀) ⊗ (LₓG)) ((LₕE₀)ᵀ ⊗ (LₓG)ᵀ)
+
+        We have::
+
+            L∂KLᵗvec(V) = 2 ((Lₕ∂E₀) ⊗ (LₓG)) ((LₓG)ᵀV(LₕE₀))
+            = 2 ((LₓG) unvec((LₓG)ᵀV(LₕE₀)) (Lₕ∂E₀)ᵀ)
+
+        Let::
+
+            L∂KLᵗ = 2 ((Lₕ∂E₁) ⊗ Lₓ) ((LₕE₁)ᵀ ⊗ Lₓᵀ)
+
+        We have::
+
+            L∂KLᵗvec(V) = 2 ((Lₕ∂E₁) ⊗ Lₓ) (LₓᵀV(LₕE₁))
+            = 2 (Lₓ unvec(LₓᵀV(LₕE₁)) (Lₕ∂E₁)ᵀ)
+        """
+        from numpy import stack
+
+        Lh = self._LD["Lh"]
+
+        V = unvec(v, (self._G.shape[0], -1))
+        dE = zeros_like(self._C0.L)
+        E = self._C0.L
+        LhE = Lh @ E
+        LdKL_dot = {"C0.Lu": [], "C1.Lu": []}
+        for i in range(self._C0.Lu.shape[0]):
+            row = i // E.shape[1]
+            col = i % E.shape[1]
+            dE[row, col] = 1
+            LhdE = Lh @ dE
+            t = self._LxG @ (self._LxG.T @ ((V @ LhdE) @ LhE.T)) + self._LxG @ (
+                self._LxG.T @ ((V @ LhE) @ LhdE.T)
+            )
+            # L = kron(self._LD["Lh"], self._Lx)
+            # dK = self.gradient()["C0.Lu"][..., i]
+            # t1 = L @ dK @ L.T @ v
+            LdKL_dot["C0.Lu"].append(vec(t)[:, newaxis])
+            dE[row, col] = 0
+
+        dE = zeros_like(self._C1.L)
+        E = self._C1.L
+        LhE = Lh @ E
+        for i in range(len(self._C1._tril1[0])):
+            row = self._C1._tril1[0][i]
+            col = self._C1._tril1[1][i]
+            dE[row, col] = 1
+            LhdE = Lh @ dE
+            t = self._Lx @ (self._Lx.T @ ((V @ LhdE) @ LhE.T)) + self._Lx @ (
+                self._Lx.T @ ((V @ LhE) @ LhdE.T)
+            )
+            # L = kron(self._LD["Lh"], self._Lx)
+            # dK = self.gradient()["C1.Lu"][..., i]
+            # t1 = L @ dK @ L.T @ v
+            LdKL_dot["C1.Lu"].append(vec(t)[:, newaxis])
+            dE[row, col] = 0
+
+        for i in range(len(self._C1._diag[0])):
+            row = self._C1._diag[0][i]
+            col = self._C1._diag[1][i]
+            dE[row, col] = E[row, col]
+            LhdE = Lh @ dE
+            t = self._Lx @ (self._Lx.T @ ((V @ LhE) @ LhdE.T)) + self._Lx @ (
+                self._Lx.T @ ((V @ LhdE) @ LhE.T)
+            )
+            # L = kron(self._LD["Lh"], self._Lx)
+            # dK = self.gradient()["C1.Lu"][..., i + 1]
+            # t1 = L @ dK @ L.T @ v
+            # breakpoint()
+            LdKL_dot["C1.Lu"].append(vec(t)[:, newaxis])
+            dE[row, col] = 0
+
+        LdKL_dot["C0.Lu"] = stack(LdKL_dot["C0.Lu"], axis=2)
+        LdKL_dot["C1.Lu"] = stack(LdKL_dot["C1.Lu"], axis=2)
+
+        return LdKL_dot
 
     def __str__(self):
         dim = self._C0.L.shape[0]

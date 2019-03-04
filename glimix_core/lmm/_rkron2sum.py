@@ -1,6 +1,6 @@
 import warnings
 
-from numpy import asfortranarray, diagonal, kron
+from numpy import asfortranarray, diagonal, kron, tensordot
 from numpy.linalg import matrix_rank, slogdet, solve
 
 from glimix_core._util import log2pi, unvec, vec
@@ -88,10 +88,10 @@ class RKron2Sum(Function):
     def _quad(self):
         LhD = self._cov.LhD
 
-        y1 = vec(self._Y0 @ self._cov.LhD["Lh"].T)
-        MKiy = self._M1.T @ (self._cov.LhD["D"] * y1)
+        y1 = vec(self._Y0 @ LhD["Lh"].T)
+        MKiy = self._M1.T @ (LhD["D"] * y1)
 
-        D = self._cov.LhD["D"]
+        D = LhD["D"]
         M1 = self._M1
         MKiM = M1.T @ ddot(D, M1)
 
@@ -105,8 +105,14 @@ class RKron2Sum(Function):
         mKiy = m @ (LhD["D"] * y1)
         mKim = m @ (LhD["D"] * m)
 
-        # dC0 = self._cov.C0_gradient()
-        # dC1 = self._cov.C1_gradient()
+        # dC0 = self._cov.C0.gradient()["Lu"]
+        # dC1 = self._cov.C1.gradient()["Lu"]
+
+        # axes = ([1], [0])
+        # Z0 = tensordot(LhD["Lh"] @ dC0, LhD["Lh"].T, axes=axes)
+        # Z0 = kron(Z0.transpose([1, 0, 2]), self._cov.LXL).transpose([1, 2, 0])
+        # Z1 = tensordot(LhD["Lh"] @ dC1, LhD["Lh"].T, axes=axes)
+        # Z1 = kron(Z1.transpose([1, 0, 2]), self._cov.LL).transpose([1, 2, 0])
 
         return {
             "MKiM": MKiM,

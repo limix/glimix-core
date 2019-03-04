@@ -65,6 +65,26 @@ def test_kron2sumcov():
         for j in range(4):
             assert_allclose(g0[j, ..., i], kron(g[..., i], eye(3)) @ vec(V[..., j]))
 
+    M = random.randn(2 * G.shape[0], 2 * 4)
+    r = cov.LdKL_dot(M[:, [0]])
+    dK = cov.gradient()
+    L = kron(cov._LD["Lh"], cov.Lx)
+
+    for i in range(cov.C0.shape[0]):
+        assert_allclose(
+            r["C0.Lu"][..., i], L @ dK["C0.Lu"][..., i] @ L.T @ M[:, [0]], atol=1e-7
+        )
+
+    for i in range(cov.C1.shape[0]):
+        assert_allclose(
+            r["C1.Lu"][..., i], L @ dK["C1.Lu"][..., i] @ L.T @ M[:, [0]], atol=1e-7
+        )
+
+    # r2 = ((L @ dK["C1.Lu"]).transpose([2, 0, 1]) @ L.T @ M[:, [0]]).transpose([1, 2, 0])
+    # print(r0["C0.Lu"].min(), r1.min())
+    # breakpoint()
+    # pass
+
 
 def test_kron2sumcov_g_full_col_rank():
 
