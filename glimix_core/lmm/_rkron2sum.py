@@ -3,7 +3,7 @@ import warnings
 from numpy import asfortranarray, diagonal
 from numpy.linalg import matrix_rank, slogdet, solve
 
-from glimix_core._util import log2pi, unvec, vec
+from glimix_core._util import log2pi, unvec
 from glimix_core.cov import Kron2SumCov
 from glimix_core.mean import KronMean
 from optimix import Function
@@ -16,15 +16,15 @@ class RKron2Sum(Function):
     Let n, c, and p be the number of samples, covariates, and traits, respectively.
     The outcome variable Y is a n×p matrix distributed according to::
 
-        vec(Y) ~ N((A ⊗ F) vec(B), Cᵣ ⊗ GGᵗ + Cₙ ⊗ I).
+        vec(Y) ~ N((A ⊗ F) vec(B), C₀ ⊗ GGᵗ + C₁ ⊗ I).
 
     A and F are design matrices of dimensions p×p and n×c provided by the user,
     where F is the usual matrix of covariates commonly used in single-trait models.
     B is a c×p matrix of fixed-effect sizes per trait.
     G is a n×r matrix provided by the user and I is a n×n identity matrices.
-    Cᵣ and Cₙ are both symmetric matrices of dimensions p×p, for which Cₙ is
+    C₀ and C₁ are both symmetric matrices of dimensions p×p, for which C₁ is
     guaranteed by our implementation to be of full rank.
-    The parameters of this model are the matrices B, Cᵣ, and Cₙ.
+    The parameters of this model are the matrices B, C₀, and C₁.
     """
 
     def __init__(self, Y, A, F, G, rank=1):
@@ -42,7 +42,7 @@ class RKron2Sum(Function):
         G : (n, r) array_like
             Matrix G from the GGᵗ term.
         rank : optional, int
-            Maximum rank of matrix Cᵣ. Defaults to ``1``.
+            Maximum rank of matrix C₀. Defaults to ``1``.
         """
         Y = asfortranarray(Y)
         yrank = matrix_rank(Y)
@@ -78,7 +78,7 @@ class RKron2Sum(Function):
     @property
     def cov(self):
         """
-        Covariance K = Cᵣ ⊗ GGᵗ + Cₙ ⊗ I.
+        Covariance K = C₀ ⊗ GGᵗ + C₁ ⊗ I.
 
         Returns
         -------
@@ -188,9 +188,9 @@ class RKron2Sum(Function):
         Returns
         -------
         C0.Lu : ndarray
-            Gradient of the log of the marginal likelihood over Cᵣ parameters.
+            Gradient of the log of the marginal likelihood over C₀ parameters.
         C1.Lu : ndarray
-            Gradient of the log of the marginal likelihood over Cₙ parameters.
+            Gradient of the log of the marginal likelihood over C₁ parameters.
         """
         ld_grad = self._cov.logdet_gradient()
 
@@ -203,25 +203,25 @@ class RKron2Sum(Function):
         grad = {}
         varnames = ["C0.Lu", "C1.Lu"]
 
-        def dKdot(v, var):
-            return self._cov.gradient_dot(v, var)
+        t = self._cov.gradient_dot(KiM)
+        dH = {n: -(KiM.T @ t[n]).T for n in varnames}
 
-        dH = {n: -(KiM.T @ dKdot(KiM, n)).T for n in varnames}
         H = self._H()
         beta = solve(H, M.T @ Kiy)
 
+        dK0 = self._cov.gradient_dot(Kiy)
+        dK1 = self._cov.gradient_dot(Kim)
         dbeta = {
-            n: -solve(H, (dH[n] @ beta).T) - solve(H, KiM.T @ dKdot(Kiy, n))
-            for n in varnames
+            n: -solve(H, (dH[n] @ beta).T) - solve(H, KiM.T @ dK0[n]) for n in varnames
         }
 
         dm = {n: M @ g for n, g in dbeta.items()}
         for var in varnames:
             grad[var] = -ld_grad[var]
             grad[var] -= diagonal(solve(H, dH[var]), axis1=1, axis2=2).sum(1)
-            grad[var] += Kiy.T @ dKdot(Kiy, var)
+            grad[var] += Kiy.T @ dK0[var]
             # - 𝐦ᵗ𝕂(2⋅𝐲-𝐦)
-            grad[var] -= Kim.T @ dKdot(2 * Kiy - Kim, var)
+            grad[var] -= Kim.T @ (2 * dK0[var] - dK1[var])
             # - 2⋅(𝐦-𝐲)ᵗK⁻¹∂(𝐦)
             grad[var] -= 2 * (m - self._y).T @ self._cov.solve(dm[var])
             grad[var] /= 2

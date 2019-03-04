@@ -15,6 +15,10 @@ help:
 livehtml:
 	sphinx-autobuild -b html "$(SPHINXOPTS)" "$(BUILDDIR)/html"
 
+clean: Makefile
+	rm -rf _autosummary/ || true
+	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+
 .PHONY: help Makefile
 
 # Catch-all target: route all unknown targets to Sphinx using the new

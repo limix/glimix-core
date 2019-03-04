@@ -24,10 +24,6 @@ def test_kron2sumcov():
     assert_allclose(cov._check_grad(), 0, atol=1e-5)
     assert_allclose(cov.solve(cov.value()), eye(2 * G.shape[0]), atol=1e-7)
     assert_allclose(cov.logdet(), slogdet(cov.value())[1], atol=1e-7)
-    assert_allclose(
-        [cov.L[0, 0], cov.L[2, 3], cov.L[2, 1]],
-        [0.23093921294934955, -5.2536114062217535e-17, 0.2828416166629259],
-    )
 
     def func(x):
         cov.C0.Lu = x[:2]
@@ -46,25 +42,25 @@ def test_kron2sumcov():
     V = random.randn(3, 2)
 
     g = cov.C0.gradient()["Lu"]
-    g0 = cov.gradient_dot(vec(V), "C0.Lu")
+    g0 = cov.gradient_dot(vec(V))["C0.Lu"]
     for i in range(2):
         assert_allclose(g0[..., i], kron(g[..., i], G @ G.T) @ vec(V))
 
     g = cov.C1.gradient()["Lu"]
-    g0 = cov.gradient_dot(vec(V), "C1.Lu")
+    g0 = cov.gradient_dot(vec(V))["C1.Lu"]
     for i in range(3):
         assert_allclose(g0[..., i], kron(g[..., i], eye(3)) @ vec(V))
 
     V = random.randn(3, 2, 4)
 
     g = cov.C0.gradient()["Lu"]
-    g0 = cov.gradient_dot(vec(V), "C0.Lu")
+    g0 = cov.gradient_dot(vec(V))["C0.Lu"]
     for i in range(2):
         for j in range(4):
             assert_allclose(g0[j, ..., i], kron(g[..., i], G @ G.T) @ vec(V[..., j]))
 
     g = cov.C1.gradient()["Lu"]
-    g0 = cov.gradient_dot(vec(V), "C1.Lu")
+    g0 = cov.gradient_dot(vec(V))["C1.Lu"]
     for i in range(3):
         for j in range(4):
             assert_allclose(g0[j, ..., i], kron(g[..., i], eye(3)) @ vec(V[..., j]))
