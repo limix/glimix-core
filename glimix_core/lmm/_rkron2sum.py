@@ -123,6 +123,7 @@ class RKron2Sum(Function):
             "beta": beta,
             "y1": y1,
             "m1": m,
+            "M1": M1,
         }
 
     @property
@@ -263,6 +264,7 @@ class RKron2Sum(Function):
         ld_grad = self._cov.logdet_gradient()
         quad = self._quad()
 
+        #  @ ddot(D, quad["y1"])
         Kiy = self._cov.solve(self._y)
 
         self._mean.B = self.reml_B
@@ -293,6 +295,9 @@ class RKron2Sum(Function):
         # dK K^-1 m
         dK1 = self._cov.gradient_dot(Kim)
 
+        # breakpoint()
+        # self._cov.LdKL_dot(D * quad["y1"])
+        # dot(ddot(D, quad["M1"]).T, self._cov.LdKL_dot(ddot(D, quad["y1"])))
         dbeta = {
             n: -solve(H, (dH[n] @ quad["beta"]).T) - solve(H, KiM.T @ dK0[n])
             for n in varnames
@@ -311,7 +316,7 @@ class RKron2Sum(Function):
         }
         # LdKL_dot
 
-        dm = {n: M @ g for n, g in dbeta.items()}
+        # dm = {n: M @ g for n, g in dbeta.items()}
         for var in varnames:
             grad[var] = -ld_grad[var]
             grad[var] -= diagonal(solve(H, dH[var]), axis1=1, axis2=2).sum(1)

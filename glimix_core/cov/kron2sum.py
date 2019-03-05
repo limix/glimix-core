@@ -403,8 +403,8 @@ class Kron2SumCov(Function):
             col = self._C1._tril1[1][i]
             dE[row, col] = 1
             LhdE = Lh @ dE
-            t0 = dot(self._Lx, dot(self._Lx.T, dot(dot(V, LhdE), LhE.T)))
-            t1 = dot(self._Lx, dot(self._Lx.T, dot(dot(V, LhE), LhdE.T)))
+            t0 = dot(dot(V, LhdE), LhE.T)
+            t1 = dot(dot(V, LhE), LhdE.T)
             t = t0 + t1
             LdKL_dot["C1.Lu"].append(t.reshape((-1,) + t.shape[2:], order="F"))
             dE[row, col] = 0
@@ -414,8 +414,8 @@ class Kron2SumCov(Function):
             col = self._C1._diag[1][i]
             dE[row, col] = E[row, col]
             LhdE = Lh @ dE
-            t0 = dot(self._Lx, dot(self._Lx.T, dot(dot(V, LhE), LhdE.T)))
-            t1 = dot(self._Lx, dot(self._Lx.T, dot(dot(V, LhdE), LhE.T)))
+            t0 = dot(dot(V, LhE), LhdE.T)
+            t1 = dot(dot(V, LhdE), LhE.T)
             t = t0 + t1
             LdKL_dot["C1.Lu"].append(t.reshape((-1,) + t.shape[2:], order="F"))
             dE[row, col] = 0
