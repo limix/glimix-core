@@ -368,11 +368,18 @@ class Kron2SumCov(Function):
             L∂KLᵗvec(V) = 2 ((Lₕ∂E₁) ⊗ Lₓ) (LₓᵀV(LₕE₁))
             = 2 (Lₓ unvec(LₓᵀV(LₕE₁)) (Lₕ∂E₁)ᵀ)
         """
-        from numpy import stack
+        from numpy import stack, einsum
+
+        def dot(a, b):
+            le = "ijk"[: a.ndim]
+            ri = "jlk"[: b.ndim]
+            re = "ilk"[: max(a.ndim, b.ndim)]
+            return einsum(f"{le},{ri}->{re}", a, b)
 
         Lh = self._LD["Lh"]
 
-        V = unvec(v, (self._G.shape[0], -1))
+        V = unvec(v, (self.G.shape[0], -1) + v.shape[1:])
+
         dE = zeros_like(self._C0.L)
         E = self._C0.L
         LhE = Lh @ E
@@ -382,13 +389,10 @@ class Kron2SumCov(Function):
             col = i % E.shape[1]
             dE[row, col] = 1
             LhdE = Lh @ dE
-            t = self._LxG @ (self._LxG.T @ ((V @ LhdE) @ LhE.T)) + self._LxG @ (
-                self._LxG.T @ ((V @ LhE) @ LhdE.T)
-            )
-            # L = kron(self._LD["Lh"], self._Lx)
-            # dK = self.gradient()["C0.Lu"][..., i]
-            # t1 = L @ dK @ L.T @ v
-            LdKL_dot["C0.Lu"].append(vec(t)[:, newaxis])
+            t0 = dot(self._LxG, dot(self._LxG.T, dot(dot(V, LhdE), LhE.T)))
+            t1 = dot(self._LxG, dot(self._LxG.T, dot(dot(V, LhE), LhdE.T)))
+            t = t0 + t1
+            LdKL_dot["C0.Lu"].append(t.reshape((-1,) + t.shape[2:], order="F"))
             dE[row, col] = 0
 
         dE = zeros_like(self._C1.L)
@@ -399,13 +403,10 @@ class Kron2SumCov(Function):
             col = self._C1._tril1[1][i]
             dE[row, col] = 1
             LhdE = Lh @ dE
-            t = self._Lx @ (self._Lx.T @ ((V @ LhdE) @ LhE.T)) + self._Lx @ (
-                self._Lx.T @ ((V @ LhE) @ LhdE.T)
-            )
-            # L = kron(self._LD["Lh"], self._Lx)
-            # dK = self.gradient()["C1.Lu"][..., i]
-            # t1 = L @ dK @ L.T @ v
-            LdKL_dot["C1.Lu"].append(vec(t)[:, newaxis])
+            t0 = dot(self._Lx, dot(self._Lx.T, dot(dot(V, LhdE), LhE.T)))
+            t1 = dot(self._Lx, dot(self._Lx.T, dot(dot(V, LhE), LhdE.T)))
+            t = t0 + t1
+            LdKL_dot["C1.Lu"].append(t.reshape((-1,) + t.shape[2:], order="F"))
             dE[row, col] = 0
 
         for i in range(len(self._C1._diag[0])):
@@ -413,18 +414,14 @@ class Kron2SumCov(Function):
             col = self._C1._diag[1][i]
             dE[row, col] = E[row, col]
             LhdE = Lh @ dE
-            t = self._Lx @ (self._Lx.T @ ((V @ LhE) @ LhdE.T)) + self._Lx @ (
-                self._Lx.T @ ((V @ LhdE) @ LhE.T)
-            )
-            # L = kron(self._LD["Lh"], self._Lx)
-            # dK = self.gradient()["C1.Lu"][..., i + 1]
-            # t1 = L @ dK @ L.T @ v
-            # breakpoint()
-            LdKL_dot["C1.Lu"].append(vec(t)[:, newaxis])
+            t0 = dot(self._Lx, dot(self._Lx.T, dot(dot(V, LhE), LhdE.T)))
+            t1 = dot(self._Lx, dot(self._Lx.T, dot(dot(V, LhdE), LhE.T)))
+            t = t0 + t1
+            LdKL_dot["C1.Lu"].append(t.reshape((-1,) + t.shape[2:], order="F"))
             dE[row, col] = 0
 
-        LdKL_dot["C0.Lu"] = stack(LdKL_dot["C0.Lu"], axis=2)
-        LdKL_dot["C1.Lu"] = stack(LdKL_dot["C1.Lu"], axis=2)
+        LdKL_dot["C0.Lu"] = stack(LdKL_dot["C0.Lu"], axis=-1)
+        LdKL_dot["C1.Lu"] = stack(LdKL_dot["C1.Lu"], axis=-1)
 
         return LdKL_dot
 

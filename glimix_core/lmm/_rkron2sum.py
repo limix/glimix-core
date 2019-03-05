@@ -262,17 +262,28 @@ class RKron2Sum(Function):
         grad = {}
         varnames = ["C0.Lu", "C1.Lu"]
 
+        # LhD = self._cov.LhD
+        # D = LhD["D"]
+
+        # dH = - M^t K^-1 dK K^-1 M
+        # dH = - M^t L^t D (L dK L^t) D L M
+        # breakpoint()
+        # dH_ = ddot(D, self._M1).T @ self._cov.LdKL_dot(ddot(D, self._M1)["C0.Lu"])
         t = self._cov.gradient_dot(KiM)
         dH = {n: -(KiM.T @ t[n]).T for n in varnames}
 
         H = self._H()
 
+        # dK K^-1 y
         dK0 = self._cov.gradient_dot(Kiy)
+        # dK K^-1 m
         dK1 = self._cov.gradient_dot(Kim)
+
         dbeta = {
             n: -solve(H, (dH[n] @ quad["beta"]).T) - solve(H, KiM.T @ dK0[n])
             for n in varnames
         }
+        # LdKL_dot
 
         dm = {n: M @ g for n, g in dbeta.items()}
         for var in varnames:
