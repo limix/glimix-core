@@ -121,6 +121,8 @@ class RKron2Sum(Function):
             "mKiy": mKiy,
             "mKim": mKim,
             "beta": beta,
+            "y1": y1,
+            "m1": m,
         }
 
     @property
@@ -270,6 +272,7 @@ class RKron2Sum(Function):
         KiM = self._cov.solve(M)
         grad = {}
         varnames = ["C0.Lu", "C1.Lu"]
+        M0 = self._M0
 
         LhD = self._cov.LhD
         D = LhD["D"]
@@ -294,6 +297,18 @@ class RKron2Sum(Function):
             n: -solve(H, (dH[n] @ quad["beta"]).T) - solve(H, KiM.T @ dK0[n])
             for n in varnames
         }
+        A = self._mean.A
+        Lh = self._cov._LD["Lh"]
+        Ldm = {
+            n: dot(
+                dot(
+                    M0,
+                    dbeta[n].reshape((self.ncovariates, self.ntraits, -1), order="F"),
+                ),
+                dot(A.T, Lh.T),
+            )
+            for n in varnames
+        }
         # LdKL_dot
 
         dm = {n: M @ g for n, g in dbeta.items()}
@@ -304,7 +319,9 @@ class RKron2Sum(Function):
             # - 𝐦ᵗ𝕂(2⋅𝐲-𝐦)
             grad[var] -= Kim.T @ (2 * dK0[var] - dK1[var])
             # - 2⋅(𝐦-𝐲)ᵗK⁻¹∂(𝐦)
-            grad[var] -= 2 * (m - self._y).T @ self._cov.solve(dm[var])
+            # grad[var] -= 2 * (m - self._y).T @ self._cov.solve(dm[var])
+            grad[var] -= 2 * quad["m1"].T @ ddot(D, vec(Ldm[var]))
+            grad[var] += 2 * quad["y1"].T @ ddot(D, vec(Ldm[var]))
             grad[var] /= 2
         return grad
 
