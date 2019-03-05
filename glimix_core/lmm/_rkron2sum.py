@@ -281,7 +281,6 @@ class RKron2Sum(Function):
 
         # dH = - M^t K^-1 dK K^-1 M
         # dH = - M^t L^t D (L dK L^t) D L M
-        # breakpoint()
         t = self._cov.LdKL_dot(ddot(D, self._M1))
         dH = {n: -dot(ddot(D, self._M1).T, t[n]).transpose([2, 0, 1]) for n in varnames}
         # t = self._cov.gradient_dot(KiM)
@@ -291,15 +290,23 @@ class RKron2Sum(Function):
         H = self._H()
 
         # dK K^-1 y
-        dK0 = self._cov.gradient_dot(Kiy)
+        # dK0 = self._cov.gradient_dot(Kiy)
         # dK K^-1 m
         dK1 = self._cov.gradient_dot(Kim)
 
         # breakpoint()
         # self._cov.LdKL_dot(D * quad["y1"])
         # dot(ddot(D, quad["M1"]).T, self._cov.LdKL_dot(ddot(D, quad["y1"])))
+        # dbeta = {
+        #     n: -solve(H, (dH[n] @ quad["beta"]).T) - solve(H, KiM.T @ dK0[n])
+        #     for n in varnames
+        # }
+        # breakpoint()
+        LdKLy = self._cov.LdKL_dot(D * quad["y1"])
+        LdKLm = self._cov.LdKL_dot(D * quad["m1"])
         dbeta = {
-            n: -solve(H, (dH[n] @ quad["beta"]).T) - solve(H, KiM.T @ dK0[n])
+            n: -solve(H, (dH[n] @ quad["beta"]).T)
+            - solve(H, quad["M1"].T @ ddot(D, LdKLy[n]))
             for n in varnames
         }
         A = self._mean.A
@@ -320,9 +327,13 @@ class RKron2Sum(Function):
         for var in varnames:
             grad[var] = -ld_grad[var]
             grad[var] -= diagonal(solve(H, dH[var]), axis1=1, axis2=2).sum(1)
-            grad[var] += Kiy.T @ dK0[var]
+            # grad[var] += Kiy.T @ dK0[var]
+            grad[var] += quad["y1"].T @ ddot(D, LdKLy[var])
             # - 𝐦ᵗ𝕂(2⋅𝐲-𝐦)
-            grad[var] -= Kim.T @ (2 * dK0[var] - dK1[var])
+            # grad[var] -= Kim.T @ (2 * dK0[var] - dK1[var])
+            grad[var] -= 2 * quad["m1"].T @ ddot(D, LdKLy[var])
+            # grad[var] += Kim.T @ dK1[var]
+            grad[var] += quad["m1"].T @ ddot(D, LdKLm[var])
             # - 2⋅(𝐦-𝐲)ᵗK⁻¹∂(𝐦)
             # grad[var] -= 2 * (m - self._y).T @ self._cov.solve(dm[var])
             grad[var] -= 2 * quad["m1"].T @ ddot(D, vec(Ldm[var]))
