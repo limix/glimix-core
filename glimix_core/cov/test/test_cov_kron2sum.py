@@ -69,7 +69,7 @@ def test_kron2sumcov():
 
     R = cov.LdKL_dot(M)
     dK = cov.gradient()
-    L = kron(cov._LD["Lh"], cov.Lx)
+    L = kron(cov.LhD["Lh"], cov.Lx)
 
     for i in range(cov.C0.shape[0]):
         for j in range(M.shape[1]):

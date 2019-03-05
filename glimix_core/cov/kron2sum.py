@@ -24,27 +24,28 @@ from .lrfree import LRFreeFormCov
 
 class Kron2SumCov(Function):
     """
-    Implements K =  C₀ ⊗ GGᵗ + C₁ ⊗ I.
+    Implements K =  C₀ ⊗ GGᵀ + C₁ ⊗ I.
 
     C₀ and C₁ are d×d symmetric matrices. C₀ is a semi-definite positive matrix while C₁
     is a positive definite one. G is a n×m matrix and I is a n×n identity matrix. Let
-    M = Uₘ Sₘ Uₘᵗ be the eigen decomposition for any matrix M. The documentation and
+    M = Uₘ Sₘ Uₘᵀ be the eigen decomposition for any matrix M. The documentation and
     implementation of this class make use of the following definitions:
 
-    - X = GGᵗ = Uₓ Sₓ Uₓᵗ
-    - C₁ = U₁ S₁ U₁ᵗ
-    - Cₕ = S₁⁻½ U₁ᵗ C₀ U₁ S₁⁻½
-    - Cₕ = Uₕ Sₕ Uₕᵗ
+    - X = GGᵀ = Uₓ Sₓ Uₓᵀ
+    - C₁ = U₁ S₁ U₁ᵀ
+    - Cₕ = S₁⁻½ U₁ᵀ C₀ U₁ S₁⁻½
+    - Cₕ = Uₕ Sₕ Uₕᵀ
     - D = (Sₕ ⊗ Sₓ + Iₕₓ)⁻¹
-    - Lₓ = Uₓᵗ
-    - Lₕ = Uₕᵗ S₁⁻½ U₁ᵗ
+    - Lₓ = Uₓᵀ
+    - Lₕ = Uₕᵀ S₁⁻½ U₁ᵀ
     - L = Lₕ ⊗ Lₓ
 
     The above definitions allows us to write the inverse of the covariance matrix as::
 
-        K⁻¹ = LᵗDL,
+        K⁻¹ = LᵀDL,
 
     where D is a diagonal matrix.
+
 
     Example
     -------
@@ -89,11 +90,10 @@ class Kron2SumCov(Function):
         self._G = atleast_2d(asarray(G, float))
         U, S, _ = svd(G)
         S = concatenate((S, [0.0] * (U.shape[0] - S.shape[0])))
-        self._USx = U, S * S
+        self._Sx = S * S
         self._Lx = U.T
-        LxG = self._Lx @ G
-        self._LXL = LxG @ LxG.T
-        self._LL = self._Lx @ self._Lx.T
+        self._LxG = self._Lx @ G
+        self._diag_LxGGLx = dotd(self._LxG, self._LxG.T)
         self._I = eye(self.G.shape[0])
         Function.__init__(
             self, "Kron2SumCov", composite=[("C0", self._C0), ("C1", self._C1)]
@@ -104,54 +104,9 @@ class Kron2SumCov(Function):
         return self._Lx
 
     @property
-    def LL(self):
-        return self._LL
-
-    @property
-    def LXL(self):
-        return self._LXL
-
-    @property
-    def _eUSx(self):
-        from numpy_sugar.linalg import economic_svd
-
-        US = economic_svd(self._G)
-        return US[0], US[1] * US[1]
-
-    @property
     @lru_cache(maxsize=None)
-    def _LxG(self):
-        return self._Lx @ self._G
-
-    @property
-    @lru_cache(maxsize=None)
-    def _T0(self):
-        return dotd(self._LxG, self._LxG.T)
-
-    @property
-    @lru_cache(maxsize=None)
-    def _T1(self):
-        return dotd(self._Lx, self._Lx.T)
-
-    @property
-    def _LD(self):
-        """
-        Implements Lₕ, Lₓ, and D.
-
-        Returns
-        -------
-        Lh : ndarray
-            Uₕᵗ S₁⁻½ U₁ᵗ.
-        Lx : ndarray
-            Uₓᵗ.
-        D : ndarray
-            (Sₕ ⊗ Sₓ + Iₕₓ)⁻¹.
-        """
-        S1, U1 = self.C1.eigh()
-        U1S1 = ddot(U1, 1 / sqrt(S1))
-        Sh, Uh = eigh(U1S1.T @ self.C0.value() @ U1S1)
-        Sx = self._USx[1]
-        return {"Lh": (U1S1 @ Uh).T, "Lx": self._Lx, "D": 1 / (kron(Sh, Sx) + 1)}
+    def _X(self):
+        return self.G @ self.G.T
 
     @property
     def LhD(self):
@@ -161,15 +116,14 @@ class Kron2SumCov(Function):
         Returns
         -------
         Lh : ndarray
-            Uₕᵗ S₁⁻½ U₁ᵗ.
+            Uₕᵀ S₁⁻½ U₁ᵀ.
         D : ndarray
             (Sₕ ⊗ Sₓ + Iₕₓ)⁻¹.
         """
         S1, U1 = self.C1.eigh()
         U1S1 = ddot(U1, 1 / sqrt(S1))
         Sh, Uh = eigh(U1S1.T @ self.C0.value() @ U1S1)
-        Sx = self._USx[1]
-        return {"Lh": (U1S1 @ Uh).T, "D": 1 / (kron(Sh, Sx) + 1)}
+        return {"Lh": (U1S1 @ Uh).T, "D": 1 / (kron(Sh, self._Sx) + 1)}
 
     @property
     def G(self):
@@ -194,17 +148,16 @@ class Kron2SumCov(Function):
 
     def value(self):
         """
-        Covariance matrix K = C₀ ⊗ GGᵗ + C₁ ⊗ I.
+        Covariance matrix K = C₀ ⊗ GGᵀ + C₁ ⊗ I.
 
         Returns
         -------
         K : ndarray
-            C₀ ⊗ GGᵗ + C₁ ⊗ I.
+            C₀ ⊗ GGᵀ + C₁ ⊗ I.
         """
-        X = self.G @ self.G.T
         C0 = self._C0.value()
         C1 = self._C1.value()
-        return kron(C0, X) + kron(C1, self._I)
+        return kron(C0, self._X) + kron(C1, self._I)
 
     def gradient(self):
         """
@@ -217,13 +170,9 @@ class Kron2SumCov(Function):
         C1 : ndarray
             Derivative of C₁ over its parameters.
         """
-        I = self._I
-        X = self.G @ self.G.T
-
         C0 = self._C0.gradient()["Lu"].T
         C1 = self._C1.gradient()["Lu"].T
-
-        grad = {"C0.Lu": kron(C0, X).T, "C1.Lu": kron(C1, I).T}
+        grad = {"C0.Lu": kron(C0, self._X).T, "C1.Lu": kron(C1, self._I).T}
         return grad
 
     def gradient_dot(self, v):
@@ -269,8 +218,8 @@ class Kron2SumCov(Function):
         x : ndarray
             Solution x to the equation K x = y.
         """
-        L = kron(self._LD["Lh"], self._LD["Lx"])
-        return L.T @ ddot(self._LD["D"], L @ v, left=True)
+        L = kron(self.LhD["Lh"], self.Lx)
+        return L.T @ ddot(self.LhD["D"], L @ v, left=True)
 
     def logdet(self):
         """
@@ -281,7 +230,7 @@ class Kron2SumCov(Function):
         logdet : float
             Log-determinant of K.
         """
-        return -log(self._LD["D"]).sum() + self.G.shape[0] * self.C1.logdet()
+        return -log(self.LhD["D"]).sum() + self.G.shape[0] * self.C1.logdet()
 
     def logdet_gradient(self):
         """
@@ -289,23 +238,13 @@ class Kron2SumCov(Function):
 
         It can be shown that::
 
-            ∂log|K| = diag(D)ᵗ diag(L ∂K Lᵗ).
+            ∂log|K| = diag(D)ᵀdiag(L(∂K)Lᵀ) = diag(D)ᵀ(diag(Lₕ∂C₀Lₕᵀ)⊗diag(LₓGGᵀLₓᵀ)),
 
-        Let C₀ = E₀E₀ᵀ. Note that::
+        when the derivative is over the parameters of C₀. Similarly,
 
-            L∂KLᵗ = 2 ((Lₕ∂E₀) ⊗ (LₓG)) ((LₕE₀)ᵀ ⊗ (LₓG)ᵀ),
+            ∂log|K| = diag(D)ᵀdiag(L(∂K)Lᵀ) = diag(D)ᵀ(diag(Lₕ∂C₁Lₕᵀ)⊗diag(I)),
 
-        when the derivative is over the elements of E₀. Similarly, ::
-
-            L∂KLᵗ = 2 ((Lₕ∂E₁) ⊗ Lₓ) ((LₕE₁)ᵀ ⊗ Lₓᵀ),
-
-        when the derivative is over the elements of E₁ for C₁ = E₁E₁ᵀ.
-        From the property ::
-
-            diag(A ⊗ B) = diag(A) ⊗ diag(B),
-
-        we can rewrite the previous expressions in order to achieve computational speed
-        up.
+        over the parameters of C₁.
 
         Returns
         -------
@@ -314,59 +253,39 @@ class Kron2SumCov(Function):
         C1 : ndarray
             Derivative of C₁ over its parameters.
         """
-        Lh = self._LD["Lh"]
-        D = self._LD["D"]
+        Lh = self.LhD["Lh"]
+        D = self.LhD["D"]
 
-        dE = zeros_like(self._C0.L)
-        E = self._C0.L
-        ELhT = E.T @ Lh.T
+        dC0 = self._C0.gradient()["Lu"]
         grad_C0 = zeros_like(self._C0.Lu)
         for i in range(self._C0.Lu.shape[0]):
-            row = i // E.shape[1]
-            col = i % E.shape[1]
-            dE[row, col] = 1
-            grad_C0[i] = (2 * kron(dotd(Lh @ dE, ELhT), self._T0) * D).sum()
-            dE[row, col] = 0
+            t = kron(dotd(Lh, dC0[..., i] @ Lh.T), self._diag_LxGGLx)
+            grad_C0[i] = (D * t).sum()
 
-        dE = zeros_like(self._C1.L)
-        E = self._C1.L
-        LhET = (Lh @ E).T
+        dC1 = self._C1.gradient()["Lu"]
         grad_C1 = zeros_like(self._C1.Lu)
-        for i in range(len(self._C1._tril1[0])):
-            row = self._C1._tril1[0][i]
-            col = self._C1._tril1[1][i]
-            dE[row, col] = 1
-            grad_C1[i] = (2 * kron(dotd(Lh @ dE, LhET), self._T1) * D).sum()
-            dE[row, col] = 0
+        for i in range(self._C1.Lu.shape[0]):
+            t = kron(dotd(Lh, dC1[..., i] @ Lh.T), self._I.diagonal())
+            grad_C1[i] = (D * t).sum()
 
-        m = len(self._C1._tril1[0])
-        for i in range(len(self._C1._diag[0])):
-            row = self._C1._diag[0][i]
-            col = self._C1._diag[1][i]
-            dE[row, col] = E[row, col]
-            grad_C1[m + i] = (2 * kron(dotd(Lh @ dE, LhET), self._T1) * D).sum()
-            dE[row, col] = 0
         return {"C0.Lu": grad_C0, "C1.Lu": grad_C1}
 
     def LdKL_dot(self, v):
         """
-        Let::
+        Implements L(∂K)Lᵀv.
 
-            L∂KLᵗ = 2 ((Lₕ∂E₀) ⊗ (LₓG)) ((LₕE₀)ᵀ ⊗ (LₓG)ᵀ)
+        The array v can have one or two dimensions and the first dimension has to have
+        size n⋅p.
 
-        We have::
+        Let vec(V) = v. We have
 
-            L∂KLᵗvec(V) = 2 ((Lₕ∂E₀) ⊗ (LₓG)) ((LₓG)ᵀV(LₕE₀))
-            = 2 ((LₓG) unvec((LₓG)ᵀV(LₕE₀)) (Lₕ∂E₀)ᵀ)
+            L(∂K)Lᵀv = ((Lₕ∂C₀Lₕᵀ) ⊗ (LₓGGᵀLₓᵀ))vec(V) = vec(LₓGGᵀLₓᵀVLₕ∂C₀Lₕᵀ),
 
-        Let::
+        when the derivative is over the parameters of C₀. Similarly,
 
-            L∂KLᵗ = 2 ((Lₕ∂E₁) ⊗ Lₓ) ((LₕE₁)ᵀ ⊗ Lₓᵀ)
+            L(∂K)Lᵀv = ((Lₕ∂C₀Lₕᵀ) ⊗ (LₓLₓᵀ))vec(V) = vec(LₓLₓᵀVLₕ∂C₀Lₕᵀ),
 
-        We have::
-
-            L∂KLᵗvec(V) = 2 ((Lₕ∂E₁) ⊗ Lₓ) (LₓᵀV(LₕE₁))
-            = 2 (Lₓ unvec(LₓᵀV(LₕE₁)) (Lₕ∂E₁)ᵀ)
+        over the parameters of C₁.
         """
         from numpy import stack, einsum
 
@@ -376,49 +295,44 @@ class Kron2SumCov(Function):
             re = "ilk"[: max(a.ndim, b.ndim)]
             return einsum(f"{le},{ri}->{re}", a, b)
 
-        Lh = self._LD["Lh"]
-
+        Lh = self.LhD["Lh"]
         V = unvec(v, (self.G.shape[0], -1) + v.shape[1:])
-
-        dE = zeros_like(self._C0.L)
-        E = self._C0.L
-        LhE = Lh @ E
         LdKL_dot = {"C0.Lu": [], "C1.Lu": []}
+
+        dC0 = self._C0.gradient()["Lu"]
         for i in range(self._C0.Lu.shape[0]):
-            row = i // E.shape[1]
-            col = i % E.shape[1]
-            dE[row, col] = 1
-            LhdE = Lh @ dE
-            t0 = dot(self._LxG, dot(self._LxG.T, dot(dot(V, LhdE), LhE.T)))
-            t1 = dot(self._LxG, dot(self._LxG.T, dot(dot(V, LhE), LhdE.T)))
-            t = t0 + t1
+            t = dot(self._LxG, dot(self._LxG.T, dot(V, Lh @ dC0[..., i] @ Lh.T)))
             LdKL_dot["C0.Lu"].append(t.reshape((-1,) + t.shape[2:], order="F"))
-            dE[row, col] = 0
 
-        dE = zeros_like(self._C1.L)
-        E = self._C1.L
-        LhE = Lh @ E
-        for i in range(len(self._C1._tril1[0])):
-            row = self._C1._tril1[0][i]
-            col = self._C1._tril1[1][i]
-            dE[row, col] = 1
-            LhdE = Lh @ dE
-            t0 = dot(dot(V, LhdE), LhE.T)
-            t1 = dot(dot(V, LhE), LhdE.T)
-            t = t0 + t1
+        dC1 = self._C1.gradient()["Lu"]
+        for i in range(self._C1.Lu.shape[0]):
+            t = dot(self._Lx, dot(self._Lx.T, dot(V, Lh @ dC1[..., i] @ Lh.T)))
             LdKL_dot["C1.Lu"].append(t.reshape((-1,) + t.shape[2:], order="F"))
-            dE[row, col] = 0
 
-        for i in range(len(self._C1._diag[0])):
-            row = self._C1._diag[0][i]
-            col = self._C1._diag[1][i]
-            dE[row, col] = E[row, col]
-            LhdE = Lh @ dE
-            t0 = dot(dot(V, LhE), LhdE.T)
-            t1 = dot(dot(V, LhdE), LhE.T)
-            t = t0 + t1
-            LdKL_dot["C1.Lu"].append(t.reshape((-1,) + t.shape[2:], order="F"))
-            dE[row, col] = 0
+        # dE = zeros_like(self._C1.L)
+        # E = self._C1.L
+        # LhE = Lh @ E
+        # for i in range(len(self._C1._tril1[0])):
+        #     row = self._C1._tril1[0][i]
+        #     col = self._C1._tril1[1][i]
+        #     dE[row, col] = 1
+        #     LhdE = Lh @ dE
+        #     t0 = dot(dot(V, LhdE), LhE.T)
+        #     t1 = dot(dot(V, LhE), LhdE.T)
+        #     t = t0 + t1
+        #     LdKL_dot["C1.Lu"].append(t.reshape((-1,) + t.shape[2:], order="F"))
+        #     dE[row, col] = 0
+
+        # for i in range(len(self._C1._diag[0])):
+        #     row = self._C1._diag[0][i]
+        #     col = self._C1._diag[1][i]
+        #     dE[row, col] = E[row, col]
+        #     LhdE = Lh @ dE
+        #     t0 = dot(dot(V, LhE), LhdE.T)
+        #     t1 = dot(dot(V, LhdE), LhE.T)
+        #     t = t0 + t1
+        #     LdKL_dot["C1.Lu"].append(t.reshape((-1,) + t.shape[2:], order="F"))
+        #     dE[row, col] = 0
 
         LdKL_dot["C0.Lu"] = stack(LdKL_dot["C0.Lu"], axis=-1)
         LdKL_dot["C1.Lu"] = stack(LdKL_dot["C1.Lu"], axis=-1)

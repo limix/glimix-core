@@ -311,7 +311,7 @@ class RKron2Sum(Function):
             for n in varnames
         }
         A = self._mean.A
-        Lh = self._cov._LD["Lh"]
+        Lh = self._cov.LhD["Lh"]
         Ldm = {
             n: dot(
                 dot(
