@@ -261,17 +261,18 @@ class RKron2Sum(Function):
             re = "ilk"[: max(a.ndim, b.ndim)]
             return einsum(f"{le},{ri}->{re}", a, b)
 
+        # breakpoint()
         ld_grad = self._cov.logdet_gradient()
         quad = self._quad()
 
         #  @ ddot(D, quad["y1"])
-        Kiy = self._cov.solve(self._y)
+        # Kiy = self._cov.solve(self._y)
 
         self._mean.B = self.reml_B
-        m = self._mean.value()
-        Kim = self._cov.solve(m)
-        M = self._mean.AF
-        KiM = self._cov.solve(M)
+        # m = self._mean.value()
+        # Kim = self._cov.solve(m)
+        # M = self._mean.AF
+        # KiM = self._cov.solve(M)
         grad = {}
         varnames = ["C0.Lu", "C1.Lu"]
         M0 = self._M0
@@ -292,7 +293,7 @@ class RKron2Sum(Function):
         # dK K^-1 y
         # dK0 = self._cov.gradient_dot(Kiy)
         # dK K^-1 m
-        dK1 = self._cov.gradient_dot(Kim)
+        # dK1 = self._cov.gradient_dot(Kim)
 
         # breakpoint()
         # self._cov.LdKL_dot(D * quad["y1"])
