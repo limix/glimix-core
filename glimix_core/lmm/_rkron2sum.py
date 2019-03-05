@@ -249,6 +249,15 @@ class RKron2Sum(Function):
         C1.Lu : ndarray
             Gradient of the log of the marginal likelihood over C₁ parameters.
         """
+
+        def dot(a, b):
+            from numpy import einsum
+
+            le = "ijk"[: a.ndim]
+            ri = "jlk"[: b.ndim]
+            re = "ilk"[: max(a.ndim, b.ndim)]
+            return einsum(f"{le},{ri}->{re}", a, b)
+
         ld_grad = self._cov.logdet_gradient()
         quad = self._quad()
 
@@ -262,15 +271,17 @@ class RKron2Sum(Function):
         grad = {}
         varnames = ["C0.Lu", "C1.Lu"]
 
-        # LhD = self._cov.LhD
-        # D = LhD["D"]
+        LhD = self._cov.LhD
+        D = LhD["D"]
 
         # dH = - M^t K^-1 dK K^-1 M
         # dH = - M^t L^t D (L dK L^t) D L M
         # breakpoint()
-        # dH_ = ddot(D, self._M1).T @ self._cov.LdKL_dot(ddot(D, self._M1)["C0.Lu"])
-        t = self._cov.gradient_dot(KiM)
-        dH = {n: -(KiM.T @ t[n]).T for n in varnames}
+        t = self._cov.LdKL_dot(ddot(D, self._M1))
+        dH = {n: -dot(ddot(D, self._M1).T, t[n]).transpose([2, 0, 1]) for n in varnames}
+        # t = self._cov.gradient_dot(KiM)
+        # dH = {n: -(KiM.T @ t[n]).T for n in varnames}
+        # print(dH["C0.Lu"].transpose([1, 2, 0]) - dH_["C0.Lu"])
 
         H = self._H()
 
