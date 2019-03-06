@@ -314,7 +314,7 @@ class Kron2SumCov(Function):
 
         dC1 = self._C1.gradient()["Lu"]
         for i in range(self._C1.Lu.shape[0]):
-            t = dot(self._Lx, dot(self._Lx.T, dot(V, Lh @ dC1[..., i] @ Lh.T)))
+            t = dot(V, Lh @ dC1[..., i] @ Lh.T)
             LdKL_dot["C1.Lu"].append(t.reshape((-1,) + t.shape[2:], order="F"))
 
         LdKL_dot["C0.Lu"] = stack(LdKL_dot["C0.Lu"], axis=-1)
