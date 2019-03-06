@@ -206,7 +206,7 @@ class Kron2SumCov(Function):
 
     def solve(self, v):
         """
-        Implements the product K⁻¹v.
+        Implements the product K⁻¹⋅v.
 
         Parameters
         ----------
@@ -216,7 +216,7 @@ class Kron2SumCov(Function):
         Returns
         -------
         x : ndarray
-            Solution x to the equation K x = y.
+            Solution x to the equation K⋅x = y.
         """
         L = kron(self.LhD["Lh"], self.Lx)
         return L.T @ ddot(self.LhD["D"], L @ v, left=True)
@@ -234,7 +234,7 @@ class Kron2SumCov(Function):
 
     def logdet_gradient(self):
         """
-        Implements ∂log|K| = Tr[K⁻¹ ∂K].
+        Implements ∂log|K| = Tr[K⁻¹∂K].
 
         It can be shown that::
 
@@ -279,11 +279,11 @@ class Kron2SumCov(Function):
 
         Let vec(V) = v. We have
 
-            L(∂K)Lᵀv = ((Lₕ∂C₀Lₕᵀ) ⊗ (LₓGGᵀLₓᵀ))vec(V) = vec(LₓGGᵀLₓᵀVLₕ∂C₀Lₕᵀ),
+            L(∂K)Lᵀ⋅v = ((Lₕ∂C₀Lₕᵀ) ⊗ (LₓGGᵀLₓᵀ))vec(V) = vec(LₓGGᵀLₓᵀVLₕ∂C₀Lₕᵀ),
 
         when the derivative is over the parameters of C₀. Similarly,
 
-            L(∂K)Lᵀv = ((Lₕ∂C₀Lₕᵀ) ⊗ (LₓLₓᵀ))vec(V) = vec(LₓLₓᵀVLₕ∂C₀Lₕᵀ),
+            L(∂K)Lᵀv = ((Lₕ∂C₁Lₕᵀ) ⊗ (LₓLₓᵀ))vec(V) = vec(LₓLₓᵀVLₕ∂C₁Lₕᵀ),
 
         over the parameters of C₁.
         """
@@ -308,31 +308,6 @@ class Kron2SumCov(Function):
         for i in range(self._C1.Lu.shape[0]):
             t = dot(self._Lx, dot(self._Lx.T, dot(V, Lh @ dC1[..., i] @ Lh.T)))
             LdKL_dot["C1.Lu"].append(t.reshape((-1,) + t.shape[2:], order="F"))
-
-        # dE = zeros_like(self._C1.L)
-        # E = self._C1.L
-        # LhE = Lh @ E
-        # for i in range(len(self._C1._tril1[0])):
-        #     row = self._C1._tril1[0][i]
-        #     col = self._C1._tril1[1][i]
-        #     dE[row, col] = 1
-        #     LhdE = Lh @ dE
-        #     t0 = dot(dot(V, LhdE), LhE.T)
-        #     t1 = dot(dot(V, LhE), LhdE.T)
-        #     t = t0 + t1
-        #     LdKL_dot["C1.Lu"].append(t.reshape((-1,) + t.shape[2:], order="F"))
-        #     dE[row, col] = 0
-
-        # for i in range(len(self._C1._diag[0])):
-        #     row = self._C1._diag[0][i]
-        #     col = self._C1._diag[1][i]
-        #     dE[row, col] = E[row, col]
-        #     LhdE = Lh @ dE
-        #     t0 = dot(dot(V, LhE), LhdE.T)
-        #     t1 = dot(dot(V, LhdE), LhE.T)
-        #     t = t0 + t1
-        #     LdKL_dot["C1.Lu"].append(t.reshape((-1,) + t.shape[2:], order="F"))
-        #     dE[row, col] = 0
 
         LdKL_dot["C0.Lu"] = stack(LdKL_dot["C0.Lu"], axis=-1)
         LdKL_dot["C1.Lu"] = stack(LdKL_dot["C1.Lu"], axis=-1)
