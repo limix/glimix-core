@@ -53,6 +53,17 @@ class LRFreeFormCov(Function):
         self._Lu = Vector(self._L.ravel())
         Function.__init__(self, "LRFreeFormCov", Lu=self._Lu)
 
+    def listen(self, func):
+        """
+        Listen to parameters change.
+
+        Parameters
+        ----------
+        func : callable
+            Function to be called when a parameter changes.
+        """
+        self._Lu.listen(func)
+
     def fix(self):
         """
         Disable parameter optimisation.

@@ -76,20 +76,19 @@ class RKron2Sum(Function):
         self._mean = KronMean(A, F)
         self._Yx = self._cov.Lx @ Y
         self._Mx = self._cov.Lx @ self._mean.F
+        self._cache = {"terms": None}
+        self._cov.listen(self._parameters_update)
         composite = [("C0", self._cov.C0), ("C1", self._cov.C1)]
         Function.__init__(self, "Kron2Sum", composite=composite)
 
-    @property
-    def _M1(self):
-        return kron(self._cov.Lh @ self._mean.A, self._Mx)
-
-    @property
-    def _MKiy(self):
-        y1 = vec(self._Yx @ self._cov.Lh.T)
-        return self._M1.T @ (self._cov.D * y1)
+    def _parameters_update(self, _):
+        self._cache["terms"] = None
 
     @property
     def _terms(self):
+        if self._cache["terms"] is not None:
+            return self._cache["terms"]
+
         Lh = self._cov.Lh
         D = self._cov.D
         yh = vec(self._Yx @ Lh.T)
@@ -114,7 +113,7 @@ class RKron2Sum(Function):
             raise ValueError("The determinant of H should be positive.")
         ldetH = ldetH[1]
 
-        return {
+        self._cache["terms"] = {
             "yh": yh,
             "yl": yl,
             "Mh": Mh,
@@ -125,47 +124,7 @@ class RKron2Sum(Function):
             "H": H,
             "b": b,
         }
-
-    def _quad(self):
-        Lh = self._cov.Lh
-        D = self._cov.D
-
-        y1 = vec(self._Yx @ Lh.T)
-        MKiy = self._M1.T @ (D * y1)
-
-        M1 = self._M1
-        MKiM = M1.T @ ddot(D, M1)
-
-        # 𝐦 = M𝛃 for 𝛃 = H⁻¹MᵗK⁻¹𝐲 and H = MᵗK⁻¹M.
-        beta = solve(MKiM, self._MKiy)
-
-        shape = (self.ncovariates, self.ntraits)
-        m = vec(self._Mx @ unvec(beta, shape) @ self._mean.A.T @ Lh.T)
-
-        yKiy = y1 @ (D * y1)
-        mKiy = m @ (D * y1)
-        mKim = m @ (D * m)
-
-        # dC0 = self._cov.C0.gradient()["Lu"]
-        # dC1 = self._cov.C1.gradient()["Lu"]
-
-        # axes = ([1], [0])
-        # Z0 = tensordot(LhD["Lh"] @ dC0, LhD["Lh"].T, axes=axes)
-        # Z0 = kron(Z0.transpose([1, 0, 2]), self._cov.LXL).transpose([1, 2, 0])
-        # Z1 = tensordot(LhD["Lh"] @ dC1, LhD["Lh"].T, axes=axes)
-        # Z1 = kron(Z1.transpose([1, 0, 2]), self._cov.LL).transpose([1, 2, 0])
-
-        return {
-            "MKiM": MKiM,
-            "MKiy": MKiy,
-            "yKiy": yKiy,
-            "mKiy": mKiy,
-            "mKim": mKim,
-            "beta": beta,
-            "y1": y1,
-            "m1": m,
-            "M1": M1,
-        }
+        return self._cache["terms"]
 
     @property
     def mean(self):
@@ -216,13 +175,6 @@ class RKron2Sum(Function):
     def gradient(self):
         return self.lml_gradient()
 
-    def _H(self):
-        D = self._cov.D
-        M1 = self._M1
-        return M1.T @ ddot(D, M1)
-        # M = self._mean.AF
-        # return M.T @ self._cov.solve(M)
-
     @property
     @lru_cache(maxsize=None)
     def _logdet_MM(self):
@@ -231,13 +183,6 @@ class RKron2Sum(Function):
         if ldet[0] != 1.0:
             raise ValueError("The determinant of MᵀM should be positive.")
         return ldet[1]
-
-    @property
-    def reml_B(self):
-        H = self._H()
-        M = self._mean.AF
-        beta = solve(H, M.T @ self._cov.solve(self._y))
-        return unvec(beta, (self.ncovariates, self.ntraits))
 
     def lml(self):
         r"""

@@ -66,6 +66,17 @@ class FreeFormCov(Function):
         bounds += [(log(epsilon.small * 1000), +15)] * dim
         self._Lu.bounds = bounds
 
+    def listen(self, func):
+        """
+        Listen to parameters change.
+
+        Parameters
+        ----------
+        func : callable
+            Function to be called when a parameter changes.
+        """
+        self._Lu.listen(func)
+
     @property
     def shape(self):
         """

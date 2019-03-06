@@ -99,6 +99,18 @@ class Kron2SumCov(Function):
             self, "Kron2SumCov", composite=[("C0", self._C0), ("C1", self._C1)]
         )
 
+    def listen(self, func):
+        """
+        Listen to parameters change.
+
+        Parameters
+        ----------
+        func : callable
+            Function to be called when a parameter changes.
+        """
+        self._C0.listen(func)
+        self._C1.listen(func)
+
     @property
     def Lx(self):
         return self._Lx
