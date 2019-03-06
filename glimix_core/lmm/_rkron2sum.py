@@ -17,7 +17,7 @@ class RKron2Sum(Function):
     Let n, c, and p be the number of samples, covariates, and traits, respectively.
     The outcome variable Y is a n×p matrix distributed according to::
 
-        vec(Y) ~ N((A ⊗ F) vec(B), C₀ ⊗ GGᵗ + C₁ ⊗ I).
+        vec(Y) ~ N((A ⊗ F) vec(B), K = C₀ ⊗ GGᵗ + C₁ ⊗ I).
 
     A and F are design matrices of dimensions p×p and n×c provided by the user,
     where F is the usual matrix of covariates commonly used in single-trait models.
@@ -29,10 +29,13 @@ class RKron2Sum(Function):
 
     For implementation purpose, we make use of the following definitions:
 
-    - Y₀ = LₓY
-    - M₀ = LₓF
-    - M₁ = (LₕA) ⊗ M₀
-    - M₂ = M₁B
+    - M = A ⊗ F
+    - H = MᵀK⁻¹M
+    - Yₓ = LₓY
+    - Yₕ = YₓLₕᵀ
+    - Mₓ = LₓF
+    - Mₕ = (LₕA) ⊗ Mₓ
+    - mₕ = Mₕvec(B)
 
     where Lₓ and Lₕ are defined in :class:`glimix_core.cov.Kron2SumCov`.
     """
@@ -65,8 +68,6 @@ class RKron2Sum(Function):
 
         self._Y = Y
         self._y = Y.ravel(order="F")
-        self._A = A
-        self._F = F
         self._cov = Kron2SumCov(G, Y.shape[1], rank)
         self._mean = KronMean(F.shape[1], Y.shape[1])
         self._mean.A = A
@@ -78,20 +79,20 @@ class RKron2Sum(Function):
 
     @property
     def _M1(self):
-        return kron(self._cov.LhD["Lh"] @ self._mean.A, self._M0)
+        return kron(self._cov.Lh @ self._mean.A, self._M0)
 
     @property
     def _MKiy(self):
-        y1 = vec(self._Y0 @ self._cov.LhD["Lh"].T)
-        return self._M1.T @ (self._cov.LhD["D"] * y1)
+        y1 = vec(self._Y0 @ self._cov.Lh.T)
+        return self._M1.T @ (self._cov.D * y1)
 
     def _quad(self):
-        LhD = self._cov.LhD
+        Lh = self._cov.Lh
+        D = self._cov.D
 
-        y1 = vec(self._Y0 @ LhD["Lh"].T)
-        MKiy = self._M1.T @ (LhD["D"] * y1)
+        y1 = vec(self._Y0 @ Lh.T)
+        MKiy = self._M1.T @ (D * y1)
 
-        D = LhD["D"]
         M1 = self._M1
         MKiM = M1.T @ ddot(D, M1)
 
@@ -99,11 +100,11 @@ class RKron2Sum(Function):
         beta = solve(MKiM, self._MKiy)
 
         shape = (self.ncovariates, self.ntraits)
-        m = vec(self._M0 @ unvec(beta, shape) @ self._mean.A.T @ LhD["Lh"].T)
+        m = vec(self._M0 @ unvec(beta, shape) @ self._mean.A.T @ Lh.T)
 
-        yKiy = y1 @ (LhD["D"] * y1)
-        mKiy = m @ (LhD["D"] * y1)
-        mKim = m @ (LhD["D"] * m)
+        yKiy = y1 @ (D * y1)
+        mKiy = m @ (D * y1)
+        mKim = m @ (D * m)
 
         # dC0 = self._cov.C0.gradient()["Lu"]
         # dC1 = self._cov.C1.gradient()["Lu"]
@@ -167,7 +168,7 @@ class RKron2Sum(Function):
         """
         Number of covariates, c.
         """
-        return self._F.shape[1]
+        return self._mean.F.shape[1]
 
     def value(self):
         return self.lml()
@@ -176,7 +177,7 @@ class RKron2Sum(Function):
         return self.lml_gradient()
 
     def _H(self):
-        D = self._cov.LhD["D"]
+        D = self._cov.D
         M1 = self._M1
         return M1.T @ ddot(D, M1)
         # M = self._mean.AF
@@ -277,8 +278,7 @@ class RKron2Sum(Function):
         varnames = ["C0.Lu", "C1.Lu"]
         M0 = self._M0
 
-        LhD = self._cov.LhD
-        D = LhD["D"]
+        D = self._cov.D
 
         # dH = - M^t K^-1 dK K^-1 M
         # dH = - M^t L^t D (L dK L^t) D L M
@@ -311,7 +311,7 @@ class RKron2Sum(Function):
             for n in varnames
         }
         A = self._mean.A
-        Lh = self._cov.LhD["Lh"]
+        Lh = self._cov.Lh
         Ldm = {
             n: dot(
                 dot(

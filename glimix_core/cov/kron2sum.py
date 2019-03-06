@@ -109,7 +109,7 @@ class Kron2SumCov(Function):
         return self.G @ self.G.T
 
     @property
-    def LhD(self):
+    def _LhD(self):
         """
         Implements Lₕ and D.
 
@@ -124,6 +124,14 @@ class Kron2SumCov(Function):
         U1S1 = ddot(U1, 1 / sqrt(S1))
         Sh, Uh = eigh(U1S1.T @ self.C0.value() @ U1S1)
         return {"Lh": (U1S1 @ Uh).T, "D": 1 / (kron(Sh, self._Sx) + 1)}
+
+    @property
+    def Lh(self):
+        return self._LhD["Lh"]
+
+    @property
+    def D(self):
+        return self._LhD["D"]
 
     @property
     def G(self):
@@ -218,8 +226,8 @@ class Kron2SumCov(Function):
         x : ndarray
             Solution x to the equation K⋅x = y.
         """
-        L = kron(self.LhD["Lh"], self.Lx)
-        return L.T @ ddot(self.LhD["D"], L @ v, left=True)
+        L = kron(self._LhD["Lh"], self.Lx)
+        return L.T @ ddot(self._LhD["D"], L @ v, left=True)
 
     def logdet(self):
         """
@@ -230,7 +238,7 @@ class Kron2SumCov(Function):
         logdet : float
             Log-determinant of K.
         """
-        return -log(self.LhD["D"]).sum() + self.G.shape[0] * self.C1.logdet()
+        return -log(self._LhD["D"]).sum() + self.G.shape[0] * self.C1.logdet()
 
     def logdet_gradient(self):
         """
@@ -253,8 +261,8 @@ class Kron2SumCov(Function):
         C1 : ndarray
             Derivative of C₁ over its parameters.
         """
-        Lh = self.LhD["Lh"]
-        D = self.LhD["D"]
+        Lh = self._LhD["Lh"]
+        D = self._LhD["D"]
 
         dC0 = self._C0.gradient()["Lu"]
         grad_C0 = zeros_like(self._C0.Lu)
@@ -295,7 +303,7 @@ class Kron2SumCov(Function):
             re = "ilk"[: max(a.ndim, b.ndim)]
             return einsum(f"{le},{ri}->{re}", a, b)
 
-        Lh = self.LhD["Lh"]
+        Lh = self._LhD["Lh"]
         V = unvec(v, (self.G.shape[0], -1) + v.shape[1:])
         LdKL_dot = {"C0.Lu": [], "C1.Lu": []}
 

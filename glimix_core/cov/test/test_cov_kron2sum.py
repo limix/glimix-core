@@ -69,7 +69,7 @@ def test_kron2sumcov():
 
     R = cov.LdKL_dot(M)
     dK = cov.gradient()
-    L = kron(cov.LhD["Lh"], cov.Lx)
+    L = kron(cov.Lh, cov.Lx)
 
     for i in range(cov.C0.shape[0]):
         for j in range(M.shape[1]):
@@ -80,14 +80,6 @@ def test_kron2sumcov():
         for j in range(M.shape[1]):
             expected = L @ dK["C1.Lu"][..., i] @ L.T @ M[:, [j]]
             assert_allclose(R["C1.Lu"][:, [j], i], expected, atol=1e-7)
-
-    # breakpoint()
-    # r = cov.LdKL_dot(M)
-
-    # r2 = ((L @ dK["C1.Lu"]).transpose([2, 0, 1]) @ L.T @ M[:, [0]]).transpose([1, 2, 0])
-    # print(r0["C0.Lu"].min(), r1.min())
-    # breakpoint()
-    # pass
 
 
 def test_kron2sumcov_g_full_col_rank():
