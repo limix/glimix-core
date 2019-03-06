@@ -58,9 +58,7 @@ class Kron2Sum(Function):
         self._A = A
         self._F = F
         self._cov = Kron2SumCov(G, Y.shape[1], rank)
-        self._mean = KronMean(F.shape[1], Y.shape[1])
-        self._mean.A = A
-        self._mean.F = F
+        self._mean = KronMean(A, F)
         composite = [("M", self._mean), ("C0", self._cov.C0), ("C1", self._cov.C1)]
         Function.__init__(self, "Kron2Sum", composite=composite)
 

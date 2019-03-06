@@ -22,22 +22,20 @@ class KronMean(Function):
     matrix of fixed effects. B is a c×p matrix of fixed-effect sizes.
     """
 
-    def __init__(self, c, p):
+    def __init__(self, A, F):
         """
         Constructor.
 
         Parameters
         ----------
-        c : int
-            Number of covariates.
-        p : int
-            Matrix dimension of A.
+        A : array_like
+            p×p array.
+        F : array_like
+            n×c array.
         """
-        vecB = zeros((c, p)).ravel()
-        self._c = c
-        self._p = p
-        self._A = None
-        self._F = None
+        self._A = asarray(A, float)
+        self._F = asarray(F, float)
+        vecB = zeros((F.shape[1], A.shape[0])).ravel()
         self._vecB = Vector(vecB)
         Function.__init__(self, "KronMean", vecB=self._vecB)
 
@@ -48,20 +46,12 @@ class KronMean(Function):
         """
         return self._A
 
-    @A.setter
-    def A(self, A):
-        self._A = A
-
     @property
     def F(self):
         """
         Matrix F.
         """
         return self._F
-
-    @F.setter
-    def F(self, F):
-        self._F = F
 
     @property
     def AF(self):
@@ -97,7 +87,7 @@ class KronMean(Function):
         """
         Effect-sizes parameter, B.
         """
-        return unvec(self._vecB.value, (self._c, self._p))
+        return unvec(self._vecB.value, (self.F.shape[1], self.A.shape[0]))
 
     @B.setter
     def B(self, v):
@@ -105,9 +95,7 @@ class KronMean(Function):
 
     def __str__(self):
         tname = type(self).__name__
-        p = self._p
-        c = self._c
-        msg = "{}(c={},p={})".format(tname, c, p)
+        msg = "{}(A=..., B=...)".format(tname)
         if self.name is not None:
             msg += ": {}".format(self.name)
         msg += "\n"

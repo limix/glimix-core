@@ -69,9 +69,7 @@ class RKron2Sum(Function):
         self._Y = Y
         self._y = Y.ravel(order="F")
         self._cov = Kron2SumCov(G, Y.shape[1], rank)
-        self._mean = KronMean(F.shape[1], Y.shape[1])
-        self._mean.A = A
-        self._mean.F = F
+        self._mean = KronMean(A, F)
         self._Y0 = self._cov.Lx @ Y
         self._M0 = self._cov.Lx @ self._mean.F
         composite = [("C0", self._cov.C0), ("C1", self._cov.C1)]
