@@ -1,6 +1,7 @@
 import warnings
+from functools import lru_cache
 
-from numpy import asfortranarray, diagonal, kron, tensordot
+from numpy import asarray, asfortranarray, diagonal, kron, tensordot
 from numpy.linalg import matrix_rank, slogdet, solve
 
 from glimix_core._util import log2pi, unvec, vec
@@ -57,7 +58,7 @@ class RKron2Sum(Function):
         rank : optional, int
             Maximum rank of matrix C₀. Defaults to ``1``.
         """
-        Y = asfortranarray(Y)
+        Y = asfortranarray(Y, float)
         yrank = matrix_rank(Y)
         if Y.shape[1] > yrank:
             warnings.warn(
@@ -66,29 +67,70 @@ class RKron2Sum(Function):
                 UserWarning,
             )
 
+        A = asarray(A, float)
+        F = asarray(F, float)
+        G = asarray(G, float)
         self._Y = Y
         self._y = Y.ravel(order="F")
         self._cov = Kron2SumCov(G, Y.shape[1], rank)
         self._mean = KronMean(A, F)
-        self._Y0 = self._cov.Lx @ Y
-        self._M0 = self._cov.Lx @ self._mean.F
+        self._Yx = self._cov.Lx @ Y
+        self._Mx = self._cov.Lx @ self._mean.F
         composite = [("C0", self._cov.C0), ("C1", self._cov.C1)]
         Function.__init__(self, "Kron2Sum", composite=composite)
 
     @property
     def _M1(self):
-        return kron(self._cov.Lh @ self._mean.A, self._M0)
+        return kron(self._cov.Lh @ self._mean.A, self._Mx)
 
     @property
     def _MKiy(self):
-        y1 = vec(self._Y0 @ self._cov.Lh.T)
+        y1 = vec(self._Yx @ self._cov.Lh.T)
         return self._M1.T @ (self._cov.D * y1)
+
+    @property
+    def _terms(self):
+        Lh = self._cov.Lh
+        D = self._cov.D
+        yh = vec(self._Yx @ Lh.T)
+        yl = D * yh
+        A = self._mean.A
+        Mh = kron(Lh @ A, self._Mx)
+        Ml = ddot(D, Mh)
+
+        # H = MᵗK⁻¹M.
+        H = Mh.T @ Ml
+
+        # 𝐦 = M𝛃 for 𝛃 = H⁻¹MᵗK⁻¹𝐲 and H = MᵗK⁻¹M.
+        # 𝛃 = H⁻¹MᵗₕD𝐲ₗ
+        b = solve(H, Mh.T @ yl)
+        self._mean.B = unvec(b, (self.ncovariates, -1))
+
+        mh = Mh @ b
+        ml = D * mh
+
+        ldetH = slogdet(H)
+        if ldetH[0] != 1.0:
+            raise ValueError("The determinant of H should be positive.")
+        ldetH = ldetH[1]
+
+        return {
+            "yh": yh,
+            "yl": yl,
+            "Mh": Mh,
+            "Ml": Ml,
+            "mh": mh,
+            "ml": ml,
+            "ldetH": ldetH,
+            "H": H,
+            "b": b,
+        }
 
     def _quad(self):
         Lh = self._cov.Lh
         D = self._cov.D
 
-        y1 = vec(self._Y0 @ Lh.T)
+        y1 = vec(self._Yx @ Lh.T)
         MKiy = self._M1.T @ (D * y1)
 
         M1 = self._M1
@@ -98,7 +140,7 @@ class RKron2Sum(Function):
         beta = solve(MKiM, self._MKiy)
 
         shape = (self.ncovariates, self.ntraits)
-        m = vec(self._M0 @ unvec(beta, shape) @ self._mean.A.T @ Lh.T)
+        m = vec(self._Mx @ unvec(beta, shape) @ self._mean.A.T @ Lh.T)
 
         yKiy = y1 @ (D * y1)
         mKiy = m @ (D * y1)
@@ -181,6 +223,8 @@ class RKron2Sum(Function):
         # M = self._mean.AF
         # return M.T @ self._cov.solve(M)
 
+    @property
+    @lru_cache(maxsize=None)
     def _logdet_MM(self):
         M = self._mean.AF
         ldet = slogdet(M.T @ M)
@@ -219,16 +263,16 @@ class RKron2Sum(Function):
         """
         np = self.nsamples * self.ntraits
         cp = self.ncovariates * self.ntraits
-        lml = -(np - cp) * log2pi + self._logdet_MM() - self._cov.logdet()
+        lml = -(np - cp) * log2pi + self._logdet_MM - self._cov.logdet()
 
-        quad = self._quad()
+        terms = self._terms
+        lml -= terms["ldetH"]
 
-        ldet = slogdet(quad["MKiM"])
-        if ldet[0] != 1.0:
-            raise ValueError("The determinant of H should be positive.")
-        lml -= ldet[1]
-
-        lml -= quad["yKiy"] - 2 * quad["mKiy"] + quad["mKim"]
+        lml -= (
+            terms["yh"] @ terms["yl"]
+            - 2 * terms["ml"] @ terms["yh"]
+            + terms["ml"] @ terms["mh"]
+        )
 
         return lml / 2
 
@@ -260,84 +304,31 @@ class RKron2Sum(Function):
             re = "ilk"[: max(a.ndim, b.ndim)]
             return einsum(f"{le},{ri}->{re}", a, b)
 
-        # breakpoint()
-        ld_grad = self._cov.logdet_gradient()
-        quad = self._quad()
+        terms = self._terms
+        LdKLy = self._cov.LdKL_dot(terms["yl"])
+        LdKLm = self._cov.LdKL_dot(terms["ml"])
 
-        #  @ ddot(D, quad["y1"])
-        # Kiy = self._cov.solve(self._y)
-
-        self._mean.B = self.reml_B
-        # m = self._mean.value()
-        # Kim = self._cov.solve(m)
-        # M = self._mean.AF
-        # KiM = self._cov.solve(M)
-        grad = {}
         varnames = ["C0.Lu", "C1.Lu"]
-        M0 = self._M0
+        LdKLM = self._cov.LdKL_dot(terms["Ml"])
+        dH = {n: -dot(terms["Ml"].T, LdKLM[n]).transpose([2, 0, 1]) for n in varnames}
 
-        D = self._cov.D
+        left = {n: solve(terms["H"], (dH[n] @ terms["b"]).T) for n in varnames}
+        right = {n: solve(terms["H"], terms["Ml"].T @ LdKLy[n]) for n in varnames}
+        db = {n: -left[n] - right[n] for n in varnames}
 
-        # dH = - M^t K^-1 dK K^-1 M
-        # dH = - M^t L^t D (L dK L^t) D L M
-        t = self._cov.LdKL_dot(ddot(D, self._M1))
-        dH = {n: -dot(ddot(D, self._M1).T, t[n]).transpose([2, 0, 1]) for n in varnames}
-        # t = self._cov.gradient_dot(KiM)
-        # dH = {n: -(KiM.T @ t[n]).T for n in varnames}
-        # print(dH["C0.Lu"].transpose([1, 2, 0]) - dH_["C0.Lu"])
-
-        H = self._H()
-
-        # dK K^-1 y
-        # dK0 = self._cov.gradient_dot(Kiy)
-        # dK K^-1 m
-        # dK1 = self._cov.gradient_dot(Kim)
-
-        # breakpoint()
-        # self._cov.LdKL_dot(D * quad["y1"])
-        # dot(ddot(D, quad["M1"]).T, self._cov.LdKL_dot(ddot(D, quad["y1"])))
-        # dbeta = {
-        #     n: -solve(H, (dH[n] @ quad["beta"]).T) - solve(H, KiM.T @ dK0[n])
-        #     for n in varnames
-        # }
-        # breakpoint()
-        LdKLy = self._cov.LdKL_dot(D * quad["y1"])
-        LdKLm = self._cov.LdKL_dot(D * quad["m1"])
-        dbeta = {
-            n: -solve(H, (dH[n] @ quad["beta"]).T)
-            - solve(H, quad["M1"].T @ ddot(D, LdKLy[n]))
-            for n in varnames
-        }
-        A = self._mean.A
-        Lh = self._cov.Lh
-        Ldm = {
-            n: dot(
-                dot(
-                    M0,
-                    dbeta[n].reshape((self.ncovariates, self.ntraits, -1), order="F"),
-                ),
-                dot(A.T, Lh.T),
-            )
-            for n in varnames
-        }
-        # LdKL_dot
-
-        # dm = {n: M @ g for n, g in dbeta.items()}
+        grad = {}
+        dmh = {n: terms["Mh"] @ db[n] for n in varnames}
+        ld_grad = self._cov.logdet_gradient()
         for var in varnames:
             grad[var] = -ld_grad[var]
-            grad[var] -= diagonal(solve(H, dH[var]), axis1=1, axis2=2).sum(1)
-            # grad[var] += Kiy.T @ dK0[var]
-            grad[var] += quad["y1"].T @ ddot(D, LdKLy[var])
-            # - 𝐦ᵗ𝕂(2⋅𝐲-𝐦)
-            # grad[var] -= Kim.T @ (2 * dK0[var] - dK1[var])
-            grad[var] -= 2 * quad["m1"].T @ ddot(D, LdKLy[var])
-            # grad[var] += Kim.T @ dK1[var]
-            grad[var] += quad["m1"].T @ ddot(D, LdKLm[var])
-            # - 2⋅(𝐦-𝐲)ᵗK⁻¹∂(𝐦)
-            # grad[var] -= 2 * (m - self._y).T @ self._cov.solve(dm[var])
-            grad[var] -= 2 * quad["m1"].T @ ddot(D, vec(Ldm[var]))
-            grad[var] += 2 * quad["y1"].T @ ddot(D, vec(Ldm[var]))
+            grad[var] -= diagonal(solve(terms["H"], dH[var]), axis1=1, axis2=2).sum(1)
+            grad[var] += terms["yl"].T @ LdKLy[var]
+            grad[var] -= 2 * terms["ml"].T @ LdKLy[var]
+            grad[var] += terms["ml"].T @ LdKLm[var]
+            grad[var] -= 2 * terms["ml"].T @ dmh[var]
+            grad[var] += 2 * terms["yl"].T @ dmh[var]
             grad[var] /= 2
+
         return grad
 
     def fit(self, verbose=True):
