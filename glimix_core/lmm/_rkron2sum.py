@@ -87,6 +87,22 @@ class RKron2Sum(Function):
         self._cache["terms"] = None
 
     @property
+    def GY(self):
+        return self._cov._Ge.T @ self._Y
+
+    @property
+    def GYGY(self):
+        return self.GY ** 2
+
+    @property
+    def GG(self):
+        return self._cov._Ge.T @ self._cov._Ge
+
+    @property
+    def GGGG(self):
+        return self.GG @ self.GG
+
+    @property
     def _terms(self):
         if self._cache["terms"] is not None:
             return self._cache["terms"]
@@ -373,6 +389,11 @@ class RKron2Sum(Function):
         Zi = np.linalg.inv(Z)
         Ki = np.linalg.inv(terms["K"])
         dK = self._cov.gradient()["C0.Lu"][..., 0]
+        M = self._mean.AF
+        m = unvec(M @ vec(terms["B"]), (-1, self.ntraits))
+        Gm = Ge.T @ m
+        XRim = vec(Ge.T @ m @ US @ US.T @ L0)
+
         # y.T @ (Ri - Ri @ X @ Zi @ X.T @ Ri) @ dK @ (Ri - Ri @ X @ Zi @ X.T @ Ri) @ y
         # y.T @ Ki @ dK @ Ki @ y
 
@@ -389,59 +410,79 @@ class RKron2Sum(Function):
         grad = {}
         dmh = {n: terms["Mh"] @ db[n] for n in varnames}
         ld_grad = self._cov.logdet_gradient()
+        ZiXRiy = solve(Z, XRiy)
+        ZiXRim = solve(Z, XRim)
         for var in varnames:
             grad[var] = -ld_grad[var]
             grad[var] -= diagonal(solve(terms["H"], dH[var]), axis1=1, axis2=2).sum(1)
 
             rr = []
             if var == "C0.Lu":
+                GYUS = self.GY @ US
+                SUL0 = US.T @ L0
                 for ii in range(self._cov.C0.Lu.shape[0]):
-                    yRidKRiX = vec(
-                        Ge.T
-                        @ Ge
-                        @ Ge.T
-                        @ Y
-                        @ US
-                        @ US.T
-                        @ self._cov.C0.gradient()["Lu"][..., ii]
-                        @ US
-                        @ US.T
-                        @ L0
-                    ).T
-                    dk = self._cov.C0.gradient()["Lu"][..., ii]
-                    y0 = vec(Ge.T @ Y @ US @ US.T @ dk)
-                    y1 = vec(Ge.T @ Y @ US @ US.T)
-                    r1 = y0 @ y1
-                    # r1 = y.T @ vec(
-                    #     Ge
-                    #     @ Ge.T
-                    #     @ Y
-                    #     @ US
-                    #     @ US.T
-                    #     @ self._cov.C0.gradient()["Lu"][..., ii].T
-                    #     @ US
-                    #     @ US.T
-                    # )
-                    r2 = yRidKRiX @ solve(Z, XRiy)
-                    J = kron(
-                        L0.T
-                        @ US
-                        @ US.T
-                        @ self._cov.C0.gradient()["Lu"][..., ii]
-                        @ US
-                        @ US.T
-                        @ L0,
-                        Ge.T @ Ge @ Ge.T @ Ge,
-                    )
-                    r3 = XRiy.T @ solve(Z, J @ solve(Z, XRiy))
+                    dC0 = self._cov.C0.gradient()["Lu"][..., ii]
+                    SUdC0US = US.T @ dC0 @ US
+                    GYUSSUdC0US = GYUS @ SUdC0US
+                    yRidKRiX = vec(self.GG @ GYUSSUdC0US @ SUL0).T
+                    r1 = (GYUSSUdC0US * GYUS).sum()
+                    r2 = yRidKRiX @ ZiXRiy
+                    J = kron(SUL0.T @ SUdC0US @ SUL0, self.GGGG)
+                    r3 = ZiXRiy.T @ J @ ZiXRiy
                     rr.append(r1 - 2 * r2 + r3)
-                rr = np.asarray(rr)
-                grad[var] += rr
+                yKidKKiy = np.asarray(rr)
+                grad[var] += yKidKKiy
             else:
-                grad[var] += terms["yl"].T @ LdKLy[var]
+                GYUS = Y @ US
+                SUL0 = US.T @ L0
+                for ii in range(self._cov.C1.Lu.shape[0]):
+                    dC0 = self._cov.C1.gradient()["Lu"][..., ii]
+                    SUdC0US = US.T @ dC0 @ US
+                    GYUSSUdC0US = GYUS @ SUdC0US
+                    yRidKRiX = vec(Ge.T @ GYUSSUdC0US @ SUL0).T
+                    r1 = (GYUSSUdC0US * GYUS).sum()
+                    r2 = yRidKRiX @ ZiXRiy
+                    J = kron(SUL0.T @ SUdC0US @ SUL0, self.GG)
+                    r3 = ZiXRiy.T @ J @ ZiXRiy
+                    rr.append(r1 - 2 * r2 + r3)
+                yKidKKiy = np.asarray(rr)
+                grad[var] += yKidKKiy
 
+            rr = []
+            if var == "C0.Lu":
+                GYUS = Gm @ US
+                SUL0 = US.T @ L0
+                for ii in range(self._cov.C0.Lu.shape[0]):
+                    dC0 = self._cov.C0.gradient()["Lu"][..., ii]
+                    SUdC0US = US.T @ dC0 @ US
+                    GYUSSUdC0US = GYUS @ SUdC0US
+                    yRidKRiX = vec(self.GG @ GYUSSUdC0US @ SUL0).T
+                    r1 = (GYUSSUdC0US * GYUS).sum()
+                    r2 = yRidKRiX @ ZiXRim
+                    J = kron(SUL0.T @ SUdC0US @ SUL0, self.GGGG)
+                    r3 = ZiXRim.T @ J @ ZiXRim
+                    rr.append(r1 - 2 * r2 + r3)
+                yKidKKiy = np.asarray(rr)
+                grad[var] += yKidKKiy
+            else:
+                GYUS = m @ US
+                SUL0 = US.T @ L0
+                for ii in range(self._cov.C1.Lu.shape[0]):
+                    dC0 = self._cov.C1.gradient()["Lu"][..., ii]
+                    SUdC0US = US.T @ dC0 @ US
+                    GYUSSUdC0US = GYUS @ SUdC0US
+                    yRidKRiX = vec(Ge.T @ GYUSSUdC0US @ SUL0).T
+                    r1 = (GYUSSUdC0US * GYUS).sum()
+                    r2 = yRidKRiX @ ZiXRim
+                    J = kron(SUL0.T @ SUdC0US @ SUL0, self.GG)
+                    r3 = ZiXRim.T @ J @ ZiXRim
+                    rr.append(r1 - 2 * r2 + r3)
+                yKidKKiy = np.asarray(rr)
+                # breakpoint()
+                grad[var] += yKidKKiy
+
+            # grad[var] += terms["ml"].T @ LdKLm[var]
             grad[var] -= 2 * terms["ml"].T @ LdKLy[var]
-            grad[var] += terms["ml"].T @ LdKLm[var]
             grad[var] += 2 * (terms["yl"] - terms["ml"]).T @ dmh[var]
             grad[var] /= 2
 
