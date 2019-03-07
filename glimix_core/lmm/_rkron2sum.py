@@ -130,10 +130,11 @@ class RKron2Sum(Function):
             @ kron(self._cov.C1.L, eye(self._cov._G.shape[0])).T
         )
         Y = self._Y
+        Ge = self._cov._Ge
         K = X @ X.T + R
-        W = kron(ddot(U, S), eye(self._cov._G.shape[0]))
+        W = kron(ddot(U, S), eye(Ge.shape[0]))
         Ri = W @ W.T
-        Z = eye(self._cov._G.shape[1]) + X.T @ solve(R, X)
+        Z = eye(Ge.shape[1]) + X.T @ solve(R, X)
         Ki = Ri - Ri @ X @ solve(Z, X.T @ Ri)
         y = vec(self._Y)
         yKiy = y.T @ Ri @ y - y.T @ Ri @ X @ solve(Z, X.T @ Ri @ y)
@@ -144,9 +145,12 @@ class RKron2Sum(Function):
         WM = kron(US.T @ A, F)
         WB = F @ B @ A.T @ US
         G = self._cov._G
-        WX = kron(US.T @ L0, G)
-        Z0 = kron(L0.T @ ddot(U, S * S) @ U.T @ L0, G.T @ G)
-        Z = eye(G.shape[1]) + Z0
+        # WX = kron(US.T @ L0, G)
+        WX = kron(US.T @ L0, Ge)
+        # Z0 = kron(L0.T @ ddot(U, S * S) @ U.T @ L0, G.T @ G)
+        Z0 = kron(L0.T @ ddot(U, S * S) @ U.T @ L0, Ge.T @ Ge)
+        # Z = eye(G.shape[1]) + Z0
+        Z = eye(Ge.shape[1]) + Z0
         yKiy = vec(WY).T @ vec(WY) - vec(WY).T @ WX @ solve(Z, WX.T @ vec(WY))
         MKiM = WM.T @ WM - WM.T @ WX @ solve(Z, WX.T @ WM)
         # MRiM = kron(A.T @ ddot(U, S ** 2) @ U.T @ A, F.T @ F)
@@ -282,12 +286,13 @@ class RKron2Sum(Function):
         terms = self._terms
         Z = terms["Z"]
         R = terms["R"]
+        W = terms["W"]
         WY = terms["WY"]
         WX = terms["WX"]
         WM = terms["WM"]
         Wm = terms["Wm"]
-        breakpoint()
-        cov_logdet = slogdet(terms["Z"])[1] + slogdet(terms["R"])[1]
+        # cov_logdet = slogdet(terms["Z"])[1] + slogdet(R)[1]
+        cov_logdet = slogdet(Z)[1] - 2 * slogdet(W)[1]
         lml = -(np - cp) * log2pi + self._logdet_MM - cov_logdet
         # lml = -(np - cp) * log2pi + self._logdet_MM - self._cov.logdet()
 
