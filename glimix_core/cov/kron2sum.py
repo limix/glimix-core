@@ -13,6 +13,7 @@ from numpy import (
     zeros_like,
 )
 from numpy.linalg import eigh
+from scipy.linalg import svd
 
 from numpy_sugar.linalg import ddot, dotd
 from optimix import Function
@@ -83,7 +84,6 @@ class Kron2SumCov(Function):
         rank : int
             Maximum rank of the C₁ matrix.
         """
-        from scipy.linalg import svd
 
         self._cache = {"LhD": None}
         self._C0 = LRFreeFormCov(dim, rank)
@@ -92,7 +92,11 @@ class Kron2SumCov(Function):
         self._C1.name = "C₁"
         G = atleast_2d(asarray(G, float))
         U, S, _ = svd(G, check_finite=False)
+        Ue = U[:, : S.shape[0]]
         self._G = G
+        # TODO: perform this dot only if G dimensionlity decrease
+        self._Ge = ddot(Ue, S)
+        self._GeTGe = self._Ge.T @ self._Ge
         S *= S
         self._Sxe = S
         self._Sx = concatenate((S, [0.0] * (U.shape[0] - S.shape[0])))

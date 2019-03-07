@@ -1,7 +1,7 @@
 import warnings
 from functools import lru_cache
 
-from numpy import asarray, asfortranarray, diagonal, kron, tensordot
+from numpy import asarray, asfortranarray, diagonal, eye, kron, sqrt, tensordot
 from numpy.linalg import matrix_rank, slogdet, solve
 
 from glimix_core._util import log2pi, unvec, vec
@@ -107,7 +107,8 @@ class RKron2Sum(Function):
         # 𝐦 = M𝛃 for 𝛃 = H⁻¹MᵗK⁻¹𝐲 and H = MᵗK⁻¹M.
         # 𝛃 = H⁻¹MᵗₕD𝐲ₗ
         b = solve(H, Mh.T @ yl)
-        self._mean.B = unvec(b, (self.ncovariates, -1))
+        B = unvec(b, (self.ncovariates, -1))
+        self._mean.B = B
 
         mh = Mh @ b
         # mhe = Mhe @ b
@@ -117,6 +118,59 @@ class RKron2Sum(Function):
         if ldetH[0] != 1.0:
             raise ValueError("The determinant of H should be positive.")
         ldetH = ldetH[1]
+
+        # breakpoint()
+        L0 = self._cov.C0.L
+        S, U = self._cov.C1.eigh()
+        S = 1 / sqrt(S)
+        US = ddot(U, S)
+        X = kron(self._cov.C0.L, self._cov._G)
+        R = (
+            kron(self._cov.C1.L, eye(self._cov._G.shape[0]))
+            @ kron(self._cov.C1.L, eye(self._cov._G.shape[0])).T
+        )
+        Y = self._Y
+        K = X @ X.T + R
+        W = kron(ddot(U, S), eye(self._cov._G.shape[0]))
+        Ri = W @ W.T
+        Z = eye(self._cov._G.shape[1]) + X.T @ solve(R, X)
+        Ki = Ri - Ri @ X @ solve(Z, X.T @ Ri)
+        y = vec(self._Y)
+        yKiy = y.T @ Ri @ y - y.T @ Ri @ X @ solve(Z, X.T @ Ri @ y)
+        WY = Y @ US
+        yRiy = vec(WY).T @ vec(WY)
+        F = self._mean.F
+        A = self._mean.A
+        WM = kron(US.T @ A, F)
+        WB = F @ B @ A.T @ US
+        G = self._cov._G
+        WX = kron(US.T @ L0, G)
+        Z0 = kron(L0.T @ ddot(U, S * S) @ U.T @ L0, G.T @ G)
+        Z = eye(G.shape[1]) + Z0
+        yKiy = vec(WY).T @ vec(WY) - vec(WY).T @ WX @ solve(Z, WX.T @ vec(WY))
+        MKiM = WM.T @ WM - WM.T @ WX @ solve(Z, WX.T @ WM)
+        # MRiM = kron(A.T @ ddot(U, S ** 2) @ U.T @ A, F.T @ F)
+        b = solve(MKiM, WM.T @ vec(WY) - WM.T @ WX @ solve(Z, WX.T @ vec(WY)))
+        B = unvec(b, (self.ncovariates, -1))
+        Wm = WM @ b
+
+        # w = ddot(U, S)
+        # WTY = self._Y @ w
+        # wA = w @ self._mean.A
+        # WTM = (wA, self._mean.F)
+        # WTm = vec(self._mean.F @ (B @ wA.T))
+        # # XX^t = kron(C0, GG^t)
+        # XTW = (L0.T @ w, self._cov._G.T)
+        # XTWWTY = self._cov._G.T @ WTY @ w.T @ L0
+
+        # # Z = (L0.T @ w.T, self._cov._G.T) @ (L0 @ w, self._cov._G)
+        # Z = kron(L0.T @ w.T @ w @ L0, self._cov._G.T @ self._cov._G)
+        # Z += eye(Z.shape[0])
+
+        # r0 = vec(WTY.T) @ vec(WTY) - vec(XTWWTY).T @ solve(Z, vec(XTWWTY))
+        # r1 = vec(self._Y).T @ solve(self._cov.value(), vec(self._Y))
+
+        # self._y.T
 
         self._cache["terms"] = {
             "yh": yh,
@@ -128,6 +182,15 @@ class RKron2Sum(Function):
             "ldetH": ldetH,
             "H": H,
             "b": b,
+            "Z": Z,
+            "WM": WM,
+            "WY": WY,
+            "WX": WX,
+            "W": W,
+            "R": R,
+            "K": K,
+            "B": B,
+            "Wm": Wm
             # "yhe": yhe,
             # "Mhe": Mhe,
             # "mhe": mhe,
@@ -216,16 +279,32 @@ class RKron2Sum(Function):
         """
         np = self.nsamples * self.ntraits
         cp = self.ncovariates * self.ntraits
-        lml = -(np - cp) * log2pi + self._logdet_MM - self._cov.logdet()
-
         terms = self._terms
-        lml -= terms["ldetH"]
+        Z = terms["Z"]
+        R = terms["R"]
+        WY = terms["WY"]
+        WX = terms["WX"]
+        WM = terms["WM"]
+        Wm = terms["Wm"]
+        breakpoint()
+        cov_logdet = slogdet(terms["Z"])[1] + slogdet(terms["R"])[1]
+        lml = -(np - cp) * log2pi + self._logdet_MM - cov_logdet
+        # lml = -(np - cp) * log2pi + self._logdet_MM - self._cov.logdet()
 
-        lml -= (
-            terms["yh"] @ terms["yl"]
-            - 2 * terms["ml"] @ terms["yh"]
-            + terms["ml"] @ terms["mh"]
-        )
+        # lml -= terms["ldetH"]
+
+        yKiy = vec(WY).T @ vec(WY) - vec(WY).T @ WX @ solve(Z, WX.T @ vec(WY))
+        mKiy = vec(Wm).T @ vec(WY) - vec(Wm).T @ WX @ solve(Z, WX.T @ vec(WY))
+        mKim = vec(Wm).T @ vec(Wm) - vec(Wm).T @ WX @ solve(Z, WX.T @ vec(Wm))
+        MKiM = WM.T @ WM - WM.T @ WX @ solve(Z, WX.T @ WM)
+        ldetH = slogdet(MKiM)[1]
+        lml -= ldetH
+        # lml -= (
+        #     terms["yh"] @ terms["yl"]
+        #     - 2 * terms["ml"] @ terms["yh"]
+        #     + terms["ml"] @ terms["mh"]
+        # )
+        lml -= yKiy - 2 * mKiy + mKim
 
         return lml / 2
 
