@@ -134,12 +134,12 @@ class RKron2Sum(Function):
         K = X @ X.T + R
         W = kron(ddot(U, S), eye(Ge.shape[0]))
         Ri = W @ W.T
-        Z = eye(Ge.shape[1]) + X.T @ solve(R, X)
-        Ki = Ri - Ri @ X @ solve(Z, X.T @ Ri)
+        # Z = eye(Ge.shape[1]) + X.T @ solve(R, X)
+        # Ki = Ri - Ri @ X @ solve(Z, X.T @ Ri)
         y = vec(self._Y)
-        yKiy = y.T @ Ri @ y - y.T @ Ri @ X @ solve(Z, X.T @ Ri @ y)
+        # yKiy = y.T @ Ri @ y - y.T @ Ri @ X @ solve(Z, X.T @ Ri @ y)
         WY = Y @ US
-        yRiy = vec(WY).T @ vec(WY)
+        # yRiy = vec(WY).T @ vec(WY)
         F = self._mean.F
         A = self._mean.A
         WM = kron(US.T @ A, F)
@@ -150,6 +150,7 @@ class RKron2Sum(Function):
         # Z0 = kron(L0.T @ ddot(U, S * S) @ U.T @ L0, G.T @ G)
         Z0 = kron(L0.T @ ddot(U, S * S) @ U.T @ L0, Ge.T @ Ge)
         # Z = eye(G.shape[1]) + Z0
+        # breakpoint()
         Z = eye(Ge.shape[1]) + Z0
         yKiy = vec(WY).T @ vec(WY) - vec(WY).T @ WX @ solve(Z, WX.T @ vec(WY))
         MKiM = WM.T @ WM - WM.T @ WX @ solve(Z, WX.T @ WM)
@@ -194,7 +195,9 @@ class RKron2Sum(Function):
             "R": R,
             "K": K,
             "B": B,
-            "Wm": Wm
+            "Wm": Wm,
+            "Ri": Ri,
+            "X": X
             # "yhe": yhe,
             # "Mhe": Mhe,
             # "mhe": mhe,
@@ -343,6 +346,38 @@ class RKron2Sum(Function):
         LdKLy = self._cov.LdKL_dot(terms["yl"])
         LdKLm = self._cov.LdKL_dot(terms["ml"])
 
+        R = terms["R"]
+        Ri = terms["Ri"]
+        Riy = solve(terms["R"], vec(self._Y))
+        r = Riy.T @ self._cov.gradient()["C0.Lu"][..., 0] @ Riy
+        L0 = self._cov.C0.L
+        L1 = self._cov.C1.L
+        S, U = self._cov.C1.eigh()
+        S = 1 / sqrt(S)
+        US = ddot(U, S)
+        G = self._cov.G
+        Y = self._Y
+        y = vec(Y)
+        X = terms["X"]
+        W = terms["W"]
+        Ri = terms["Ri"]
+        Z = terms["Z"]
+        Ge = self._cov._Ge
+        # X = kron(self._cov.C0.L, self._cov._G)
+        # W = kron(ddot(U, S), eye(Ge.shape[0]))
+        # Ri = W @ W.T
+
+        XRiy = vec(Ge.T @ Y @ US @ US.T @ L0)
+        import numpy as np
+
+        Zi = np.linalg.inv(Z)
+        Ki = np.linalg.inv(terms["K"])
+        dK = self._cov.gradient()["C0.Lu"][..., 0]
+        # y.T @ (Ri - Ri @ X @ Zi @ X.T @ Ri) @ dK @ (Ri - Ri @ X @ Zi @ X.T @ Ri) @ y
+        # y.T @ Ki @ dK @ Ki @ y
+
+        # breakpoint()
+
         varnames = ["C0.Lu", "C1.Lu"]
         LdKLM = self._cov.LdKL_dot(terms["Ml"])
         dH = {n: -dot(terms["Ml"].T, LdKLM[n]).transpose([2, 0, 1]) for n in varnames}
@@ -357,7 +392,55 @@ class RKron2Sum(Function):
         for var in varnames:
             grad[var] = -ld_grad[var]
             grad[var] -= diagonal(solve(terms["H"], dH[var]), axis1=1, axis2=2).sum(1)
-            grad[var] += (terms["yl"] - 2 * terms["ml"]).T @ LdKLy[var]
+
+            rr = []
+            if var == "C0.Lu":
+                for ii in range(self._cov.C0.Lu.shape[0]):
+                    yRidKRiX = vec(
+                        Ge.T
+                        @ Ge
+                        @ Ge.T
+                        @ Y
+                        @ US
+                        @ US.T
+                        @ self._cov.C0.gradient()["Lu"][..., ii]
+                        @ US
+                        @ US.T
+                        @ L0
+                    ).T
+                    dk = self._cov.C0.gradient()["Lu"][..., ii]
+                    y0 = vec(Ge.T @ Y @ US @ US.T @ dk)
+                    y1 = vec(Ge.T @ Y @ US @ US.T)
+                    r1 = y0 @ y1
+                    # r1 = y.T @ vec(
+                    #     Ge
+                    #     @ Ge.T
+                    #     @ Y
+                    #     @ US
+                    #     @ US.T
+                    #     @ self._cov.C0.gradient()["Lu"][..., ii].T
+                    #     @ US
+                    #     @ US.T
+                    # )
+                    r2 = yRidKRiX @ solve(Z, XRiy)
+                    J = kron(
+                        L0.T
+                        @ US
+                        @ US.T
+                        @ self._cov.C0.gradient()["Lu"][..., ii]
+                        @ US
+                        @ US.T
+                        @ L0,
+                        Ge.T @ Ge @ Ge.T @ Ge,
+                    )
+                    r3 = XRiy.T @ solve(Z, J @ solve(Z, XRiy))
+                    rr.append(r1 - 2 * r2 + r3)
+                rr = np.asarray(rr)
+                grad[var] += rr
+            else:
+                grad[var] += terms["yl"].T @ LdKLy[var]
+
+            grad[var] -= 2 * terms["ml"].T @ LdKLy[var]
             grad[var] += terms["ml"].T @ LdKLm[var]
             grad[var] += 2 * (terms["yl"] - terms["ml"]).T @ dmh[var]
             grad[var] /= 2
