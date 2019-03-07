@@ -4,20 +4,20 @@ from numpy import (
     asarray,
     atleast_2d,
     concatenate,
+    empty,
     eye,
     kron,
     log,
-    newaxis,
     sqrt,
     tensordot,
     zeros_like,
 )
-from numpy.linalg import eigh, svd
+from numpy.linalg import eigh
 
 from numpy_sugar.linalg import ddot, dotd
 from optimix import Function
 
-from .._util import format_function, unvec, vec
+from .._util import format_function, unvec
 from .free import FreeFormCov
 from .lrfree import LRFreeFormCov
 
@@ -83,21 +83,34 @@ class Kron2SumCov(Function):
         rank : int
             Maximum rank of the C₁ matrix.
         """
+        from scipy.linalg import svd
+
+        self._cache = {"LhD": None}
         self._C0 = LRFreeFormCov(dim, rank)
         self._C0.name = "C₀"
         self._C1 = FreeFormCov(dim)
         self._C1.name = "C₁"
-        self._G = atleast_2d(asarray(G, float))
-        U, S, _ = svd(G)
-        S = concatenate((S, [0.0] * (U.shape[0] - S.shape[0])))
-        self._Sx = S * S
+        G = atleast_2d(asarray(G, float))
+        U, S, _ = svd(G, check_finite=False)
+        self._G = G
+        S *= S
+        self._Sxe = S
+        self._Sx = concatenate((S, [0.0] * (U.shape[0] - S.shape[0])))
         self._Lx = U.T
         self._LxG = self._Lx @ G
         self._diag_LxGGLx = dotd(self._LxG, self._LxG.T)
-        self._I = eye(self.G.shape[0])
+        self._I = eye(U.shape[1])
+        self._Lxe = U[:, : S.shape[0]].T
+        self._LxGe = self._Lxe @ G
+        self._diag_LxGGLxe = dotd(self._LxGe, self._LxGe.T)
         Function.__init__(
             self, "Kron2SumCov", composite=[("C0", self._C0), ("C1", self._C1)]
         )
+        self._C0.listen(self._parameters_update)
+        self._C1.listen(self._parameters_update)
+
+    def _parameters_update(self):
+        self._cache["LhD"] = None
 
     def listen(self, func):
         """
@@ -132,10 +145,25 @@ class Kron2SumCov(Function):
         D : ndarray
             (Sₕ ⊗ Sₓ + Iₕₓ)⁻¹.
         """
+        if self._cache["LhD"] is not None:
+            return self._cache["LhD"]
         S1, U1 = self.C1.eigh()
         U1S1 = ddot(U1, 1 / sqrt(S1))
         Sh, Uh = eigh(U1S1.T @ self.C0.value() @ U1S1)
-        return {"Lh": (U1S1 @ Uh).T, "D": 1 / (kron(Sh, self._Sx) + 1)}
+        self._cache["LhD"] = {
+            "Lh": (U1S1 @ Uh).T,
+            "D": 1 / (kron(Sh, self._Sx) + 1),
+            "De": 1 / (kron(Sh, self._Sxe) + 1),
+        }
+        return self._cache["LhD"]
+
+    # @property
+    # def U1(self):
+    #     return self._LhD["U1"]
+
+    # @property
+    # def S1(self):
+    #     return self._LhD["S1"]
 
     @property
     def Lh(self):
@@ -144,6 +172,10 @@ class Kron2SumCov(Function):
     @property
     def D(self):
         return self._LhD["D"]
+
+    @property
+    def De(self):
+        return self._LhD["De"]
 
     @property
     def G(self):
@@ -238,8 +270,8 @@ class Kron2SumCov(Function):
         x : ndarray
             Solution x to the equation K⋅x = y.
         """
-        L = kron(self._LhD["Lh"], self.Lx)
-        return L.T @ ddot(self._LhD["D"], L @ v, left=True)
+        L = kron(self.Lh, self.Lx)
+        return L.T @ ddot(self.D, L @ v, left=True)
 
     def logdet(self):
         """
@@ -248,9 +280,9 @@ class Kron2SumCov(Function):
         Returns
         -------
         logdet : float
-            Log-determinant of K.
+            Log-determinant of K. 1 / (kron(Sh, self._Sx) + 1)
         """
-        return -log(self._LhD["D"]).sum() + self.G.shape[0] * self.C1.logdet()
+        return -log(self.De).sum() + self.G.shape[0] * self.C1.logdet()
 
     def logdet_gradient(self):
         """
@@ -273,24 +305,26 @@ class Kron2SumCov(Function):
         C1 : ndarray
             Derivative of C₁ over its parameters.
         """
-        Lh = self._LhD["Lh"]
-        D = self._LhD["D"]
 
         dC0 = self._C0.gradient()["Lu"]
         grad_C0 = zeros_like(self._C0.Lu)
         for i in range(self._C0.Lu.shape[0]):
-            t = kron(dotd(Lh, dC0[..., i] @ Lh.T), self._diag_LxGGLx)
-            grad_C0[i] = (D * t).sum()
+            t = kron(dotd(self.Lh, dC0[..., i] @ self.Lh.T), self._diag_LxGGLxe)
+            grad_C0[i] = (self.De * t).sum()
 
         dC1 = self._C1.gradient()["Lu"]
         grad_C1 = zeros_like(self._C1.Lu)
+        p = self._Sxe.shape[0]
+        np = self._G.shape[0] - p
         for i in range(self._C1.Lu.shape[0]):
-            t = kron(dotd(Lh, dC1[..., i] @ Lh.T), self._I.diagonal())
-            grad_C1[i] = (D * t).sum()
+            t = (dotd(self.Lh, dC1[..., i] @ self.Lh.T) * np).sum()
+            t1 = kron(dotd(self.Lh, dC1[..., i] @ self.Lh.T), eye(p))
+            t += (self.De * t1).sum()
+            grad_C1[i] = t
 
         return {"C0.Lu": grad_C0, "C1.Lu": grad_C1}
 
-    def LdKL_dot(self, v):
+    def LdKL_dot(self, v, v1=None):
         """
         Implements L(∂K)Lᵀv.
 
@@ -307,30 +341,29 @@ class Kron2SumCov(Function):
 
         over the parameters of C₁.
         """
-        from numpy import stack, einsum
 
         def dot(a, b):
-            le = "ijk"[: a.ndim]
-            ri = "jlk"[: b.ndim]
-            re = "ilk"[: max(a.ndim, b.ndim)]
-            return einsum(f"{le},{ri}->{re}", a, b)
+            r = tensordot(a, b, axes=([1], [0]))
+            if a.ndim > b.ndim:
+                return r.transpose([0, 2, 1])
+            return r
 
-        Lh = self._LhD["Lh"]
-        V = unvec(v, (self.G.shape[0], -1) + v.shape[1:])
-        LdKL_dot = {"C0.Lu": [], "C1.Lu": []}
+        Lh = self.Lh
+        V = unvec(v, (self.Lx.shape[0], -1) + v.shape[1:])
+        LdKL_dot = {
+            "C0.Lu": empty((v.shape[0],) + v.shape[1:] + (self._C0.Lu.shape[0],)),
+            "C1.Lu": empty((v.shape[0],) + v.shape[1:] + (self._C1.Lu.shape[0],)),
+        }
 
         dC0 = self._C0.gradient()["Lu"]
         for i in range(self._C0.Lu.shape[0]):
             t = dot(self._LxG, dot(self._LxG.T, dot(V, Lh @ dC0[..., i] @ Lh.T)))
-            LdKL_dot["C0.Lu"].append(t.reshape((-1,) + t.shape[2:], order="F"))
+            LdKL_dot["C0.Lu"][..., i] = t.reshape((-1,) + t.shape[2:], order="F")
 
         dC1 = self._C1.gradient()["Lu"]
         for i in range(self._C1.Lu.shape[0]):
             t = dot(V, Lh @ dC1[..., i] @ Lh.T)
-            LdKL_dot["C1.Lu"].append(t.reshape((-1,) + t.shape[2:], order="F"))
-
-        LdKL_dot["C0.Lu"] = stack(LdKL_dot["C0.Lu"], axis=-1)
-        LdKL_dot["C1.Lu"] = stack(LdKL_dot["C1.Lu"], axis=-1)
+            LdKL_dot["C1.Lu"][..., i] = t.reshape((-1,) + t.shape[2:], order="F")
 
         return LdKL_dot
 

@@ -71,17 +71,19 @@ class RKron2Sum(Function):
         F = asarray(F, float)
         G = asarray(G, float)
         self._Y = Y
-        self._y = Y.ravel(order="F")
+        # self._y = Y.ravel(order="F")
         self._cov = Kron2SumCov(G, Y.shape[1], rank)
         self._mean = KronMean(A, F)
         self._Yx = self._cov.Lx @ Y
         self._Mx = self._cov.Lx @ self._mean.F
+        # self._Yxe = self._cov._Lxe @ Y
+        # self._Mxe = self._cov._Lxe @ self._mean.F
         self._cache = {"terms": None}
         self._cov.listen(self._parameters_update)
         composite = [("C0", self._cov.C0), ("C1", self._cov.C1)]
         Function.__init__(self, "Kron2Sum", composite=composite)
 
-    def _parameters_update(self, _):
+    def _parameters_update(self):
         self._cache["terms"] = None
 
     @property
@@ -92,9 +94,11 @@ class RKron2Sum(Function):
         Lh = self._cov.Lh
         D = self._cov.D
         yh = vec(self._Yx @ Lh.T)
+        # yhe = vec(self._Yxe @ Lh.T)
         yl = D * yh
         A = self._mean.A
         Mh = kron(Lh @ A, self._Mx)
+        # Mhe = kron(Lh @ A, self._Mxe)
         Ml = ddot(D, Mh)
 
         # H = MᵗK⁻¹M.
@@ -106,6 +110,7 @@ class RKron2Sum(Function):
         self._mean.B = unvec(b, (self.ncovariates, -1))
 
         mh = Mh @ b
+        # mhe = Mhe @ b
         ml = D * mh
 
         ldetH = slogdet(H)
@@ -123,6 +128,9 @@ class RKron2Sum(Function):
             "ldetH": ldetH,
             "H": H,
             "b": b,
+            # "yhe": yhe,
+            # "Mhe": Mhe,
+            # "mhe": mhe,
         }
         return self._cache["terms"]
 
@@ -242,12 +250,10 @@ class RKron2Sum(Function):
         """
 
         def dot(a, b):
-            from numpy import einsum
-
-            le = "ijk"[: a.ndim]
-            ri = "jlk"[: b.ndim]
-            re = "ilk"[: max(a.ndim, b.ndim)]
-            return einsum(f"{le},{ri}->{re}", a, b)
+            r = tensordot(a, b, axes=([1], [0]))
+            if a.ndim > b.ndim:
+                return r.transpose([0, 2, 1])
+            return r
 
         terms = self._terms
         LdKLy = self._cov.LdKL_dot(terms["yl"])
@@ -257,9 +263,9 @@ class RKron2Sum(Function):
         LdKLM = self._cov.LdKL_dot(terms["Ml"])
         dH = {n: -dot(terms["Ml"].T, LdKLM[n]).transpose([2, 0, 1]) for n in varnames}
 
-        left = {n: solve(terms["H"], (dH[n] @ terms["b"]).T) for n in varnames}
-        right = {n: solve(terms["H"], terms["Ml"].T @ LdKLy[n]) for n in varnames}
-        db = {n: -left[n] - right[n] for n in varnames}
+        left = {n: (dH[n] @ terms["b"]).T for n in varnames}
+        right = {n: terms["Ml"].T @ LdKLy[n] for n in varnames}
+        db = {n: -solve(terms["H"], left[n] + right[n]) for n in varnames}
 
         grad = {}
         dmh = {n: terms["Mh"] @ db[n] for n in varnames}
@@ -267,11 +273,9 @@ class RKron2Sum(Function):
         for var in varnames:
             grad[var] = -ld_grad[var]
             grad[var] -= diagonal(solve(terms["H"], dH[var]), axis1=1, axis2=2).sum(1)
-            grad[var] += terms["yl"].T @ LdKLy[var]
-            grad[var] -= 2 * terms["ml"].T @ LdKLy[var]
+            grad[var] += (terms["yl"] - 2 * terms["ml"]).T @ LdKLy[var]
             grad[var] += terms["ml"].T @ LdKLm[var]
-            grad[var] -= 2 * terms["ml"].T @ dmh[var]
-            grad[var] += 2 * terms["yl"].T @ dmh[var]
+            grad[var] += 2 * (terms["yl"] - terms["ml"]).T @ dmh[var]
             grad[var] /= 2
 
         return grad

@@ -117,22 +117,22 @@ def test_lmm_kron2sum_fit_C1_well_cond_C0_fullrank():
     assert_allclose(concatenate([grad[var] for var in vars]), [0] * 11, atol=1e-3)
 
 
-def test_lmm_kron2sum_fit_C1_well_cond_redutant_G():
-    random = RandomState(0)
-    Y = random.randn(5, 2)
-    A = random.randn(2, 2)
-    A = A @ A.T
-    F = random.randn(5, 2)
-    G = random.randn(5, 2)
-    G = concatenate((G, G), axis=1)
-    lmm = Kron2Sum(Y, A, F, G)
-    lml0 = lmm.lml()
-    lmm.fit(verbose=False)
-    lml1 = lmm.lml()
-    assert_allclose([lml0, lml1], [-19.905930526833977, 2.9779698820017453])
-    grad = lmm.lml_gradient()
-    vars = grad.keys()
-    assert_allclose(concatenate([grad[var] for var in vars]), [0] * 9, atol=1e-2)
+# def test_lmm_kron2sum_fit_C1_well_cond_redutant_G():
+#     random = RandomState(0)
+#     Y = random.randn(5, 2)
+#     A = random.randn(2, 2)
+#     A = A @ A.T
+#     F = random.randn(5, 2)
+#     G = random.randn(5, 2)
+#     G = concatenate((G, G), axis=1)
+#     lmm = Kron2Sum(Y, A, F, G)
+#     lml0 = lmm.lml()
+#     lmm.fit(verbose=False)
+#     lml1 = lmm.lml()
+#     assert_allclose([lml0, lml1], [-19.905930526833977, 2.9779698820017453])
+#     grad = lmm.lml_gradient()
+#     vars = grad.keys()
+#     assert_allclose(concatenate([grad[var] for var in vars]), [0] * 9, atol=1e-2)
 
 
 def test_lmm_kron2sum_fit_C1_well_cond_redutant_F():
