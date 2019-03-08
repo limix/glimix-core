@@ -440,7 +440,6 @@ class RKron2Sum(Function):
         # Ri = W @ W.T
 
         XRiy = vec(Ge.T @ Y @ US @ US.T @ L0)
-        import numpy as np
 
         M = self._mean.AF
         m = unvec(M @ vec(terms["B"]), (-1, self.ntraits))
@@ -463,67 +462,70 @@ class RKron2Sum(Function):
         for var in varnames:
             grad[var] = -ld_grad[var]
 
-        GYUS = self.GY @ US
         SUL0 = US.T @ L0
         dC0 = self._cov.C0.gradient()["Lu"]
-        t0 = dot(US.T, dC0, US)
-        t1 = dot(GYUS, t0)
-        yRidKRiX = vec(dot(self.GG, t1, SUL0))
-        r1 = (t1.T * GYUS.T).T.sum(axis=(0, 1))
+        SUdC0US = dot(US.T, dC0, US)
+        dC1 = self._cov.C1.gradient()["Lu"]
+        SUdC1US = dot(US.T, dC1, US)
+
+        YUS = Y @ US
+        GYUS = self.GY @ US
+        GmUS = Gm @ US
+        mUS = m @ US
+
+        J0 = kron(dot(SUL0.T, SUdC0US, SUL0).T, self.GGGG)
+        J1 = kron(dot(SUL0.T, SUdC1US, SUL0).T, self.GG)
+
+        GYUSSUdC0US = dot(GYUS, SUdC0US)
+        yRidKRiX = vec(dot(self.GG, GYUSSUdC0US, SUL0))
+        r1 = (GYUSSUdC0US.T * GYUS.T).T.sum(axis=(0, 1))
         r2 = yRidKRiX.T @ ZiXRiy
-        J = kron(dot(SUL0.T, t0, SUL0).T, self.GGGG).T
-        r3 = ZiXRiy @ (J.T @ ZiXRiy).T
+        r3 = ZiXRiy @ (J0 @ ZiXRiy).T
         yKidKKiy = r1 - 2 * r2 + r3
         grad["C0.Lu"] += yKidKKiy
 
-        YUS = Y @ US
-        dC1 = self._cov.C1.gradient()["Lu"]
-        t0 = dot(US.T, dC1, US)
-        t1 = dot(YUS, t0)
-        yRidKRiX = vec(dot(Ge.T, t1, SUL0))
-        r1 = (t1.T * YUS.T).T.sum(axis=(0, 1))
+        YUSSUdC1US = dot(YUS, SUdC1US)
+        yRidKRiX = vec(dot(Ge.T, YUSSUdC1US, SUL0))
+        r1 = (YUSSUdC1US.T * YUS.T).T.sum(axis=(0, 1))
         r2 = yRidKRiX.T @ ZiXRiy
-        J = kron(dot(SUL0.T, t0, SUL0).T, self.GG).T
-        r3 = ZiXRiy @ (J.T @ ZiXRiy).T
+        r3 = ZiXRiy @ (J1 @ ZiXRiy).T
         yKidKKiy = r1 - 2 * r2 + r3
         grad["C1.Lu"] += yKidKKiy
 
+        GmUSSUdC0US = dot(GmUS, SUdC0US)
+        mRidKRiX = vec(dot(self.GG, GmUSSUdC0US, SUL0))
+        r1 = (GmUSSUdC0US.T * GmUS.T).T.sum(axis=(0, 1))
+        r2 = mRidKRiX.T @ ZiXRim
+        r3 = ZiXRim @ (J0 @ ZiXRim).T
+        mKidKKim = r1 - 2 * r2 + r3
+        grad["C0.Lu"] += mKidKKim
+
+        mUSSUdC1US = dot(mUS, SUdC1US)
+        mRidKRiX = vec(dot(Ge.T, mUSSUdC1US, SUL0))
+        r1 = (mUSSUdC1US.T * mUS.T).T.sum(axis=(0, 1))
+        r2 = mRidKRiX.T @ ZiXRim
+        r3 = ZiXRim @ (J1 @ ZiXRim).T
+        mKidKKim = r1 - 2 * r2 + r3
+        grad["C1.Lu"] += mKidKKim
+
+        mRidKRiX = vec(dot(self.GG, GmUSSUdC0US, SUL0))
+        yRidKRiX = vec(dot(self.GG, GYUSSUdC0US, SUL0))
+        r1 = (GYUSSUdC0US.T * GmUS.T).T.sum(axis=(0, 1))
+        r2 = yRidKRiX.T @ ZiXRim + mRidKRiX.T @ ZiXRiy
+        r3 = ZiXRiy @ (J0 @ ZiXRim).T
+        yKidKKim = r1 - r2 + r3
+        grad["C0.Lu"] -= 2 * yKidKKim
+
+        mRidKRiX = vec(dot(Ge.T, mUSSUdC1US, SUL0))
+        yRidKRiX = vec(dot(Ge.T, YUSSUdC1US, SUL0))
+        r1 = (YUSSUdC1US.T * mUS.T).T.sum(axis=(0, 1))
+        r2 = yRidKRiX.T @ ZiXRim + mRidKRiX.T @ ZiXRiy
+        r3 = ZiXRiy @ (J1 @ ZiXRim).T
+        yKidKKim = r1 - r2 + r3
+        grad["C1.Lu"] -= 2 * yKidKKim
+
         for var in varnames:
             grad[var] -= diagonal(solve(terms["H"], dH[var]), axis1=1, axis2=2).sum(1)
-
-            rr = []
-            if var == "C0.Lu":
-                GYUS = Gm @ US
-                SUL0 = US.T @ L0
-                for ii in range(self._cov.C0.Lu.shape[0]):
-                    dC0 = self._cov.C0.gradient()["Lu"][..., ii]
-                    SUdC0US = US.T @ dC0 @ US
-                    GYUSSUdC0US = GYUS @ SUdC0US
-                    yRidKRiX = vec(self.GG @ GYUSSUdC0US @ SUL0).T
-                    r1 = (GYUSSUdC0US * GYUS).sum()
-                    r2 = yRidKRiX @ ZiXRim
-                    J = kron(SUL0.T @ SUdC0US @ SUL0, self.GGGG)
-                    r3 = ZiXRim.T @ J @ ZiXRim
-                    rr.append(r1 - 2 * r2 + r3)
-                yKidKKiy = np.asarray(rr)
-                grad[var] += yKidKKiy
-            else:
-                GYUS = m @ US
-                SUL0 = US.T @ L0
-                for ii in range(self._cov.C1.Lu.shape[0]):
-                    dC0 = self._cov.C1.gradient()["Lu"][..., ii]
-                    SUdC0US = US.T @ dC0 @ US
-                    GYUSSUdC0US = GYUS @ SUdC0US
-                    yRidKRiX = vec(Ge.T @ GYUSSUdC0US @ SUL0).T
-                    r1 = (GYUSSUdC0US * GYUS).sum()
-                    r2 = yRidKRiX @ ZiXRim
-                    J = kron(SUL0.T @ SUdC0US @ SUL0, self.GG)
-                    r3 = ZiXRim.T @ J @ ZiXRim
-                    rr.append(r1 - 2 * r2 + r3)
-                yKidKKiy = np.asarray(rr)
-                grad[var] += yKidKKiy
-
-            grad[var] -= 2 * terms["ml"].T @ LdKLy[var]
             grad[var] += 2 * (terms["yl"] - terms["ml"]).T @ dmh[var]
             grad[var] /= 2
 
