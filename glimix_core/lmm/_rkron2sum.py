@@ -213,7 +213,8 @@ class RKron2Sum(Function):
             "B": B,
             "Wm": Wm,
             "Ri": Ri,
-            "X": X
+            "X": X,
+            "US": US
             # "yhe": yhe,
             # "Mhe": Mhe,
             # "mhe": mhe,
@@ -285,10 +286,43 @@ class RKron2Sum(Function):
         Let 𝐲 = vec(Y), M = A⊗F, and H = MᵀK⁻¹M. The restricted log of the marginal
         likelihood is given by [R07]_::
 
-            2⋅log(p(𝐲)) = -(n⋅p - c⋅p) log(2π) + log(\|MᵗM\|) - log(\|K\|) - log(\|H\|)
+            2⋅log(p(𝐲)) = -(n⋅p - c⋅p) log(2π) + log(｜MᵗM｜) - log(｜K｜) - log(｜H｜)
                 - (𝐲-𝐦)ᵗ K⁻¹ (𝐲-𝐦),
 
         where 𝐦 = M𝛃 for 𝛃 = H⁻¹MᵗK⁻¹𝐲 and H = MᵗK⁻¹M.
+
+        For implementation purpose, let X = (L₀ ⊗ G) and R = (L₁ ⊗ I)(L₁ ⊗ I)ᵀ.
+        The covariance can be written as::
+
+            K = XXᵀ + R.
+
+        From the Woodbury matrix identity, we have
+
+            𝐲ᵀK⁻¹𝐲 = 𝐲ᵀR⁻¹𝐲 - 𝐲ᵀR⁻¹XZ⁻¹XᵀR⁻¹𝐲,
+
+        where Z = I + XᵀR⁻¹X. Note that R⁻¹ = (U₁S₁⁻½ ⊗ I)(U₁S₁⁻½ ⊗ I)ᵀ and ::
+
+            XᵀR⁻¹𝐲 = (L₀ᵀU₁S₁⁻¹U₁ᵀ ⊗ Gᵀ)𝐲 = vec(GᵀYU₁S₁⁻¹U₁ᵀL₀).
+
+        The term GᵀY can be calculated only once and it will form a r×p matrix. We
+        similarly have ::
+
+            XᵀR⁻¹M = (L₀ᵀU₁S₁⁻¹U₁ᵀA ⊗ GᵀF),
+
+        for which GᵀF is pre-computed.
+
+        The log-determinant of the covariance matrix is given by
+
+            log(｜K｜) = log(｜Z｜) - log(｜R⁻¹｜) = log(｜Z｜) - 2·n·log(｜U₁S₁⁻½｜).
+
+        The log of the marginal likelihood can be rewritten as::
+
+            2⋅log(p(𝐲)) = -(n⋅p - c⋅p) log(2π) + log(｜MᵗM｜)
+            - log(｜Z｜) + 2·n·log(｜U₁S₁⁻½｜)
+            - log(｜MᵀR⁻¹M - MᵀR⁻¹XZ⁻¹XᵀR⁻¹M｜)
+            - 𝐲ᵀR⁻¹𝐲 + 𝐲ᵀR⁻¹XZ⁻¹XᵀR⁻¹𝐲
+            - 𝐦ᵀR⁻¹𝐦 + 𝐦ᵀR⁻¹XZ⁻¹XᵀR⁻¹𝐦
+            + 2⋅𝐲ᵀR⁻¹𝐦 - 2⋅𝐲ᵀR⁻¹XZ⁻¹XᵀR⁻¹𝐦.
 
         Returns
         -------
@@ -304,31 +338,21 @@ class RKron2Sum(Function):
         cp = self.ncovariates * self.ntraits
         terms = self._terms
         Z = terms["Z"]
-        R = terms["R"]
-        W = terms["W"]
         WY = terms["WY"]
         WX = terms["WX"]
         WM = terms["WM"]
         Wm = terms["Wm"]
-        # cov_logdet = slogdet(terms["Z"])[1] + slogdet(R)[1]
-        cov_logdet = slogdet(Z)[1] - 2 * slogdet(W)[1]
+        US = terms["US"]
+        cov_logdet = slogdet(Z)[1] - 2 * slogdet(US)[1] * self.nsamples
         lml = -(np - cp) * log2pi + self._logdet_MM - cov_logdet
-        # lml = -(np - cp) * log2pi + self._logdet_MM - self._cov.logdet()
 
-        # lml -= terms["ldetH"]
+        MKiM = WM.T @ WM - WM.T @ WX @ solve(Z, WX.T @ WM)
+        lml -= slogdet(MKiM)[1]
 
         yKiy = vec(WY).T @ vec(WY) - vec(WY).T @ WX @ solve(Z, WX.T @ vec(WY))
         mKiy = vec(Wm).T @ vec(WY) - vec(Wm).T @ WX @ solve(Z, WX.T @ vec(WY))
         mKim = vec(Wm).T @ vec(Wm) - vec(Wm).T @ WX @ solve(Z, WX.T @ vec(Wm))
-        MKiM = WM.T @ WM - WM.T @ WX @ solve(Z, WX.T @ WM)
-        ldetH = slogdet(MKiM)[1]
-        lml -= ldetH
-        # lml -= (
-        #     terms["yh"] @ terms["yl"]
-        #     - 2 * terms["ml"] @ terms["yh"]
-        #     + terms["ml"] @ terms["mh"]
-        # )
-        lml -= yKiy - 2 * mKiy + mKim
+        lml += -yKiy - mKim + 2 * mKiy
 
         return lml / 2
 
@@ -338,11 +362,40 @@ class RKron2Sum(Function):
 
         Let 𝐲 = vec(Y), 𝕂 = K⁻¹∂(K)K⁻¹, and H = MᵀK⁻¹M. The gradient is given by::
 
-            2⋅∂log(p(𝐲)) = -tr(K⁻¹∂K) - tr(H⁻¹∂H) + 𝐲ᵗ𝕂𝐲 + 2⋅∂(𝐦)ᵗK⁻¹𝐲 - 2⋅𝐦ᵗ𝕂𝐲
-                - ∂(𝐦)ᵗK⁻¹𝐦 + 𝐦ᵗ𝕂𝐦 - 𝐦K⁻¹∂(𝐦).
+            2⋅∂log(p(𝐲)) = -tr(K⁻¹∂K) - tr(H⁻¹∂H) + 𝐲ᵀ𝕂𝐲 - 𝐦ᵀ𝕂(2⋅𝐲-𝐦)
+                - 2⋅(𝐦-𝐲)ᵀK⁻¹∂(𝐦).
 
-            2⋅∂log(p(𝐲)) = -tr(K⁻¹∂K) - tr(H⁻¹∂H) + 𝐲ᵗ𝕂𝐲 - 𝐦ᵗ𝕂(2⋅𝐲-𝐦)
-                - 2⋅(𝐦-𝐲)ᵗK⁻¹∂(𝐦).
+        For implementation purposes, we use Woodbury matrix identity to write
+
+            𝐲ᵀ𝕂𝐲 = 𝐲ᵀ𝓡𝐲 - 2⋅𝐲ᵀ𝓡XZ⁻¹XᵀR⁻¹𝐲 + 𝐲ᵀR⁻¹XZ⁻¹Xᵀ𝓡XZ⁻¹XᵀR⁻¹𝐲.
+
+        where 𝓡 = R⁻¹∂(K)R⁻¹. We compute the above equation as follows::
+
+            𝐲ᵀ𝓡𝐲 = 𝐲ᵀ(U₁S₁⁻¹U₁ᵀ ⊗ I)(∂C₀ ⊗ GGᵀ)(U₁S₁⁻¹U₁ᵀ ⊗ I)𝐲
+                  = 𝐲ᵀ(U₁S₁⁻¹U₁ᵀ∂C₀ ⊗ G)(U₁S₁⁻¹U₁ᵀ ⊗ Gᵀ)𝐲
+                  = vec(GᵀYU₁S₁⁻¹U₁ᵀ∂C₀)ᵀvec(GᵀYU₁S₁⁻¹U₁ᵀ),
+
+        when the derivative is over the parameters of C₀. Otherwise, we have
+
+            𝐲ᵀ𝓡𝐲 = vec(YU₁S₁⁻¹U₁ᵀ∂C₁)ᵀvec(YU₁S₁⁻¹U₁ᵀ).
+
+        We have
+
+            Xᵀ𝓡𝐲 = (L₀ ⊗ G)ᵀ(U₁S₁⁻¹U₁ᵀ ⊗ I)(∂C₀ ⊗ GGᵀ)(U₁S₁⁻¹U₁ᵀ ⊗ I)𝐲
+                  = (L₀ᵀU₁S₁⁻¹U₁ᵀ∂C₀ ⊗ GᵀG) vec(GᵀYU₁S₁⁻¹U₁ᵀ)
+                  = vec(GᵀGGᵀYU₁S₁⁻¹U₁ᵀ∂C₀U₁S₁⁻¹U₁ᵀL₀),
+
+        when the derivative is over the parameters of C₀. Otherwise, we have
+
+            Xᵀ𝓡𝐲 = vec(GᵀYU₁S₁⁻¹U₁ᵀ∂C₁U₁S₁⁻¹U₁ᵀL₀).
+
+        We also have
+
+            Xᵀ𝓡X = (L₀ᵀU₁S₁⁻¹U₁ᵀ∂C₀U₁S₁⁻¹U₁ᵀL₀) ⊗ (GᵀGGᵀG),
+
+        when the derivative is over the parameters of C₀. Otherwise, we have
+
+            Xᵀ𝓡X = (L₀ᵀU₁S₁⁻¹U₁ᵀ∂C₀U₁S₁⁻¹U₁ᵀL₀) ⊗ (GᵀG).
 
         Returns
         -------
@@ -478,10 +531,8 @@ class RKron2Sum(Function):
                     r3 = ZiXRim.T @ J @ ZiXRim
                     rr.append(r1 - 2 * r2 + r3)
                 yKidKKiy = np.asarray(rr)
-                # breakpoint()
                 grad[var] += yKidKKiy
 
-            # grad[var] += terms["ml"].T @ LdKLm[var]
             grad[var] -= 2 * terms["ml"].T @ LdKLy[var]
             grad[var] += 2 * (terms["yl"] - terms["ml"]).T @ dmh[var]
             grad[var] /= 2
