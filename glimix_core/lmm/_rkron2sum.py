@@ -395,7 +395,7 @@ class RKron2Sum(Function):
 
         when the derivative is over the parameters of C₀. Otherwise, we have
 
-            Xᵀ𝓡X = (L₀ᵀU₁S₁⁻¹U₁ᵀ∂C₀U₁S₁⁻¹U₁ᵀL₀) ⊗ (GᵀG).
+            Xᵀ𝓡X = (L₀ᵀU₁S₁⁻¹U₁ᵀ∂C₁U₁S₁⁻¹U₁ᵀL₀) ⊗ (GᵀG).
 
         Returns
         -------
@@ -413,6 +413,9 @@ class RKron2Sum(Function):
 
         def dot(*args):
             return reduce(_dot, args)
+
+        def _sum(a):
+            return a.sum(axis=(0, 1))
 
         terms = self._terms
         LdKLy = self._cov.LdKL_dot(terms["yl"])
@@ -473,55 +476,71 @@ class RKron2Sum(Function):
         GmUS = Gm @ US
         mUS = m @ US
 
-        J0 = kron(dot(SUL0.T, SUdC0US, SUL0).T, self.GGGG)
-        J1 = kron(dot(SUL0.T, SUdC1US, SUL0).T, self.GG)
+        GG = self.GG
+        GGGG = self.GGGG
 
-        GYUSSUdC0US = dot(GYUS, SUdC0US)
-        yRidKRiX = vec(dot(self.GG, GYUSSUdC0US, SUL0))
-        r1 = (GYUSSUdC0US.T * GYUS.T).T.sum(axis=(0, 1))
-        r2 = yRidKRiX.T @ ZiXRiy
-        r3 = ZiXRiy @ (J0 @ ZiXRiy).T
-        yKidKKiy = r1 - 2 * r2 + r3
+        # Xᵀ𝓡X = (L₀ᵀU₁S₁⁻¹U₁ᵀ∂C₀U₁S₁⁻¹U₁ᵀL₀) ⊗ (GᵀGGᵀG)
+        J0 = kron(dot(SUL0.T, SUdC0US, SUL0).T, GGGG)
+        # Xᵀ𝓡X = (L₀ᵀU₁S₁⁻¹U₁ᵀ∂C₁U₁S₁⁻¹U₁ᵀL₀) ⊗ (GᵀG)
+        J1 = kron(dot(SUL0.T, SUdC1US, SUL0).T, GG)
+
+        # Xᵀ𝓡XZ⁻¹XᵀR⁻¹𝐲 over C₀ parameters
+        J0ZiXRiy = J0 @ ZiXRiy
+        # Xᵀ𝓡XZ⁻¹XᵀR⁻¹𝐦 over C₀ parameters
+        J0ZiXRim = J0 @ ZiXRim
+        # Xᵀ𝓡XZ⁻¹XᵀR⁻¹𝐲 over C₁ parameters
+        J1ZiXRiy = J1 @ ZiXRiy
+        # Xᵀ𝓡XZ⁻¹XᵀR⁻¹𝐦 over C₁ parameters
+        J1ZiXRim = J1 @ ZiXRim
+
+        GYC1idC0US = dot(GYUS, SUdC0US)
+        # 𝐲ᵀ𝓡X over C₀ parameters
+        yR0X = vec(dot(GG, GYC1idC0US, SUL0))
+        GmC1idC0US = dot(GmUS, SUdC0US)
+        # 𝐦ᵀ𝓡X over C₀ parameters
+        mR0X = vec(dot(GG, GmC1idC0US, SUL0))
+
+        YC1idC1US = dot(YUS, SUdC1US)
+        # 𝐲ᵀ𝓡X over C₁ parameters
+        yR1X = vec(dot(Ge.T, YC1idC1US, SUL0))
+        mC1idC1US = dot(mUS, SUdC1US)
+        # 𝐦ᵀ𝓡X over C₁ parameters
+        mR1X = vec(dot(Ge.T, mC1idC1US, SUL0))
+
+        # 𝐲ᵀ𝓡𝐲 over C₀ parameters
+        yR0y = _sum((GYC1idC0US.T * GYUS.T).T)
+        # 𝐲ᵀ𝕂𝐲 over C₀ parameters
+        yKidKKiy = yR0y - 2 * yR0X.T @ ZiXRiy + ZiXRiy @ J0ZiXRiy.T
         grad["C0.Lu"] += yKidKKiy
 
-        YUSSUdC1US = dot(YUS, SUdC1US)
-        yRidKRiX = vec(dot(Ge.T, YUSSUdC1US, SUL0))
-        r1 = (YUSSUdC1US.T * YUS.T).T.sum(axis=(0, 1))
-        r2 = yRidKRiX.T @ ZiXRiy
-        r3 = ZiXRiy @ (J1 @ ZiXRiy).T
-        yKidKKiy = r1 - 2 * r2 + r3
+        # 𝐲ᵀ𝓡𝐲 over C₁ parameters
+        yR1y = _sum((YC1idC1US.T * YUS.T).T)
+        # 𝐲ᵀ𝕂𝐲 over C₁ parameters
+        yKidKKiy = yR1y - 2 * yR1X.T @ ZiXRiy + ZiXRiy @ J1ZiXRiy.T
         grad["C1.Lu"] += yKidKKiy
 
-        GmUSSUdC0US = dot(GmUS, SUdC0US)
-        mRidKRiX = vec(dot(self.GG, GmUSSUdC0US, SUL0))
-        r1 = (GmUSSUdC0US.T * GmUS.T).T.sum(axis=(0, 1))
-        r2 = mRidKRiX.T @ ZiXRim
-        r3 = ZiXRim @ (J0 @ ZiXRim).T
-        mKidKKim = r1 - 2 * r2 + r3
+        # 𝐦ᵀ𝓡𝐦 over C₀ parameters
+        mR0m = _sum((GmC1idC0US.T * GmUS.T).T)
+        # 𝐦ᵀ𝕂𝐦 over C₀ parameters
+        mKidKKim = mR0m - 2 * mR0X.T @ ZiXRim + ZiXRim @ J0ZiXRim.T
         grad["C0.Lu"] += mKidKKim
 
-        mUSSUdC1US = dot(mUS, SUdC1US)
-        mRidKRiX = vec(dot(Ge.T, mUSSUdC1US, SUL0))
-        r1 = (mUSSUdC1US.T * mUS.T).T.sum(axis=(0, 1))
-        r2 = mRidKRiX.T @ ZiXRim
-        r3 = ZiXRim @ (J1 @ ZiXRim).T
-        mKidKKim = r1 - 2 * r2 + r3
+        # 𝐦ᵀ𝓡𝐦 over C₁ parameters
+        mR1m = _sum((mC1idC1US.T * mUS.T).T)
+        # 𝐦ᵀ𝕂𝐦 over C₁ parameters
+        mKidKKim = mR1m - 2 * mR1X.T @ ZiXRim + ZiXRim @ J1ZiXRim.T
         grad["C1.Lu"] += mKidKKim
 
-        mRidKRiX = vec(dot(self.GG, GmUSSUdC0US, SUL0))
-        yRidKRiX = vec(dot(self.GG, GYUSSUdC0US, SUL0))
-        r1 = (GYUSSUdC0US.T * GmUS.T).T.sum(axis=(0, 1))
-        r2 = yRidKRiX.T @ ZiXRim + mRidKRiX.T @ ZiXRiy
-        r3 = ZiXRiy @ (J0 @ ZiXRim).T
-        yKidKKim = r1 - r2 + r3
+        # 𝐲ᵀ𝓡𝐦 over C₀ parameters
+        yR0m = _sum((GYC1idC0US.T * GmUS.T).T)
+        # 𝐲ᵀ𝕂𝐦 over C₀ parameters
+        yKidKKim = yR0m - yR0X.T @ ZiXRim - mR0X.T @ ZiXRiy + ZiXRiy @ J0ZiXRim.T
         grad["C0.Lu"] -= 2 * yKidKKim
 
-        mRidKRiX = vec(dot(Ge.T, mUSSUdC1US, SUL0))
-        yRidKRiX = vec(dot(Ge.T, YUSSUdC1US, SUL0))
-        r1 = (YUSSUdC1US.T * mUS.T).T.sum(axis=(0, 1))
-        r2 = yRidKRiX.T @ ZiXRim + mRidKRiX.T @ ZiXRiy
-        r3 = ZiXRiy @ (J1 @ ZiXRim).T
-        yKidKKim = r1 - r2 + r3
+        # 𝐲ᵀ𝓡𝐦 over C₁ parameters
+        yR1m = _sum((YC1idC1US.T * mUS.T).T)
+        # 𝐲ᵀ𝕂𝐦 over C₁ parameters
+        yKidKKim = yR1m - yR1X.T @ ZiXRim - mR1X.T @ ZiXRiy + ZiXRiy @ J1ZiXRim.T
         grad["C1.Lu"] -= 2 * yKidKKim
 
         for var in varnames:
