@@ -8,7 +8,7 @@ from scipy.linalg import cho_factor, cho_solve
 from glimix_core._util import log2pi, unvec, vec
 from glimix_core.cov import Kron2SumCov
 from glimix_core.mean import KronMean
-from numpy_sugar.linalg import ddot
+from numpy_sugar.linalg import ddot, sum2diag
 from optimix import Function
 
 
@@ -88,20 +88,20 @@ class RKron2Sum(Function):
         self._cache["terms"] = None
 
     @property
-    def GY(self):
+    def _GY(self):
         return self._cov._Ge.T @ self._Y
 
     @property
-    def GYGY(self):
-        return self.GY ** 2
-
-    @property
-    def GG(self):
+    def _GG(self):
         return self._cov._Ge.T @ self._cov._Ge
 
     @property
-    def GGGG(self):
-        return self.GG @ self.GG
+    def _GGGG(self):
+        return self._GG @ self._GG
+
+    @property
+    def _GGGY(self):
+        return self._GG @ self._GY
 
     @property
     def _FF(self):
@@ -110,6 +110,10 @@ class RKron2Sum(Function):
     @property
     def _GF(self):
         return self._cov._Ge.T @ self._mean.F
+
+    @property
+    def _FGGF(self):
+        return self._GF.T @ self._GF
 
     @property
     def _FY(self):
@@ -147,57 +151,48 @@ class RKron2Sum(Function):
 
         L0 = self._cov.C0.L
         S, U = self._cov.C1.eigh()
-        w = ddot(U, 1 / S) @ U.T
+        W = ddot(U, 1 / S) @ U.T
         S = 1 / sqrt(S)
-        US = ddot(U, S)
         X = kron(self._cov.C0.L, self._cov._G)
-        R = (
-            kron(self._cov.C1.L, eye(self._cov._G.shape[0]))
-            @ kron(self._cov.C1.L, eye(self._cov._G.shape[0])).T
-        )
         Y = self._Y
-        G = self._cov._Ge
-        K = X @ X.T + R
-        W = kron(ddot(U, S), eye(G.shape[0]))
-        Ri = W @ W.T
         y = vec(self._Y)
-        WY = Y @ US
-        # yRiy = vec(WY).T @ vec(WY)
         F = self._mean.F
         A = self._mean.A
-        WM = kron(US.T @ A, F)
-        WB = F @ B @ A.T @ US
-        # G = self._cov._G
-        WX = kron(US.T @ L0, G)
-        Z0 = kron(L0.T @ ddot(U, S * S) @ U.T @ L0, G.T @ G)
-        Z = eye(G.shape[1]) + Z0
-        Lz = cho_factor(Z, lower=True)
-        MKiM = WM.T @ WM - WM.T @ WX @ solve(Z, WX.T @ WM)
-        b = solve(MKiM, WM.T @ vec(WY) - WM.T @ WX @ solve(Z, WX.T @ vec(WY)))
-        B = unvec(b, (self.ncovariates, -1))
-        Wm = WM @ b
-        WL0 = w @ L0
-        YW = Y @ w
-        WA = w @ A
+
+        WL0 = W @ L0
+        YW = Y @ W
+        WA = W @ A
         L0WA = L0.T @ WA
+
+        Z = kron(L0.T @ WL0, self._GG)
+        # Z = eye(G.shape[1]) + Z0
+        Z = sum2diag(Z, 1)
+        Lz = cho_factor(Z, lower=True)
 
         # 𝐲ᵀR⁻¹𝐲 = vec(YW)ᵀ𝐲
         yRiy = vec(YW) @ y
         # MᵀR⁻¹M = AᵀWA ⊗ FᵀF
         MRiM = kron(A.T @ WA, self._FF)
         # XᵀR⁻¹𝐲 = vec(GᵀYWL₀)
-        XRiy = vec(self.GY @ WL0)
+        XRiy = vec(self._GY @ WL0)
         # XᵀR⁻¹M = (L₀ᵀWA) ⊗ (GᵀF)
         XRiM = kron(L0WA, self._GF)
         # MᵀR⁻¹𝐲 = vec(FᵀYWA)
         MRiy = vec(self._FY @ WA)
         XRim = XRiM @ b
+
+        ZiXRiM = cho_solve(Lz, XRiM)
+        ZiXRiy = cho_solve(Lz, XRiy)
+
+        yKiy = yRiy - XRiy @ ZiXRiy
+        MKiy = MRiy - ZiXRiM.T @ XRiy
+        H = MRiM - XRiM.T @ ZiXRiM
+        b = solve(H, MKiy)
+        B = unvec(b, (self.ncovariates, -1))
+
+        ZiXRim = ZiXRiM @ b
         mRiy = b.T @ MRiy
         mRim = b.T @ MRiM @ b
-
-        ZiXRiM = cho_solve(Lz, WX.T @ WM)
-        ZiXRiy = cho_solve(Lz, WX.T @ vec(WY))
-        ZiXRim = ZiXRiM @ b
 
         self._cache["terms"] = {
             "yh": yh,
@@ -207,22 +202,15 @@ class RKron2Sum(Function):
             "mh": mh,
             "ml": ml,
             "ldetH": ldetH,
-            "H": H,
             "b": b,
             "Z": Z,
-            "WM": WM,
-            "WY": WY,
-            "WX": WX,
-            "W": W,
-            "R": R,
-            "K": K,
             "B": B,
-            "Wm": Wm,
-            "Ri": Ri,
             "X": X,
-            "US": US,
             "Lz": Lz,
             "S": S,
+            "W": W,
+            "WA": WA,
+            "WL0": WL0,
             "yRiy": yRiy,
             "MRiM": MRiM,
             "XRiy": XRiy,
@@ -234,9 +222,8 @@ class RKron2Sum(Function):
             "mRim": mRim,
             "mRiy": mRiy,
             "XRim": XRim,
-            # "yhe": yhe,
-            # "Mhe": Mhe,
-            # "mhe": mhe,
+            "yKiy": yKiy,
+            "H": H,
         }
         return self._cache["terms"]
 
@@ -396,7 +383,7 @@ class RKron2Sum(Function):
 
             ∂𝛃 = -H⁻¹(∂H)𝛃 - H⁻¹Mᵀ𝕂𝐲 and ∂H = -Mᵀ𝕂M.
 
-        Let Z = I + XᵀR⁻¹X and 𝓡 = R⁻¹∂(K)R⁻¹. We use Woodbury matrix identity to
+        Let Z = I + XᵀR⁻¹X and 𝓡 = R⁻¹(∂K)R⁻¹. We use Woodbury matrix identity to
         write ::
 
             𝐲ᵀ𝕂𝐲 = 𝐲ᵀ𝓡𝐲 - 2(𝐲ᵀ𝓡X)Z⁻¹(XᵀR⁻¹𝐲) + (𝐲ᵀR⁻¹X)Z⁻¹(Xᵀ𝓡X)Z⁻¹(XᵀR⁻¹𝐲)
@@ -425,7 +412,9 @@ class RKron2Sum(Function):
 
             Xᵀ𝓡X = (L₀ᵀW∂CᵢWL₀) ⊗ (GᵀEᵢEᵢᵀG)
             Mᵀ𝓡y = (AᵀW∂Cᵢ⊗FᵀEᵢ)vec(EᵢᵀYW) = vec(FᵀEᵢEᵢᵀYW∂CᵢWA)
-            Mᵀ𝓡X = AᵀW∂CᵢWL₀⊗FᵀEᵢEᵢᵀG.
+            Mᵀ𝓡X = AᵀW∂CᵢWL₀ ⊗ FᵀEᵢEᵢᵀG
+            Mᵀ𝓡M = AᵀW∂CᵢWA ⊗ FᵀEᵢEᵢᵀF
+            Xᵀ𝓡𝐲 = GᵀEᵢEᵢᵀYW∂CᵢWL₀
 
         From Woodbury matrix identity and Kronecker product properties we have ::
 
@@ -443,7 +432,9 @@ class RKron2Sum(Function):
         def _dot(a, b):
             r = tensordot(a, b, axes=([1], [0]))
             if a.ndim > b.ndim:
-                return r.transpose([0, 2, 1])
+                if r.ndim == 3:
+                    return r.transpose([0, 2, 1])
+                return r
             return r
 
         def dot(*args):
@@ -452,30 +443,89 @@ class RKron2Sum(Function):
         def _sum(a):
             return a.sum(axis=(0, 1))
 
-        terms = self._terms
-        LdKLy = self._cov.LdKL_dot(terms["yl"])
-        LdKLm = self._cov.LdKL_dot(terms["ml"])
+        def _kron(a, b):
+            from numpy import kron
 
-        R = terms["R"]
-        Ri = terms["Ri"]
-        Riy = solve(terms["R"], vec(self._Y))
-        r = Riy.T @ self._cov.gradient()["C0.Lu"][..., 0] @ Riy
+            if a.ndim == 3:
+                return kron(a.transpose([2, 0, 1]), b).transpose([1, 2, 0])
+            return kron(a, b)
+
+        terms = self._terms
+        dC0 = self._cov.C0.gradient()["Lu"]
+        dC1 = self._cov.C1.gradient()["Lu"]
+
+        b = terms["b"]
+        W = terms["W"]
+        Lz = terms["Lz"]
+        WA = terms["WA"]
+        WL0 = terms["WL0"]
+        MRiM = terms["MRiM"]
+        XRiM = terms["XRiM"]
+        ZiXRiM = terms["ZiXRiM"]
+        ZiXRiy = terms["ZiXRiy"]
+
+        WdC0 = dot(W, dC0)
+        WdC1 = dot(W, dC1)
+
+        # Mᵀ𝓡M
+        MR0M = _kron(dot(WA.T, dC0, WA), self._FGGF)
+        MR1M = _kron(dot(WA.T, dC1, WA), self._FF)
+
+        # Mᵀ𝓡X
+        MR0X = _kron(dot(WA.T, dC0, WL0), self._GF.T @ self._GG)
+        MR1X = _kron(dot(WA.T, dC1, WL0), self._GF.T)
+
+        # Mᵀ𝓡𝐲 = (AᵀW∂Cᵢ⊗FᵀEᵢ)vec(EᵢᵀYW) = vec(FᵀEᵢEᵢᵀYW∂CᵢWA)
+        MR0y = vec(dot(self._GF.T @ self._GY, dot(dC0, WA)))
+        MR1y = vec(self._FY @ dot(dC1, WA))
+
+        # Xᵀ𝓡X
+        XR0X = _kron(dot(WL0.T, dC0, WL0), self._GGGG)
+        XR1X = _kron(dot(WL0.T, dC1, WL0), self._GG)
+
+        # Xᵀ𝓡𝐲
+        XR0y = dot(self._GGGY, WdC0, WL0)
+        XR1y = dot(self._GY, WdC1, WL0)
+
+        ZiXR0X = cho_solve(Lz, XR0X)
+        ZiXR1X = cho_solve(Lz, XR1X)
+        ZiXR0y = cho_solve(Lz, XR0y)
+        ZiXR1y = cho_solve(Lz, XR1y)
+
+        # Mᵀ𝕂y = Mᵀ𝓡𝐲 - (MᵀR⁻¹X)Z⁻¹(Xᵀ𝓡𝐲) - (Mᵀ𝓡X)Z⁻¹(XᵀR⁻¹𝐲)
+        #       + (MᵀR⁻¹X)Z⁻¹(Xᵀ𝓡X)Z⁻¹(XᵀR⁻¹𝐲)
+        MK0y = MR0y - dot(XRiM.T, ZiXR0y) - dot(MR0X, ZiXRiy)
+        MK0y += dot(XRiM.T, ZiXR0X, ZiXRiy)
+        MK1y = MR1y - dot(XRiM.T, ZiXR1y) - dot(MR1X, ZiXRiy)
+        MK1y += dot(XRiM.T, ZiXR1X, ZiXRiy)
+
+        # Mᵀ𝕂M = Mᵀ𝓡M - 2(Mᵀ𝓡X)Z⁻¹(XᵀR⁻¹M) + (MᵀR⁻¹X)Z⁻¹(Xᵀ𝓡X)Z⁻¹(XᵀR⁻¹M)
+        MK0M = MR0M - 2 * dot(MR0X, ZiXRiM) + dot(ZiXRiM.T, XR0X, ZiXRiM)
+        MK1M = MR1M - 2 * dot(MR1X, ZiXRiM) + dot(ZiXRiM.T, XR1X, ZiXRiM)
+
+        MK0m = dot(MK0M, b)
+        MK1m = dot(MK1M, b)
+
+        db = {
+            "C0.Lu": MRiM @ MK0m
+            - XRiM.T @ ZiXRiM @ MK0m
+            - MRiM @ MK0y
+            + XRiM.T @ ZiXRiM @ MK0y,
+            "C1.Lu": MRiM @ MK1m
+            - XRiM.T @ ZiXRiM @ MK1m
+            - MRiM @ MK1y
+            + XRiM.T @ ZiXRiM @ MK1y,
+        }
+
+        LdKLy = self._cov.LdKL_dot(terms["yl"])
+
         L0 = self._cov.C0.L
-        L1 = self._cov.C1.L
         S, U = self._cov.C1.eigh()
         S = 1 / sqrt(S)
         US = ddot(U, S)
-        G = self._cov.G
         Y = self._Y
-        y = vec(Y)
-        X = terms["X"]
-        W = terms["W"]
-        Ri = terms["Ri"]
         Z = terms["Z"]
         Ge = self._cov._Ge
-        # X = kron(self._cov.C0.L, self._cov._G)
-        # W = kron(ddot(U, S), eye(Ge.shape[0]))
-        # Ri = W @ W.T
 
         XRiy = vec(Ge.T @ Y @ US @ US.T @ L0)
 
@@ -507,12 +557,12 @@ class RKron2Sum(Function):
         SUdC1US = dot(US.T, dC1, US)
 
         YUS = Y @ US
-        GYUS = self.GY @ US
+        GYUS = self._GY @ US
         GmUS = Gm @ US
         mUS = m @ US
 
-        GG = self.GG
-        GGGG = self.GGGG
+        GG = self._GG
+        GGGG = self._GGGG
 
         # Xᵀ𝓡X = (L₀ᵀU₁S₁⁻¹U₁ᵀ∂C₀U₁S₁⁻¹U₁ᵀL₀) ⊗ (GᵀGGᵀG)
         J0 = kron(dot(SUL0.T, SUdC0US, SUL0).T, GGGG)
@@ -545,38 +595,38 @@ class RKron2Sum(Function):
         # 𝐲ᵀ𝓡𝐲 over C₀ parameters
         yR0y = _sum((GYC1idC0US.T * GYUS.T).T)
         # 𝐲ᵀ𝕂𝐲 over C₀ parameters
-        yKidKKiy = yR0y - 2 * yR0X.T @ ZiXRiy + ZiXRiy @ J0ZiXRiy.T
-        grad["C0.Lu"] += yKidKKiy
+        yK0y = yR0y - 2 * yR0X.T @ ZiXRiy + ZiXRiy @ J0ZiXRiy.T
+        grad["C0.Lu"] += yK0y
 
         # 𝐲ᵀ𝓡𝐲 over C₁ parameters
         yR1y = _sum((YC1idC1US.T * YUS.T).T)
         # 𝐲ᵀ𝕂𝐲 over C₁ parameters
-        yKidKKiy = yR1y - 2 * yR1X.T @ ZiXRiy + ZiXRiy @ J1ZiXRiy.T
-        grad["C1.Lu"] += yKidKKiy
+        yK1y = yR1y - 2 * yR1X.T @ ZiXRiy + ZiXRiy @ J1ZiXRiy.T
+        grad["C1.Lu"] += yK1y
 
         # 𝐦ᵀ𝓡𝐦 over C₀ parameters
         mR0m = _sum((GmC1idC0US.T * GmUS.T).T)
         # 𝐦ᵀ𝕂𝐦 over C₀ parameters
-        mKidKKim = mR0m - 2 * mR0X.T @ ZiXRim + ZiXRim @ J0ZiXRim.T
-        grad["C0.Lu"] += mKidKKim
+        mK0m = mR0m - 2 * mR0X.T @ ZiXRim + ZiXRim @ J0ZiXRim.T
+        grad["C0.Lu"] += mK0m
 
         # 𝐦ᵀ𝓡𝐦 over C₁ parameters
         mR1m = _sum((mC1idC1US.T * mUS.T).T)
         # 𝐦ᵀ𝕂𝐦 over C₁ parameters
-        mKidKKim = mR1m - 2 * mR1X.T @ ZiXRim + ZiXRim @ J1ZiXRim.T
-        grad["C1.Lu"] += mKidKKim
+        mK1m = mR1m - 2 * mR1X.T @ ZiXRim + ZiXRim @ J1ZiXRim.T
+        grad["C1.Lu"] += mK1m
 
         # 𝐲ᵀ𝓡𝐦 over C₀ parameters
         yR0m = _sum((GYC1idC0US.T * GmUS.T).T)
         # 𝐲ᵀ𝕂𝐦 over C₀ parameters
-        yKidKKim = yR0m - yR0X.T @ ZiXRim - mR0X.T @ ZiXRiy + ZiXRiy @ J0ZiXRim.T
-        grad["C0.Lu"] -= 2 * yKidKKim
+        yK0m = yR0m - yR0X.T @ ZiXRim - mR0X.T @ ZiXRiy + ZiXRiy @ J0ZiXRim.T
+        grad["C0.Lu"] -= 2 * yK0m
 
         # 𝐲ᵀ𝓡𝐦 over C₁ parameters
         yR1m = _sum((YC1idC1US.T * mUS.T).T)
         # 𝐲ᵀ𝕂𝐦 over C₁ parameters
-        yKidKKim = yR1m - yR1X.T @ ZiXRim - mR1X.T @ ZiXRiy + ZiXRiy @ J1ZiXRim.T
-        grad["C1.Lu"] -= 2 * yKidKKim
+        yK1im = yR1m - yR1X.T @ ZiXRim - mR1X.T @ ZiXRiy + ZiXRiy @ J1ZiXRim.T
+        grad["C1.Lu"] -= 2 * yK1im
 
         for var in varnames:
             grad[var] -= diagonal(solve(terms["H"], dH[var]), axis1=1, axis2=2).sum(1)
