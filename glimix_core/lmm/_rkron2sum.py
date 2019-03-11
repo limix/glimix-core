@@ -1,8 +1,9 @@
 import warnings
 from functools import lru_cache, reduce
 
-from numpy import asarray, asfortranarray, diagonal, eye, kron, sqrt, tensordot
+from numpy import asarray, asfortranarray, diagonal, eye, kron, log, sqrt, tensordot
 from numpy.linalg import matrix_rank, slogdet, solve
+from scipy.linalg import cho_factor, cho_solve
 
 from glimix_core._util import log2pi, unvec, vec
 from glimix_core.cov import Kron2SumCov
@@ -18,7 +19,7 @@ class RKron2Sum(Function):
     Let n, c, and p be the number of samples, covariates, and traits, respectively.
     The outcome variable Y is a n×p matrix distributed according to::
 
-        vec(Y) ~ N((A ⊗ F) vec(B), K = C₀ ⊗ GGᵗ + C₁ ⊗ I).
+        vec(Y) ~ N((A ⊗ F) vec(B), K = C₀ ⊗ GGᵀ + C₁ ⊗ I).
 
     A and F are design matrices of dimensions p×p and n×c provided by the user,
     where F is the usual matrix of covariates commonly used in single-trait models.
@@ -54,7 +55,7 @@ class RKron2Sum(Function):
         F : (n, c) array_like
             Covariates design matrix.
         G : (n, r) array_like
-            Matrix G from the GGᵗ term.
+            Matrix G from the GGᵀ term.
         rank : optional, int
             Maximum rank of matrix C₀. Defaults to ``1``.
         """
@@ -103,6 +104,18 @@ class RKron2Sum(Function):
         return self.GG @ self.GG
 
     @property
+    def _FF(self):
+        return self._mean.F.T @ self._mean.F
+
+    @property
+    def _GF(self):
+        return self._cov._Ge.T @ self._mean.F
+
+    @property
+    def _FY(self):
+        return self._mean.F.T @ self._Y
+
+    @property
     def _terms(self):
         if self._cache["terms"] is not None:
             return self._cache["terms"]
@@ -110,24 +123,21 @@ class RKron2Sum(Function):
         Lh = self._cov.Lh
         D = self._cov.D
         yh = vec(self._Yx @ Lh.T)
-        # yhe = vec(self._Yxe @ Lh.T)
         yl = D * yh
         A = self._mean.A
         Mh = kron(Lh @ A, self._Mx)
-        # Mhe = kron(Lh @ A, self._Mxe)
         Ml = ddot(D, Mh)
 
-        # H = MᵗK⁻¹M.
+        # H = MᵀK⁻¹M.
         H = Mh.T @ Ml
 
-        # 𝐦 = M𝛃 for 𝛃 = H⁻¹MᵗK⁻¹𝐲 and H = MᵗK⁻¹M.
-        # 𝛃 = H⁻¹MᵗₕD𝐲ₗ
+        # 𝐦 = M𝛃 for 𝛃 = H⁻¹MᵀK⁻¹𝐲 and H = MᵀK⁻¹M.
+        # 𝛃 = H⁻¹MᵀₕD𝐲ₗ
         b = solve(H, Mh.T @ yl)
         B = unvec(b, (self.ncovariates, -1))
         self._mean.B = B
 
         mh = Mh @ b
-        # mhe = Mhe @ b
         ml = D * mh
 
         ldetH = slogdet(H)
@@ -135,9 +145,9 @@ class RKron2Sum(Function):
             raise ValueError("The determinant of H should be positive.")
         ldetH = ldetH[1]
 
-        # breakpoint()
         L0 = self._cov.C0.L
         S, U = self._cov.C1.eigh()
+        w = ddot(U, 1 / S) @ U.T
         S = 1 / sqrt(S)
         US = ddot(U, S)
         X = kron(self._cov.C0.L, self._cov._G)
@@ -146,52 +156,48 @@ class RKron2Sum(Function):
             @ kron(self._cov.C1.L, eye(self._cov._G.shape[0])).T
         )
         Y = self._Y
-        Ge = self._cov._Ge
+        G = self._cov._Ge
         K = X @ X.T + R
-        W = kron(ddot(U, S), eye(Ge.shape[0]))
+        W = kron(ddot(U, S), eye(G.shape[0]))
         Ri = W @ W.T
-        # Z = eye(Ge.shape[1]) + X.T @ solve(R, X)
-        # Ki = Ri - Ri @ X @ solve(Z, X.T @ Ri)
         y = vec(self._Y)
-        # yKiy = y.T @ Ri @ y - y.T @ Ri @ X @ solve(Z, X.T @ Ri @ y)
         WY = Y @ US
         # yRiy = vec(WY).T @ vec(WY)
         F = self._mean.F
         A = self._mean.A
         WM = kron(US.T @ A, F)
         WB = F @ B @ A.T @ US
-        G = self._cov._G
-        # WX = kron(US.T @ L0, G)
-        WX = kron(US.T @ L0, Ge)
-        # Z0 = kron(L0.T @ ddot(U, S * S) @ U.T @ L0, G.T @ G)
-        Z0 = kron(L0.T @ ddot(U, S * S) @ U.T @ L0, Ge.T @ Ge)
-        # Z = eye(G.shape[1]) + Z0
-        # breakpoint()
-        Z = eye(Ge.shape[1]) + Z0
-        yKiy = vec(WY).T @ vec(WY) - vec(WY).T @ WX @ solve(Z, WX.T @ vec(WY))
+        # G = self._cov._G
+        WX = kron(US.T @ L0, G)
+        Z0 = kron(L0.T @ ddot(U, S * S) @ U.T @ L0, G.T @ G)
+        Z = eye(G.shape[1]) + Z0
+        Lz = cho_factor(Z, lower=True)
         MKiM = WM.T @ WM - WM.T @ WX @ solve(Z, WX.T @ WM)
-        # MRiM = kron(A.T @ ddot(U, S ** 2) @ U.T @ A, F.T @ F)
         b = solve(MKiM, WM.T @ vec(WY) - WM.T @ WX @ solve(Z, WX.T @ vec(WY)))
         B = unvec(b, (self.ncovariates, -1))
         Wm = WM @ b
+        WL0 = w @ L0
+        YW = Y @ w
+        WA = w @ A
+        L0WA = L0.T @ WA
 
-        # w = ddot(U, S)
-        # WTY = self._Y @ w
-        # wA = w @ self._mean.A
-        # WTM = (wA, self._mean.F)
-        # WTm = vec(self._mean.F @ (B @ wA.T))
-        # # XX^t = kron(C0, GG^t)
-        # XTW = (L0.T @ w, self._cov._G.T)
-        # XTWWTY = self._cov._G.T @ WTY @ w.T @ L0
+        # 𝐲ᵀR⁻¹𝐲 = vec(YW)ᵀ𝐲
+        yRiy = vec(YW) @ y
+        # MᵀR⁻¹M = AᵀWA ⊗ FᵀF
+        MRiM = kron(A.T @ WA, self._FF)
+        # XᵀR⁻¹𝐲 = vec(GᵀYWL₀)
+        XRiy = vec(self.GY @ WL0)
+        # XᵀR⁻¹M = (L₀ᵀWA) ⊗ (GᵀF)
+        XRiM = kron(L0WA, self._GF)
+        # MᵀR⁻¹𝐲 = vec(FᵀYWA)
+        MRiy = vec(self._FY @ WA)
+        XRim = XRiM @ b
+        mRiy = b.T @ MRiy
+        mRim = b.T @ MRiM @ b
 
-        # # Z = (L0.T @ w.T, self._cov._G.T) @ (L0 @ w, self._cov._G)
-        # Z = kron(L0.T @ w.T @ w @ L0, self._cov._G.T @ self._cov._G)
-        # Z += eye(Z.shape[0])
-
-        # r0 = vec(WTY.T) @ vec(WTY) - vec(XTWWTY).T @ solve(Z, vec(XTWWTY))
-        # r1 = vec(self._Y).T @ solve(self._cov.value(), vec(self._Y))
-
-        # self._y.T
+        ZiXRiM = cho_solve(Lz, WX.T @ WM)
+        ZiXRiy = cho_solve(Lz, WX.T @ vec(WY))
+        ZiXRim = ZiXRiM @ b
 
         self._cache["terms"] = {
             "yh": yh,
@@ -214,7 +220,20 @@ class RKron2Sum(Function):
             "Wm": Wm,
             "Ri": Ri,
             "X": X,
-            "US": US
+            "US": US,
+            "Lz": Lz,
+            "S": S,
+            "yRiy": yRiy,
+            "MRiM": MRiM,
+            "XRiy": XRiy,
+            "XRiM": XRiM,
+            "ZiXRiM": ZiXRiM,
+            "ZiXRiy": ZiXRiy,
+            "ZiXRim": ZiXRim,
+            "MRiy": MRiy,
+            "mRim": mRim,
+            "mRiy": mRiy,
+            "XRim": XRim,
             # "yhe": yhe,
             # "Mhe": Mhe,
             # "mhe": mhe,
@@ -235,7 +254,7 @@ class RKron2Sum(Function):
     @property
     def cov(self):
         """
-        Covariance K = C₀ ⊗ GGᵗ + C₁ ⊗ I.
+        Covariance K = C₀ ⊗ GGᵀ + C₁ ⊗ I.
 
         Returns
         -------
@@ -286,10 +305,10 @@ class RKron2Sum(Function):
         Let 𝐲 = vec(Y), M = A⊗F, and H = MᵀK⁻¹M. The restricted log of the marginal
         likelihood is given by [R07]_::
 
-            2⋅log(p(𝐲)) = -(n⋅p - c⋅p) log(2π) + log(｜MᵗM｜) - log(｜K｜) - log(｜H｜)
-                - (𝐲-𝐦)ᵗ K⁻¹ (𝐲-𝐦),
+            2⋅log(p(𝐲)) = -(n⋅p - c⋅p) log(2π) + log(｜MᵀM｜) - log(｜K｜) - log(｜H｜)
+                - (𝐲-𝐦)ᵀ K⁻¹ (𝐲-𝐦),
 
-        where 𝐦 = M𝛃 for 𝛃 = H⁻¹MᵗK⁻¹𝐲 and H = MᵗK⁻¹M.
+        where 𝐦 = M𝛃 for 𝛃 = H⁻¹MᵀK⁻¹𝐲.
 
         For implementation purpose, let X = (L₀ ⊗ G) and R = (L₁ ⊗ I)(L₁ ⊗ I)ᵀ.
         The covariance can be written as::
@@ -300,14 +319,14 @@ class RKron2Sum(Function):
 
             𝐲ᵀK⁻¹𝐲 = 𝐲ᵀR⁻¹𝐲 - 𝐲ᵀR⁻¹XZ⁻¹XᵀR⁻¹𝐲,
 
-        where Z = I + XᵀR⁻¹X. Note that R⁻¹ = (U₁S₁⁻½ ⊗ I)(U₁S₁⁻½ ⊗ I)ᵀ and ::
+        where Z = I + XᵀR⁻¹X. Note that R⁻¹ = (U₁S₁⁻¹U₁ᵀ) ⊗ I and ::
 
-            XᵀR⁻¹𝐲 = (L₀ᵀU₁S₁⁻¹U₁ᵀ ⊗ Gᵀ)𝐲 = vec(GᵀYU₁S₁⁻¹U₁ᵀL₀).
+            XᵀR⁻¹𝐲 = (L₀ᵀW ⊗ Gᵀ)𝐲 = vec(GᵀYWL₀),
 
-        The term GᵀY can be calculated only once and it will form a r×p matrix. We
-        similarly have ::
+        where W = U₁S₁⁻¹U₁ᵀ. The term GᵀY can be calculated only once and it will form a
+        r×p matrix. We similarly have ::
 
-            XᵀR⁻¹M = (L₀ᵀU₁S₁⁻¹U₁ᵀA ⊗ GᵀF),
+            XᵀR⁻¹M = (L₀ᵀWA) ⊗ (GᵀF),
 
         for which GᵀF is pre-computed.
 
@@ -317,12 +336,12 @@ class RKron2Sum(Function):
 
         The log of the marginal likelihood can be rewritten as::
 
-            2⋅log(p(𝐲)) = -(n⋅p - c⋅p) log(2π) + log(｜MᵗM｜)
+            2⋅log(p(𝐲)) = -(n⋅p - c⋅p) log(2π) + log(｜MᵀM｜)
             - log(｜Z｜) + 2·n·log(｜U₁S₁⁻½｜)
             - log(｜MᵀR⁻¹M - MᵀR⁻¹XZ⁻¹XᵀR⁻¹M｜)
-            - 𝐲ᵀR⁻¹𝐲 + 𝐲ᵀR⁻¹XZ⁻¹XᵀR⁻¹𝐲
-            - 𝐦ᵀR⁻¹𝐦 + 𝐦ᵀR⁻¹XZ⁻¹XᵀR⁻¹𝐦
-            + 2⋅𝐲ᵀR⁻¹𝐦 - 2⋅𝐲ᵀR⁻¹XZ⁻¹XᵀR⁻¹𝐦.
+            - 𝐲ᵀR⁻¹𝐲 + (𝐲ᵀR⁻¹X)Z⁻¹(XᵀR⁻¹𝐲)
+            - 𝐦ᵀR⁻¹𝐦 + (𝐦ᵀR⁻¹X)Z⁻¹(XᵀR⁻¹𝐦)
+            + 2𝐲ᵀR⁻¹𝐦 - 2(𝐲ᵀR⁻¹X)Z⁻¹(XᵀR⁻¹𝐦).
 
         Returns
         -------
@@ -337,21 +356,29 @@ class RKron2Sum(Function):
         np = self.nsamples * self.ntraits
         cp = self.ncovariates * self.ntraits
         terms = self._terms
-        Z = terms["Z"]
-        WY = terms["WY"]
-        WX = terms["WX"]
-        WM = terms["WM"]
-        Wm = terms["Wm"]
-        US = terms["US"]
-        cov_logdet = slogdet(Z)[1] - 2 * slogdet(US)[1] * self.nsamples
+        S = terms["S"]
+        Lz = terms["Lz"]
+        yRiy = terms["yRiy"]
+        MRiM = terms["MRiM"]
+        mRim = terms["mRim"]
+        mRiy = terms["mRiy"]
+        XRiy = terms["XRiy"]
+        XRiM = terms["XRiM"]
+        XRim = terms["XRim"]
+        ZiXRiM = terms["ZiXRiM"]
+        ZiXRim = terms["ZiXRim"]
+        ZiXRiy = terms["ZiXRiy"]
+
+        cov_logdet = log(Lz[0].diagonal()).sum() * 2
+        cov_logdet -= 2 * log(S).sum() * self.nsamples
         lml = -(np - cp) * log2pi + self._logdet_MM - cov_logdet
 
-        MKiM = WM.T @ WM - WM.T @ WX @ solve(Z, WX.T @ WM)
+        MKiM = MRiM - XRiM.T @ ZiXRiM
         lml -= slogdet(MKiM)[1]
 
-        yKiy = vec(WY).T @ vec(WY) - vec(WY).T @ WX @ solve(Z, WX.T @ vec(WY))
-        mKiy = vec(Wm).T @ vec(WY) - vec(Wm).T @ WX @ solve(Z, WX.T @ vec(WY))
-        mKim = vec(Wm).T @ vec(Wm) - vec(Wm).T @ WX @ solve(Z, WX.T @ vec(Wm))
+        yKiy = yRiy - XRiy @ ZiXRiy
+        mKiy = mRiy - XRim.T @ ZiXRiy
+        mKim = mRim - XRim.T @ ZiXRim
         lml += -yKiy - mKim + 2 * mKiy
 
         return lml / 2
@@ -365,11 +392,21 @@ class RKron2Sum(Function):
             2⋅∂log(p(𝐲)) = -tr(K⁻¹∂K) - tr(H⁻¹∂H) + 𝐲ᵀ𝕂𝐲 - 𝐦ᵀ𝕂(2⋅𝐲-𝐦)
                 - 2⋅(𝐦-𝐲)ᵀK⁻¹∂(𝐦).
 
-        For implementation purposes, we use Woodbury matrix identity to write
+        Observe that
 
-            𝐲ᵀ𝕂𝐲 = 𝐲ᵀ𝓡𝐲 - 2⋅𝐲ᵀ𝓡XZ⁻¹XᵀR⁻¹𝐲 + 𝐲ᵀR⁻¹XZ⁻¹Xᵀ𝓡XZ⁻¹XᵀR⁻¹𝐲.
+            ∂𝛃 = -H⁻¹(∂H)𝛃 - H⁻¹Mᵀ𝕂𝐲 and ∂H = -Mᵀ𝕂M.
 
-        where 𝓡 = R⁻¹∂(K)R⁻¹. We compute the above equation as follows::
+        Let Z = I + XᵀR⁻¹X and 𝓡 = R⁻¹∂(K)R⁻¹. We use Woodbury matrix identity to
+        write ::
+
+            𝐲ᵀ𝕂𝐲 = 𝐲ᵀ𝓡𝐲 - 2(𝐲ᵀ𝓡X)Z⁻¹(XᵀR⁻¹𝐲) + (𝐲ᵀR⁻¹X)Z⁻¹(Xᵀ𝓡X)Z⁻¹(XᵀR⁻¹𝐲)
+            Mᵀ𝕂M = Mᵀ𝓡M - 2(Mᵀ𝓡X)Z⁻¹(XᵀR⁻¹M) + (MᵀR⁻¹X)Z⁻¹(Xᵀ𝓡X)Z⁻¹(XᵀR⁻¹M)
+            Mᵀ𝕂𝐲 = Mᵀ𝓡𝐲 - (MᵀR⁻¹X)Z⁻¹(Xᵀ𝓡𝐲) - (Mᵀ𝓡X)Z⁻¹(XᵀR⁻¹𝐲)
+                  + (MᵀR⁻¹X)Z⁻¹(Xᵀ𝓡X)Z⁻¹(XᵀR⁻¹𝐲)
+            H⁻¹   = MᵀR⁻¹M - (MᵀR⁻¹X)Z⁻¹(XᵀR⁻¹M),
+
+        where we have used parentheses to separate expressions
+        that we will compute separately. For example, we have ::
 
             𝐲ᵀ𝓡𝐲 = 𝐲ᵀ(U₁S₁⁻¹U₁ᵀ ⊗ I)(∂C₀ ⊗ GGᵀ)(U₁S₁⁻¹U₁ᵀ ⊗ I)𝐲
                   = 𝐲ᵀ(U₁S₁⁻¹U₁ᵀ∂C₀ ⊗ G)(U₁S₁⁻¹U₁ᵀ ⊗ Gᵀ)𝐲
@@ -379,23 +416,21 @@ class RKron2Sum(Function):
 
             𝐲ᵀ𝓡𝐲 = vec(YU₁S₁⁻¹U₁ᵀ∂C₁)ᵀvec(YU₁S₁⁻¹U₁ᵀ).
 
-        We have
+        The above equations can be more compactly written as
 
-            Xᵀ𝓡𝐲 = (L₀ ⊗ G)ᵀ(U₁S₁⁻¹U₁ᵀ ⊗ I)(∂C₀ ⊗ GGᵀ)(U₁S₁⁻¹U₁ᵀ ⊗ I)𝐲
-                  = (L₀ᵀU₁S₁⁻¹U₁ᵀ∂C₀ ⊗ GᵀG) vec(GᵀYU₁S₁⁻¹U₁ᵀ)
-                  = vec(GᵀGGᵀYU₁S₁⁻¹U₁ᵀ∂C₀U₁S₁⁻¹U₁ᵀL₀),
+            𝐲ᵀ𝓡𝐲 = vec(EᵢᵀYW∂Cᵢ)ᵀvec(EᵢᵀYW),
 
-        when the derivative is over the parameters of C₀. Otherwise, we have
+        where W = U₁S₁⁻¹U₁ᵀ, E₀ = G, and E₁ = I. We will now just state the results for
+        the other instances of the aBc form, which follow similar derivations::
 
-            Xᵀ𝓡𝐲 = vec(GᵀYU₁S₁⁻¹U₁ᵀ∂C₁U₁S₁⁻¹U₁ᵀL₀).
+            Xᵀ𝓡X = (L₀ᵀW∂CᵢWL₀) ⊗ (GᵀEᵢEᵢᵀG)
+            Mᵀ𝓡y = (AᵀW∂Cᵢ⊗FᵀEᵢ)vec(EᵢᵀYW) = vec(FᵀEᵢEᵢᵀYW∂CᵢWA)
+            Mᵀ𝓡X = AᵀW∂CᵢWL₀⊗FᵀEᵢEᵢᵀG.
 
-        We also have
+        From Woodbury matrix identity and Kronecker product properties we have ::
 
-            Xᵀ𝓡X = (L₀ᵀU₁S₁⁻¹U₁ᵀ∂C₀U₁S₁⁻¹U₁ᵀL₀) ⊗ (GᵀGGᵀG),
-
-        when the derivative is over the parameters of C₀. Otherwise, we have
-
-            Xᵀ𝓡X = (L₀ᵀU₁S₁⁻¹U₁ᵀ∂C₁U₁S₁⁻¹U₁ᵀL₀) ⊗ (GᵀG).
+            tr(K⁻¹∂K) = tr[W∂Cᵢ]tr[EᵢEᵢᵀ] - tr[Z⁻¹(Xᵀ𝓡X)]
+            tr(H⁻¹∂H) = - tr[(MᵀR⁻¹M)(Mᵀ𝕂M)] + tr[(MᵀR⁻¹X)Z⁻¹(XᵀR⁻¹M)(Mᵀ𝕂M)]
 
         Returns
         -------
