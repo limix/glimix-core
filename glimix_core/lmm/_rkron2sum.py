@@ -185,7 +185,11 @@ class RKron2Sum(Function):
         yKiy = yRiy - XRiy @ ZiXRiy
         MKiy = MRiy - ZiXRiM.T @ XRiy
         H = MRiM - XRiM.T @ ZiXRiM
-        Lh = cho_factor(H)
+        try:
+            Lh = cho_factor(H)
+        except Exception:
+            breakpoint()
+            pass
         b = cho_solve(Lh, MKiy)
         B = unvec(b, (self.ncovariates, -1))
         self._mean.B = B

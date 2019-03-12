@@ -63,7 +63,7 @@ class FreeFormCov(Function):
         self._grad_Lu = zeros((n, n, self._Lu.shape[0]))
         Function.__init__(self, "FreeCov", Lu=self._Lu)
         bounds = [(-inf, +inf)] * (tsize - dim)
-        bounds += [(log(epsilon.small * 1000), +15)] * dim
+        bounds += [(log(epsilon.small * 1000), +12)] * dim
         self._Lu.bounds = bounds
 
     def listen(self, func):
