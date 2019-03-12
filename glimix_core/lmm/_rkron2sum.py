@@ -1,14 +1,24 @@
 import warnings
 from functools import lru_cache, reduce
 
-from numpy import asarray, asfortranarray, diagonal, eye, kron, log, sqrt, tensordot
+from numpy import (
+    asarray,
+    asfortranarray,
+    diagonal,
+    eye,
+    kron,
+    log,
+    sqrt,
+    tensordot,
+    trace,
+)
 from numpy.linalg import matrix_rank, slogdet, solve
 from scipy.linalg import cho_factor, cho_solve
 
 from glimix_core._util import log2pi, unvec, vec
 from glimix_core.cov import Kron2SumCov
 from glimix_core.mean import KronMean
-from numpy_sugar.linalg import ddot, sum2diag
+from numpy_sugar.linalg import ddot, sum2diag, trace2
 from optimix import Function
 
 
@@ -72,13 +82,8 @@ class RKron2Sum(Function):
         F = asarray(F, float)
         G = asarray(G, float)
         self._Y = Y
-        # self._y = Y.ravel(order="F")
         self._cov = Kron2SumCov(G, Y.shape[1], rank)
         self._mean = KronMean(A, F)
-        self._Yx = self._cov.Lx @ Y
-        self._Mx = self._cov.Lx @ self._mean.F
-        # self._Yxe = self._cov._Lxe @ Y
-        # self._Mxe = self._cov._Lxe @ self._mean.F
         self._cache = {"terms": None}
         self._cov.listen(self._parameters_update)
         composite = [("C0", self._cov.C0), ("C1", self._cov.C1)]
@@ -88,34 +93,57 @@ class RKron2Sum(Function):
         self._cache["terms"] = None
 
     @property
+    @lru_cache(maxsize=None)
     def _GY(self):
-        return self._cov._Ge.T @ self._Y
+        return self._cov.Ge.T @ self._Y
 
     @property
+    @lru_cache(maxsize=None)
     def _GG(self):
-        return self._cov._Ge.T @ self._cov._Ge
+        return self._cov.Ge.T @ self._cov.Ge
 
     @property
+    @lru_cache(maxsize=None)
+    def _trGG(self):
+        return trace2(self._cov.Ge, self._cov.Ge.T)
+
+    @property
+    @lru_cache(maxsize=None)
     def _GGGG(self):
         return self._GG @ self._GG
 
     @property
+    @lru_cache(maxsize=None)
     def _GGGY(self):
         return self._GG @ self._GY
 
     @property
+    @lru_cache(maxsize=None)
     def _FF(self):
         return self._mean.F.T @ self._mean.F
 
     @property
+    @lru_cache(maxsize=None)
     def _GF(self):
-        return self._cov._Ge.T @ self._mean.F
+        return self._cov.Ge.T @ self._mean.F
 
     @property
+    @lru_cache(maxsize=None)
+    def _FGGG(self):
+        return self._GF.T @ self._GG
+
+    @property
+    @lru_cache(maxsize=None)
+    def _FGGY(self):
+        return self._GF.T @ self._GY
+
+    @property
+    @lru_cache(maxsize=None)
     def _FGGF(self):
         return self._GF.T @ self._GF
 
     @property
+    @lru_cache(maxsize=None)
     def _FY(self):
         return self._mean.F.T @ self._Y
 
@@ -124,39 +152,11 @@ class RKron2Sum(Function):
         if self._cache["terms"] is not None:
             return self._cache["terms"]
 
-        Lh = self._cov.Lh
-        D = self._cov.D
-        yh = vec(self._Yx @ Lh.T)
-        yl = D * yh
-        A = self._mean.A
-        Mh = kron(Lh @ A, self._Mx)
-        Ml = ddot(D, Mh)
-
-        # H = MᵀK⁻¹M.
-        H = Mh.T @ Ml
-
-        # 𝐦 = M𝛃 for 𝛃 = H⁻¹MᵀK⁻¹𝐲 and H = MᵀK⁻¹M.
-        # 𝛃 = H⁻¹MᵀₕD𝐲ₗ
-        b = solve(H, Mh.T @ yl)
-        B = unvec(b, (self.ncovariates, -1))
-        self._mean.B = B
-
-        mh = Mh @ b
-        ml = D * mh
-
-        ldetH = slogdet(H)
-        if ldetH[0] != 1.0:
-            raise ValueError("The determinant of H should be positive.")
-        ldetH = ldetH[1]
-
         L0 = self._cov.C0.L
         S, U = self._cov.C1.eigh()
         W = ddot(U, 1 / S) @ U.T
         S = 1 / sqrt(S)
-        X = kron(self._cov.C0.L, self._cov._G)
         Y = self._Y
-        y = vec(self._Y)
-        F = self._mean.F
         A = self._mean.A
 
         WL0 = W @ L0
@@ -165,12 +165,11 @@ class RKron2Sum(Function):
         L0WA = L0.T @ WA
 
         Z = kron(L0.T @ WL0, self._GG)
-        # Z = eye(G.shape[1]) + Z0
         Z = sum2diag(Z, 1)
         Lz = cho_factor(Z, lower=True)
 
         # 𝐲ᵀR⁻¹𝐲 = vec(YW)ᵀ𝐲
-        yRiy = vec(YW) @ y
+        yRiy = (YW * self._Y).sum()
         # MᵀR⁻¹M = AᵀWA ⊗ FᵀF
         MRiM = kron(A.T @ WA, self._FF)
         # XᵀR⁻¹𝐲 = vec(GᵀYWL₀)
@@ -179,7 +178,6 @@ class RKron2Sum(Function):
         XRiM = kron(L0WA, self._GF)
         # MᵀR⁻¹𝐲 = vec(FᵀYWA)
         MRiy = vec(self._FY @ WA)
-        XRim = XRiM @ b
 
         ZiXRiM = cho_solve(Lz, XRiM)
         ZiXRiy = cho_solve(Lz, XRiy)
@@ -187,29 +185,25 @@ class RKron2Sum(Function):
         yKiy = yRiy - XRiy @ ZiXRiy
         MKiy = MRiy - ZiXRiM.T @ XRiy
         H = MRiM - XRiM.T @ ZiXRiM
-        b = solve(H, MKiy)
+        Lh = cho_factor(H)
+        b = cho_solve(Lh, MKiy)
         B = unvec(b, (self.ncovariates, -1))
+        self._mean.B = B
+        XRim = XRiM @ b
 
         ZiXRim = ZiXRiM @ b
         mRiy = b.T @ MRiy
         mRim = b.T @ MRiM @ b
 
         self._cache["terms"] = {
-            "yh": yh,
-            "yl": yl,
-            "Mh": Mh,
-            "Ml": Ml,
-            "mh": mh,
-            "ml": ml,
-            "ldetH": ldetH,
             "b": b,
             "Z": Z,
             "B": B,
-            "X": X,
             "Lz": Lz,
             "S": S,
             "W": W,
             "WA": WA,
+            "YW": YW,
             "WL0": WL0,
             "yRiy": yRiy,
             "MRiM": MRiM,
@@ -223,7 +217,7 @@ class RKron2Sum(Function):
             "mRiy": mRiy,
             "XRim": XRim,
             "yKiy": yKiy,
-            "H": H,
+            "Lh": Lh,
         }
         return self._cache["terms"]
 
@@ -421,6 +415,10 @@ class RKron2Sum(Function):
             tr(K⁻¹∂K) = tr[W∂Cᵢ]tr[EᵢEᵢᵀ] - tr[Z⁻¹(Xᵀ𝓡X)]
             tr(H⁻¹∂H) = - tr[(MᵀR⁻¹M)(Mᵀ𝕂M)] + tr[(MᵀR⁻¹X)Z⁻¹(XᵀR⁻¹M)(Mᵀ𝕂M)]
 
+        Note also that ::
+
+            ∂𝛃 = H⁻¹Mᵀ𝕂M𝛃 - H⁻¹Mᵀ𝕂𝐲.
+
         Returns
         -------
         C0.Lu : ndarray
@@ -428,64 +426,53 @@ class RKron2Sum(Function):
         C1.Lu : ndarray
             Gradient of the log of the marginal likelihood over C₁ parameters.
         """
-
-        def _dot(a, b):
-            r = tensordot(a, b, axes=([1], [0]))
-            if a.ndim > b.ndim:
-                if r.ndim == 3:
-                    return r.transpose([0, 2, 1])
-                return r
-            return r
-
-        def dot(*args):
-            return reduce(_dot, args)
-
-        def _sum(a):
-            return a.sum(axis=(0, 1))
-
-        def _kron(a, b):
-            from numpy import kron
-
-            if a.ndim == 3:
-                return kron(a.transpose([2, 0, 1]), b).transpose([1, 2, 0])
-            return kron(a, b)
-
         terms = self._terms
         dC0 = self._cov.C0.gradient()["Lu"]
         dC1 = self._cov.C1.gradient()["Lu"]
 
         b = terms["b"]
         W = terms["W"]
+        Lh = terms["Lh"]
         Lz = terms["Lz"]
         WA = terms["WA"]
         WL0 = terms["WL0"]
+        YW = terms["YW"]
         MRiM = terms["MRiM"]
+        MRiy = terms["MRiy"]
         XRiM = terms["XRiM"]
+        XRiy = terms["XRiy"]
         ZiXRiM = terms["ZiXRiM"]
         ZiXRiy = terms["ZiXRiy"]
 
-        WdC0 = dot(W, dC0)
-        WdC1 = dot(W, dC1)
+        WdC0 = mdot(W, dC0)
+        WdC1 = mdot(W, dC1)
+
+        AWdC0 = mdot(WA.T, dC0)
+        AWdC1 = mdot(WA.T, dC1)
 
         # Mᵀ𝓡M
-        MR0M = _kron(dot(WA.T, dC0, WA), self._FGGF)
-        MR1M = _kron(dot(WA.T, dC1, WA), self._FF)
+        MR0M = mkron(mdot(AWdC0, WA), self._FGGF)
+        MR1M = mkron(mdot(AWdC1, WA), self._FF)
 
         # Mᵀ𝓡X
-        MR0X = _kron(dot(WA.T, dC0, WL0), self._GF.T @ self._GG)
-        MR1X = _kron(dot(WA.T, dC1, WL0), self._GF.T)
+        MR0X = mkron(mdot(AWdC0, WL0), self._FGGG)
+        MR1X = mkron(mdot(AWdC1, WL0), self._GF.T)
 
         # Mᵀ𝓡𝐲 = (AᵀW∂Cᵢ⊗FᵀEᵢ)vec(EᵢᵀYW) = vec(FᵀEᵢEᵢᵀYW∂CᵢWA)
-        MR0y = vec(dot(self._GF.T @ self._GY, dot(dC0, WA)))
-        MR1y = vec(self._FY @ dot(dC1, WA))
+        MR0y = vec(mdot(self._FGGY, mdot(WdC0, WA)))
+        MR1y = vec(mdot(self._FY, WdC1, WA))
 
         # Xᵀ𝓡X
-        XR0X = _kron(dot(WL0.T, dC0, WL0), self._GGGG)
-        XR1X = _kron(dot(WL0.T, dC1, WL0), self._GG)
+        XR0X = mkron(mdot(WL0.T, dC0, WL0), self._GGGG)
+        XR1X = mkron(mdot(WL0.T, dC1, WL0), self._GG)
 
         # Xᵀ𝓡𝐲
-        XR0y = dot(self._GGGY, WdC0, WL0)
-        XR1y = dot(self._GY, WdC1, WL0)
+        XR0y = vec(mdot(self._GGGY, WdC0, WL0))
+        XR1y = vec(mdot(self._GY, WdC1, WL0))
+
+        # 𝐲ᵀ𝓡𝐲 = vec(EᵢᵀYW∂Cᵢ)ᵀvec(EᵢᵀYW)
+        yR0y = vec(mdot(self._GY, WdC0)).T @ vec(self._GY @ W)
+        yR1y = (YW.T * mdot(self._Y, WdC1).T).T.sum(axis=(0, 1))
 
         ZiXR0X = cho_solve(Lz, XR0X)
         ZiXR1X = cho_solve(Lz, XR1X)
@@ -494,144 +481,53 @@ class RKron2Sum(Function):
 
         # Mᵀ𝕂y = Mᵀ𝓡𝐲 - (MᵀR⁻¹X)Z⁻¹(Xᵀ𝓡𝐲) - (Mᵀ𝓡X)Z⁻¹(XᵀR⁻¹𝐲)
         #       + (MᵀR⁻¹X)Z⁻¹(Xᵀ𝓡X)Z⁻¹(XᵀR⁻¹𝐲)
-        MK0y = MR0y - dot(XRiM.T, ZiXR0y) - dot(MR0X, ZiXRiy)
-        MK0y += dot(XRiM.T, ZiXR0X, ZiXRiy)
-        MK1y = MR1y - dot(XRiM.T, ZiXR1y) - dot(MR1X, ZiXRiy)
-        MK1y += dot(XRiM.T, ZiXR1X, ZiXRiy)
+        MK0y = MR0y - mdot(XRiM.T, ZiXR0y) - mdot(MR0X, ZiXRiy)
+        MK0y += mdot(XRiM.T, ZiXR0X, ZiXRiy)
+        MK1y = MR1y - mdot(XRiM.T, ZiXR1y) - mdot(MR1X, ZiXRiy)
+        MK1y += mdot(XRiM.T, ZiXR1X, ZiXRiy)
 
-        # Mᵀ𝕂M = Mᵀ𝓡M - 2(Mᵀ𝓡X)Z⁻¹(XᵀR⁻¹M) + (MᵀR⁻¹X)Z⁻¹(Xᵀ𝓡X)Z⁻¹(XᵀR⁻¹M)
-        MK0M = MR0M - 2 * dot(MR0X, ZiXRiM) + dot(ZiXRiM.T, XR0X, ZiXRiM)
-        MK1M = MR1M - 2 * dot(MR1X, ZiXRiM) + dot(ZiXRiM.T, XR1X, ZiXRiM)
+        # 𝐲ᵀ𝕂𝐲 = 𝐲ᵀ𝓡𝐲 - 2(𝐲ᵀ𝓡X)Z⁻¹(XᵀR⁻¹𝐲) + (𝐲ᵀR⁻¹X)Z⁻¹(Xᵀ𝓡X)Z⁻¹(XᵀR⁻¹𝐲)
+        yK0y = yR0y - 2 * XR0y.T @ ZiXRiy + ZiXRiy.T @ mdot(XR0X, ZiXRiy)
+        yK1y = yR1y - 2 * XR1y.T @ ZiXRiy + ZiXRiy.T @ mdot(XR1X, ZiXRiy)
 
-        MK0m = dot(MK0M, b)
-        MK1m = dot(MK1M, b)
+        # Mᵀ𝕂M = Mᵀ𝓡M - (Mᵀ𝓡X)Z⁻¹(XᵀR⁻¹M) - (MᵀR⁻¹X)Z⁻¹(Xᵀ𝓡M)
+        #       + (MᵀR⁻¹X)Z⁻¹(Xᵀ𝓡X)Z⁻¹(XᵀR⁻¹M)
+        MR0XZiXRiM = mdot(MR0X, ZiXRiM)
+        MK0M = MR0M - MR0XZiXRiM - MR0XZiXRiM.transpose([1, 0, 2])
+        MK0M += mdot(ZiXRiM.T, XR0X, ZiXRiM)
+        MR1XZiXRiM = mdot(MR1X, ZiXRiM)
+        MK1M = MR1M - MR1XZiXRiM - MR1XZiXRiM.transpose([1, 0, 2])
+        MK1M += mdot(ZiXRiM.T, XR1X, ZiXRiM)
 
-        db = {
-            "C0.Lu": MRiM @ MK0m
-            - XRiM.T @ ZiXRiM @ MK0m
-            - MRiM @ MK0y
-            + XRiM.T @ ZiXRiM @ MK0y,
-            "C1.Lu": MRiM @ MK1m
-            - XRiM.T @ ZiXRiM @ MK1m
-            - MRiM @ MK1y
-            + XRiM.T @ ZiXRiM @ MK1y,
+        MK0m = mdot(MK0M, b)
+        mK0y = b.T @ MK0y
+        mK0m = b.T @ MK0m
+        MK1m = mdot(MK1M, b)
+        mK1y = b.T @ MK1y
+        mK1m = b.T @ MK1m
+        XRim = XRiM @ b
+        MRim = MRiM @ b
+
+        db = {"C0.Lu": cho_solve(Lh, MK0m - MK0y), "C1.Lu": cho_solve(Lh, MK1m - MK1y)}
+
+        grad = {
+            "C0.Lu": -trace(WdC0) * self._trGG + trace(ZiXR0X),
+            "C1.Lu": -trace(WdC1) * self.nsamples + trace(ZiXR1X),
         }
 
-        LdKLy = self._cov.LdKL_dot(terms["yl"])
+        grad["C0.Lu"] += cho_solve(Lh, MK0M).diagonal().sum(1)
+        grad["C1.Lu"] += cho_solve(Lh, MK1M).diagonal().sum(1)
 
-        L0 = self._cov.C0.L
-        S, U = self._cov.C1.eigh()
-        S = 1 / sqrt(S)
-        US = ddot(U, S)
-        Y = self._Y
-        Z = terms["Z"]
-        Ge = self._cov._Ge
+        mKiM = MRim.T - XRim.T @ ZiXRiM
+        yKiM = MRiy.T - XRiy.T @ ZiXRiM
 
-        XRiy = vec(Ge.T @ Y @ US @ US.T @ L0)
+        grad["C0.Lu"] += yK0y - 2 * mK0y + mK0m - 2 * mdot(mKiM, db["C0.Lu"])
+        grad["C0.Lu"] += 2 * mdot(yKiM, db["C0.Lu"])
+        grad["C1.Lu"] += yK1y - 2 * mK1y + mK1m - 2 * mdot(mKiM, db["C1.Lu"])
+        grad["C1.Lu"] += 2 * mdot(yKiM, db["C1.Lu"])
 
-        M = self._mean.AF
-        m = unvec(M @ vec(terms["B"]), (-1, self.ntraits))
-        Gm = Ge.T @ m
-        XRim = vec(Ge.T @ m @ US @ US.T @ L0)
-
-        varnames = ["C0.Lu", "C1.Lu"]
-        LdKLM = self._cov.LdKL_dot(terms["Ml"])
-        dH = {n: -dot(terms["Ml"].T, LdKLM[n]).transpose([2, 0, 1]) for n in varnames}
-
-        left = {n: (dH[n] @ terms["b"]).T for n in varnames}
-        right = {n: terms["Ml"].T @ LdKLy[n] for n in varnames}
-        db = {n: -solve(terms["H"], left[n] + right[n]) for n in varnames}
-
-        grad = {}
-        dmh = {n: terms["Mh"] @ db[n] for n in varnames}
-        ld_grad = self._cov.logdet_gradient()
-        ZiXRiy = solve(Z, XRiy)
-        ZiXRim = solve(Z, XRim)
-        for var in varnames:
-            grad[var] = -ld_grad[var]
-
-        SUL0 = US.T @ L0
-        dC0 = self._cov.C0.gradient()["Lu"]
-        SUdC0US = dot(US.T, dC0, US)
-        dC1 = self._cov.C1.gradient()["Lu"]
-        SUdC1US = dot(US.T, dC1, US)
-
-        YUS = Y @ US
-        GYUS = self._GY @ US
-        GmUS = Gm @ US
-        mUS = m @ US
-
-        GG = self._GG
-        GGGG = self._GGGG
-
-        # Xᵀ𝓡X = (L₀ᵀU₁S₁⁻¹U₁ᵀ∂C₀U₁S₁⁻¹U₁ᵀL₀) ⊗ (GᵀGGᵀG)
-        J0 = kron(dot(SUL0.T, SUdC0US, SUL0).T, GGGG)
-        # Xᵀ𝓡X = (L₀ᵀU₁S₁⁻¹U₁ᵀ∂C₁U₁S₁⁻¹U₁ᵀL₀) ⊗ (GᵀG)
-        J1 = kron(dot(SUL0.T, SUdC1US, SUL0).T, GG)
-
-        # Xᵀ𝓡XZ⁻¹XᵀR⁻¹𝐲 over C₀ parameters
-        J0ZiXRiy = J0 @ ZiXRiy
-        # Xᵀ𝓡XZ⁻¹XᵀR⁻¹𝐦 over C₀ parameters
-        J0ZiXRim = J0 @ ZiXRim
-        # Xᵀ𝓡XZ⁻¹XᵀR⁻¹𝐲 over C₁ parameters
-        J1ZiXRiy = J1 @ ZiXRiy
-        # Xᵀ𝓡XZ⁻¹XᵀR⁻¹𝐦 over C₁ parameters
-        J1ZiXRim = J1 @ ZiXRim
-
-        GYC1idC0US = dot(GYUS, SUdC0US)
-        # 𝐲ᵀ𝓡X over C₀ parameters
-        yR0X = vec(dot(GG, GYC1idC0US, SUL0))
-        GmC1idC0US = dot(GmUS, SUdC0US)
-        # 𝐦ᵀ𝓡X over C₀ parameters
-        mR0X = vec(dot(GG, GmC1idC0US, SUL0))
-
-        YC1idC1US = dot(YUS, SUdC1US)
-        # 𝐲ᵀ𝓡X over C₁ parameters
-        yR1X = vec(dot(Ge.T, YC1idC1US, SUL0))
-        mC1idC1US = dot(mUS, SUdC1US)
-        # 𝐦ᵀ𝓡X over C₁ parameters
-        mR1X = vec(dot(Ge.T, mC1idC1US, SUL0))
-
-        # 𝐲ᵀ𝓡𝐲 over C₀ parameters
-        yR0y = _sum((GYC1idC0US.T * GYUS.T).T)
-        # 𝐲ᵀ𝕂𝐲 over C₀ parameters
-        yK0y = yR0y - 2 * yR0X.T @ ZiXRiy + ZiXRiy @ J0ZiXRiy.T
-        grad["C0.Lu"] += yK0y
-
-        # 𝐲ᵀ𝓡𝐲 over C₁ parameters
-        yR1y = _sum((YC1idC1US.T * YUS.T).T)
-        # 𝐲ᵀ𝕂𝐲 over C₁ parameters
-        yK1y = yR1y - 2 * yR1X.T @ ZiXRiy + ZiXRiy @ J1ZiXRiy.T
-        grad["C1.Lu"] += yK1y
-
-        # 𝐦ᵀ𝓡𝐦 over C₀ parameters
-        mR0m = _sum((GmC1idC0US.T * GmUS.T).T)
-        # 𝐦ᵀ𝕂𝐦 over C₀ parameters
-        mK0m = mR0m - 2 * mR0X.T @ ZiXRim + ZiXRim @ J0ZiXRim.T
-        grad["C0.Lu"] += mK0m
-
-        # 𝐦ᵀ𝓡𝐦 over C₁ parameters
-        mR1m = _sum((mC1idC1US.T * mUS.T).T)
-        # 𝐦ᵀ𝕂𝐦 over C₁ parameters
-        mK1m = mR1m - 2 * mR1X.T @ ZiXRim + ZiXRim @ J1ZiXRim.T
-        grad["C1.Lu"] += mK1m
-
-        # 𝐲ᵀ𝓡𝐦 over C₀ parameters
-        yR0m = _sum((GYC1idC0US.T * GmUS.T).T)
-        # 𝐲ᵀ𝕂𝐦 over C₀ parameters
-        yK0m = yR0m - yR0X.T @ ZiXRim - mR0X.T @ ZiXRiy + ZiXRiy @ J0ZiXRim.T
-        grad["C0.Lu"] -= 2 * yK0m
-
-        # 𝐲ᵀ𝓡𝐦 over C₁ parameters
-        yR1m = _sum((YC1idC1US.T * mUS.T).T)
-        # 𝐲ᵀ𝕂𝐦 over C₁ parameters
-        yK1im = yR1m - yR1X.T @ ZiXRim - mR1X.T @ ZiXRiy + ZiXRiy @ J1ZiXRim.T
-        grad["C1.Lu"] -= 2 * yK1im
-
-        for var in varnames:
-            grad[var] -= diagonal(solve(terms["H"], dH[var]), axis1=1, axis2=2).sum(1)
-            grad[var] += 2 * (terms["yl"] - terms["ml"]).T @ dmh[var]
-            grad[var] /= 2
+        grad["C0.Lu"] /= 2
+        grad["C1.Lu"] /= 2
 
         return grad
 
@@ -646,3 +542,28 @@ class RKron2Sum(Function):
             Defaults to ``True``.
         """
         self._maximize(verbose=verbose)
+
+
+def _dot(a, b):
+    r = tensordot(a, b, axes=([min(1, a.ndim - 1)], [0]))
+    if a.ndim > b.ndim:
+        if r.ndim == 3:
+            return r.transpose([0, 2, 1])
+        return r
+    return r
+
+
+def mdot(*args):
+    return reduce(_dot, args)
+
+
+def _sum(a):
+    return a.sum(axis=(0, 1))
+
+
+def mkron(a, b):
+    from numpy import kron
+
+    if a.ndim == 3:
+        return kron(a.transpose([2, 0, 1]), b).transpose([1, 2, 0])
+    return kron(a, b)

@@ -91,12 +91,29 @@ class Kron2SumCov(Function):
         self._C1 = FreeFormCov(dim)
         self._C1.name = "C₁"
         G = atleast_2d(asarray(G, float))
-        U, S, _ = svd(G, check_finite=False)
-        Ue = U[:, : S.shape[0]]
         self._G = G
-        # TODO: perform this dot only if G dimensionlity decrease
-        self._Ge = ddot(Ue, S)
-        self._GeTGe = self._Ge.T @ self._Ge
+
+        self._Sxe = None
+        self._Sx = None
+        self._Lx = None
+        self._LxG = None
+        self._diag_LxGGLx = None
+        self._I = None
+        self._Lxe = None
+        self._LxGe = None
+        self._diag_LxGGLxe = None
+
+        Function.__init__(
+            self, "Kron2SumCov", composite=[("C0", self._C0), ("C1", self._C1)]
+        )
+        self._C0.listen(self._parameters_update)
+        self._C1.listen(self._parameters_update)
+
+    def _init_svd(self):
+        if self._Lx is not None:
+            return
+        G = self._G
+        U, S, _ = svd(G, check_finite=False)
         S *= S
         self._Sxe = S
         self._Sx = concatenate((S, [0.0] * (U.shape[0] - S.shape[0])))
@@ -107,11 +124,14 @@ class Kron2SumCov(Function):
         self._Lxe = U[:, : S.shape[0]].T
         self._LxGe = self._Lxe @ G
         self._diag_LxGGLxe = dotd(self._LxGe, self._LxGe.T)
-        Function.__init__(
-            self, "Kron2SumCov", composite=[("C0", self._C0), ("C1", self._C1)]
-        )
-        self._C0.listen(self._parameters_update)
-        self._C1.listen(self._parameters_update)
+
+    @property
+    @lru_cache(maxsize=None)
+    def Ge(self):
+        U, S, _ = svd(self._G, full_matrices=False, check_finite=False)
+        if U.shape[1] < self._G.shape[1]:
+            return ddot(U, S)
+        return self._G
 
     def _parameters_update(self):
         self._cache["LhD"] = None
@@ -130,6 +150,7 @@ class Kron2SumCov(Function):
 
     @property
     def Lx(self):
+        self._init_svd()
         return self._Lx
 
     @property
@@ -149,6 +170,7 @@ class Kron2SumCov(Function):
         D : ndarray
             (Sₕ ⊗ Sₓ + Iₕₓ)⁻¹.
         """
+        self._init_svd()
         if self._cache["LhD"] is not None:
             return self._cache["LhD"]
         S1, U1 = self.C1.eigh()
@@ -211,6 +233,7 @@ class Kron2SumCov(Function):
         K : ndarray
             C₀ ⊗ GGᵀ + C₁ ⊗ I.
         """
+        self._init_svd()
         C0 = self._C0.value()
         C1 = self._C1.value()
         return kron(C0, self._X) + kron(C1, self._I)
@@ -226,6 +249,7 @@ class Kron2SumCov(Function):
         C1 : ndarray
             Derivative of C₁ over its parameters.
         """
+        self._init_svd()
         C0 = self._C0.gradient()["Lu"].T
         C1 = self._C1.gradient()["Lu"].T
         grad = {"C0.Lu": kron(C0, self._X).T, "C1.Lu": kron(C1, self._I).T}
@@ -247,6 +271,7 @@ class Kron2SumCov(Function):
         C1.Lu : ndarray
             ∂K⋅v, where the gradient is taken over the C₁ parameters.
         """
+        self._init_svd()
         V = unvec(v, (self.G.shape[0], -1) + v.shape[1:])
         r = {}
 
@@ -274,6 +299,7 @@ class Kron2SumCov(Function):
         x : ndarray
             Solution x to the equation K⋅x = y.
         """
+        self._init_svd()
         L = kron(self.Lh, self.Lx)
         return L.T @ ddot(self.D, L @ v, left=True)
 
@@ -286,6 +312,7 @@ class Kron2SumCov(Function):
         logdet : float
             Log-determinant of K. 1 / (kron(Sh, self._Sx) + 1)
         """
+        self._init_svd()
         return -log(self.De).sum() + self.G.shape[0] * self.C1.logdet()
 
     def logdet_gradient(self):
@@ -309,6 +336,7 @@ class Kron2SumCov(Function):
         C1 : ndarray
             Derivative of C₁ over its parameters.
         """
+        self._init_svd()
 
         dC0 = self._C0.gradient()["Lu"]
         grad_C0 = zeros_like(self._C0.Lu)
@@ -345,6 +373,7 @@ class Kron2SumCov(Function):
 
         over the parameters of C₁.
         """
+        self._init_svd()
 
         def dot(a, b):
             r = tensordot(a, b, axes=([1], [0]))
