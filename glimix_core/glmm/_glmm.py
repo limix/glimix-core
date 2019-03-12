@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
-
 from copy import copy
 
 from numpy import asarray, ascontiguousarray, clip, diag, dot, exp, log, zeros

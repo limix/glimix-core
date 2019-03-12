@@ -1,24 +1,12 @@
 import warnings
 from functools import lru_cache, reduce
 
-from numpy import (
-    asarray,
-    asfortranarray,
-    diagonal,
-    eye,
-    kron,
-    log,
-    sqrt,
-    tensordot,
-    trace,
-)
-from numpy.linalg import matrix_rank, slogdet, solve
-from scipy.linalg import cho_factor, cho_solve
+from numpy import asarray, asfortranarray, kron, log, sqrt, tensordot, trace
+from numpy.linalg import matrix_rank, slogdet
 
 from glimix_core._util import log2pi, unvec, vec
 from glimix_core.cov import Kron2SumCov
 from glimix_core.mean import KronMean
-from numpy_sugar.linalg import ddot, sum2diag, trace2
 from optimix import Function
 
 
@@ -105,6 +93,8 @@ class RKron2Sum(Function):
     @property
     @lru_cache(maxsize=None)
     def _trGG(self):
+        from numpy_sugar.linalg import trace2
+
         return trace2(self._cov.Ge, self._cov.Ge.T)
 
     @property
@@ -149,6 +139,9 @@ class RKron2Sum(Function):
 
     @property
     def _terms(self):
+        from scipy.linalg import cho_factor, cho_solve
+        from numpy_sugar.linalg import ddot, sum2diag
+
         if self._cache["terms"] is not None:
             return self._cache["terms"]
 
@@ -430,6 +423,8 @@ class RKron2Sum(Function):
         C1.Lu : ndarray
             Gradient of the log of the marginal likelihood over C₁ parameters.
         """
+        from scipy.linalg import cho_solve
+
         terms = self._terms
         dC0 = self._cov.C0.gradient()["Lu"]
         dC1 = self._cov.C1.gradient()["Lu"]

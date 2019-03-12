@@ -1,5 +1,3 @@
-from __future__ import division
-
 from numpy import asarray, exp, log
 
 

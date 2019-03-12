@@ -1,6 +1,5 @@
 from numpy import diag_indices_from, dot, exp, eye, inf, log, tril_indices_from, zeros
 
-from numpy_sugar import epsilon
 from optimix import Function, Vector
 
 from .._util import format_function
@@ -49,6 +48,8 @@ class FreeFormCov(Function):
         dim : int
             Dimension d of the free-form covariance matrix.
         """
+        from numpy_sugar import epsilon
+
         dim = int(dim)
         tsize = ((dim + 1) * dim) // 2
         self._L = zeros((dim, dim))

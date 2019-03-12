@@ -1,6 +1,4 @@
-from __future__ import division
-
-from numpy import arange, ascontiguousarray, atleast_2d, sqrt, std
+from numpy import ascontiguousarray, atleast_2d, sqrt, std
 
 from ..cov import EyeCov, LinearCov, SumCov
 from ..lik import BernoulliProdLik, BinomialProdLik, PoissonProdLik

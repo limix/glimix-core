@@ -1,5 +1,3 @@
-from __future__ import division
-
 from numpy import asarray, dot, ones, zeros
 
 from optimix import Function, Vector

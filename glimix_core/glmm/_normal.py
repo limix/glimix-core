@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
-
 from copy import deepcopy
 
 from numpy import dot, exp, eye, log, pi, trace, zeros

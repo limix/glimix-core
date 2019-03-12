@@ -1,6 +1,4 @@
-from __future__ import division
-
-from numpy import arange, corrcoef, dot, ones, sqrt
+from numpy import corrcoef, dot, ones, sqrt
 from numpy.random import RandomState
 from numpy.testing import assert_allclose
 

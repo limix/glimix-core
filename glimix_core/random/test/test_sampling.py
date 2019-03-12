@@ -1,6 +1,3 @@
-from __future__ import division
-
-from numpy import arange
 from numpy.random import RandomState
 from numpy.testing import assert_allclose, assert_array_less, assert_equal
 

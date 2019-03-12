@@ -1,5 +1,3 @@
-from __future__ import division
-
 from numpy import asarray, clip, dot, exp
 from numpy.linalg import solve
 

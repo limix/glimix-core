@@ -1,5 +1,3 @@
-from __future__ import division, unicode_literals
-
 from numpy import ascontiguousarray
 
 from ..link import IdentityLink, LogitLink, LogLink

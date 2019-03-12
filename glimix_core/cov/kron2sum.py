@@ -13,9 +13,7 @@ from numpy import (
     zeros_like,
 )
 from numpy.linalg import eigh
-from scipy.linalg import svd
 
-from numpy_sugar.linalg import ddot, dotd
 from optimix import Function
 
 from .._util import format_function, unvec
@@ -98,7 +96,6 @@ class Kron2SumCov(Function):
         self._Lx = None
         self._LxG = None
         self._diag_LxGGLx = None
-        self._I = None
         self._Lxe = None
         self._LxGe = None
         self._diag_LxGGLxe = None
@@ -110,6 +107,9 @@ class Kron2SumCov(Function):
         self._C1.listen(self._parameters_update)
 
     def _init_svd(self):
+        from scipy.linalg import svd
+        from numpy_sugar.linalg import dotd
+
         if self._Lx is not None:
             return
         G = self._G
@@ -120,7 +120,6 @@ class Kron2SumCov(Function):
         self._Lx = U.T
         self._LxG = self._Lx @ G
         self._diag_LxGGLx = dotd(self._LxG, self._LxG.T)
-        self._I = eye(U.shape[1])
         self._Lxe = U[:, : S.shape[0]].T
         self._LxGe = self._Lxe @ G
         self._diag_LxGGLxe = dotd(self._LxGe, self._LxGe.T)
@@ -128,10 +127,23 @@ class Kron2SumCov(Function):
     @property
     @lru_cache(maxsize=None)
     def Ge(self):
+        from scipy.linalg import svd
+        from numpy_sugar.linalg import ddot
+
         U, S, _ = svd(self._G, full_matrices=False, check_finite=False)
         if U.shape[1] < self._G.shape[1]:
             return ddot(U, S)
         return self._G
+
+    @property
+    @lru_cache(maxsize=None)
+    def _GG(self):
+        return self._G @ self._G.T
+
+    @property
+    @lru_cache(maxsize=None)
+    def _I(self):
+        return eye(self._G.shape[0])
 
     def _parameters_update(self):
         self._cache["LhD"] = None
@@ -170,6 +182,8 @@ class Kron2SumCov(Function):
         D : ndarray
             (Sₕ ⊗ Sₓ + Iₕₓ)⁻¹.
         """
+        from numpy_sugar.linalg import ddot
+
         self._init_svd()
         if self._cache["LhD"] is not None:
             return self._cache["LhD"]
@@ -182,14 +196,6 @@ class Kron2SumCov(Function):
             "De": 1 / (kron(Sh, self._Sxe) + 1),
         }
         return self._cache["LhD"]
-
-    # @property
-    # def U1(self):
-    #     return self._LhD["U1"]
-
-    # @property
-    # def S1(self):
-    #     return self._LhD["S1"]
 
     @property
     def Lh(self):
@@ -233,10 +239,9 @@ class Kron2SumCov(Function):
         K : ndarray
             C₀ ⊗ GGᵀ + C₁ ⊗ I.
         """
-        self._init_svd()
         C0 = self._C0.value()
         C1 = self._C1.value()
-        return kron(C0, self._X) + kron(C1, self._I)
+        return kron(C0, self._GG) + kron(C1, self._I)
 
     def gradient(self):
         """
@@ -299,6 +304,8 @@ class Kron2SumCov(Function):
         x : ndarray
             Solution x to the equation K⋅x = y.
         """
+        from numpy_sugar.linalg import ddot
+
         self._init_svd()
         L = kron(self.Lh, self.Lx)
         return L.T @ ddot(self.D, L @ v, left=True)
@@ -336,6 +343,8 @@ class Kron2SumCov(Function):
         C1 : ndarray
             Derivative of C₁ over its parameters.
         """
+        from numpy_sugar.linalg import dotd
+
         self._init_svd()
 
         dC0 = self._C0.gradient()["Lu"]

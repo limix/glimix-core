@@ -1,4 +1,4 @@
-from numpy import arange, sqrt
+from numpy import sqrt
 from numpy.random import RandomState
 
 from glimix_core.cov import EyeCov, LinearCov, SumCov

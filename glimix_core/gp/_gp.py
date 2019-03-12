@@ -1,5 +1,3 @@
-from __future__ import division
-
 from numpy import log, pi
 from numpy.linalg import slogdet, solve
 
