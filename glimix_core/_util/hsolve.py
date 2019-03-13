@@ -10,9 +10,10 @@ def _norm(x0, x1):
 
 
 def hsolve(A00, A01, A11, y0, y1):
-    r"""Solver for the linear equations of two variables and equations only.
+    """
+    Solver for the linear equations of two variables and equations only.
 
-    It uses Householder reductions to solve ``Ax = y`` in a robust manner.
+    It uses Householder reductions to solve A𝐱 = 𝐲 in a robust manner.
 
     Parameters
     ----------
@@ -23,7 +24,8 @@ def hsolve(A00, A01, A11, y0, y1):
 
     Returns
     -------
-    :class:`numpy.ndarray`  Solution ``x``.
+    ndarray
+        Solution 𝐱.
     """
     from numpy_sugar import epsilon
 

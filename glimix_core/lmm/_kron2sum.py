@@ -11,7 +11,11 @@ from optimix import Function
 
 class Kron2Sum(Function):
     """
-    LMM for multiple traits.
+    LMM for multiple traits fitted via maximum likelihood
+
+    .. warning::
+
+        This is a class in beta stage. Please, prefer using RKron2Sum instead.
 
     Let n, c, and p be the number of samples, covariates, and traits, respectively.
     The outcome variable Y is a n×p matrix distributed according to

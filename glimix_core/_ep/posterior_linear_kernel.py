@@ -1,5 +1,3 @@
-from __future__ import division
-
 from numpy import dot
 
 from .posterior import Posterior
@@ -13,15 +11,12 @@ def _cho_factor(B):
 
 
 class PosteriorLinearKernel(Posterior):
-    r"""EP posterior.
+    """
+    EP posterior.
 
-    It is given by
+    It is given by ::
 
-    .. math::
-
-        \mathbf z \sim \mathcal N\left(\Sigma (\tilde{\mathrm T}
-          \tilde{\boldsymbol\mu} + \mathrm K^{-1}\mathbf m),
-          (\tilde{\mathrm T} + \mathrm K^{-1})^{-1}\right).
+        𝐳 ∼ 𝒩(Σ(T̃𝛍̃ + K⁻¹𝐦), (T̃ + K⁻¹)⁻¹).
     """
 
     @property

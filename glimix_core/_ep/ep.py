@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
-
 from copy import deepcopy
 from math import fsum
 
@@ -13,32 +11,27 @@ MAX_ITERS = 100
 
 
 class EP(object):
-    r"""Expectation Propagation algorithm.
+    """
+    Expectation Propagation algorithm.
 
-    Let
+    Let ::
 
-    .. math::
-
-        \mathcal N(\mathbf z ~|~ \mathbf m, \mathrm K)
+        𝒩(𝐳｜𝐦, K)
 
     be the prior distribution.
-    This class estimates the log of the marginal likelihood
+    This class estimates the log of the marginal likelihood ::
 
-    .. math::
-
-        p(\mathbf y) = \int \prod_i p(y_i | \mu_i = g(z_i))
-            \mathcal N(\mathbf z ~|~ \mathbf m, \mathrm K) \mathrm d\mathbf z
+        p(𝐲) = ∫∏ᵢp(yᵢ｜μᵢ = g(zᵢ))𝒩(𝐳｜𝐦, K) d𝐳
 
     via Expectation Propagation and provides its gradient.
 
-    Attributes:
-        _site (:class:`glimix_core.ep.site.Site`): site-likelihood.
-        _psite (:class:`glimix_core.ep.site.Site`): previous
-                                                        site-likelihood.
-        _cav (:class:`glimix_core.ep.cavity.Cavity`): cavity distribution.
-        _posterior (:class:`glimix_core.ep.posterior.Posterior`):
-                                                        posterior distribution.
-        _moments (dict): moments for KL moment matching.
+    Attributes
+    ----------
+        _site: site-likelihood.
+        _psite: previous site-likelihood.
+        _cav: cavity distribution.
+        _posterior: posterior distribution.
+        _moments: moments for KL moment matching.
     """
 
     def __init__(

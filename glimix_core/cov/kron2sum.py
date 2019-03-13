@@ -127,6 +127,10 @@ class Kron2SumCov(Function):
     @property
     @lru_cache(maxsize=None)
     def Ge(self):
+        """
+        US for the SVD decomposition G = USVᵀ.
+        """
+
         from scipy.linalg import svd
         from numpy_sugar.linalg import ddot
 
@@ -162,6 +166,10 @@ class Kron2SumCov(Function):
 
     @property
     def Lx(self):
+        """
+        Lₓ.
+        """
+
         self._init_svd()
         return self._Lx
 
@@ -199,14 +207,20 @@ class Kron2SumCov(Function):
 
     @property
     def Lh(self):
+        """
+        Lₕ.
+        """
         return self._LhD["Lh"]
 
     @property
     def D(self):
+        """
+        (Sₕ ⊗ Sₓ + Iₕₓ)⁻¹.
+        """
         return self._LhD["D"]
 
     @property
-    def De(self):
+    def _De(self):
         return self._LhD["De"]
 
     @property
@@ -320,7 +334,7 @@ class Kron2SumCov(Function):
             Log-determinant of K. 1 / (kron(Sh, self._Sx) + 1)
         """
         self._init_svd()
-        return -log(self.De).sum() + self.G.shape[0] * self.C1.logdet()
+        return -log(self._De).sum() + self.G.shape[0] * self.C1.logdet()
 
     def logdet_gradient(self):
         """
@@ -351,7 +365,7 @@ class Kron2SumCov(Function):
         grad_C0 = zeros_like(self._C0.Lu)
         for i in range(self._C0.Lu.shape[0]):
             t = kron(dotd(self.Lh, dC0[..., i] @ self.Lh.T), self._diag_LxGGLxe)
-            grad_C0[i] = (self.De * t).sum()
+            grad_C0[i] = (self._De * t).sum()
 
         dC1 = self._C1.gradient()["Lu"]
         grad_C1 = zeros_like(self._C1.Lu)
@@ -360,7 +374,7 @@ class Kron2SumCov(Function):
         for i in range(self._C1.Lu.shape[0]):
             t = (dotd(self.Lh, dC1[..., i] @ self.Lh.T) * np).sum()
             t1 = kron(dotd(self.Lh, dC1[..., i] @ self.Lh.T), eye(p))
-            t += (self.De * t1).sum()
+            t += (self._De * t1).sum()
             grad_C1[i] = t
 
         return {"C0.Lu": grad_C0, "C1.Lu": grad_C1}

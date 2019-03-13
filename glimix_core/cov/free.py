@@ -7,12 +7,12 @@ from .._util import format_function
 
 class FreeFormCov(Function):
     """
-    General definite positive matrix, K = LLᵗ + ϵI.
+    General definite positive matrix, K = LLᵀ + ϵI.
 
     A d×d covariance matrix K will have ((d+1)⋅d)/2 parameters defining the lower
     triangular elements of a Cholesky matrix L such that:
 
-        K = LLᵗ + ϵI,
+        K = LLᵀ + ϵI,
 
     for a very small positive number ϵ. That additional term is necessary to avoid
     singular and ill conditioned covariance matrices.
@@ -66,6 +66,11 @@ class FreeFormCov(Function):
         bounds = [(-inf, +inf)] * (tsize - dim)
         bounds += [(log(epsilon.small * 1000), +12)] * dim
         self._Lu.bounds = bounds
+        self._cache = {"eig": None}
+        self.listen(self._parameters_update)
+
+    def _parameters_update(self):
+        self._cache["eig"] = None
 
     def listen(self, func):
         """
@@ -112,10 +117,15 @@ class FreeFormCov(Function):
         """
         from numpy.linalg import svd
 
+        if self._cache["eig"] is not None:
+            return self._cache["eig"]
+
         U, S = svd(self.L)[:2]
         S *= S
         S += self._epsilon
-        return S, U
+        self._cache["eig"] = S, U
+
+        return self._cache["eig"]
 
     @property
     def Lu(self):
@@ -131,7 +141,7 @@ class FreeFormCov(Function):
     @property
     def L(self):
         """
-        Lower-triangular matrix L such that K = LLᵗ + ϵI.
+        Lower-triangular matrix L such that K = LLᵀ + ϵI.
 
         Returns
         -------
@@ -151,8 +161,8 @@ class FreeFormCov(Function):
         self._Lu.value[m:] = log(self._L[self._diag])
 
     def logdet(self):
-        r"""
-        Log of \|K\|.
+        """
+        Log of ｜K｜.
 
         Returns
         -------
@@ -178,13 +188,13 @@ class FreeFormCov(Function):
         Returns
         -------
         K : ndarray
-            Matrix K = LLᵗ + ϵI, for a very small positive number ϵ.
+            Matrix K = LLᵀ + ϵI, for a very small positive number ϵ.
         """
         K = dot(self.L, self.L.T)
         return K + self._epsilon * eye(K.shape[0])
 
     def gradient(self):
-        r"""
+        """
         Derivative of the covariance matrix over L₀ and L₁.
 
         Returns

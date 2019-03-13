@@ -12,7 +12,7 @@ from optimix import Function
 
 class RKron2Sum(Function):
     """
-    LMM for multiple traits.
+    LMM for multiple traits fitted via restricted maximum likelihood.
 
     Let n, c, and p be the number of samples, covariates, and traits, respectively.
     The outcome variable Y is a n×p matrix distributed according to::
@@ -262,9 +262,15 @@ class RKron2Sum(Function):
         return self._mean.F.shape[1]
 
     def value(self):
+        """
+        Log of the marginal likelihood.
+        """
         return self.lml()
 
     def gradient(self):
+        """
+        Gradient of the log of the marginal likelihood.
+        """
         return self.lml_gradient()
 
     @property
@@ -277,7 +283,7 @@ class RKron2Sum(Function):
         return ldet[1]
 
     def lml(self):
-        r"""
+        """
         Log of the marginal likelihood.
 
         Let 𝐲 = vec(Y), M = A⊗F, and H = MᵀK⁻¹M. The restricted log of the marginal

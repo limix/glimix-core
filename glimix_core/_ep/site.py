@@ -1,10 +1,8 @@
-from __future__ import division
-
 from numpy import maximum, zeros
 
 
 class Site(object):
-    r"""EP parameters."""
+    """EP parameters."""
 
     def __init__(self, n):
         self.tau = zeros(n)

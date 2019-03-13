@@ -2,7 +2,7 @@ from numpy import empty, eye
 
 
 def economic_qs_zeros(n):
-    r"""Eigen decomposition of a zero matrix."""
+    """Eigen decomposition of a zero matrix."""
 
     Q0 = empty((n, 0))
     Q1 = eye(n)
