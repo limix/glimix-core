@@ -57,8 +57,8 @@ def test_lmm_rkron2sum():
     assert_equal(lmm.name, "KronSum")
     lmm.fit(verbose=False)
     grad = lmm.gradient()
-    assert_allclose(grad["C0.Lu"], [0], atol=1e-5)
-    assert_allclose(grad["C1.Lu"], [0], atol=1e-5)
+    assert_allclose(grad["C0.Lu"], [0], atol=1e-4)
+    assert_allclose(grad["C1.Lu"], [0], atol=1e-4)
     assert_allclose(lmm.lml(), -0.6930197958236421)
 
 
