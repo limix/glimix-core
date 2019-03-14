@@ -2,7 +2,7 @@ from numpy import asarray, eye, zeros
 from numpy.random import RandomState
 from numpy.testing import assert_allclose
 
-from glimix_core.example import linear_eye_cov, nsamples
+from glimix_core.example import linear_eye_cov
 from glimix_core.glmm import GLMMNormal
 from numpy_sugar.linalg import economic_qs
 
@@ -11,13 +11,15 @@ RTOL = 1e-2
 
 
 def test_glmmnormal_copy():
+    nsamples = 10
+
     random = RandomState(0)
 
-    X = random.randn(nsamples(), 5)
+    X = random.randn(nsamples, 5)
     QS = economic_qs(linear_eye_cov().value())
 
-    eta = random.randn(nsamples())
-    tau = random.rand(nsamples()) * 10
+    eta = random.randn(nsamples)
+    tau = random.rand(nsamples) * 10
 
     glmm0 = GLMMNormal(eta, tau, X, QS)
 
@@ -171,14 +173,16 @@ def test_glmmnormal_copy():
 
 
 def test_glmmnormal():
+    nsamples = 10
+
     random = RandomState(0)
-    X = random.randn(nsamples(), 5)
-    M = random.randn(nsamples(), 3)
+    X = random.randn(nsamples, 5)
+    M = random.randn(nsamples, 3)
     K = linear_eye_cov().value()
     QS = economic_qs(K)
 
-    eta = random.randn(nsamples())
-    tau = 10 * random.rand(nsamples())
+    eta = random.randn(nsamples)
+    tau = 10 * random.rand(nsamples)
 
     glmm = GLMMNormal(eta, tau, X, QS)
     glmm.beta = asarray([1.0, 0, 0.5, 0.1, 0.4])
@@ -201,12 +205,14 @@ def test_glmmnormal():
 
 
 def test_glmmnormal_qs_zeros():
+    nsamples = 10
+
     random = RandomState(0)
 
-    X = random.randn(nsamples(), 5)
+    X = random.randn(nsamples, 5)
 
-    eta = random.randn(nsamples())
-    tau = random.rand(nsamples()) * 10
+    eta = random.randn(nsamples)
+    tau = random.rand(nsamples) * 10
 
     glmm = GLMMNormal(eta, tau, X)
 

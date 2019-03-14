@@ -13,7 +13,7 @@ from numpy import (
 from numpy.random import RandomState
 from numpy.testing import assert_, assert_allclose
 
-from glimix_core.example import linear_eye_cov, nsamples
+from glimix_core.example import linear_eye_cov
 from glimix_core.glmm import GLMMExpFam, GLMMNormal
 from glimix_core.random import bernoulli_sample
 from numpy_sugar.linalg import economic_qs, economic_qs_linear
@@ -37,14 +37,16 @@ def test_glmmexpfam_layout():
 
 
 def test_glmmexpfam_copy():
+    nsamples = 10
+
     random = RandomState(0)
-    X = random.randn(nsamples(), 5)
+    X = random.randn(nsamples, 5)
     K = linear_eye_cov().value()
-    z = random.multivariate_normal(0.2 * ones(nsamples()), K)
+    z = random.multivariate_normal(0.2 * ones(nsamples), K)
     QS = economic_qs(K)
 
-    ntri = random.randint(1, 30, nsamples())
-    nsuc = zeros(nsamples(), dtype=int)
+    ntri = random.randint(1, 30, nsamples)
+    nsuc = zeros(nsamples, dtype=int)
     for (i, ni) in enumerate(ntri):
         nsuc[i] += sum(z[i] + 0.2 * random.randn(ni) > 0)
 
@@ -73,12 +75,14 @@ def test_glmmexpfam_copy():
 
 
 def test_glmmexpfam_precise():
+    nsamples = 10
+
     random = RandomState(0)
-    X = random.randn(nsamples(), 5)
+    X = random.randn(nsamples, 5)
     K = linear_eye_cov().value()
     QS = economic_qs(K)
 
-    ntri = random.randint(1, 30, nsamples())
+    ntri = random.randint(1, 30, nsamples)
     nsuc = [random.randint(0, i) for i in ntri]
 
     glmm = GLMMExpFam(nsuc, ["binomial", ntri], X, QS)
@@ -103,13 +107,15 @@ def test_glmmexpfam_precise():
 
 
 def test_glmmexpfam_glmmnormal_get_fast_scanner():
+    nsamples = 10
+
     random = RandomState(0)
-    X = random.randn(nsamples(), 5)
+    X = random.randn(nsamples, 5)
     K = linear_eye_cov().value()
     QS = economic_qs(K)
 
-    eta = random.randn(nsamples())
-    tau = 10 * random.rand(nsamples())
+    eta = random.randn(nsamples)
+    tau = 10 * random.rand(nsamples)
 
     glmm = GLMMNormal(eta, tau, X, QS)
     glmm.fit(verbose=False)
@@ -129,12 +135,14 @@ def test_glmmexpfam_glmmnormal_get_fast_scanner():
 
 
 def test_glmmexpfam_delta0():
+    nsamples = 10
+
     random = RandomState(0)
-    X = random.randn(nsamples(), 5)
+    X = random.randn(nsamples, 5)
     K = linear_eye_cov().value()
     QS = economic_qs(K)
 
-    ntri = random.randint(1, 30, nsamples())
+    ntri = random.randint(1, 30, nsamples)
     nsuc = [random.randint(0, i) for i in ntri]
 
     glmm = GLMMExpFam(nsuc, ("binomial", ntri), X, QS)
@@ -147,12 +155,14 @@ def test_glmmexpfam_delta0():
 
 
 def test_glmmexpfam_delta1():
+    nsamples = 10
+
     random = RandomState(0)
-    X = random.randn(nsamples(), 5)
+    X = random.randn(nsamples, 5)
     K = linear_eye_cov().value()
     QS = economic_qs(K)
 
-    ntri = random.randint(1, 30, nsamples())
+    ntri = random.randint(1, 30, nsamples)
     nsuc = [random.randint(0, i) for i in ntri]
 
     glmm = GLMMExpFam(nsuc, ("binomial", ntri), X, QS)
@@ -178,14 +188,16 @@ def test_glmmexpfam_wrong_qs():
 
 
 def test_glmmexpfam_optimize():
+    nsamples = 10
+
     random = RandomState(0)
-    X = random.randn(nsamples(), 5)
+    X = random.randn(nsamples, 5)
     K = linear_eye_cov().value()
-    z = random.multivariate_normal(0.2 * ones(nsamples()), K)
+    z = random.multivariate_normal(0.2 * ones(nsamples), K)
     QS = economic_qs(K)
 
-    ntri = random.randint(1, 30, nsamples())
-    nsuc = zeros(nsamples(), dtype=int)
+    ntri = random.randint(1, 30, nsamples)
+    nsuc = zeros(nsamples, dtype=int)
     for (i, ni) in enumerate(ntri):
         nsuc[i] += sum(z[i] + 0.2 * random.randn(ni) > 0)
 
@@ -209,14 +221,16 @@ def test_glmmexpfam_optimize():
 
 
 def test_glmmexpfam_optimize_low_rank():
+    nsamples = 10
+
     random = RandomState(0)
-    X = random.randn(nsamples(), 5)
+    X = random.randn(nsamples, 5)
     K = dot(X, X.T)
     z = dot(X, 0.2 * random.randn(5))
     QS = economic_qs(K)
 
-    ntri = random.randint(1, 30, nsamples())
-    nsuc = zeros(nsamples(), dtype=int)
+    ntri = random.randint(1, 30, nsamples)
+    nsuc = zeros(nsamples, dtype=int)
     for (i, ni) in enumerate(ntri):
         nsuc[i] += sum(z[i] + 0.2 * random.randn(ni) > 0)
 
@@ -382,12 +396,14 @@ def test_glmmexpfam_binomial_large_ntrials():
 
 
 def test_glmmexpfam_scale_very_low():
+    nsamples = 10
+
     random = RandomState(0)
-    X = random.randn(nsamples(), 5)
+    X = random.randn(nsamples, 5)
     K = linear_eye_cov().value()
     QS = economic_qs(K)
 
-    ntri = random.randint(1, 30, nsamples())
+    ntri = random.randint(1, 30, nsamples)
     nsuc = [random.randint(0, i) for i in ntri]
 
     glmm = GLMMExpFam(nsuc, ("binomial", ntri), X, QS)
@@ -400,12 +416,14 @@ def test_glmmexpfam_scale_very_low():
 
 
 def test_glmmexpfam_scale_very_high():
+    nsamples = 10
+
     random = RandomState(0)
-    X = random.randn(nsamples(), 5)
+    X = random.randn(nsamples, 5)
     K = linear_eye_cov().value()
     QS = economic_qs(K)
 
-    ntri = random.randint(1, 30, nsamples())
+    ntri = random.randint(1, 30, nsamples)
     nsuc = [random.randint(0, i) for i in ntri]
 
     glmm = GLMMExpFam(nsuc, ("binomial", ntri), X, QS)
@@ -504,13 +522,15 @@ def test_glmmexpfam_predict():
 
 
 def test_glmmexpfam_qs_none():
-    random = RandomState(0)
-    X = random.randn(nsamples(), 5)
-    K = linear_eye_cov().value()
-    z = random.multivariate_normal(0.2 * ones(nsamples()), K)
+    nsamples = 10
 
-    ntri = random.randint(1, 30, nsamples())
-    nsuc = zeros(nsamples(), dtype=int)
+    random = RandomState(0)
+    X = random.randn(nsamples, 5)
+    K = linear_eye_cov().value()
+    z = random.multivariate_normal(0.2 * ones(nsamples), K)
+
+    ntri = random.randint(1, 30, nsamples)
+    nsuc = zeros(nsamples, dtype=int)
     for (i, ni) in enumerate(ntri):
         nsuc[i] += sum(z[i] + 0.2 * random.randn(ni) > 0)
 
