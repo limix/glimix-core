@@ -36,7 +36,7 @@ class OffsetMean(Function):
         Parameters
         ----------
         n : int
-            Size of the M array.
+            Size of the 𝟏 array.
         """
         self._offset = Scalar(0.0)
         self._offset.bounds = (-200.0, +200)
