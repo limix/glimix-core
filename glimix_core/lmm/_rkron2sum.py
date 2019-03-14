@@ -14,6 +14,7 @@ class RKron2Sum(Function):
     """
     LMM for multiple traits fitted via restricted maximum likelihood.
 
+    This implementation follows the work published in [CA05]_.
     Let n, c, and p be the number of samples, covariates, and traits, respectively.
     The outcome variable Y is a n×p matrix distributed according to::
 
@@ -38,6 +39,12 @@ class RKron2Sum(Function):
     - mₕ = Mₕvec(B)
 
     where Lₓ and Lₕ are defined in :class:`glimix_core.cov.Kron2SumCov`.
+
+    References
+    ----------
+    .. [CA05] Casale, F. P., Rakitsch, B., Lippert, C., & Stegle, O. (2015). Efficient
+       set tests for the genetic analysis of correlated traits. Nature methods, 12(8),
+       755.
     """
 
     def __init__(self, Y, A, F, G, rank=1):
