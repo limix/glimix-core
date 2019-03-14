@@ -16,8 +16,8 @@ from numpy.linalg import eigh
 
 from optimix import Function
 
-from .free import FreeFormCov
-from .lrfree import LRFreeFormCov
+from ._free import FreeFormCov
+from ._lrfree import LRFreeFormCov
 from .._util import format_function, unvec
 
 
