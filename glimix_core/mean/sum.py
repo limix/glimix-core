@@ -23,8 +23,7 @@ class SumMean(Function):
         >>> X = [[5.1, 1.0],
         ...      [2.1, -0.2]]
         >>>
-        >>> mean0 = LinearMean(2)
-        >>> mean0.X = X
+        >>> mean0 = LinearMean(X)
         >>> mean0.effsizes = [-1.0, 0.5]
         >>>
         >>> mean1 = OffsetMean(2)

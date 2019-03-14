@@ -33,8 +33,7 @@ def test_gp_gp_value_2():
     X1 = random.randn(N, 3)
     X2 = random.randn(N, 100)
 
-    mean = LinearMean(3)
-    mean.X = X1
+    mean = LinearMean(X1)
 
     cov = LinearCov(X2)
     cov.scale = 1.0

@@ -17,9 +17,8 @@ class LinearMean(Function):
 
         >>> from glimix_core.mean import LinearMean
         >>>
-        >>> mean = LinearMean(2)
+        >>> mean = LinearMean([[1.5, 0.2], [0.5, 0.4]])
         >>> mean.effsizes = [1.0, -1.0]
-        >>> mean.X = [[1.5, 0.2], [0.5, 0.4]]
         >>> print(mean.value())
         [1.3 0.1]
         >>> print(mean.gradient()["effsizes"])
@@ -31,18 +30,20 @@ class LinearMean(Function):
           effsizes: [ 1. -1.]
     """
 
-    def __init__(self, m):
+    def __init__(self, X):
         """
         Constructor.
 
         Parameters
         ----------
-        size : int
-            Size m of 𝜶.
+        X : array_like
+            Covariates X, from X𝜶.
         """
+        X = asarray(X, float)
+        m = X.shape[1]
         self._effsizes = Vector(zeros(m))
         self._effsizes.bounds = [(-200.0, +200)] * m
-        self._X = None
+        self._X = X
         Function.__init__(self, "LinearMean", effsizes=self._effsizes)
 
     @property
@@ -51,10 +52,6 @@ class LinearMean(Function):
         An n×m matrix of covariates.
         """
         return self._X
-
-    @X.setter
-    def X(self, X):
-        self._X = asarray(X, float)
 
     def value(self):
         """
