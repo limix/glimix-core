@@ -7,9 +7,9 @@ from .._util import format_function
 
 class LRFreeFormCov(Function):
     """
-    General semi-definite positive matrix of low rank, K = LLᵗ.
+    General semi-definite positive matrix of low rank, K = LLᵀ.
 
-    The covariance matrix K is given by LLᵗ, where L is a n×m matrix and n≥m. Therefore,
+    The covariance matrix K is given by LLᵀ, where L is a n×m matrix and n≥m. Therefore,
     K will have rank(K) ≤ m.
 
     Example
@@ -88,7 +88,7 @@ class LRFreeFormCov(Function):
     @property
     def L(self):
         """
-        Matrix L from K = LLᵗ.
+        Matrix L from K = LLᵀ.
 
         Returns
         -------

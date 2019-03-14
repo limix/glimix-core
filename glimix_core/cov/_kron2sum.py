@@ -128,7 +128,7 @@ class Kron2SumCov(Function):
     @lru_cache(maxsize=None)
     def Ge(self):
         """
-        US for the SVD decomposition G = USVᵀ.
+        Result of US from the SVD decomposition G = USVᵀ.
         """
 
         from scipy.linalg import svd
@@ -331,7 +331,7 @@ class Kron2SumCov(Function):
         Returns
         -------
         logdet : float
-            Log-determinant of K. 1 / (kron(Sh, self._Sx) + 1)
+            Log-determinant of K.
         """
         self._init_svd()
         return -log(self._De).sum() + self.G.shape[0] * self.C1.logdet()

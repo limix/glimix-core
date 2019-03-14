@@ -16,9 +16,9 @@ class GGPSampler(object):
     link : str
         Likelihood name.
     mean : function
-        Mean function. (Refer to :doc:`mean`.)
+        Mean function.
     cov : function
-        Covariance function. (Refer to :doc:`cov`.)
+        Covariance function.
 
     Example
     -------

@@ -195,14 +195,12 @@ class FreeFormCov(Function):
 
     def gradient(self):
         """
-        Derivative of the covariance matrix over L₀ and L₁.
+        Derivative of the covariance matrix over the parameters of L.
 
         Returns
         -------
-        L0 : ndarray
-            Derivative of K over L0.
-        L1 : ndarray
-            Derivative of K over L1.
+        Lu : ndarray
+            Derivative of K over the lower triangular part of L.
         """
         L = self.L
         self._grad_Lu[:] = 0

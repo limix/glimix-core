@@ -51,13 +51,13 @@ class LinearCov(Function):
         """
         return self._X
 
-    def fix_scale(self):
+    def fix(self):
         """
         Prevent s update during optimization.
         """
         self._fix("logscale")
 
-    def unfix_scale(self):
+    def unfix(self):
         """
         Enable s update during optimization.
         """

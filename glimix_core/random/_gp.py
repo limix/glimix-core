@@ -14,9 +14,9 @@ class GPSampler(object):
     Parameters
     ----------
     mean : function
-        Mean function. (Refer to :doc:`mean`.)
+        Mean function.
     cov : function
-        Covariance function. (Refer to :doc:`cov`.)
+        Covariance function.
 
     Example
     -------

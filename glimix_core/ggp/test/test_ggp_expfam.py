@@ -44,7 +44,7 @@ def test_ggp_expfam():
     ep = ExpFamGP((data["y"],), "bernoulli", data["mean"], data["cov"])
     assert_allclose(ep.value(), -5.031838893222976)
     assert_allclose(ep._check_grad(), 0, atol=1e-4)
-    data["cov_left"].fix_scale()
+    data["cov_left"].fix()
     ep.fit(verbose=False)
     assert_allclose(data["cov_right"].scale, 0.38162494996579965, atol=1e-5)
     assert_allclose(data["mean"].offset, 2.8339908366727267, rtol=1e-6)

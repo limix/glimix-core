@@ -4,11 +4,12 @@ Random sampler
 
 .. currentmodule:: glimix_core.random
 
-.. autoclass:: glimix_core.random.GGPSampler
-    :members:
+.. autosummary::
+  :toctree: _autosummary
+  :template: class.rst
 
-.. autoclass:: glimix_core.random.GPSampler
-    :members:
+  GGPSampler
+  GPSampler
 
 .. autofunction:: glimix_core.random.bernoulli_sample
 
