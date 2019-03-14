@@ -21,8 +21,8 @@ class LRFreeFormCov(Function):
         >>> cov = LRFreeFormCov(3, 2)
         >>> print(cov.L)
         [[1. 1.]
-        [1. 1.]
-        [1. 1.]]
+         [1. 1.]
+         [1. 1.]]
         >>> cov.L = [[1, 2], [0, 3], [1, 3]]
         >>> print(cov.L)
         [[1. 2.]
