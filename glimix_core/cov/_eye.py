@@ -9,10 +9,7 @@ class EyeCov(Function):
     """
     Identity covariance function, K = s·I.
 
-    The mathematical representation is given by f(x₀, x₁), which takes value s when
-    x₀ and x₁ are arrays of the same sample and 0 otherwise. Note that it is possible to
-    have two different samples for which the arrays x₀ and x₁ are identical. The
-    parameter s is the scale of the matrix.
+    The parameter s is the scale of the matrix.
 
     Example
     -------
