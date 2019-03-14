@@ -3,6 +3,7 @@ from numpy import array, concatenate, inf, nan, newaxis, ones, sqrt
 from numpy.random import RandomState
 from numpy.testing import assert_allclose
 
+from glimix_core._util import assert_interface
 from glimix_core.cov import EyeCov, LinearCov, SumCov
 from glimix_core.lik import DeltaProdLik
 from glimix_core.lmm import LMM, FastScanner
@@ -429,3 +430,7 @@ def test_lmm_scan_interface():
 
     with pytest.raises(ValueError):
         FastScanner(y, X, QS, nan)
+
+
+def test_lmm_scan_public_attrs():
+    assert_interface(FastScanner, ["unset_scale", "null_lml", "set_scale", "fast_scan"])

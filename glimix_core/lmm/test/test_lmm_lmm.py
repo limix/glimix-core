@@ -2,6 +2,7 @@ from numpy import corrcoef, dot, ones, sqrt
 from numpy.random import RandomState
 from numpy.testing import assert_allclose
 
+from glimix_core._util import assert_interface
 from glimix_core.cov import EyeCov, LinearCov, SumCov
 from glimix_core.lik import DeltaProdLik
 from glimix_core.lmm import LMM
@@ -54,3 +55,35 @@ def test_lmm_lmm_prediction():
     K = dot(X, X.T)
     pm = lmm.predictive_mean(ones((n, 1)), K, K.diagonal())
     assert_allclose(corrcoef(y, pm)[0, 1], 0.8358820971891354)
+
+
+def test_lmm_lmm_public_attrs():
+    assert_interface(
+        LMM,
+        [
+            "lml",
+            "X",
+            "beta",
+            "delta",
+            "scale",
+            "mean_star",
+            "variance_star",
+            "covariance_star",
+            "covariance",
+            "predictive_covariance",
+            "mean",
+            "isfixed",
+            "fixed_effects_variance",
+            "gradient",
+            "v0",
+            "v1",
+            "fit",
+            "copy",
+            "value",
+            "get_fast_scanner",
+            "predictive_mean",
+            "name",
+            "unfix",
+            "fix",
+        ],
+    )

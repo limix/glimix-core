@@ -271,7 +271,7 @@ class RKron2Sum(Function):
         """
         Gradient of the log of the marginal likelihood.
         """
-        return self.lml_gradient()
+        return self._lml_gradient()
 
     @property
     @lru_cache(maxsize=None)
@@ -367,7 +367,7 @@ class RKron2Sum(Function):
 
         return lml / 2
 
-    def lml_gradient(self):
+    def _lml_gradient(self):
         """
         Gradient of the log of the marginal likelihood.
 
@@ -546,7 +546,7 @@ class RKron2Sum(Function):
             ``True`` for progress output; ``False`` otherwise.
             Defaults to ``True``.
         """
-        self._maximize(verbose=verbose)
+        self._maximize(verbose=verbose, pgtol=1e-6)
 
 
 def _dot(a, b):

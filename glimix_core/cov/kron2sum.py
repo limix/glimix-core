@@ -16,9 +16,9 @@ from numpy.linalg import eigh
 
 from optimix import Function
 
-from .._util import format_function, unvec
 from .free import FreeFormCov
 from .lrfree import LRFreeFormCov
+from .._util import format_function, unvec
 
 
 class Kron2SumCov(Function):

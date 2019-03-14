@@ -216,13 +216,14 @@ class LMMCore(Function):
 
     @property
     def X(self):
-        r"""Covariates set by the user.
+        """
+        Covariates set by the user.
 
         It has to be a matrix of number-of-samples by number-of-covariates.
 
         Returns
         -------
-        :class:`numpy.ndarray`
+        ndarray
             Covariates.
         """
         from numpy_sugar.linalg import ddot
