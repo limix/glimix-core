@@ -1,6 +1,6 @@
 # glimix-core
 
-[![Travis](https://img.shields.io/travis/com/limix/glimix-core.svg?style=flat-square&label=linux%20%2F%20macos%20build)](https://travis-ci.com/limix/glimix-core) [![AppVeyor](https://img.shields.io/appveyor/ci/Horta/glimix-core.svg?style=flat-square&label=windows%20build)](https://ci.appveyor.com/project/Horta/glimix-core) [![Documentation](https://img.shields.io/readthedocs/glimix-core.svg?style=flat-square&version=stable)](https://glimix-core.readthedocs.io/)
+[![Travis](https://img.shields.io/travis/com/limix/glimix-core.svg?style=flat-square&label=linux%20%2F%20macos%20build)](https://travis-ci.com/limix/glimix-core) [![AppVeyor](https://img.shields.io/appveyor/ci/Horta/glimix-core.svg?style=flat-square&label=windows%20build)](https://ci.appveyor.com/project/Horta/glimix-core) [![Documentation](https://img.shields.io/readthedocs/glimix-core.svg?style=flat-square&version=latest)](https://glimix-core.readthedocs.io/)
 
 Fast inference over mean and covariance parameters for Generalised Linear Mixed
 Models.

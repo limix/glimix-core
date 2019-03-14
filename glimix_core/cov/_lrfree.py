@@ -31,9 +31,9 @@ class LRFreeFormCov(Function):
         >>> cov.name = "F"
         >>> print(cov)
         LRFreeFormCov(n=3, m=2): F
-        L: [[1. 2.]
-            [0. 3.]
-            [1. 3.]]
+          L: [[1. 2.]
+              [0. 3.]
+              [1. 3.]]
     """
 
     def __init__(self, n, m):
