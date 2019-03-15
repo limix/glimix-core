@@ -433,4 +433,35 @@ def test_lmm_scan_interface():
 
 
 def test_lmm_scan_public_attrs():
-    assert_interface(FastScanner, ["unset_scale", "null_lml", "set_scale", "fast_scan"])
+    assert_interface(
+        FastScanner, ["unset_scale", "null_lml", "set_scale", "fast_scan", "scan"]
+    )
+
+
+def test_lmm_scan_scan():
+    random = RandomState(9458)
+    n = 30
+    X = _covariates_sample(random, n, n + 1)
+    offset = 1.0
+
+    y = _outcome_sample(random, offset, X)
+
+    QS = economic_qs_linear(X)
+
+    lmm = LMM(y, ones((n, 1)), QS)
+    lmm.fit(verbose=False)
+    fast_scanner = lmm.get_fast_scanner()
+
+    markers = [random.randn(n, 2), random.randn(n, 3)]
+    lmls, effsizes = fast_scanner.scan(markers)
+
+    markers = [random.randn(n, 1), random.randn(n, 1)]
+    lmls0, effsizes0 = fast_scanner.scan(markers)
+    lmls1, effsizes1 = fast_scanner.fast_scan(concatenate(markers, axis=1))
+    assert_allclose(lmls0, lmls1)
+    assert_allclose(concatenate(effsizes0), effsizes1)
+
+    x = [concatenate([markers[0], markers[0]], axis=1)]
+    lmls2, effsizes2 = fast_scanner.scan(x)
+
+    assert_allclose(lmls1[:1], lmls2)

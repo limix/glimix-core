@@ -171,7 +171,7 @@ class FastScanner(object):
 
             beta = _solve(sum(j.value for j in ETBE), sum(j for j in yTBE))
             beta = (beta[:-1][:, newaxis], beta[-1:])
-            bstar = _bstar_unpack(beta, self._yTBy, yTBE, ETBE)
+            bstar = _bstar_unpack(beta, self._yTBy, yTBE, ETBE, _bstar)
 
             if self._scale is None:
                 scale = bstar / self._nsamples
@@ -182,6 +182,46 @@ class FastScanner(object):
             effsizes[i] = beta[1][0]
 
         lmls /= 2
+
+    def _multicovariate_set_loop(self, yTBM, XTBM, MTBM):
+
+        if self._scale is not None:
+            scale = self._scale
+
+        yTBE = []
+        for a, b in zip(self._yTBX, yTBM):
+            c = empty(a.shape[0] + b.shape[0])
+            c[: a.shape[0]] = a
+            c[a.shape[0] :] = b
+            yTBE.append(c)
+
+        for a, b in zip(yTBE, yTBM):
+            a[-b.shape[0] :] = b
+
+        set_size = yTBM[0].shape[0]
+        ETBE = [_ETBE(i, j, set_size) for (i, j) in zip(self._XTQDi, self._XTQ)]
+
+        for a, b, c in zip(ETBE, XTBM, MTBM):
+            a.set_XTBM(b)
+            a.set_MTBM(c)
+
+        beta = _solve(sum(j.value for j in ETBE), sum(j for j in yTBE))
+        beta = (beta[:-set_size], beta[-set_size:])
+        bstar = _bstar_unpack(beta, self._yTBy, yTBE, ETBE, _bstar_set)
+
+        lmls = self._static_lml()
+
+        if self._scale is None:
+            scale = bstar / self._nsamples
+        else:
+            lmls += self._nsamples - bstar / scale
+
+        lmls -= self._nsamples * _safe_log(scale)
+
+        lmls /= 2
+        effsizes = beta[1]
+
+        return lmls, effsizes
 
     def _1covariate_loop(self, lmls, effsizes, yTBM, XTBM, MTBM):
         ETBE = self._ETBE
@@ -260,6 +300,46 @@ class FastScanner(object):
 
         return lmls, effect_sizes
 
+    def scan(self, M, verbose=True):
+        r"""LML and fixed-effect sizes of each marker set.
+
+        If the scaling factor ``s`` is not set by the user via method
+        :func:`set_scale`, its optimal value will be found and
+        used in the calculation.
+
+        Parameters
+        ----------
+        verbose : bool, optional
+            ``True`` for progress information; ``False`` otherwise.
+            Defaults to ``True``.
+
+        Returns
+        -------
+        lmls : ndarray
+            Log of the marginal likelihood for each set.
+        effsizes : list
+            Fixed-effect sizes for each set.
+        """
+        from tqdm import tqdm
+
+        lmls = []
+        effect_sizes = []
+
+        for Mi in tqdm(M, desc="Scanning", disable=not verbose):
+            Mi = asarray(Mi, float)
+
+            MTQ = [dot(Mi.T, Q) for Q in self._QS[0] if Q.size > 0]
+            yTBM = [dot(i, j.T) for (i, j) in zip(self._yTQDi, MTQ)]
+            XTBM = [dot(i, j.T) for (i, j) in zip(self._XTQDi, MTQ)]
+            D = self._D
+            MTBM = [npsum(i / j * i, 1) for i, j in zip(MTQ, D) if npmin(j) > 0]
+
+            lml, effsiz = self._multicovariate_set_loop(yTBM, XTBM, MTBM)
+            lmls.append(lml)
+            effect_sizes.append(effsiz)
+
+        return asarray(lmls, float), effect_sizes
+
     def null_lml(self):
         r"""Log of the marginal likelihood for the null hypothesis.
 
@@ -310,10 +390,11 @@ class FastScanner(object):
 
 
 class _ETBE(object):
-    def __init__(self, XTQDi, XTQ):
-        n = XTQDi.shape[0] + 1
+    def __init__(self, XTQDi, XTQ, set_size=1):
+        n = XTQDi.shape[0] + set_size
         self._data = empty((n, n))
-        self._data[:-1, :-1] = dot(XTQDi, XTQ.T)
+        self._data[:-set_size, :-set_size] = dot(XTQDi, XTQ.T)
+        self._m = set_size
 
     @property
     def value(self):
@@ -321,19 +402,19 @@ class _ETBE(object):
 
     @property
     def XTBX(self):
-        return self._data[:-1, :-1]
+        return self._data[: -self._m, : -self._m]
 
     @property
     def XTBM(self):
-        return self._data[:-1, -1:]
+        return self._data[: -self._m, -self._m :]
 
     @property
     def MTBX(self):
-        return self._data[-1:, :-1]
+        return self._data[-self._m :, : -self._m]
 
     @property
     def MTBM(self):
-        return self._data[-1:, -1]
+        return self._data[-self._m :, -self._m :]
 
     def set_XTBM(self, XTBM):
         copyto(self.XTBM, XTBM)
@@ -352,18 +433,28 @@ def _bstar(beta, yTBy, yTBX, yTBM, XTBX, XTBM, MTBM):
     r += sum(dotd(beta[0].T, dot(i, beta[0])) for i in XTBX)
     r += sum(dotd(beta[0].T, i * beta[1]) for i in XTBM)
     r += sum(npsum(beta[1] * i * beta[0], axis=0) for i in XTBM)
-    r += sum(beta[1] * i * beta[1] for i in MTBM)
+    r += sum(beta[1] * i.ravel() * beta[1] for i in MTBM)
     return r
 
 
-def _bstar_unpack(beta, yTBy, yTBE, ETBE):
+def _bstar_set(beta, yTBy, yTBX, yTBM, XTBX, XTBM, MTBM):
+    r = yTBy
+    r -= 2 * sum(i @ beta[0] for i in yTBX)
+    r -= 2 * sum(i @ beta[1] for i in yTBM)
+    r += sum(beta[0].T @ i @ beta[0] for i in XTBX)
+    r += 2 * sum(beta[0].T @ i @ beta[1] for i in XTBM)
+    r += sum(beta[1].T @ i @ beta[1] for i in MTBM)
+    return r
+
+
+def _bstar_unpack(beta, yTBy, yTBE, ETBE, bstar):
     nc = beta[0].shape[0]
     yTBX = [j[:nc] for j in yTBE]
     yTBM = [j[nc:] for j in yTBE]
     XTBX = [j.XTBX for j in ETBE]
     XTBM = [j.XTBM for j in ETBE]
     MTBM = [j.MTBM for j in ETBE]
-    return _bstar(beta, yTBy, yTBX, yTBM, XTBX, XTBM, MTBM)
+    return bstar(beta, yTBy, yTBX, yTBM, XTBX, XTBM, MTBM)
 
 
 def _solve(A, y):
