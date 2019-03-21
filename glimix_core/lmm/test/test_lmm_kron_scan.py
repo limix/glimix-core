@@ -49,7 +49,7 @@ def test_lmm_kron_scan_redundant():
     m = lmm.mean.value()
     K = lmm.cov.value()
     assert_allclose(scan.null_lml(), st.multivariate_normal(m, K).logpdf(vec(Y)))
-    assert_allclose(kron(A, F) @ scan.null_effsizes(), m)
+    assert_allclose(kron(A, F) @ vec(scan.null_effsizes()), m)
 
     A1 = random.randn(3, 2)
     F1 = random.randn(n, 4)
@@ -57,5 +57,5 @@ def test_lmm_kron_scan_redundant():
 
     lml, effsizes0, effsizes1 = scan.scan(A1, F1)
 
-    m = kron(A, F) @ effsizes0 + kron(A1, F1) @ effsizes1
+    m = kron(A, F) @ vec(effsizes0) + kron(A1, F1) @ vec(effsizes1)
     assert_allclose(lml, st.multivariate_normal(m, K).logpdf(vec(Y)))

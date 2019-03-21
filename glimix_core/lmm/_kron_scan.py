@@ -1,7 +1,7 @@
 import warnings
 from functools import lru_cache
 
-from glimix_core._util import vec
+from glimix_core._util import vec, unvec
 from numpy import (
     all as npall,
     asarray,
@@ -15,8 +15,6 @@ from numpy import (
     isfinite,
     log,
     min as npmin,
-    newaxis,
-    sum as npsum,
     zeros,
     kron,
     block,
@@ -128,7 +126,9 @@ class KronFastScanner:
         mKim = beta.T @ MKiM @ beta
         mKiy = beta.T @ MKiy
         cp = self._ntraits * self._ncovariates
-        return self._static_lml() - mKim / 2 + mKiy, beta[:cp], beta[cp:]
+        effsizes0 = unvec(beta[:cp], (self._ncovariates, self._ntraits))
+        effsizes1 = unvec(beta[cp:], (G.shape[1], self._ntraits))
+        return self._static_lml() - mKim / 2 + mKiy, effsizes0, effsizes1
 
 
 def _solve(A, y):
