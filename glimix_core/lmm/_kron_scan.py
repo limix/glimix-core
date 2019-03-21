@@ -112,7 +112,7 @@ class KronFastScanner:
         mKiy = beta.T @ MKiy
         cp = self._ntraits * self._ncovariates
         effsizes0 = unvec(beta[:cp], (self._ncovariates, self._ntraits))
-        effsizes1 = unvec(beta[cp:], (G.shape[1], self._ntraits))
+        effsizes1 = unvec(beta[cp:], (F1.shape[1], A1.shape[1]))
         return self._static_lml() - mKim / 2 + mKiy, effsizes0, effsizes1
 
 

@@ -29,7 +29,7 @@ def test_lmm_kron_scan():
 
     lml, effsizes0, effsizes1 = scan.scan(A1, F1)
 
-    m = kron(A, F) @ effsizes0 + kron(A1, F1) @ effsizes1
+    m = kron(A, F) @ vec(effsizes0) + kron(A1, F1) @ vec(effsizes1)
     assert_allclose(lml, st.multivariate_normal(m, K).logpdf(vec(Y)))
 
 
