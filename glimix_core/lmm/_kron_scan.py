@@ -1,25 +1,10 @@
 import warnings
 from functools import lru_cache
 
-from glimix_core._util import vec, unvec
-from numpy import (
-    all as npall,
-    asarray,
-    atleast_2d,
-    clip,
-    copyto,
-    dot,
-    empty,
-    full,
-    inf,
-    isfinite,
-    log,
-    min as npmin,
-    zeros,
-    kron,
-    block,
-)
+from numpy import asarray, block, kron, zeros
 from numpy.linalg import LinAlgError
+
+from glimix_core._util import unvec, vec
 
 from .._util import log2pi
 

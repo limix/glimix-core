@@ -7,8 +7,9 @@ from numpy.linalg import matrix_rank, slogdet
 from glimix_core._util import log2pi, unvec, vec
 from glimix_core.cov import Kron2SumCov
 from glimix_core.mean import KronMean
-from ._kron_scan import KronFastScanner
 from optimix import Function
+
+from ._kron_scan import KronFastScanner
 
 
 class RKron2Sum(Function):
