@@ -7,6 +7,7 @@ from numpy.linalg import matrix_rank, slogdet
 from glimix_core._util import log2pi, unvec, vec
 from glimix_core.cov import Kron2SumCov
 from glimix_core.mean import KronMean
+from ._kron_scan import KronFastScanner
 from optimix import Function
 
 
@@ -182,9 +183,12 @@ class RKron2Sum(Function):
         ZiXRiM = cho_solve(Lz, XRiM)
         ZiXRiy = cho_solve(Lz, XRiy)
 
+        MRiXZiXRiy = ZiXRiM.T @ XRiy
+        MRiXZiXRiM = XRiM.T @ ZiXRiM
+
         yKiy = yRiy - XRiy @ ZiXRiy
-        MKiy = MRiy - ZiXRiM.T @ XRiy
-        H = MRiM - XRiM.T @ ZiXRiM
+        MKiy = MRiy - MRiXZiXRiy
+        H = MRiM - MRiXZiXRiM
         Lh = cho_factor(H)
         b = cho_solve(Lh, MKiy)
         B = unvec(b, (self.ncovariates, -1))
@@ -195,7 +199,16 @@ class RKron2Sum(Function):
         mRiy = b.T @ MRiy
         mRim = b.T @ MRiM @ b
 
+        logdetK = log(Lz[0].diagonal()).sum() * 2
+        logdetK -= 2 * log(S).sum() * self.nsamples
+
+        mKiy = mRiy - XRim.T @ ZiXRiy
+        mKim = mRim - XRim.T @ ZiXRim
+
         self._cache["terms"] = {
+            "logdetK": logdetK,
+            "mKiy": mKiy,
+            "mKim": mKim,
             "b": b,
             "Z": Z,
             "B": B,
@@ -218,8 +231,21 @@ class RKron2Sum(Function):
             "XRim": XRim,
             "yKiy": yKiy,
             "Lh": Lh,
+            "MRiXZiXRiy": MRiXZiXRiy,
+            "MRiXZiXRiM": MRiXZiXRiM,
         }
         return self._cache["terms"]
+
+    def get_fast_scanner(self):
+        r"""Return :class:`.FastScanner` for association scan.
+
+        Returns
+        -------
+        :class:`.FastScanner`
+            Instance of a class designed to perform very fast association scan.
+        """
+        terms = self._terms
+        return KronFastScanner(self._Y, self._mean.A, self._mean.F, self._cov.Ge, terms)
 
     @property
     def mean(self):
@@ -285,6 +311,16 @@ class RKron2Sum(Function):
             raise ValueError("The determinant of MᵀM should be positive.")
         return ldet[1]
 
+    @property
+    def _logdetK(self):
+        terms = self._terms
+        S = terms["S"]
+        Lz = terms["Lz"]
+
+        cov_logdet = log(Lz[0].diagonal()).sum() * 2
+        cov_logdet -= 2 * log(S).sum() * self.nsamples
+        return cov_logdet
+
     def lml(self):
         """
         Log of the marginal likelihood.
@@ -343,29 +379,18 @@ class RKron2Sum(Function):
         np = self.nsamples * self.ntraits
         cp = self.ncovariates * self.ntraits
         terms = self._terms
-        S = terms["S"]
-        Lz = terms["Lz"]
-        yRiy = terms["yRiy"]
+        # yRiy = terms["yRiy"]
+        yKiy = terms["yKiy"]
+        mKiy = terms["mKiy"]
+        mKim = terms["mKim"]
         MRiM = terms["MRiM"]
-        mRim = terms["mRim"]
-        mRiy = terms["mRiy"]
-        XRiy = terms["XRiy"]
         XRiM = terms["XRiM"]
-        XRim = terms["XRim"]
         ZiXRiM = terms["ZiXRiM"]
-        ZiXRim = terms["ZiXRim"]
-        ZiXRiy = terms["ZiXRiy"]
 
-        cov_logdet = log(Lz[0].diagonal()).sum() * 2
-        cov_logdet -= 2 * log(S).sum() * self.nsamples
-        lml = -(np - cp) * log2pi + self._logdet_MM - cov_logdet
+        lml = -(np - cp) * log2pi + self._logdet_MM - self._logdetK
 
         MKiM = MRiM - XRiM.T @ ZiXRiM
         lml -= slogdet(MKiM)[1]
-
-        yKiy = yRiy - XRiy @ ZiXRiy
-        mKiy = mRiy - XRim.T @ ZiXRiy
-        mKim = mRim - XRim.T @ ZiXRim
         lml += -yKiy - mKim + 2 * mKiy
 
         return lml / 2

@@ -76,5 +76,6 @@ def test_lmm_rkron2sum_public_attrs():
             "ncovariates",
             "name",
             "gradient",
+            "get_fast_scanner",
         ],
     )

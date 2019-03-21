@@ -1,4 +1,5 @@
 import warnings
+from functools import lru_cache
 
 from numpy import (
     all as npall,
@@ -120,6 +121,7 @@ class FastScanner(object):
     def _ncovariates(self):
         return self._X.shape[1]
 
+    @lru_cache(maxsize=None)
     def _static_lml(self):
         n = self._nsamples
         static_lml = -n * log2pi - n
@@ -321,6 +323,10 @@ class FastScanner(object):
             Fixed-effect sizes for each set.
         """
         from tqdm import tqdm
+        from numpy_sugar.linalg import ddot
+
+        if not isinstance(M, (list, tuple)):
+            return self.fast_scan(M, verbose=verbose)
 
         lmls = []
         effect_sizes = []
@@ -332,7 +338,7 @@ class FastScanner(object):
             yTBM = [dot(i, j.T) for (i, j) in zip(self._yTQDi, MTQ)]
             XTBM = [dot(i, j.T) for (i, j) in zip(self._XTQDi, MTQ)]
             D = self._D
-            MTBM = [npsum(i / j * i, 1) for i, j in zip(MTQ, D) if npmin(j) > 0]
+            MTBM = [ddot(i, 1 / j) @ i.T for i, j in zip(MTQ, D) if npmin(j) > 0]
 
             lml, effsiz = self._multicovariate_set_loop(yTBM, XTBM, MTBM)
             lmls.append(lml)
