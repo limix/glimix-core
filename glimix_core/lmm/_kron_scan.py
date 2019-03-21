@@ -1,12 +1,11 @@
 import warnings
-from functools import lru_cache
 
 from numpy import asarray, block, kron, zeros
 from numpy.linalg import LinAlgError
 
 from glimix_core._util import unvec, vec
 
-from .._util import log2pi
+from .._util import log2pi, cache
 
 
 class KronFastScanner:
@@ -30,7 +29,7 @@ class KronFastScanner:
         self._MRiy = terms["MRiy"]
         self._MRiXZiXRiy = terms["MRiXZiXRiy"]
 
-    @lru_cache(maxsize=None)
+    @cache
     def _static_lml(self):
         np = self._nsamples * self._ntraits
         static_lml = -np * log2pi - self._logdetK - self._yKiy
@@ -49,20 +48,20 @@ class KronFastScanner:
         return self._F.shape[1]
 
     @property
-    @lru_cache(maxsize=None)
+    @cache
     def _MKiM(self):
         return self._MRiM - self._XRiM.T @ self._ZiXRiM
 
     @property
-    @lru_cache(maxsize=None)
+    @cache
     def _MKiy(self):
         return self._MRiy - self._XRiM.T @ self._ZiXRiy
 
-    @lru_cache(maxsize=None)
+    @cache
     def null_effsizes(self):
         return _solve(self._MKiM, self._MKiy)
 
-    @lru_cache(maxsize=None)
+    @cache
     def null_lml(self):
         """
         Log of the marginal likelihood for the null hypothesis.
@@ -97,6 +96,7 @@ class KronFastScanner:
         effsizes1 : (m, e) ndarray
             Fixed-effect sizes for the set.
         """
+        from numpy.linalg import multi_dot
         from scipy.linalg import cho_solve
 
         A1 = asarray(A, float)
@@ -111,7 +111,7 @@ class KronFastScanner:
         MRiM1 = kron(AWA1, FF1)
         M1RiM1 = kron(A1W @ A1, F1F1)
 
-        M1Riy = vec(F1.T @ self._Y @ A1W.T)
+        M1Riy = vec(multi_dot([F1.T, self._Y, A1W.T]))
         XRiM1 = kron(self._WL0.T @ A1, GF1)
         ZiXRiM1 = cho_solve(self._Lz, XRiM1)
 
