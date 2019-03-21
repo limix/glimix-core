@@ -1,5 +1,4 @@
 import warnings
-from functools import lru_cache
 
 from numpy import (
     all as npall,
@@ -20,7 +19,7 @@ from numpy import (
 )
 from numpy.linalg import LinAlgError
 
-from .._util import hsolve, log2pi
+from .._util import hsolve, log2pi, cache
 
 
 class FastScanner(object):
@@ -121,7 +120,7 @@ class FastScanner(object):
     def _ncovariates(self):
         return self._X.shape[1]
 
-    @lru_cache(maxsize=None)
+    @cache
     def _static_lml(self):
         n = self._nsamples
         static_lml = -n * log2pi - n
@@ -271,7 +270,7 @@ class FastScanner(object):
 
         Returns
         -------
-        lml : ndarray
+        lmls : ndarray
             Log of the marginal likelihoods.
         effsizes : ndarray
             Fixed-effect sizes.
@@ -303,7 +302,7 @@ class FastScanner(object):
 
         return lmls, effsizes
 
-    def scan(self, M, verbose=True):
+    def scan(self, M):
         """
         LML and fixed-effect sizes of each marker set.
 
@@ -313,40 +312,27 @@ class FastScanner(object):
 
         Parameters
         ----------
-        verbose : bool, optional
-            ``True`` for progress information; ``False`` otherwise.
-            Defaults to ``True``.
+        M : array_like
+            Fixed-effects set.
 
         Returns
         -------
-        lmls : ndarray
+        lml : float
             Log of the marginal likelihood for each set.
-        effsizes : list
+        effsizes : ndarray
             Fixed-effect sizes for each set.
         """
-        from tqdm import tqdm
         from numpy_sugar.linalg import ddot
 
-        if not isinstance(M, (list, tuple)):
-            return self.fast_scan(M, verbose=verbose)
+        M = asarray(M, float)
 
-        lmls = []
-        effsizes = []
+        MTQ = [dot(M.T, Q) for Q in self._QS[0] if Q.size > 0]
+        yTBM = [dot(i, j.T) for (i, j) in zip(self._yTQDi, MTQ)]
+        XTBM = [dot(i, j.T) for (i, j) in zip(self._XTQDi, MTQ)]
+        D = self._D
+        MTBM = [ddot(i, 1 / j) @ i.T for i, j in zip(MTQ, D) if npmin(j) > 0]
 
-        for Mi in tqdm(M, desc="Scanning", disable=not verbose):
-            Mi = asarray(Mi, float)
-
-            MTQ = [dot(Mi.T, Q) for Q in self._QS[0] if Q.size > 0]
-            yTBM = [dot(i, j.T) for (i, j) in zip(self._yTQDi, MTQ)]
-            XTBM = [dot(i, j.T) for (i, j) in zip(self._XTQDi, MTQ)]
-            D = self._D
-            MTBM = [ddot(i, 1 / j) @ i.T for i, j in zip(MTQ, D) if npmin(j) > 0]
-
-            lml, effsiz = self._multicovariate_set_loop(yTBM, XTBM, MTBM)
-            lmls.append(lml)
-            effsizes.append(effsiz)
-
-        return asarray(lmls, float), effsizes
+        return self._multicovariate_set_loop(yTBM, XTBM, MTBM)
 
     def null_lml(self):
         """
@@ -354,7 +340,7 @@ class FastScanner(object):
 
         Returns
         -------
-        float
+        lml : float
             Log of the marginal likelihood.
         """
         n = self._nsamples

@@ -421,10 +421,11 @@ API
   :toctree: _autosummary
   :template: class.rst
 
-  LMM
-  MTLMM
   FastScanner
   Kron2Sum
+  KronFastScanner
+  LMM
+  MTLMM
   RKron2Sum
 
 .. rubric:: References

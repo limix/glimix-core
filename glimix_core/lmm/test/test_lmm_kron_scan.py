@@ -59,7 +59,3 @@ def test_lmm_kron_scan_redundant():
 
     m = kron(A, F) @ vec(effsizes0) + kron(A1, F1) @ vec(effsizes1)
     assert_allclose(lml, st.multivariate_normal(m, K).logpdf(vec(Y)))
-
-
-if __name__ == "__main__":
-    test_lmm_kron_scan_redundant()

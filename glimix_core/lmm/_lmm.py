@@ -6,7 +6,7 @@ from ._scan import FastScanner
 
 
 class LMM(LMMCore):
-    r"""
+    """
     Fast Linear Mixed Models inference via maximum likelihood.
 
     It perform inference on the model :eq:`lmm1`, explained in the
@@ -82,7 +82,9 @@ class LMM(LMMCore):
 
     @property
     def beta(self):
-        r"""Get or set fixed-effect sizes."""
+        """
+        Get or set fixed-effect sizes.
+        """
         return LMMCore.beta.fget(self)
 
     @beta.setter
@@ -90,7 +92,8 @@ class LMM(LMMCore):
         LMMCore.beta.fset(self, beta)
 
     def copy(self):
-        r"""Return a copy of this object.
+        """
+        Return a copy of this object.
 
         This is useful for performing new inference based on the results
         of the copied object, as the new LMM object will start its inference
@@ -116,7 +119,8 @@ class LMM(LMMCore):
         return o
 
     def isfixed(self, var_name):
-        r"""Return whether a variable it is fixed or not.
+        """
+        Return whether a variable it is fixed or not.
 
         Parameters
         ----------
@@ -139,28 +143,31 @@ class LMM(LMMCore):
 
     @property
     def v0(self):
-        r"""First variance.
+        """
+        First variance.
 
         Returns
         -------
         float
-            :math:`s (1 - \delta)`
+            1 - 𝛿.
         """
         return self.scale * (1 - self.delta)
 
     @property
     def v1(self):
-        r"""Second variance.
+        """
+        Second variance.
 
         Returns
         -------
         float
-            :math:`s \delta`
+            𝛿.
         """
         return self.scale * self.delta
 
     def fit(self, verbose=True):
-        r"""Maximise the marginal likelihood.
+        """
+        Maximise the marginal likelihood.
 
         Parameters
         ----------
@@ -176,7 +183,8 @@ class LMM(LMMCore):
         self._verbose = False
 
     def fix(self, var_name):
-        r"""Disable the optimisation of a given variable.
+        """
+        Disable the optimisation of a given variable.
 
         Parameters
         ----------
@@ -198,19 +206,21 @@ class LMM(LMMCore):
 
     @property
     def fixed_effects_variance(self):
-        r"""Variance of the fixed-effects.
+        """
+        Variance of the fixed-effects.
 
         It is defined as the empirical variance of the prior mean.
 
         Returns
         -------
-        :class:`numpy.ndarray`
+        var : float
             Estimated variance of the fixed-effects.
         """
         return self.mean.var()
 
     def get_fast_scanner(self):
-        r"""Return :class:`.FastScanner` for association scan.
+        """
+        Return :class:`.FastScanner` for association scan.
 
         Returns
         -------
@@ -228,11 +238,12 @@ class LMM(LMMCore):
 
     @property
     def mean(self):
-        r"""Estimated mean :math:`\mathrm X\boldsymbol\beta`.
+        """
+        Estimated mean X𝞫.
 
         Returns
         -------
-        :class:`numpy.ndarray`
+        mean : ndarray
             Mean of the prior.
         """
         return LMMCore.mean.fget(self)
@@ -248,7 +259,8 @@ class LMM(LMMCore):
         self._scale = v
 
     def unfix(self, var_name):
-        r"""Enable the optimisation of a given variable.
+        """
+        Enable the optimisation of a given variable.
 
         Parameters
         ----------

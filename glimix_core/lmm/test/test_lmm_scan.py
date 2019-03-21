@@ -453,27 +453,20 @@ def test_lmm_scan_scan():
     fast_scanner = lmm.get_fast_scanner()
 
     markers = [random.randn(n, 2), random.randn(n, 3)]
-    lmls, effsizes = fast_scanner.scan(markers, verbose=False)
-    assert_allclose(lmls, [-51.176103656322304, -50.279756791246925])
-    assert_allclose(effsizes[0], [0.16683458074028157, 0.23266357557893075])
-    assert_allclose(
-        effsizes[1], [0.09524012234056872, -0.09797218842405285, 0.47925863412073777]
-    )
+    lml, effsizes = fast_scanner.scan(markers[0])
+    assert_allclose(lml, -51.176103656322304)
+    assert_allclose(effsizes, [0.16683458074028157, 0.23266357557893075])
+    lml, effsizes = fast_scanner.scan(markers[1])
+    assert_allclose(lml, -50.279756791246925)
+    assert_allclose(effsizes, [0.095240122340569, -0.097972188424052, 0.47925863412073])
 
     markers = [random.randn(n, 1), random.randn(n, 1)]
-    lmls0, effsizes0 = fast_scanner.scan(markers, verbose=False)
+    lml00, effsizes00 = fast_scanner.scan(markers[0])
+    lml01, effsizes01 = fast_scanner.scan(markers[1])
+    lmls0 = array([lml00, lml01])
+    effsizes0 = concatenate([effsizes00, effsizes01])
+
     x = concatenate(markers, axis=1)
     lmls1, effsizes1 = fast_scanner.fast_scan(x, verbose=False)
-    assert_allclose(lmls0, lmls1)
-    assert_allclose(concatenate(effsizes0), effsizes1)
-
-    x = [concatenate([markers[0], markers[0]], axis=1)]
-    lmls2, effsizes2 = fast_scanner.scan(x, verbose=False)
-
-    assert_allclose(lmls1[:1], lmls2)
-
-    M = random.randn(n, 2)
-    lmls0, effsizes0 = fast_scanner.fast_scan(M, verbose=False)
-    lmls1, effsizes1 = fast_scanner.scan(M, verbose=False)
     assert_allclose(lmls0, lmls1)
     assert_allclose(effsizes0, effsizes1)
