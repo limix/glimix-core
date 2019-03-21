@@ -64,11 +64,12 @@ class KronFastScanner:
 
     @lru_cache(maxsize=None)
     def null_lml(self):
-        r"""Log of the marginal likelihood for the null hypothesis.
+        """
+        Log of the marginal likelihood for the null hypothesis.
 
         Returns
         -------
-        float
+        lml : float
             Log of the marginal likelihood.
         """
         b = self.null_effsizes()
@@ -77,6 +78,25 @@ class KronFastScanner:
         return self._static_lml() - mKim / 2 + mKiy
 
     def scan(self, A, G):
+        """
+        LML and fixed-effect sizes of each marker set and covariates.
+
+        Parameters
+        ----------
+        A : (p, e) array_like
+            Trait-by-environments design matrix.
+        G : (n, m) array_like
+            Variants set matrix.
+
+        Returns
+        -------
+        lml : float
+            Log of the marginal likelihood for the set.
+        effsizes0 : (c, p) ndarray
+            Fixed-effect sizes for the covariates.
+        effsizes1 : (m, e) ndarray
+            Fixed-effect sizes for the set.
+        """
         from scipy.linalg import cho_solve
 
         A1 = asarray(A, float)

@@ -254,7 +254,8 @@ class FastScanner(object):
         effsizes[:] = beta[1]
 
     def fast_scan(self, M, verbose=True):
-        r"""LML and fixed-effect sizes of each marker.
+        """
+        LML and fixed-effect sizes of each marker.
 
         If the scaling factor ``s`` is not set by the user via method
         :func:`set_scale`, its optimal value will be found and
@@ -270,9 +271,9 @@ class FastScanner(object):
 
         Returns
         -------
-        :class:`numpy.ndarray`
+        lml : ndarray
             Log of the marginal likelihoods.
-        :class:`numpy.ndarray`
+        effsizes : ndarray
             Fixed-effect sizes.
         """
         from tqdm import tqdm
@@ -282,7 +283,7 @@ class FastScanner(object):
         p = M.shape[1]
 
         lmls = empty(p)
-        effect_sizes = empty(p)
+        effsizes = empty(p)
 
         if verbose:
             nchunks = min(p, 30)
@@ -298,12 +299,13 @@ class FastScanner(object):
             l, e = self._fast_scan_chunk(M[:, start:stop])
 
             lmls[start:stop] = l
-            effect_sizes[start:stop] = e
+            effsizes[start:stop] = e
 
-        return lmls, effect_sizes
+        return lmls, effsizes
 
     def scan(self, M, verbose=True):
-        r"""LML and fixed-effect sizes of each marker set.
+        """
+        LML and fixed-effect sizes of each marker set.
 
         If the scaling factor ``s`` is not set by the user via method
         :func:`set_scale`, its optimal value will be found and
@@ -329,7 +331,7 @@ class FastScanner(object):
             return self.fast_scan(M, verbose=verbose)
 
         lmls = []
-        effect_sizes = []
+        effsizes = []
 
         for Mi in tqdm(M, desc="Scanning", disable=not verbose):
             Mi = asarray(Mi, float)
@@ -342,12 +344,13 @@ class FastScanner(object):
 
             lml, effsiz = self._multicovariate_set_loop(yTBM, XTBM, MTBM)
             lmls.append(lml)
-            effect_sizes.append(effsiz)
+            effsizes.append(effsiz)
 
-        return asarray(lmls, float), effect_sizes
+        return asarray(lmls, float), effsizes
 
     def null_lml(self):
-        r"""Log of the marginal likelihood for the null hypothesis.
+        """
+        Log of the marginal likelihood for the null hypothesis.
 
         Returns
         -------
@@ -376,7 +379,8 @@ class FastScanner(object):
         return (lml - n * log(scale)) / 2
 
     def set_scale(self, scale):
-        r"""Set the scaling factor.
+        """
+        Set the scaling factor.
 
         Calling this method disables the automatic scale learning.
 
@@ -388,7 +392,8 @@ class FastScanner(object):
         self._scale = scale
 
     def unset_scale(self):
-        r"""Unset the scaling factor.
+        """
+        Unset the scaling factor.
 
         If called, it enables the scale learning again.
         """

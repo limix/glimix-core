@@ -43,7 +43,7 @@ def test_lmm_kron_scan_redundant():
     G = random.randn(n, 6)
     G = concatenate([G, G], axis=1)
     lmm = RKron2Sum(Y, A, F, G)
-    lmm.fit(verbose=True)
+    lmm.fit(verbose=False)
     scan = lmm.get_fast_scanner()
 
     m = lmm.mean.value()
