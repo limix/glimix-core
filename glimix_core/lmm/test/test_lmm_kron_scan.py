@@ -43,7 +43,7 @@ def test_lmm_kron_scan_redundant():
     G = random.randn(n, 6)
     G = concatenate([G, G], axis=1)
     lmm = RKron2Sum(Y, A, F, G)
-    lmm.fit(verbose=False)
+    lmm.fit(verbose=True)
     scan = lmm.get_fast_scanner()
 
     m = lmm.mean.value()
@@ -59,3 +59,7 @@ def test_lmm_kron_scan_redundant():
 
     m = kron(A, F) @ vec(effsizes0) + kron(A1, F1) @ vec(effsizes1)
     assert_allclose(lml, st.multivariate_normal(m, K).logpdf(vec(Y)))
+
+
+if __name__ == "__main__":
+    test_lmm_kron_scan_redundant()

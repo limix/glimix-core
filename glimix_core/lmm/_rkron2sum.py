@@ -575,7 +575,7 @@ class RKron2Sum(Function):
             ``True`` for progress output; ``False`` otherwise.
             Defaults to ``True``.
         """
-        self._maximize(verbose=verbose, pgtol=1e-6)
+        self._maximize(verbose=verbose, pgtol=1e-5, factr=1e8)
 
 
 def _dot(a, b):
@@ -596,8 +596,6 @@ def _sum(a):
 
 
 def mkron(a, b):
-    from numpy import kron
-
     if a.ndim == 3:
         return kron(a.transpose([2, 0, 1]), b).transpose([1, 2, 0])
     return kron(a, b)

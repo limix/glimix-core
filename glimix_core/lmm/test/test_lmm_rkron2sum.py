@@ -59,7 +59,7 @@ def test_lmm_rkron2sum():
     grad = lmm.gradient()
     assert_allclose(grad["C0.Lu"], [0], atol=1e-4)
     assert_allclose(grad["C1.Lu"], [0], atol=1e-4)
-    assert_allclose(lmm.lml(), -0.6930197958236421)
+    assert_allclose(lmm.lml(), -0.6930197958236421, rtol=1e-5)
 
 
 def test_lmm_rkron2sum_public_attrs():
