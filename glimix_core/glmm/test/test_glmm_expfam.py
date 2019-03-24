@@ -12,11 +12,11 @@ from numpy import (
 )
 from numpy.random import RandomState
 from numpy.testing import assert_, assert_allclose
+from numpy_sugar.linalg import economic_qs, economic_qs_linear
 
 from glimix_core.example import linear_eye_cov
 from glimix_core.glmm import GLMMExpFam, GLMMNormal
 from glimix_core.random import bernoulli_sample
-from numpy_sugar.linalg import economic_qs, economic_qs_linear
 
 ATOL = 1e-3
 RTOL = 1e-3
@@ -126,9 +126,10 @@ def test_glmmexpfam_glmmnormal_get_fast_scanner():
 
     scanner = glmm.get_fast_scanner()
     scanner.set_scale(1.0)
-    lmls, effect_sizes = scanner.fast_scan(X, verbose=False)
+    lmls, effect_sizes, scales = scanner.fast_scan(X, verbose=False)
     want = [-4.75845, -4.75845, -4.75845, -4.75845, -4.75845]
     assert_allclose(lmls, want, atol=1e-2, rtol=1e-2)
+    assert_allclose(scales, [1.0, 1.0, 1.0, 1.0, 1.0])
 
     want = [-0.04114, -0.019553, 0.021131, -0.029469, 0.008593]
     assert_allclose(effect_sizes, want, atol=1e-2, rtol=1e-2)

@@ -1,5 +1,5 @@
 import scipy.stats as st
-from numpy import concatenate, kron
+from numpy import concatenate, empty, kron
 from numpy.random import RandomState
 from numpy.testing import assert_allclose
 
@@ -31,6 +31,21 @@ def test_lmm_kron_scan():
 
     m = kron(A, F) @ vec(effsizes0) + kron(A1, F1) @ vec(effsizes1)
     assert_allclose(lml, st.multivariate_normal(m, K).logpdf(vec(Y)))
+
+    lml, effsizes0, effsizes1 = scan.scan(empty((3, 0)), F1)
+    assert_allclose(lml, -11.79537049705445)
+    assert_allclose(
+        effsizes0,
+        [
+            1.411082677273241,
+            -0.6753042112998789,
+            0.41436234081257045,
+            -0.20299590400182352,
+            -1.5337251391408189,
+            0.6723874047807074,
+        ],
+    )
+    assert_allclose(effsizes1, [])
 
 
 def test_lmm_kron_scan_redundant():

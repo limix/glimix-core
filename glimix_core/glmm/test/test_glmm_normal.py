@@ -1,10 +1,10 @@
 from numpy import asarray, eye, zeros
 from numpy.random import RandomState
 from numpy.testing import assert_allclose
+from numpy_sugar.linalg import economic_qs
 
 from glimix_core.example import linear_eye_cov
 from glimix_core.glmm import GLMMNormal
-from numpy_sugar.linalg import economic_qs
 
 ATOL = 1e-3
 RTOL = 1e-2
@@ -192,10 +192,13 @@ def test_glmmnormal():
     assert_allclose(glmm._check_grad(), 0, atol=1e-3, rtol=RTOL)
 
     flmm = glmm.get_fast_scanner()
-    lmls, effsizes = flmm.fast_scan(M, verbose=False)
+    lmls, effsizes, scales = flmm.fast_scan(M, verbose=False)
 
     assert_allclose(lmls, [9.64605678059, 9.17041834, 9.56927990771])
     assert_allclose(effsizes, [-0.0758297759308, 0.0509863368859, 0.0876858800519])
+    assert_allclose(
+        scales, [0.0053192483818597395, 0.005850105527002988, 0.00540155776161286]
+    )
 
     assert_allclose(flmm.null_lml(), 8.89275310307)
     flmm.set_scale(1.5)

@@ -1,7 +1,8 @@
 import warnings
 
 from numpy import (
-    all as npall,
+    add,
+    all,
     asarray,
     atleast_2d,
     clip,
@@ -12,33 +13,25 @@ from numpy import (
     inf,
     isfinite,
     log,
-    min as npmin,
     newaxis,
-    sum as npsum,
     zeros,
 )
 from numpy.linalg import LinAlgError
 
-from .._util import hsolve, log2pi, cache
+from .._util import cache, hsolve, log2pi
 
 
 class FastScanner(object):
-    r"""Approximated fast inference over several covariates.
+    """
+    Approximated fast inference over several covariates.
 
-    Specifically, it computes the log of the marginal likelihood
+    Specifically, it maximizes the log of the marginal likelihood ::
 
-    .. math::
+        log(p(𝐲)ⱼ) = log𝓝(𝐲 | X𝜷ⱼ + Mⱼ𝜶ⱼ, sⱼ(K + vI)),
 
-        \log p(\mathbf y)_j = \log \mathcal N\big(~ \mathrm X\mathbf b_j^*
-        + \mathbf{m}_j \alpha_j^*,~
-        s_j^* (\mathrm K + v \mathrm I) ~\big),
-
-    for optimal :math:`\mathbf b_j`, :math:`\alpha_j`, and :math:`s_j^*`
-    values.
-    Vector :math:`\mathbf{m}_j` is the candidate defined by the i-th column
-    of matrix ``M`` provided to method
-    :func:`.fast_scan`. Variance :math:`v` is not optimised for performance reasons.
-    The method assumes the user has provided a reasonable value for it.
+    over 𝜷ⱼ, 𝜶ⱼ, and sⱼ. Matrix Mⱼ is the candidate defined by the user. Variance v is
+    not optimised for performance reasons. The method assumes the user has provided a
+    reasonable value for it.
 
     Parameters
     ----------
@@ -53,20 +46,25 @@ class FastScanner(object):
 
     Notes
     -----
-    The implementation requires further explanation as it is somehow obscure.
-    Let :math:`\mathrm B_i=\mathrm Q_i\mathrm D_i^{-1}\mathrm Q_i^{\intercal}`
-    for :math:`i \in \{0, 1\}` and
-    :math:`\mathrm E_j = [\mathrm X;~ \mathbf m_j]`.
-    The matrix resulted from
-    :math:`\mathrm E_j^{\intercal}\mathrm B_i\mathrm E_j`
-    is represented by the variable ``ETBE``, and
-    four views of such a matrix are given by the variables ``XTBX``,
-    ``XTBM``, ``MTBX``, and ``MTBM``.
-    Those views represent
-    :math:`\mathrm X^{\intercal}\mathrm B_i\mathrm X`,
-    :math:`\mathrm X^{\intercal}\mathrm B_i\mathbf m_j`,
-    :math:`\mathbf m_j^{\intercal}\mathrm B_i\mathrm X`, and
-    :math:`\mathbf m_j^{\intercal}\mathrm B_i\mathbf m_j`, respectively.
+    The implementation requires further explanation as it is somehow obscure. Let
+    QSQᵀ = K, where QSQᵀ is the eigendecomposition of K. We then have ::
+
+        p(𝐲)ⱼ =  𝓝(Qᵀ𝐲 | QᵀX𝜷ⱼ + QᵀMⱼ𝜶ⱼ, sⱼ(S + vI)).
+
+    Let Dᵢ = (Sᵢ + vI), where Sᵢ is the part of S with positive values. Similarly,
+    let Bᵢ = QᵢDᵢ⁻¹Qᵢᵀ for i ϵ {0, 1} and Eⱼ = [X Mⱼ]. The matrix resulted from
+    EⱼᵀBᵢEⱼ is represented by the variable ``ETBE``, and four views of such a matrix are
+    given by the variables ``XTBX``, ``XTBM``, ``MTBX``, and ``MTBM``. Those views
+    represent XᵀBᵢX, XᵀBᵢMⱼ, MⱼᵀBᵢX, and MⱼᵀBᵢMⱼ, respectively.
+
+    Let 𝐛ⱼ = [𝜷ⱼᵀ 𝜶ⱼᵀ]ᵀ. The optimal parameters according to the marginal likelihood
+    are given by ::
+
+        (EⱼᵀBEⱼ)𝐛ⱼ = EⱼᵀB𝐲
+
+    and ::
+
+        s = n⁻¹𝐲ᵀB(𝐲 - Eⱼ𝐛ⱼ).
     """
 
     def __init__(self, y, X, QS, v):
@@ -74,10 +72,10 @@ class FastScanner(object):
         y = asarray(y, float)
         X = atleast_2d(asarray(X, float).T).T
 
-        if not npall(isfinite(y)):
+        if not all(isfinite(y)):
             raise ValueError("Not all values are finite in the outcome array.")
 
-        if not npall(isfinite(X)):
+        if not all(isfinite(X)):
             raise ValueError("Not all values are finite in the `X` matrix.")
 
         if v < 0:
@@ -94,15 +92,18 @@ class FastScanner(object):
         yTQ = [dot(y.T, Q) for Q in QS[0] if Q.size > 0]
         XTQ = [dot(X.T, Q) for Q in QS[0] if Q.size > 0]
 
-        yTQDi = [l / r for (l, r) in zip(yTQ, D) if npmin(r) > 0]
-        yTBy = npsum([npsum(i * i / j) for (i, j) in zip(yTQ, D) if npmin(j) > 0])
+        yTQDi = [l / r for (l, r) in zip(yTQ, D) if r.min() > 0]
+        yTBy = sum([(i * i / j).sum() for (i, j) in zip(yTQ, D) if j.min() > 0])
         yTBX = [dot(i, j.T) for (i, j) in zip(yTQDi, XTQ)]
-        XTQDi = [i / j for (i, j) in zip(XTQ, D) if npmin(j) > 0]
+        XTQDi = [i / j for (i, j) in zip(XTQ, D) if j.min() > 0]
 
         self._yTBy = yTBy
         self._yTBX = yTBX
+
+        # Used for performing association scan on single variants
         self._ETBE = [_ETBE(i, j) for (i, j) in zip(XTQDi, XTQ)]
-        self._yTBE = [empty(len(i) + 1) for i in yTBX]
+        self._yTBE = [_yTBE(i) for i in yTBX]
+
         self._XTQ = XTQ
         self._yTQDi = yTQDi
         self._XTQDi = XTQDi
@@ -124,80 +125,75 @@ class FastScanner(object):
     def _static_lml(self):
         n = self._nsamples
         static_lml = -n * log2pi - n
-        static_lml -= sum(npsum(_safe_log(D)) for D in self._D)
+        static_lml -= sum(_safe_log(D).sum() for D in self._D)
         return static_lml
 
     def _fast_scan_chunk(self, M):
+        from numpy import sum
+
         M = asarray(M, float)
 
         if not M.ndim == 2:
             raise ValueError("`M` array must be bidimensional.")
 
-        if not npall(isfinite(M)):
+        if not all(isfinite(M)):
             raise ValueError("One or more variants have non-finite value.")
 
         MTQ = [dot(M.T, Q) for Q in self._QS[0] if Q.size > 0]
         yTBM = [dot(i, j.T) for (i, j) in zip(self._yTQDi, MTQ)]
         XTBM = [dot(i, j.T) for (i, j) in zip(self._XTQDi, MTQ)]
         D = self._D
-        MTBM = [npsum(i / j * i, 1) for i, j in zip(MTQ, D) if npmin(j) > 0]
+        MTBM = [sum(i / j * i, 1) for i, j in zip(MTQ, D) if j.min() > 0]
 
         lmls = full(M.shape[1], self._static_lml())
         effsizes = empty(M.shape[1])
+        scales = empty(M.shape[1])
 
         if self._ncovariates == 1:
-            self._1covariate_loop(lmls, effsizes, yTBM, XTBM, MTBM)
+            self._1covariate_loop(lmls, effsizes, scales, yTBM, XTBM, MTBM)
         else:
-            self._multicovariate_loop(lmls, effsizes, yTBM, XTBM, MTBM)
+            self._multicovariate_loop(lmls, effsizes, scales, yTBM, XTBM, MTBM)
 
-        return lmls, effsizes
+        return lmls, effsizes, scales
 
-    def _multicovariate_loop(self, lmls, effsizes, yTBM, XTBM, MTBM):
-
+    def _multicovariate_loop(self, lmls, effsizes, scales, yTBM, XTBM, MTBM):
         ETBE = self._ETBE
         yTBE = self._yTBE
         tuple_size = len(yTBE)
         if self._scale is not None:
-            scale = self._scale
-
-        for i in range(tuple_size):
-            yTBE[i][:-1] = self._yTBX[i]
+            scales[:] = self._scale
 
         for i in range(XTBM[0].shape[1]):
 
             for j in range(tuple_size):
-                yTBE[j][-1] = yTBM[j][i]
+                yTBE[j].set_yTBM(yTBM[j][i])
                 ETBE[j].set_XTBM(XTBM[j][:, [i]])
                 ETBE[j].set_MTBM(MTBM[j][i])
 
-            beta = _solve(sum(j.value for j in ETBE), sum(j for j in yTBE))
-            beta = (beta[:-1][:, newaxis], beta[-1:])
-            bstar = _bstar_unpack(beta, self._yTBy, yTBE, ETBE, _bstar)
+            left = add.reduce([j.value for j in ETBE])
+            right = add.reduce([j.value for j in yTBE])
+            x = _solve(left, right)
+            beta = x[:-1][:, newaxis]
+            alpha = x[-1:]
+            bstar = _bstar_unpack(beta, alpha, self._yTBy, yTBE, ETBE, _bstar_1effect)
 
             if self._scale is None:
-                scale = bstar / self._nsamples
+                scales[i] = bstar / self._nsamples
             else:
-                lmls[i] += self._nsamples - bstar / scale
+                lmls[i] += self._nsamples - bstar / scales[i]
 
-            lmls[i] -= self._nsamples * _safe_log(scale)
-            effsizes[i] = beta[1][0]
+            lmls[i] -= self._nsamples * _safe_log(scales[i])
+            effsizes[i] = alpha[0]
 
         lmls /= 2
 
     def _multicovariate_set_loop(self, yTBM, XTBM, MTBM):
-
         if self._scale is not None:
             scale = self._scale
 
-        yTBE = []
-        for a, b in zip(self._yTBX, yTBM):
-            c = empty(a.shape[0] + b.shape[0])
-            c[: a.shape[0]] = a
-            c[a.shape[0] :] = b
-            yTBE.append(c)
-
+        yTBE = [_yTBE(i, j.shape[0]) for (i, j) in zip(self._yTBX, yTBM)]
         for a, b in zip(yTBE, yTBM):
-            a[-b.shape[0] :] = b
+            a.set_yTBM(b)
 
         set_size = yTBM[0].shape[0]
         ETBE = [_ETBE(i, j, set_size) for (i, j) in zip(self._XTQDi, self._XTQ)]
@@ -206,9 +202,13 @@ class FastScanner(object):
             a.set_XTBM(b)
             a.set_MTBM(c)
 
-        beta = _solve(sum(j.value for j in ETBE), sum(j for j in yTBE))
-        beta = (beta[:-set_size], beta[-set_size:])
-        bstar = _bstar_unpack(beta, self._yTBy, yTBE, ETBE, _bstar_set)
+        left = add.reduce([j.value for j in ETBE])
+        right = add.reduce([j.value for j in yTBE])
+        x = _solve(left, right)
+
+        beta = x[:-set_size]
+        alpha = x[-set_size:]
+        bstar = _bstar_unpack(beta, alpha, self._yTBy, yTBE, ETBE, _bstar_set)
 
         lmls = self._static_lml()
 
@@ -220,45 +220,44 @@ class FastScanner(object):
         lmls -= self._nsamples * _safe_log(scale)
 
         lmls /= 2
-        effsizes = beta[1]
+        effsizes = alpha
 
-        return lmls, effsizes
+        return lmls, effsizes, scale
 
-    def _1covariate_loop(self, lmls, effsizes, yTBM, XTBM, MTBM):
+    def _1covariate_loop(self, lmls, effsizes, scales, yTBM, XTBM, MTBM):
         ETBE = self._ETBE
         yTBX = self._yTBX
         XTBX = [i.XTBX for i in ETBE]
         yTBy = self._yTBy
 
-        A00 = sum(i.XTBX[0, 0] for i in ETBE)
-        A01 = sum(i[0, :] for i in XTBM)
-        A11 = sum(i for i in MTBM)
+        A00 = add.reduce([i.XTBX[0, 0] for i in ETBE])
+        A01 = add.reduce([i[0, :] for i in XTBM])
+        A11 = add.reduce([i for i in MTBM])
 
-        b0 = sum(i[0] for i in yTBX)
-        b1 = sum(i for i in yTBM)
+        b0 = add.reduce([i[0] for i in yTBX])
+        b1 = add.reduce([i for i in yTBM])
 
-        beta = hsolve(A00, A01, A11, b0, b1)
-        beta = (beta[0][newaxis, :], beta[1])
-
-        bstar = _bstar(beta, yTBy, yTBX, yTBM, XTBX, XTBM, MTBM)
+        x = hsolve(A00, A01, A11, b0, b1)
+        beta = x[0][newaxis, :]
+        alpha = x[1]
+        bstar = _bstar_1effect(beta, alpha, yTBy, yTBX, yTBM, XTBX, XTBM, MTBM)
 
         if self._scale is None:
-            scale = bstar / self._nsamples
+            scales[:] = bstar / self._nsamples
         else:
-            scale = full(len(lmls), self._scale)
-            lmls += self._nsamples - bstar / scale
+            scales[:] = self._scale
+            lmls += self._nsamples - bstar / scales
 
-        lmls -= self._nsamples * _safe_log(scale)
+        lmls -= self._nsamples * _safe_log(scales)
         lmls /= 2
-        effsizes[:] = beta[1]
+        effsizes[:] = alpha
 
     def fast_scan(self, M, verbose=True):
         """
-        LML and fixed-effect sizes of each marker.
+        LML, scale, and fixed-effect size for single-marker scan.
 
         If the scaling factor ``s`` is not set by the user via method
-        :func:`set_scale`, its optimal value will be found and
-        used in the calculation.
+        :func:`set_scale`, its optimal value will be found.
 
         Parameters
         ----------
@@ -283,6 +282,7 @@ class FastScanner(object):
 
         lmls = empty(p)
         effsizes = empty(p)
+        scales = empty(p)
 
         if verbose:
             nchunks = min(p, 30)
@@ -295,16 +295,17 @@ class FastScanner(object):
             start = i * chunk_size
             stop = min(start + chunk_size, M.shape[1])
 
-            l, e = self._fast_scan_chunk(M[:, start:stop])
+            l, e, s = self._fast_scan_chunk(M[:, start:stop])
 
             lmls[start:stop] = l
             effsizes[start:stop] = e
+            scales[start:stop] = s
 
-        return lmls, effsizes
+        return lmls, effsizes, scales
 
     def scan(self, M):
         """
-        LML and fixed-effect sizes of each marker set.
+        LML, fixed-effect sizes, and scale of each marker set.
 
         If the scaling factor ``s`` is not set by the user via method
         :func:`set_scale`, its optimal value will be found and
@@ -330,13 +331,17 @@ class FastScanner(object):
         yTBM = [dot(i, j.T) for (i, j) in zip(self._yTQDi, MTQ)]
         XTBM = [dot(i, j.T) for (i, j) in zip(self._XTQDi, MTQ)]
         D = self._D
-        MTBM = [ddot(i, 1 / j) @ i.T for i, j in zip(MTQ, D) if npmin(j) > 0]
+        MTBM = [ddot(i, 1 / j) @ i.T for i, j in zip(MTQ, D) if j.min() > 0]
 
         return self._multicovariate_set_loop(yTBM, XTBM, MTBM)
 
     def null_lml(self):
         """
         Log of the marginal likelihood for the null hypothesis.
+
+        It is implemented as ::
+
+            log(p(𝐲)ⱼ) = log𝓝(Diag(√(sⱼD)) | 𝟎, sⱼD).
 
         Returns
         -------
@@ -386,7 +391,30 @@ class FastScanner(object):
         self._scale = None
 
 
-class _ETBE(object):
+class _yTBE:
+    def __init__(self, yTBX, set_size=1):
+        n = yTBX.shape[0] + set_size
+        self._data = empty((n,))
+        self._data[:-set_size] = yTBX
+        self._m = set_size
+
+    @property
+    def value(self):
+        return self._data
+
+    @property
+    def yTBX(self):
+        return self._data[: -self._m]
+
+    @property
+    def yTBM(self):
+        return self._data[-self._m :]
+
+    def set_yTBM(self, yTBM):
+        copyto(self.yTBM, yTBM)
+
+
+class _ETBE:
     def __init__(self, XTQDi, XTQ, set_size=1):
         n = XTQDi.shape[0] + set_size
         self._data = empty((n, n))
@@ -421,37 +449,47 @@ class _ETBE(object):
         copyto(self.MTBM, MTBM)
 
 
-def _bstar(beta, yTBy, yTBX, yTBM, XTBX, XTBM, MTBM):
+def _bstar_1effect(beta, alpha, yTBy, yTBX, yTBM, XTBX, XTBM, MTBM):
+    """
+    Same as :func:`_bstar_set` but for single-effect.
+    """
     from numpy_sugar.linalg import dotd
+    from numpy import add, sum
 
     r = full(MTBM[0].shape[0], yTBy)
-    r -= 2 * sum(dot(i, beta[0]) for i in yTBX)
-    r -= 2 * sum(i * beta[1] for i in yTBM)
-    r += sum(dotd(beta[0].T, dot(i, beta[0])) for i in XTBX)
-    r += sum(dotd(beta[0].T, i * beta[1]) for i in XTBM)
-    r += sum(npsum(beta[1] * i * beta[0], axis=0) for i in XTBM)
-    r += sum(beta[1] * i.ravel() * beta[1] for i in MTBM)
+    r -= 2 * add.reduce([dot(i, beta) for i in yTBX])
+    r -= 2 * add.reduce([i * alpha for i in yTBM])
+    r += add.reduce([dotd(beta.T, dot(i, beta)) for i in XTBX])
+    r += add.reduce([dotd(beta.T, i * alpha) for i in XTBM])
+    r += add.reduce([sum(alpha * i * beta, axis=0) for i in XTBM])
+    r += add.reduce([alpha * i.ravel() * alpha for i in MTBM])
     return r
 
 
-def _bstar_set(beta, yTBy, yTBX, yTBM, XTBX, XTBM, MTBM):
+def _bstar_set(beta, alpha, yTBy, yTBX, yTBM, XTBX, XTBM, MTBM):
+    """
+    Compute -2𝐲ᵀBEⱼ𝐛ⱼ + (𝐛ⱼEⱼ)ᵀBEⱼ𝐛ⱼ.
+
+    For 𝐛ⱼ = [𝜷ⱼᵀ 𝜶ⱼᵀ]ᵀ.
+    """
+    from numpy import add
+
     r = yTBy
-    r -= 2 * sum(i @ beta[0] for i in yTBX)
-    r -= 2 * sum(i @ beta[1] for i in yTBM)
-    r += sum(beta[0].T @ i @ beta[0] for i in XTBX)
-    r += 2 * sum(beta[0].T @ i @ beta[1] for i in XTBM)
-    r += sum(beta[1].T @ i @ beta[1] for i in MTBM)
+    r -= 2 * add.reduce([i @ beta for i in yTBX])
+    r -= 2 * add.reduce([i @ alpha for i in yTBM])
+    r += add.reduce([beta.T @ i @ beta for i in XTBX])
+    r += 2 * add.reduce([beta.T @ i @ alpha for i in XTBM])
+    r += add.reduce([alpha.T @ i @ alpha for i in MTBM])
     return r
 
 
-def _bstar_unpack(beta, yTBy, yTBE, ETBE, bstar):
-    nc = beta[0].shape[0]
-    yTBX = [j[:nc] for j in yTBE]
-    yTBM = [j[nc:] for j in yTBE]
+def _bstar_unpack(beta, alpha, yTBy, yTBE, ETBE, bstar):
+    yTBX = [j.yTBX for j in yTBE]
+    yTBM = [j.yTBM for j in yTBE]
     XTBX = [j.XTBX for j in ETBE]
     XTBM = [j.XTBM for j in ETBE]
     MTBM = [j.MTBM for j in ETBE]
-    return bstar(beta, yTBy, yTBX, yTBM, XTBX, XTBM, MTBM)
+    return bstar(beta, alpha, yTBy, yTBX, yTBM, XTBX, XTBM, MTBM)
 
 
 def _solve(A, y):

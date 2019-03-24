@@ -5,7 +5,7 @@ from numpy.linalg import LinAlgError
 
 from glimix_core._util import unvec, vec
 
-from .._util import log2pi, cache
+from .._util import cache, log2pi
 
 
 class KronFastScanner:
@@ -96,11 +96,15 @@ class KronFastScanner:
         effsizes1 : (m, e) ndarray
             Fixed-effect sizes for the set.
         """
+        from numpy import empty
         from numpy.linalg import multi_dot
         from scipy.linalg import cho_solve
 
         A1 = asarray(A, float)
         F1 = asarray(G, float)
+
+        if A1.shape[1] == 0:
+            return self.null_lml(), self.null_effsizes(), empty((0,))
 
         F1F1 = F1.T @ F1
         FF1 = self._F.T @ F1
