@@ -20,7 +20,7 @@ def test_lmm_kron_scan():
     lmm.fit(verbose=False)
     scan = lmm.get_fast_scanner()
 
-    m = lmm.mean.value()
+    m = lmm.mean
     K = lmm.cov.value()
 
     def func(scale):
@@ -78,7 +78,7 @@ def test_lmm_kron_scan_redundant():
     lmm.fit(verbose=False)
     scan = lmm.get_fast_scanner()
 
-    m = lmm.mean.value()
+    m = lmm.mean
     K = lmm.cov.value()
 
     def func(scale):

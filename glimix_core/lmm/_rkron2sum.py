@@ -49,7 +49,7 @@ class RKron2Sum(Function):
        755.
     """
 
-    def __init__(self, Y, A, F, G, rank=1):
+    def __init__(self, Y, A, F, G, rank=1, restricted=True):
         """
         Constructor.
 
@@ -83,6 +83,7 @@ class RKron2Sum(Function):
         self._mean = KronMean(A, F)
         self._cache = {"terms": None}
         self._cov.listen(self._parameters_update)
+        self._restricted = restricted
         composite = [("C0", self._cov.C0), ("C1", self._cov.C1)]
         Function.__init__(self, "Kron2Sum", composite=composite)
 
@@ -238,7 +239,8 @@ class RKron2Sum(Function):
         return self._cache["terms"]
 
     def get_fast_scanner(self):
-        r"""Return :class:`.FastScanner` for association scan.
+        """
+        Return :class:`.FastScanner` for association scan.
 
         Returns
         -------
@@ -255,9 +257,24 @@ class RKron2Sum(Function):
 
         Returns
         -------
-        mean : KronMean
+        mean : ndarray
+            𝐦.
         """
-        return self._mean
+        self._terms
+        return self._mean.value()
+
+    @property
+    def B(self):
+        """
+        Fixed-effect sizes B from 𝐦 = (A ⊗ F) vec(B).
+
+        Returns
+        -------
+        fixed-effects : ndarray
+            B from 𝐦 = (A ⊗ F) vec(B).
+        """
+        self._terms
+        return self._mean.B
 
     @property
     def cov(self):
@@ -306,11 +323,22 @@ class RKron2Sum(Function):
     @property
     @lru_cache(maxsize=None)
     def _logdet_MM(self):
+        if not self._restricted:
+            return 0.0
+
         M = self._mean.AF
         ldet = slogdet(M.T @ M)
         if ldet[0] != 1.0:
             raise ValueError("The determinant of MᵀM should be positive.")
         return ldet[1]
+
+    @property
+    def _logdetH(self):
+        if not self._restricted:
+            return 0.0
+        terms = self._terms
+        MKiM = terms["MRiM"] - terms["XRiM"].T @ terms["ZiXRiM"]
+        return slogdet(MKiM)[1]
 
     @property
     def _logdetK(self):
@@ -377,21 +405,13 @@ class RKron2Sum(Function):
         .. [R07] LaMotte, L. R. (2007). A direct derivation of the REML likelihood
            function. Statistical Papers, 48(2), 321-327.
         """
-        np = self.nsamples * self.ntraits
-        cp = self.ncovariates * self.ntraits
         terms = self._terms
-        # yRiy = terms["yRiy"]
         yKiy = terms["yKiy"]
         mKiy = terms["mKiy"]
         mKim = terms["mKim"]
-        MRiM = terms["MRiM"]
-        XRiM = terms["XRiM"]
-        ZiXRiM = terms["ZiXRiM"]
 
-        lml = -(np - cp) * log2pi + self._logdet_MM - self._logdetK
-
-        MKiM = MRiM - XRiM.T @ ZiXRiM
-        lml -= slogdet(MKiM)[1]
+        lml = -self._df * log2pi + self._logdet_MM - self._logdetK
+        lml -= self._logdetH
         lml += -yKiy - mKim + 2 * mKiy
 
         return lml / 2
@@ -549,8 +569,9 @@ class RKron2Sum(Function):
             "C1.Lu": -trace(WdC1) * self.nsamples + trace(ZiXR1X),
         }
 
-        grad["C0.Lu"] += cho_solve(Lh, MK0M).diagonal().sum(1)
-        grad["C1.Lu"] += cho_solve(Lh, MK1M).diagonal().sum(1)
+        if self._restricted:
+            grad["C0.Lu"] += cho_solve(Lh, MK0M).diagonal().sum(1)
+            grad["C1.Lu"] += cho_solve(Lh, MK1M).diagonal().sum(1)
 
         mKiM = MRim.T - XRim.T @ ZiXRiM
         yKiM = MRiy.T - XRiy.T @ ZiXRiM
@@ -576,6 +597,14 @@ class RKron2Sum(Function):
             Defaults to ``True``.
         """
         self._maximize(verbose=verbose, pgtol=1e-5, factr=1e8)
+
+    @property
+    def _df(self):
+        np = self.nsamples * self.ntraits
+        if not self._restricted:
+            return np
+        cp = self.ncovariates * self.ntraits
+        return np - cp
 
 
 def _dot(a, b):
