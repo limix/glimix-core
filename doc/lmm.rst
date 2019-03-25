@@ -410,7 +410,7 @@ marginal likelihood:
 Multi-trait
 -----------
 
-Please, refer to :class:`glimix_core.lmm.RKron2Sum`.
+Please, refer to :class:`glimix_core.lmm.Kron2Sum`.
 
 API
 ===
@@ -426,7 +426,6 @@ API
   KronFastScanner
   LMM
   MTLMM
-  RKron2Sum
 
 .. rubric:: References
 

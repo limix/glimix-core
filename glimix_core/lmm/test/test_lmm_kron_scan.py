@@ -5,7 +5,7 @@ from numpy.testing import assert_allclose
 from brent_search import minimize
 
 from glimix_core._util import vec
-from glimix_core.lmm import RKron2Sum
+from glimix_core.lmm import Kron2Sum
 
 
 def test_lmm_kron_scan():
@@ -16,7 +16,7 @@ def test_lmm_kron_scan():
     A = A @ A.T
     F = random.randn(n, 2)
     G = random.randn(n, 6)
-    lmm = RKron2Sum(Y, A, F, G)
+    lmm = Kron2Sum(Y, A, F, G)
     lmm.fit(verbose=False)
     scan = lmm.get_fast_scanner()
 
@@ -74,7 +74,7 @@ def test_lmm_kron_scan_redundant():
     F = random.randn(n, 2)
     G = random.randn(n, 6)
     G = concatenate([G, G], axis=1)
-    lmm = RKron2Sum(Y, A, F, G)
+    lmm = Kron2Sum(Y, A, F, G)
     lmm.fit(verbose=False)
     scan = lmm.get_fast_scanner()
 
