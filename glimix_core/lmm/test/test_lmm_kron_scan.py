@@ -2,6 +2,7 @@ import scipy.stats as st
 from numpy import concatenate, empty, kron
 from numpy.random import RandomState
 from numpy.testing import assert_allclose
+from brent_search import minimize
 
 from glimix_core._util import vec
 from glimix_core.lmm import RKron2Sum
@@ -21,7 +22,14 @@ def test_lmm_kron_scan():
 
     m = lmm.mean.value()
     K = lmm.cov.value()
-    assert_allclose(scan.null_lml(), st.multivariate_normal(m, K).logpdf(vec(Y)))
+
+    def func(scale):
+        mv = st.multivariate_normal(m, scale * K)
+        return -mv.logpdf(vec(Y))
+
+    s = minimize(func, 1e-3, 5.0, 1e-5)[0]
+
+    assert_allclose(scan.null_lml(), st.multivariate_normal(m, s * K).logpdf(vec(Y)))
     assert_allclose(kron(A, F) @ scan.null_effsizes(), m)
 
     A1 = random.randn(3, 2)
@@ -30,10 +38,17 @@ def test_lmm_kron_scan():
     lml, effsizes0, effsizes1 = scan.scan(A1, F1)
 
     m = kron(A, F) @ vec(effsizes0) + kron(A1, F1) @ vec(effsizes1)
-    assert_allclose(lml, st.multivariate_normal(m, K).logpdf(vec(Y)))
+
+    def func(scale):
+        mv = st.multivariate_normal(m, scale * K)
+        return -mv.logpdf(vec(Y))
+
+    s = minimize(func, 1e-3, 5.0, 1e-5)[0]
+
+    assert_allclose(lml, st.multivariate_normal(m, s * K).logpdf(vec(Y)))
 
     lml, effsizes0, effsizes1 = scan.scan(empty((3, 0)), F1)
-    assert_allclose(lml, -11.79537049705445)
+    assert_allclose(lml, -10.96414417860732)
     assert_allclose(
         effsizes0,
         [
@@ -63,7 +78,14 @@ def test_lmm_kron_scan_redundant():
 
     m = lmm.mean.value()
     K = lmm.cov.value()
-    assert_allclose(scan.null_lml(), st.multivariate_normal(m, K).logpdf(vec(Y)))
+
+    def func(scale):
+        mv = st.multivariate_normal(m, scale * K)
+        return -mv.logpdf(vec(Y))
+
+    s = minimize(func, 1e-3, 5.0, 1e-5)[0]
+
+    assert_allclose(scan.null_lml(), st.multivariate_normal(m, s * K).logpdf(vec(Y)))
     assert_allclose(kron(A, F) @ vec(scan.null_effsizes()), m)
 
     A1 = random.randn(3, 2)
@@ -73,4 +95,11 @@ def test_lmm_kron_scan_redundant():
     lml, effsizes0, effsizes1 = scan.scan(A1, F1)
 
     m = kron(A, F) @ vec(effsizes0) + kron(A1, F1) @ vec(effsizes1)
-    assert_allclose(lml, st.multivariate_normal(m, K).logpdf(vec(Y)))
+
+    def func(scale):
+        mv = st.multivariate_normal(m, scale * K)
+        return -mv.logpdf(vec(Y))
+
+    s = minimize(func, 1e-3, 5.0, 1e-5)[0]
+
+    assert_allclose(lml, st.multivariate_normal(m, s * K).logpdf(vec(Y)))

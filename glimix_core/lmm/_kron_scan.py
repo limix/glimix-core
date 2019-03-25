@@ -1,4 +1,4 @@
-from numpy import asarray, block, kron
+from numpy import asarray, block, clip, inf, kron, log
 
 from glimix_core._util import rsolve, unvec, vec
 
@@ -6,6 +6,15 @@ from .._util import cache, log2pi
 
 
 class KronFastScanner:
+    """
+    Approximated fast inference over several covariates.
+
+    Specifically, it maximizes the log of the marginal likelihood ::
+
+        log(p(Y)ⱼ) = log𝓝(Y | (A⊗F)vec(𝚩ⱼ)+(Aⱼ⊗Fⱼ)vec(𝚨ⱼ), sⱼ(C₀ ⊗ GGᵀ + C₁ ⊗ I)),
+
+    """
+
     def __init__(self, Y, A, F, G, terms):
 
         self._Y = Y
@@ -36,10 +45,27 @@ class KronFastScanner:
         lml : float
             Log of the marginal likelihood.
         """
+        np = self._nsamples * self._ntraits
         b = self.null_effsizes()
-        mKim = b.T @ self._MKiM @ b
         mKiy = b.T @ self._MKiy
-        return self._static_lml() - mKim / 2 + mKiy
+        sqrtdot = self._yKiy - mKiy
+        scale = sqrtdot / np
+        # lml = self._static_lml() / 2 - np * _safe_log(scale) / 2 + mKiy / (scale * 2)
+        # lml -= self._yKiy / (scale * 2)
+        # return lml
+        return self._static_lml() / 2 - np * _safe_log(scale) / 2 - np / 2
+
+        # from numpy_sugar import epsilon
+
+        # b = self.null_effsizes()
+        # np = self._nsamples * self._ntraits
+        # mKiy = b.T @ self._MKiy
+        # sqrdot = self._yKiy - mKiy.T
+        # scale = clip(sqrdot / np, epsilon.small, inf)
+        # np = self._nsamples * self._ntraits
+        # breakpoint()
+        # return self._static_lml()/2 - np * log(scale) / 2 + mKiy / (scale * 2)
+        # # return (lml - n * log(scale)) / 2
 
     def scan(self, A, G):
         """
@@ -97,18 +123,23 @@ class KronFastScanner:
         MKiy = block(T2) - block(T3)
         beta = rsolve(MKiM, MKiy)
 
-        mKim = beta.T @ MKiM @ beta
+        # mKim = beta.T @ MKiM @ beta
         mKiy = beta.T @ MKiy
         cp = self._ntraits * self._ncovariates
         effsizes0 = unvec(beta[:cp], (self._ncovariates, self._ntraits))
         effsizes1 = unvec(beta[cp:], (F1.shape[1], A1.shape[1]))
-        return self._static_lml() - mKim / 2 + mKiy, effsizes0, effsizes1
+
+        np = self._nsamples * self._ntraits
+        sqrtdot = self._yKiy - mKiy
+        scale = sqrtdot / np
+        lmls = self._static_lml() / 2 - np * _safe_log(scale) / 2 - np / 2
+        return lmls, effsizes0, effsizes1
 
     @cache
     def _static_lml(self):
         np = self._nsamples * self._ntraits
-        static_lml = -np * log2pi - self._logdetK - self._yKiy
-        return static_lml / 2
+        static_lml = -np * log2pi - self._logdetK
+        return static_lml
 
     @property
     def _nsamples(self):
@@ -135,3 +166,9 @@ class KronFastScanner:
     @cache
     def null_effsizes(self):
         return rsolve(self._MKiM, self._MKiy)
+
+
+def _safe_log(x):
+    from numpy_sugar import epsilon
+
+    return log(clip(x, epsilon.small, inf))
