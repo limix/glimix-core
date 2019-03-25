@@ -1,12 +1,15 @@
+import pytest
 import scipy.stats as st
+from numpy import concatenate
 from numpy.random import RandomState
 from numpy.testing import assert_allclose, assert_equal
+from scipy.optimize import check_grad
 
 from glimix_core._util import assert_interface, vec
 from glimix_core.lmm import RKron2Sum
 
 
-def test_lmm_rkron2sum():
+def test_lmm_rkron2sum_restricted():
     random = RandomState(0)
     n = 5
     Y = random.randn(n, 3)
@@ -161,3 +164,112 @@ def test_lmm_rkron2sum_public_attrs():
             "get_fast_scanner",
         ],
     )
+
+
+def test_lmm_rkron2sum_gradient_unrestricted():
+    random = RandomState(2)
+    Y = random.randn(5, 3)
+    A = random.randn(3, 3)
+    A = A @ A.T
+    F = random.randn(5, 2)
+    G = random.randn(5, 4)
+    lmm = RKron2Sum(Y, A, F, G, restricted=False)
+    lmm.cov.C0.Lu = random.randn(3)
+    lmm.cov.C1.Lu = random.randn(6)
+
+    def func(x):
+        lmm.cov.C0.Lu = x[:3]
+        lmm.cov.C1.Lu = x[3:9]
+        return lmm.lml()
+
+    def grad(x):
+        lmm.cov.C0.Lu = x[:3]
+        lmm.cov.C1.Lu = x[3:9]
+        D = lmm.gradient()
+        return concatenate((D["C0.Lu"], D["C1.Lu"]))
+
+    assert_allclose(check_grad(func, grad, random.randn(9), epsilon=1e-8), 0, atol=1e-3)
+
+
+def test_lmm_rkron2sum_fit_ill_conditioned_unrestricted():
+    random = RandomState(0)
+    n = 30
+    Y = random.randn(n, 3)
+    A = random.randn(3, 3)
+    A = A @ A.T
+    F = random.randn(n, 2)
+    G = random.randn(n, 4)
+    lmm = RKron2Sum(Y, A, F, G, restricted=False)
+    lml0 = lmm.lml()
+    lmm.fit(verbose=False)
+    lml1 = lmm.lml()
+    assert_allclose([lml0, lml1], [-157.18713011032833, -122.97307224440634])
+    grad = lmm.gradient()
+    vars = grad.keys()
+    assert_allclose(concatenate([grad[var] for var in vars]), [0] * 9, atol=1e-3)
+
+
+def test_lmm_rkron2sum_fit_C1_well_cond_unrestricted():
+    random = RandomState(0)
+    Y = random.randn(5, 2)
+    A = random.randn(2, 2)
+    A = A @ A.T
+    F = random.randn(5, 2)
+    G = random.randn(5, 6)
+    lmm = RKron2Sum(Y, A, F, G, restricted=False)
+    lml0 = lmm.lml()
+    lmm.fit(verbose=False)
+    lml1 = lmm.lml()
+    assert_allclose([lml0, lml1], [-19.12949904791771, -11.853021820832943])
+    grad = lmm.gradient()
+    vars = grad.keys()
+    assert_allclose(concatenate([grad[var] for var in vars]), [0] * 5, atol=1e-3)
+
+
+def test_lmm_rkron2sum_fit_C1_well_cond_C0_fullrank_unrestricted():
+    random = RandomState(0)
+    Y = random.randn(5, 2)
+    A = random.randn(2, 2)
+    A = A @ A.T
+    F = random.randn(5, 2)
+    G = random.randn(5, 6)
+    lmm = RKron2Sum(Y, A, F, G, rank=2, restricted=False)
+    lml0 = lmm.lml()
+    lmm.fit(verbose=False)
+    lml1 = lmm.lml()
+    assert_allclose([lml0, lml1], [-20.15199256730784, -11.853022074873408])
+    grad = lmm.gradient()
+    vars = grad.keys()
+    assert_allclose(concatenate([grad[var] for var in vars]), [0] * 7, atol=1e-2)
+
+
+# def test_lmm_rkron2sum_fit_C1_well_cond_redutant_F_unrestricted():
+#     random = RandomState(0)
+#     Y = random.randn(5, 2)
+#     A = random.randn(2, 2)
+#     A = A @ A.T
+#     F = random.randn(5, 2)
+#     F = concatenate((F, F), axis=1)
+#     G = random.randn(5, 2)
+#     lmm = RKron2Sum(Y, A, F, G, restricted=False)
+#     lml0 = lmm.lml()
+#     lmm.fit(verbose=False)
+#     lml1 = lmm.lml()
+#     assert_allclose([lml0, lml1], [-19.423945522925802, 2.9779698820395035])
+#     grad = lmm.gradient()
+#     vars = grad.keys()
+#     assert_allclose(concatenate([grad[var] for var in vars]), [0] * 13, atol=1e-2)
+
+
+def test_lmm_rkron2sum_fit_C1_well_cond_redundant_Y_unrestricted():
+    random = RandomState(0)
+    Y = random.randn(5, 2)
+    Y = concatenate((Y, Y), axis=1)
+    A = random.randn(4, 4)
+    A = A @ A.T
+    F = random.randn(5, 2)
+    G = random.randn(5, 2)
+    with pytest.warns(UserWarning):
+        lmm = RKron2Sum(Y, A, F, G, restricted=False)
+    lml = lmm.lml()
+    assert_allclose(lml, -40.5860882514021)
