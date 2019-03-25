@@ -192,10 +192,10 @@ def test_glmmnormal():
     assert_allclose(glmm._check_grad(), 0, atol=1e-3, rtol=RTOL)
 
     flmm = glmm.get_fast_scanner()
-    lmls, effsizes, scales = flmm.fast_scan(M, verbose=False)
+    lmls, eff0, eff1, scales = flmm.fast_scan(M, verbose=False)
 
     assert_allclose(lmls, [9.64605678059, 9.17041834, 9.56927990771])
-    assert_allclose(effsizes, [-0.0758297759308, 0.0509863368859, 0.0876858800519])
+    assert_allclose(eff1, [-0.0758297759308, 0.0509863368859, 0.0876858800519])
     assert_allclose(
         scales, [0.0053192483818597395, 0.005850105527002988, 0.00540155776161286]
     )

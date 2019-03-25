@@ -126,13 +126,13 @@ def test_glmmexpfam_glmmnormal_get_fast_scanner():
 
     scanner = glmm.get_fast_scanner()
     scanner.set_scale(1.0)
-    lmls, effect_sizes, scales = scanner.fast_scan(X, verbose=False)
+    lmls, eff0, eff1, scales = scanner.fast_scan(X, verbose=False)
     want = [-4.75845, -4.75845, -4.75845, -4.75845, -4.75845]
     assert_allclose(lmls, want, atol=1e-2, rtol=1e-2)
     assert_allclose(scales, [1.0, 1.0, 1.0, 1.0, 1.0])
 
     want = [-0.04114, -0.019553, 0.021131, -0.029469, 0.008593]
-    assert_allclose(effect_sizes, want, atol=1e-2, rtol=1e-2)
+    assert_allclose(eff1, want, atol=1e-2, rtol=1e-2)
 
 
 def test_glmmexpfam_delta0():

@@ -1,12 +1,24 @@
-from numpy import abs as npy_abs, array, errstate, maximum, nan_to_num, sqrt
+import warnings
+
+from numpy import abs as npy_abs, array, errstate, maximum, nan_to_num, sqrt, zeros
+from numpy.linalg import LinAlgError
 
 
-def _norm(x0, x1):
-    m = maximum(npy_abs(x0), npy_abs(x1))
-    with errstate(invalid="ignore"):
-        a = (x0 / m) * (x0 / m)
-        b = (x1 / m) * (x1 / m)
-        return nan_to_num(m * sqrt(a + b))
+def rsolve(A, y):
+    """
+    Robust solve Ax=y.
+    """
+    from numpy_sugar.linalg import rsolve as _rsolve
+
+    try:
+        beta = _rsolve(A, y)
+    except LinAlgError:
+        msg = "Could not converge to solve Ax=y."
+        msg += " Setting x to zero."
+        warnings.warn(msg, RuntimeWarning)
+        beta = zeros(A.shape[0])
+
+    return beta
 
 
 def hsolve(A00, A01, A11, y0, y1):
@@ -80,3 +92,11 @@ def hsolve(A00, A01, A11, y0, y1):
     x1 = E01 * c0 + E11 * c1
 
     return array([x0, x1])
+
+
+def _norm(x0, x1):
+    m = maximum(npy_abs(x0), npy_abs(x1))
+    with errstate(invalid="ignore"):
+        a = (x0 / m) * (x0 / m)
+        b = (x1 / m) * (x1 / m)
+        return nan_to_num(m * sqrt(a + b))

@@ -1,9 +1,6 @@
-import warnings
+from numpy import asarray, block, kron
 
-from numpy import asarray, block, kron, zeros
-from numpy.linalg import LinAlgError
-
-from glimix_core._util import unvec, vec
+from glimix_core._util import rsolve, unvec, vec
 
 from .._util import cache, log2pi
 
@@ -28,38 +25,6 @@ class KronFastScanner:
         self._MRiXZiXRiM = terms["MRiXZiXRiM"]
         self._MRiy = terms["MRiy"]
         self._MRiXZiXRiy = terms["MRiXZiXRiy"]
-
-    @cache
-    def _static_lml(self):
-        np = self._nsamples * self._ntraits
-        static_lml = -np * log2pi - self._logdetK - self._yKiy
-        return static_lml / 2
-
-    @property
-    def _nsamples(self):
-        return self._Y.shape[0]
-
-    @property
-    def _ntraits(self):
-        return self._Y.shape[1]
-
-    @property
-    def _ncovariates(self):
-        return self._F.shape[1]
-
-    @property
-    @cache
-    def _MKiM(self):
-        return self._MRiM - self._XRiM.T @ self._ZiXRiM
-
-    @property
-    @cache
-    def _MKiy(self):
-        return self._MRiy - self._XRiM.T @ self._ZiXRiy
-
-    @cache
-    def null_effsizes(self):
-        return _solve(self._MKiM, self._MKiy)
 
     @cache
     def null_lml(self):
@@ -130,7 +95,7 @@ class KronFastScanner:
 
         MKiM = block(T0) - block(T1)
         MKiy = block(T2) - block(T3)
-        beta = _solve(MKiM, MKiy)
+        beta = rsolve(MKiM, MKiy)
 
         mKim = beta.T @ MKiM @ beta
         mKiy = beta.T @ MKiy
@@ -139,16 +104,34 @@ class KronFastScanner:
         effsizes1 = unvec(beta[cp:], (F1.shape[1], A1.shape[1]))
         return self._static_lml() - mKim / 2 + mKiy, effsizes0, effsizes1
 
+    @cache
+    def _static_lml(self):
+        np = self._nsamples * self._ntraits
+        static_lml = -np * log2pi - self._logdetK - self._yKiy
+        return static_lml / 2
 
-def _solve(A, y):
-    from numpy_sugar.linalg import rsolve
+    @property
+    def _nsamples(self):
+        return self._Y.shape[0]
 
-    try:
-        beta = rsolve(A, y)
-    except LinAlgError:
-        msg = "Could not converge to the optimal effect-size. "
-        msg += "Setting its effect-size to zero."
-        warnings.warn(msg, RuntimeWarning)
-        beta = zeros(A.shape[0])
+    @property
+    def _ntraits(self):
+        return self._Y.shape[1]
 
-    return beta
+    @property
+    def _ncovariates(self):
+        return self._F.shape[1]
+
+    @property
+    @cache
+    def _MKiM(self):
+        return self._MRiM - self._XRiM.T @ self._ZiXRiM
+
+    @property
+    @cache
+    def _MKiy(self):
+        return self._MRiy - self._XRiM.T @ self._ZiXRiy
+
+    @cache
+    def null_effsizes(self):
+        return rsolve(self._MKiM, self._MKiy)
