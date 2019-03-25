@@ -46,26 +46,17 @@ class KronFastScanner:
             Log of the marginal likelihood.
         """
         np = self._nsamples * self._ntraits
+        scale = self.null_scale()
+        return self._static_lml() / 2 - np * _safe_log(scale) / 2 - np / 2
+
+    @cache
+    def null_scale(self):
+        np = self._nsamples * self._ntraits
         b = self.null_effsizes()
         mKiy = b.T @ self._MKiy
         sqrtdot = self._yKiy - mKiy
         scale = sqrtdot / np
-        # lml = self._static_lml() / 2 - np * _safe_log(scale) / 2 + mKiy / (scale * 2)
-        # lml -= self._yKiy / (scale * 2)
-        # return lml
-        return self._static_lml() / 2 - np * _safe_log(scale) / 2 - np / 2
-
-        # from numpy_sugar import epsilon
-
-        # b = self.null_effsizes()
-        # np = self._nsamples * self._ntraits
-        # mKiy = b.T @ self._MKiy
-        # sqrdot = self._yKiy - mKiy.T
-        # scale = clip(sqrdot / np, epsilon.small, inf)
-        # np = self._nsamples * self._ntraits
-        # breakpoint()
-        # return self._static_lml()/2 - np * log(scale) / 2 + mKiy / (scale * 2)
-        # # return (lml - n * log(scale)) / 2
+        return scale
 
     def scan(self, A, G):
         """
@@ -95,7 +86,7 @@ class KronFastScanner:
         F1 = asarray(G, float)
 
         if A1.shape[1] == 0:
-            return self.null_lml(), self.null_effsizes(), empty((0,))
+            return self.null_lml(), self.null_effsizes(), empty((0,)), self.null_scale()
 
         F1F1 = F1.T @ F1
         FF1 = self._F.T @ F1
@@ -133,7 +124,7 @@ class KronFastScanner:
         sqrtdot = self._yKiy - mKiy
         scale = sqrtdot / np
         lmls = self._static_lml() / 2 - np * _safe_log(scale) / 2 - np / 2
-        return lmls, effsizes0, effsizes1
+        return lmls, effsizes0, effsizes1, scale
 
     @cache
     def _static_lml(self):

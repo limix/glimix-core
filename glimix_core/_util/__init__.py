@@ -6,6 +6,7 @@ from .check import check_covariates, check_economic_qs, check_outcome
 from .eigen import economic_qs_zeros
 from .format import format_function
 from .solve import hsolve, rsolve
+from .numbers import safe_log
 
 log2pi = 1.837877066409345339081937709124758839607238769531250
 
@@ -20,6 +21,7 @@ __all__ = [
     "hsolve",
     "numbers",
     "rsolve",
+    "safe_log",
     "unvec",
     "vec",
 ]
