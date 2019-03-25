@@ -84,6 +84,11 @@ class KronFastScanner:
             MᵀK⁻¹Mvec(𝚩) = MᵀK⁻¹𝐲,
 
         for 𝐲 = vec(Y) and M = (A ⊗ F)vec(𝚩).
+
+        Returns
+        -------
+        effsizes : ndarray
+            Optimal 𝚩.
         """
         return rsolve(self._MKiM, self._MKiy)
 
@@ -97,6 +102,11 @@ class KronFastScanner:
             s = (n·p)⁻¹𝐲ᵀK⁻¹(𝐲 - 𝐦),
 
         where 𝐦 = (A ⊗ F)vec(𝚩) and 𝚩 is optimal.
+
+        Returns
+        -------
+        scale : float
+            Optimal scale.
         """
         np = self._nsamples * self._ntraits
         b = self.null_effsizes()

@@ -12,7 +12,7 @@ from numpy import (
     newaxis,
 )
 
-from .._util import cache, hsolve, log2pi, rsolve, safe_log, cache
+from .._util import cache, hsolve, log2pi, rsolve, safe_log
 
 
 class FastScanner(object):
@@ -127,13 +127,16 @@ class FastScanner(object):
     @cache
     def null_effsizes(self):
         """
-        Optimal 𝚩 according to the marginal likelihood.
+        Optimal 𝜷 according to the marginal likelihood.
 
         It is compute by solving the equation ::
 
-            MᵀK⁻¹Mvec(𝚩) = MᵀK⁻¹𝐲,
+            (XᵀBX)𝜷 = XᵀB𝐲.
 
-        for 𝐲 = vec(Y) and M = (A ⊗ F)vec(𝚩).
+        Returns
+        -------
+        effsizes : ndarray
+            Optimal 𝜷.
         """
         ETBE = self._ETBE
         yTBX = self._yTBX
@@ -149,9 +152,14 @@ class FastScanner(object):
 
         The optimal s is given by
 
-            s = (n·p)⁻¹𝐲ᵀK⁻¹(𝐲 - 𝐦),
+            s = n⁻¹𝐲ᵀB(𝐲 - X𝜷),
 
-        where 𝐦 = (A ⊗ F)vec(𝚩) and 𝚩 is optimal.
+        where 𝜷 is optimal.
+
+        Returns
+        -------
+        scale : float
+            Optimal scale.
         """
         n = self._nsamples
         beta = self.null_effsizes()
