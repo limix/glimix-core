@@ -223,7 +223,7 @@ def test_lmm_kron2sum_fit_C1_well_cond_unrestricted():
     assert_allclose([lml0, lml1], [-19.12949904791771, -11.853021820832943])
     grad = lmm.gradient()
     vars = grad.keys()
-    assert_allclose(concatenate([grad[var] for var in vars]), [0] * 5, atol=1e-3)
+    assert_allclose(concatenate([grad[var] for var in vars]), [0] * 5, atol=1e-2)
 
 
 def test_lmm_kron2sum_fit_C1_well_cond_C0_fullrank_unrestricted():
@@ -243,22 +243,16 @@ def test_lmm_kron2sum_fit_C1_well_cond_C0_fullrank_unrestricted():
     assert_allclose(concatenate([grad[var] for var in vars]), [0] * 7, atol=1e-2)
 
 
-# def test_lmm_kron2sum_fit_C1_well_cond_redutant_F_unrestricted():
-#     random = RandomState(0)
-#     Y = random.randn(5, 2)
-#     A = random.randn(2, 2)
-#     A = A @ A.T
-#     F = random.randn(5, 2)
-#     F = concatenate((F, F), axis=1)
-#     G = random.randn(5, 2)
-#     lmm = Kron2Sum(Y, A, F, G, restricted=False)
-#     lml0 = lmm.lml()
-#     lmm.fit(verbose=False)
-#     lml1 = lmm.lml()
-#     assert_allclose([lml0, lml1], [-19.423945522925802, 2.9779698820395035])
-#     grad = lmm.gradient()
-#     vars = grad.keys()
-#     assert_allclose(concatenate([grad[var] for var in vars]), [0] * 13, atol=1e-2)
+def test_lmm_kron2sum_fit_C1_well_cond_redutant_F_unrestricted():
+    random = RandomState(0)
+    Y = random.randn(5, 2)
+    A = random.randn(2, 2)
+    A = A @ A.T
+    F = random.randn(5, 2)
+    F = concatenate((F, F), axis=1)
+    G = random.randn(5, 2)
+    with pytest.warns(UserWarning):
+        Kron2Sum(Y, A, F, G, restricted=False)
 
 
 def test_lmm_kron2sum_fit_C1_well_cond_redundant_Y_unrestricted():

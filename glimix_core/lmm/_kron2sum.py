@@ -1,10 +1,10 @@
 import warnings
-from functools import lru_cache, reduce
+from functools import reduce
 
 from numpy import asarray, asfortranarray, kron, log, sqrt, tensordot, trace
 from numpy.linalg import matrix_rank, slogdet
 
-from glimix_core._util import log2pi, unvec, vec
+from glimix_core._util import cache, log2pi, unvec, vec
 from glimix_core.cov import Kron2SumCov
 from glimix_core.mean import KronMean
 from optimix import Function
@@ -77,6 +77,14 @@ class Kron2Sum(Function):
 
         A = asarray(A, float)
         F = asarray(F, float)
+        Frank = matrix_rank(F)
+        if F.shape[1] > Frank:
+            warnings.warn(
+                f"F is not full column rank: rank(F)={Frank}. "
+                + "Convergence might be problematic.",
+                UserWarning,
+            )
+
         G = asarray(G, float)
         self._Y = Y
         self._cov = Kron2SumCov(G, Y.shape[1], rank)
@@ -91,59 +99,59 @@ class Kron2Sum(Function):
         self._cache["terms"] = None
 
     @property
-    @lru_cache(maxsize=None)
+    @cache
     def _GY(self):
         return self._cov.Ge.T @ self._Y
 
     @property
-    @lru_cache(maxsize=None)
+    @cache
     def _GG(self):
         return self._cov.Ge.T @ self._cov.Ge
 
     @property
-    @lru_cache(maxsize=None)
+    @cache
     def _trGG(self):
         from numpy_sugar.linalg import trace2
 
         return trace2(self._cov.Ge, self._cov.Ge.T)
 
     @property
-    @lru_cache(maxsize=None)
+    @cache
     def _GGGG(self):
         return self._GG @ self._GG
 
     @property
-    @lru_cache(maxsize=None)
+    @cache
     def _GGGY(self):
         return self._GG @ self._GY
 
     @property
-    @lru_cache(maxsize=None)
+    @cache
     def _FF(self):
         return self._mean.F.T @ self._mean.F
 
     @property
-    @lru_cache(maxsize=None)
+    @cache
     def _GF(self):
         return self._cov.Ge.T @ self._mean.F
 
     @property
-    @lru_cache(maxsize=None)
+    @cache
     def _FGGG(self):
         return self._GF.T @ self._GG
 
     @property
-    @lru_cache(maxsize=None)
+    @cache
     def _FGGY(self):
         return self._GF.T @ self._GY
 
     @property
-    @lru_cache(maxsize=None)
+    @cache
     def _FGGF(self):
         return self._GF.T @ self._GF
 
     @property
-    @lru_cache(maxsize=None)
+    @cache
     def _FY(self):
         return self._mean.F.T @ self._Y
 
@@ -321,7 +329,7 @@ class Kron2Sum(Function):
         return self._lml_gradient()
 
     @property
-    @lru_cache(maxsize=None)
+    @cache
     def _logdet_MM(self):
         if not self._restricted:
             return 0.0
