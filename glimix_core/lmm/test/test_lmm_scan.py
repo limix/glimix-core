@@ -137,17 +137,6 @@ def test_lmm_scan_fastlmm_set_scale_1covariate():
     markers = M.copy() + random.randn(n, 1)
 
     fast_scanner = lmm.get_fast_scanner()
-
-    fast_scanner.set_scale(1.0)
-
-    lmls, eff0, eff1, scales = fast_scanner.fast_scan(markers, verbose=False)
-
-    assert_allclose(lmls, [-21.577703], rtol=1e-6)
-    assert_allclose(eff0, [[-1.43206379971882]])
-    assert_allclose(eff1, [1.412239], rtol=1e-6)
-    assert_allclose(scales, [1.0])
-
-    fast_scanner.unset_scale()
     lmls, eff0, eff1, scales = fast_scanner.fast_scan(markers, verbose=False)
 
     assert_allclose(lmls, [-21.509721], rtol=1e-6)
@@ -177,17 +166,6 @@ def test_lmm_scan_fastlmm_set_scale_1covariate_redundant():
     markers = M.copy()
 
     fast_scanner = lmm.get_fast_scanner()
-
-    fast_scanner.set_scale(1.0)
-
-    lmls, eff0, eff1, scales = fast_scanner.fast_scan(markers, verbose=False)
-
-    assert_allclose(lmls, [-22.357526], rtol=1e-6)
-    assert_allclose(eff0, [[0.029985622694805182]])
-    assert_allclose(eff1, [0.029986], rtol=1e-6, atol=1e-6)
-    assert_allclose(scales, [1.0])
-
-    fast_scanner.unset_scale()
     lmls, eff0, eff1, scales = fast_scanner.fast_scan(markers, verbose=False)
     assert_allclose(lmls[0], -22.357525517597185, rtol=1e-6)
     assert_allclose(eff0, [[0.029985622694805182]])
@@ -213,27 +191,6 @@ def test_lmm_scan_fastlmm_set_scale_multicovariates():
     markers = M.copy()
 
     fast_scanner = lmm.get_fast_scanner()
-
-    fast_scanner.set_scale(1.0)
-
-    lmls, eff0, eff1, scales = fast_scanner.fast_scan(markers, verbose=False)
-    assert_allclose(
-        [lmm.beta], fast_scanner.fast_scan(zeros((10, 1)), verbose=False)[1]
-    )
-
-    want = [-19.318845, -19.318845, -19.318845]
-    assert_allclose(lmls, want, rtol=1e-6, atol=1e-6)
-
-    assert_allclose(
-        eff0[1], [-0.6923007382350215, 1.1775405412986524, -0.7631553930778899]
-    )
-
-    want = [-0.34615, 1.177541, -0.381578]
-    assert_allclose(eff1, want, rtol=1e-6, atol=1e-6)
-
-    assert_allclose(scales, [1] * 3)
-
-    fast_scanner.unset_scale()
     lmls, eff0, eff1, scales = fast_scanner.fast_scan(markers, verbose=False)
 
     want = [-19.318845, -19.318845, -19.318845]
@@ -497,7 +454,7 @@ def test_lmm_scan_interface():
 
 def test_lmm_scan_public_attrs():
     assert_interface(
-        FastScanner, ["unset_scale", "null_lml", "set_scale", "fast_scan", "scan"]
+        FastScanner, ["null_lml", "null_effsizes", "null_scale", "fast_scan", "scan"]
     )
 
 

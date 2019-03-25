@@ -1,8 +1,8 @@
-from numpy import asarray, block, clip, inf, kron, log
+from numpy import asarray, block, kron
 
 from glimix_core._util import rsolve, unvec, vec
 
-from .._util import cache, log2pi
+from .._util import cache, log2pi, safe_log
 
 
 class KronFastScanner:
@@ -11,16 +11,35 @@ class KronFastScanner:
 
     Specifically, it maximizes the log of the marginal likelihood ::
 
-        log(p(Y)ⱼ) = log𝓝(Y | (A⊗F)vec(𝚩ⱼ)+(Aⱼ⊗Fⱼ)vec(𝚨ⱼ), sⱼ(C₀ ⊗ GGᵀ + C₁ ⊗ I)),
+        log(p(Y)ⱼ) = log𝓝(vec(Y) | (A ⊗ F)vec(𝚩ⱼ) + (Aⱼ ⊗ Fⱼ)vec(𝚨ⱼ), sⱼK),
 
+    where K = C₀ ⊗ GGᵀ + C₁ ⊗ I and ⱼ index the candidates set. For performance purpose,
+    we optimise only the fixed-effect sizes and scale parameters. Therefore, K is fixed
+    throughout the process.
     """
 
     def __init__(self, Y, A, F, G, terms):
+        """
+        Constructor.
 
-        self._Y = Y
-        self._A = A
-        self._F = F
-        self._G = G
+        Parameters
+        ----------
+        Y : (n, p) array_like
+            Outcome matrix.
+        A : (n, n) array_like
+            Trait-by-trait design matrix.
+        F : (n, c) array_like
+            Covariates design matrix.
+        G : (n, r) array_like
+            Matrix G from the GGᵀ term.
+        terms : dict
+            Pre-computed terms.
+        """
+
+        self._Y = asarray(Y, float)
+        self._A = asarray(A, float)
+        self._F = asarray(F, float)
+        self._G = asarray(G, float)
         self._logdetK = terms["logdetK"]
         self._W = terms["W"]
         self._yKiy = terms["yKiy"]
@@ -40,6 +59,12 @@ class KronFastScanner:
         """
         Log of the marginal likelihood for the null hypothesis.
 
+        It is implemented as ::
+
+            2·log(p(Y)) = -n·p·log(2𝜋s) - log｜K｜ - n·p,
+
+        for which s and 𝚩 are optimal.
+
         Returns
         -------
         lml : float
@@ -47,10 +72,32 @@ class KronFastScanner:
         """
         np = self._nsamples * self._ntraits
         scale = self.null_scale()
-        return self._static_lml() / 2 - np * _safe_log(scale) / 2 - np / 2
+        return self._static_lml() / 2 - np * safe_log(scale) / 2 - np / 2
+
+    @cache
+    def null_effsizes(self):
+        """
+        Optimal 𝚩 according to the marginal likelihood.
+
+        It is compute by solving the equation ::
+
+            MᵀK⁻¹Mvec(𝚩) = MᵀK⁻¹𝐲,
+
+        for 𝐲 = vec(Y) and M = (A ⊗ F)vec(𝚩).
+        """
+        return rsolve(self._MKiM, self._MKiy)
 
     @cache
     def null_scale(self):
+        """
+        Optimal s according to the marginal likelihood.
+
+        The optimal s is given by
+
+            s = (n·p)⁻¹𝐲ᵀK⁻¹(𝐲 - 𝐦),
+
+        where 𝐦 = (A ⊗ F)vec(𝚩) and 𝚩 is optimal.
+        """
         np = self._nsamples * self._ntraits
         b = self.null_effsizes()
         mKiy = b.T @ self._MKiy
@@ -58,15 +105,15 @@ class KronFastScanner:
         scale = sqrtdot / np
         return scale
 
-    def scan(self, A, G):
+    def scan(self, A1, F1):
         """
-        LML and fixed-effect sizes of each marker set and covariates.
+        LML, fixed-effect sizes, and scale of the candidate set.
 
         Parameters
         ----------
-        A : (p, e) array_like
+        A1 : (p, e) array_like
             Trait-by-environments design matrix.
-        G : (n, m) array_like
+        F1 : (n, m) array_like
             Variants set matrix.
 
         Returns
@@ -76,14 +123,16 @@ class KronFastScanner:
         effsizes0 : (c, p) ndarray
             Fixed-effect sizes for the covariates.
         effsizes1 : (m, e) ndarray
-            Fixed-effect sizes for the set.
+            Fixed-effect sizes for the candidates.
+        scale : float
+            Optimal scale.
         """
         from numpy import empty
         from numpy.linalg import multi_dot
         from scipy.linalg import cho_solve
 
-        A1 = asarray(A, float)
-        F1 = asarray(G, float)
+        A1 = asarray(A1, float)
+        F1 = asarray(F1, float)
 
         if A1.shape[1] == 0:
             return self.null_lml(), self.null_effsizes(), empty((0,)), self.null_scale()
@@ -114,7 +163,6 @@ class KronFastScanner:
         MKiy = block(T2) - block(T3)
         beta = rsolve(MKiM, MKiy)
 
-        # mKim = beta.T @ MKiM @ beta
         mKiy = beta.T @ MKiy
         cp = self._ntraits * self._ncovariates
         effsizes0 = unvec(beta[:cp], (self._ncovariates, self._ntraits))
@@ -123,7 +171,7 @@ class KronFastScanner:
         np = self._nsamples * self._ntraits
         sqrtdot = self._yKiy - mKiy
         scale = sqrtdot / np
-        lmls = self._static_lml() / 2 - np * _safe_log(scale) / 2 - np / 2
+        lmls = self._static_lml() / 2 - np * safe_log(scale) / 2 - np / 2
         return lmls, effsizes0, effsizes1, scale
 
     @cache
@@ -153,13 +201,3 @@ class KronFastScanner:
     @cache
     def _MKiy(self):
         return self._MRiy - self._XRiM.T @ self._ZiXRiy
-
-    @cache
-    def null_effsizes(self):
-        return rsolve(self._MKiM, self._MKiy)
-
-
-def _safe_log(x):
-    from numpy_sugar import epsilon
-
-    return log(clip(x, epsilon.small, inf))

@@ -3,18 +3,16 @@ from numpy import (
     all,
     asarray,
     atleast_2d,
-    clip,
     copyto,
     dot,
     empty,
     full,
-    inf,
     isfinite,
     log,
     newaxis,
 )
 
-from .._util import cache, hsolve, log2pi, rsolve
+from .._util import cache, hsolve, log2pi, rsolve, safe_log, cache
 
 
 class FastScanner(object):
@@ -103,11 +101,62 @@ class FastScanner(object):
         self._XTQ = XTQ
         self._yTQDi = yTQDi
         self._XTQDi = XTQDi
-        self._scale = None
         self._QS = QS
         self._D = D
         self._X = X
         self._y = y
+
+    @cache
+    def null_lml(self):
+        """
+        Log of the marginal likelihood for the null hypothesis.
+
+        It is implemented as ::
+
+            log(p(𝐲)) = log𝓝(Diag(√(sD)) | 𝟎, sD).
+
+        Returns
+        -------
+        lml : float
+            Log of the marginal likelihood.
+        """
+        n = self._nsamples
+        scale = self.null_scale()
+        return (self._static_lml() - n * log(scale)) / 2
+
+    @cache
+    def null_effsizes(self):
+        """
+        Optimal 𝚩 according to the marginal likelihood.
+
+        It is compute by solving the equation ::
+
+            MᵀK⁻¹Mvec(𝚩) = MᵀK⁻¹𝐲,
+
+        for 𝐲 = vec(Y) and M = (A ⊗ F)vec(𝚩).
+        """
+        ETBE = self._ETBE
+        yTBX = self._yTBX
+
+        A = sum(i.XTBX for i in ETBE)
+        b = sum(yTBX)
+        return rsolve(A, b)
+
+    @cache
+    def null_scale(self):
+        """
+        Optimal s according to the marginal likelihood.
+
+        The optimal s is given by
+
+            s = (n·p)⁻¹𝐲ᵀK⁻¹(𝐲 - 𝐦),
+
+        where 𝐦 = (A ⊗ F)vec(𝚩) and 𝚩 is optimal.
+        """
+        n = self._nsamples
+        beta = self.null_effsizes()
+        sqrdot = self._yTBy - dot(sum(self._yTBX), beta)
+        return sqrdot / n
 
     def fast_scan(self, M, verbose=True):
         """
@@ -166,7 +215,7 @@ class FastScanner(object):
 
     def scan(self, M):
         """
-        LML, fixed-effect sizes, and scale of each marker set.
+        LML, fixed-effect sizes, and scale of the candidate set.
 
         If the scaling factor ``s`` is not set by the user via method
         :func:`set_scale`, its optimal value will be found and
@@ -181,10 +230,12 @@ class FastScanner(object):
         -------
         lml : float
             Log of the marginal likelihood for each set.
-        effsizes : ndarray
-            Fixed-effect sizes for each set.
-        scales : ndarray
-            Scale.
+        effsizes0 : ndarray
+            Fixed-effect sizes for the covariates.
+        effsizes1 : ndarray
+            Fixed-effect sizes for each marker.
+        scale : ndarray
+            Optimal scale.
         """
         from numpy_sugar.linalg import ddot
 
@@ -198,61 +249,6 @@ class FastScanner(object):
 
         return self._multicovariate_set_loop(yTBM, XTBM, MTBM)
 
-    def null_lml(self):
-        """
-        Log of the marginal likelihood for the null hypothesis.
-
-        It is implemented as ::
-
-            log(p(𝐲)) = log𝓝(Diag(√(sD)) | 𝟎, sD).
-
-        Returns
-        -------
-        lml : float
-            Log of the marginal likelihood.
-        """
-        n = self._nsamples
-
-        ETBE = self._ETBE
-        yTBX = self._yTBX
-
-        A = sum(i.XTBX for i in ETBE)
-        b = sum(yTBX)
-        beta = rsolve(A, b)
-        sqrdot = self._yTBy - dot(b, beta)
-
-        lml = self._static_lml()
-
-        if self._scale is None:
-            scale = sqrdot / n
-        else:
-            scale = self._scale
-            lml += n
-            lml -= sqrdot / scale
-
-        return (lml - n * log(scale)) / 2
-
-    def set_scale(self, scale):
-        """
-        Set the scaling factor.
-
-        Calling this method disables the automatic scale learning.
-
-        Parameters
-        ----------
-        scale : float
-            Scaling factor.
-        """
-        self._scale = scale
-
-    def unset_scale(self):
-        """
-        Unset the scaling factor.
-
-        If called, it enables the scale learning again.
-        """
-        self._scale = None
-
     @property
     def _nsamples(self):
         return self._QS[0][0].shape[0]
@@ -265,7 +261,7 @@ class FastScanner(object):
     def _static_lml(self):
         n = self._nsamples
         static_lml = -n * log2pi - n
-        static_lml -= sum(_safe_log(D).sum() for D in self._D)
+        static_lml -= sum(safe_log(D).sum() for D in self._D)
         return static_lml
 
     def _fast_scan_chunk(self, M):
@@ -301,8 +297,6 @@ class FastScanner(object):
         ETBE = self._ETBE
         yTBE = self._yTBE
         tuple_size = len(yTBE)
-        if self._scale is not None:
-            scales[:] = self._scale
 
         for i in range(XTBM[0].shape[1]):
 
@@ -318,20 +312,14 @@ class FastScanner(object):
             alpha = x[-1:]
             bstar = _bstar_unpack(beta, alpha, self._yTBy, yTBE, ETBE, _bstar_1effect)
 
-            if self._scale is None:
-                scales[i] = bstar / self._nsamples
-            else:
-                lmls[i] += self._nsamples - bstar / scales[i]
-
-            lmls[i] -= self._nsamples * _safe_log(scales[i])
+            scales[i] = bstar / self._nsamples
+            lmls[i] -= self._nsamples * safe_log(scales[i])
             eff0[i, :] = beta.T
             eff1[i] = alpha[0]
 
         lmls /= 2
 
     def _multicovariate_set_loop(self, yTBM, XTBM, MTBM):
-        if self._scale is not None:
-            scale = self._scale
 
         yTBE = [_yTBE(i, j.shape[0]) for (i, j) in zip(self._yTBX, yTBM)]
         for a, b in zip(yTBE, yTBM):
@@ -354,13 +342,8 @@ class FastScanner(object):
 
         lmls = self._static_lml()
 
-        if self._scale is None:
-            scale = bstar / self._nsamples
-        else:
-            lmls += self._nsamples - bstar / scale
-
-        lmls -= self._nsamples * _safe_log(scale)
-
+        scale = bstar / self._nsamples
+        lmls -= self._nsamples * safe_log(scale)
         lmls /= 2
         effsizes = alpha
 
@@ -384,13 +367,8 @@ class FastScanner(object):
         alpha = x[1]
         bstar = _bstar_1effect(beta, alpha, yTBy, yTBX, yTBM, XTBX, XTBM, MTBM)
 
-        if self._scale is None:
-            scales[:] = bstar / self._nsamples
-        else:
-            scales[:] = self._scale
-            lmls += self._nsamples - bstar / scales
-
-        lmls -= self._nsamples * _safe_log(scales)
+        scales[:] = bstar / self._nsamples
+        lmls -= self._nsamples * safe_log(scales)
         lmls /= 2
         effsizes0[:] = beta.T
         effsizes1[:] = alpha
@@ -493,9 +471,3 @@ def _bstar_unpack(beta, alpha, yTBy, yTBE, ETBE, bstar):
     XTBM = [j.XTBM for j in ETBE]
     MTBM = [j.MTBM for j in ETBE]
     return bstar(beta, alpha, yTBy, yTBX, yTBM, XTBX, XTBM, MTBM)
-
-
-def _safe_log(x):
-    from numpy_sugar import epsilon
-
-    return log(clip(x, epsilon.small, inf))

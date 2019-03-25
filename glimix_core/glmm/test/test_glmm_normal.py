@@ -200,12 +200,6 @@ def test_glmmnormal():
         scales, [0.0053192483818597395, 0.005850105527002988, 0.00540155776161286]
     )
 
-    assert_allclose(flmm.null_lml(), 8.89275310307)
-    flmm.set_scale(1.5)
-    assert_allclose(flmm.null_lml(), -13.5839989949)
-    flmm.set_scale(0.5)
-    assert_allclose(flmm.null_lml(), -8.13216534935)
-
 
 def test_glmmnormal_qs_zeros():
     nsamples = 10

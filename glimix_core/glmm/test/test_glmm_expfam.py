@@ -1,6 +1,7 @@
 import pytest
 from numpy import (
     arange,
+    array,
     asarray,
     ascontiguousarray,
     corrcoef,
@@ -125,14 +126,52 @@ def test_glmmexpfam_glmmnormal_get_fast_scanner():
     assert_allclose(0.999999994119, glmm.delta, atol=1e-3, rtol=1e-3)
 
     scanner = glmm.get_fast_scanner()
-    scanner.set_scale(1.0)
     lmls, eff0, eff1, scales = scanner.fast_scan(X, verbose=False)
-    want = [-4.75845, -4.75845, -4.75845, -4.75845, -4.75845]
-    assert_allclose(lmls, want, atol=1e-2, rtol=1e-2)
-    assert_allclose(scales, [1.0, 1.0, 1.0, 1.0, 1.0])
 
-    want = [-0.04114, -0.019553, 0.021131, -0.029469, 0.008593]
-    assert_allclose(eff1, want, atol=1e-2, rtol=1e-2)
+    assert_allclose(
+        lmls,
+        [
+            3.666664259270515,
+            3.6666642592705188,
+            3.666664259270515,
+            3.666664259270515,
+            3.6666642592705188,
+        ],
+        rtol=1e-6,
+    )
+    assert_allclose(
+        eff0,
+        [
+            array([-0.04114011, -0.03910684, 0.04226118, -0.05893773, 0.01718666]),
+            array([-0.08228023, -0.01955342, 0.04226118, -0.05893773, 0.01718666]),
+            array([-0.08228023, -0.03910684, 0.02113059, -0.05893773, 0.01718666]),
+            array([-0.08228023, -0.03910684, 0.04226118, -0.02946886, 0.01718666]),
+            array([-0.08228023, -0.03910684, 0.04226118, -0.05893773, 0.00859333]),
+        ],
+        rtol=1e-6,
+    )
+    assert_allclose(
+        eff1,
+        [
+            -0.04114011396191331,
+            -0.01955341813308458,
+            0.02113058926220273,
+            -0.029468864872716646,
+            0.008593328546792367,
+        ],
+        rtol=1e-6,
+    )
+    assert_allclose(
+        scales,
+        [
+            0.07341651661479422,
+            0.07341651661479419,
+            0.07341651661479422,
+            0.07341651661479422,
+            0.0734165166147942,
+        ],
+        rtol=1e-6,
+    )
 
 
 def test_glmmexpfam_delta0():
