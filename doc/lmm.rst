@@ -220,8 +220,6 @@ API
   Kron2Sum
   KronFastScanner
   LMM
-  MTLMM
-
 
 Implementation
 ==============
