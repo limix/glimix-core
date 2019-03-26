@@ -473,19 +473,21 @@ def test_lmm_scan_scan():
     fast_scanner = lmm.get_fast_scanner()
 
     markers = [random.randn(n, 2), random.randn(n, 3)]
-    lml, effsizes, scale = fast_scanner.scan(markers[0])
+    lml, eff0, eff1, scale = fast_scanner.scan(markers[0])
     assert_allclose(lml, -51.176103656322304)
-    assert_allclose(effsizes, [0.16683458074028157, 0.23266357557893075])
+    assert_allclose(eff0, [0.6027876492916453])
+    assert_allclose(eff1, [0.16683458074028157, 0.23266357557893075])
     assert_allclose(scale, [0.9564527908242139])
 
-    lml, effsizes, scale = fast_scanner.scan(markers[1])
+    lml, eff0, eff1, scale = fast_scanner.scan(markers[1])
     assert_allclose(lml, -50.279756791246925)
-    assert_allclose(effsizes, [0.095240122340569, -0.097972188424052, 0.47925863412073])
+    assert_allclose(eff0, [0.823889122685148])
+    assert_allclose(eff1, [0.095240122340569, -0.097972188424052, 0.47925863412073])
     assert_allclose(scale, [0.900972714721136])
 
     markers = [random.randn(n, 1), random.randn(n, 1)]
-    lml00, effsizes00, scale00 = fast_scanner.scan(markers[0])
-    lml01, effsizes01, scale01 = fast_scanner.scan(markers[1])
+    lml00, _, effsizes00, scale00 = fast_scanner.scan(markers[0])
+    lml01, _, effsizes01, scale01 = fast_scanner.scan(markers[1])
     lmls0 = array([lml00, lml01])
     effsizes0 = concatenate([effsizes00, effsizes01])
     scales0 = array([scale00, scale01])

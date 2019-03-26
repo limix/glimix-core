@@ -282,7 +282,7 @@ class Kron2Sum(Function):
             B from 𝐦 = (A ⊗ F) vec(B).
         """
         self._terms
-        return self._mean.B
+        return asarray(self._mean.B, float)
 
     @property
     def cov(self):

@@ -348,14 +348,13 @@ class FastScanner(object):
         alpha = x[-set_size:]
         bstar = _bstar_unpack(beta, alpha, self._yTBy, yTBE, ETBE, _bstar_set)
 
-        lmls = self._static_lml()
+        lml = self._static_lml()
 
         scale = bstar / self._nsamples
-        lmls -= self._nsamples * safe_log(scale)
-        lmls /= 2
-        effsizes = alpha
+        lml -= self._nsamples * safe_log(scale)
+        lml /= 2
 
-        return lmls, effsizes, scale
+        return lml, beta, alpha, scale
 
     def _1covariate_loop(self, lmls, effsizes0, effsizes1, scales, yTBM, XTBM, MTBM):
         ETBE = self._ETBE

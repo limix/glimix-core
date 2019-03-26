@@ -1,4 +1,4 @@
-from numpy import asarray, block, kron
+from numpy import asarray, block, clip, inf, kron
 
 from glimix_core._util import rsolve, unvec, vec
 
@@ -139,6 +139,7 @@ class KronFastScanner:
         """
         from numpy import empty
         from numpy.linalg import multi_dot
+        from numpy_sugar import epsilon
         from scipy.linalg import cho_solve
 
         A1 = asarray(A1, float)
@@ -180,7 +181,7 @@ class KronFastScanner:
 
         np = self._nsamples * self._ntraits
         sqrtdot = self._yKiy - mKiy
-        scale = sqrtdot / np
+        scale = clip(sqrtdot / np, epsilon.tiny, inf)
         lmls = self._static_lml() / 2 - np * safe_log(scale) / 2 - np / 2
         return lmls, effsizes0, effsizes1, scale
 
