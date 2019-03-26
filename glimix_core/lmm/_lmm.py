@@ -6,21 +6,11 @@ from ._scan import FastScanner
 
 
 class LMM(LMMCore):
-    """
+    r"""
     Fast Linear Mixed Models inference via maximum likelihood.
 
     It perform inference on the model :eq:`lmm1`, explained in the
     :ref:`lmm-intro` section.
-
-    Parameters
-    ----------
-    y : array_like
-        Outcome.
-    X : array_like
-        Covariates as a two-dimensional array.
-    QS : tuple
-        Economic eigendecompositon in form of ``((Q0, Q1), S0)`` of a
-        covariance matrix ``K``.
 
     Examples
     --------
@@ -63,9 +53,69 @@ class LMM(LMMCore):
         >>> lmm.fit(verbose=False)
         >>> print('%.3f' % lmm.lml())
         -3.713
+
+    Notes
+    -----
+
+    The LMM model can be equivalently written as ::
+
+        𝐲 ∼ 𝓝(X𝜷, s((1-𝛿)K + 𝛿I)),
+
+    and we thus have v₀ = s (1 - 𝛿) and v₁ = s 𝛿.
+    Consider the economic eigendecomposition of K:
+
+    .. math::
+
+        \overbrace{[\mathrm Q₀ \quad \mathrm Q₁]}^{\mathrm Q}
+            \overbrace{\left[\begin{array}{cc}
+                \mathrm S₀ & 𝟎\\
+                        𝟎  & 𝟎
+            \end{array}\right]}^{\mathrm S}
+        \left[\begin{array}{c}
+            \mathrm Q₀ᵀ \\
+            \mathrm Q₁ᵀ
+        \end{array}\right] = \mathrm K
+
+    and let
+
+    .. math::
+
+        \mathrm D = \left[
+            \begin{array}{cc}
+                (1-𝛿)\mathrm S₀ + 𝛿\mathrm I & 𝟎\\
+                𝟎                            & 𝛿\mathrm I
+            \end{array}
+        \right].
+
+    We thus have
+
+    .. math::
+
+        ((1-𝛿)\mathrm K + 𝛿I)⁻¹ = \mathrm Q\mathrm D⁻¹\mathrm Qᵀ.
+
+    A diagonal covariance-matrix can then be used to define an equivalent
+    marginal likelihood:
+
+    .. math::
+
+        𝓝\left(\mathrm Qᵀ 𝐲 ~|~ \mathrm Qᵀ \mathrm X𝜷,~ s \mathrm D \right).
+
     """
 
     def __init__(self, y, X, QS=None):
+        """
+        Constructor.
+
+        Parameters
+        ----------
+        y : array_like
+            Outcome.
+        X : array_like
+            Covariates as a two-dimensional array.
+        QS : tuple
+            Economic eigendecompositon in form of ``((Q0, Q1), S0)`` of a
+            covariance matrix ``K``.
+        """
         from numpy_sugar import is_all_finite
 
         LMMCore.__init__(self, y, X, QS)

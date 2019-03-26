@@ -87,19 +87,42 @@ class LMMCore(Function):
         self._tbeta = zeros(self._tM.shape[1])
 
     def lml(self):
-        r"""Log of the marginal likelihood.
+        """
+        Log of the marginal likelihood.
 
         Returns
         -------
         float
             Log of the marginal likelihood.
+
+        Notes
+        -----
+        The log of the marginal likelihood is given by ::
+
+            2⋅log(p(𝐲)) = -n⋅log(2π) - n⋅log(s) - log|D| - (Qᵀ𝐲)ᵀs⁻¹D⁻¹(Qᵀ𝐲)
+                        + (Qᵀ𝐲)ᵀs⁻¹D⁻¹(QᵀX𝜷)/2 - (QᵀX𝜷)ᵀs⁻¹D⁻¹(QᵀX𝜷).
+
+        By using the optimal 𝜷, the log of the marginal likelihood can be rewritten
+        as::
+
+            2⋅log(p(𝐲)) = -log(2π) - log(s) - log|D| + (Qᵀ𝐲)ᵀs⁻¹D⁻¹Qᵀ(X𝜷-𝐲).
+
+
+        In the extreme case where 𝜷 is such that 𝐲 = X𝜷, the maximum is attained as
+        s→0.
+
+        For optimals 𝜷 and s, the log of the marginal likelihood can be further
+        simplified to ::
+
+            2⋅log(p(𝐲; 𝜷, s)) = -n⋅log(2π) - n⋅log s - log|D| - n.
         """
         if self.isfixed("scale"):
             return self._lml_arbitrary_scale()
         return self._lml_optimal_scale()
 
     def _lml_optimal_scale(self):
-        r"""Log of the marginal likelihood.
+        """
+        Log of the marginal likelihood.
 
         Returns
         -------
@@ -116,7 +139,8 @@ class LMMCore(Function):
         return lml / 2
 
     def _lml_arbitrary_scale(self):
-        r"""Log of the marginal likelihood.
+        """
+        Log of the marginal likelihood.
 
         Returns
         -------
@@ -236,24 +260,20 @@ class LMMCore(Function):
 
     @property
     def beta(self):
-        r"""Fixed-effect sizes.
-
-        The optimal fixed-effect sizes is given by any solution to equation
-
-        .. math::
-
-            (\mathrm Q^{\intercal}\mathrm X)^{\intercal}
-                \mathrm D^{-1}
-                (\mathrm Q^{\intercal}\mathrm X)
-                \boldsymbol\beta =
-                (\mathrm Q^{\intercal}\mathrm X)^{\intercal}
-                \mathrm D^{-1}
-                (\mathrm Q^{\intercal}\mathbf y).
+        """
+        Fixed-effect sizes.
 
         Returns
         -------
-        :class:`numpy.ndarray`
+        effect-sizes : numpy.ndarray
             Optimal fixed-effect sizes.
+
+        Notes
+        -----
+        Setting the derivative of log(p(𝐲)) over effect sizes equal
+        to zero leads to solutions 𝜷 from equation ::
+
+            (QᵀX)ᵀD⁻¹(QᵀX)𝜷 = (QᵀX)ᵀD⁻¹(Qᵀ𝐲).
         """
         from numpy_sugar.linalg import ddot, rsolve
 
@@ -272,7 +292,9 @@ class LMMCore(Function):
 
     @property
     def delta(self):
-        r"""Variance ratio between ``K`` and ``I``."""
+        """
+        Variance ratio between ``K`` and ``I``.
+        """
         from numpy_sugar import epsilon
 
         v = float(self._variables.get("logistic").value)
@@ -289,12 +311,20 @@ class LMMCore(Function):
 
     @property
     def scale(self):
-        r"""Scaling factor.
+        """
+        Scaling factor.
 
         Returns
         -------
         float
             Current scale if fixed; optimal scale otherwise.
+
+        Notes
+        -----
+        Setting the derivative of log(p(𝐲; 𝜷)), for which 𝜷 is optimal, over
+        scale equal to zero leads to the maximum ::
+
+            s = n⁻¹(Qᵀ𝐲)ᵀD⁻¹ Qᵀ(𝐲-X𝜷).
         """
         if self.isfixed("scale"):
             return self._scale
@@ -306,13 +336,14 @@ class LMMCore(Function):
 
     @property
     def mean(self):
-        r"""Mean of the prior.
+        """
+        Mean of the prior.
 
-        Formally, :math:`\mathbf m = \mathrm X \boldsymbol\beta`.
+        Formally, 𝐦 = X𝜷.
 
         Returns
         -------
-        array_like
+        mean : ndarray
             Mean of the prior.
         """
         return dot(self._tM, self._tbeta)
@@ -327,12 +358,13 @@ class LMMCore(Function):
         return ks * self.v0
 
     def covariance(self):
-        r"""Covariance of the prior.
+        """
+        Covariance of the prior.
 
         Returns
         -------
-        :class:`numpy.ndarray`
-            :math:`v_0 \mathrm K + v_1 \mathrm I`.
+        covariance : ndarray
+            v₀K + v₁I.
         """
         from numpy_sugar.linalg import ddot, sum2diag
 
