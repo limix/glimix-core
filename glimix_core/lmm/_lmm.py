@@ -1,8 +1,8 @@
 from numpy import asarray, clip, dot, exp
 from numpy.linalg import solve
 
-from ._core import LMMCore
-from ._scan import FastScanner
+from ._lmm_core import LMMCore
+from ._lmm_scan import FastScanner
 
 
 class LMM(LMMCore):

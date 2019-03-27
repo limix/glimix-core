@@ -9,7 +9,7 @@ from glimix_core.cov import Kron2SumCov
 from glimix_core.mean import KronMean
 from optimix import Function
 
-from ._kron_scan import KronFastScanner
+from ._kron2sum_scan import KronFastScanner
 
 
 class Kron2Sum(Function):
