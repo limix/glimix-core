@@ -2,7 +2,7 @@ from numpy import asarray, exp, log
 
 
 def _value_doc(func):
-    func.__doc__ = r"""Link function evaluated at the given points.
+    func.__doc__ = """Link function evaluated at the given points.
 
         Parameters
         ----------
@@ -11,14 +11,14 @@ def _value_doc(func):
 
         Returns
         -------
-        :class:`numpy.ndarray`
+        ndarray
             Link function values.
         """
     return func
 
 
 def _inv_doc(func):
-    func.__doc__ = r"""Inverse of the link function evaluated at the given points.
+    func.__doc__ = """Inverse of the link function evaluated at the given points.
 
         Parameters
         ----------
@@ -27,20 +27,15 @@ def _inv_doc(func):
 
         Returns
         -------
-        :class:`numpy.ndarray`
+        ndarray
             Inverse of the link function values.
         """
     return func
 
 
 class IdentityLink(object):
-    r"""Identity link function.
-
-    Mathematically,
-
-    .. math::
-
-        g(x) = x.
+    """
+    Identity link function, g(x) = x.
     """
 
     @_value_doc
@@ -53,13 +48,8 @@ class IdentityLink(object):
 
 
 class LogitLink(object):
-    r"""Logit link function.
-
-    Mathematically,
-
-    .. math::
-
-        g(x) = \log(x/(1 - x)).
+    """
+    Logit link function, g(x) = log(x/(1 - x)).
     """
 
     @_value_doc
@@ -72,13 +62,8 @@ class LogitLink(object):
 
 
 class ProbitLink(object):
-    r"""Probit link function.
-
-    Mathematically,
-
-    .. math::
-
-        g(x) = \Phi^{-1}(x).
+    """
+    Probit link function, g(x) = 𝚽⁻¹(x).
     """
 
     @_value_doc
@@ -91,13 +76,8 @@ class ProbitLink(object):
 
 
 class LogLink(object):
-    r"""Log link function.
-
-    Mathematically,
-
-    .. math::
-
-        g(x) = \log(x).
+    """
+    Log link function, g(x) = log(x).
     """
 
     @_value_doc

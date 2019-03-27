@@ -19,12 +19,12 @@ class FastScanner(object):
     """
     Approximated fast inference over several covariates.
 
-    Specifically, it maximizes the log of the marginal likelihood ::
+    Specifically, it maximizes the marginal likelihood ::
 
-        log(p(𝐲)ⱼ) = log𝓝(𝐲 | X𝜷ⱼ + Mⱼ𝜶ⱼ, sⱼ(K + vI)),
+        p(𝐲)ⱼ = 𝓝(𝐲 | X𝜷ⱼ + Mⱼ𝜶ⱼ, sⱼ(K + vI)),
 
-    over 𝜷ⱼ, 𝜶ⱼ, and sⱼ. Matrix Mⱼ is the candidate defined by the user. Variance v is
-    not optimised for performance reasons. The method assumes the user has provided a
+    over 𝜷ⱼ, 𝜶ⱼ, and sⱼ. Matrix Mⱼ is the candidate set defined by the user. Variance v
+    is not optimised for performance reasons. The method assumes the user has provided a
     reasonable value for it.
 
     Parameters
@@ -113,7 +113,7 @@ class FastScanner(object):
 
         It is implemented as ::
 
-            log(p(𝐲)) = log𝓝(Diag(√(sD)) | 𝟎, sD).
+            2·log(p(Y)) = -n·log(2𝜋s) - log｜D｜ - n,
 
         Returns
         -------
@@ -150,7 +150,7 @@ class FastScanner(object):
         """
         Optimal s according to the marginal likelihood.
 
-        The optimal s is given by
+        The optimal s is given by ::
 
             s = n⁻¹𝐲ᵀB(𝐲 - X𝜷),
 
@@ -168,10 +168,7 @@ class FastScanner(object):
 
     def fast_scan(self, M, verbose=True):
         """
-        LML, scale, and fixed-effect size for single-marker scan.
-
-        If the scaling factor ``s`` is not set by the user via method
-        :func:`set_scale`, its optimal value will be found.
+        LMLs, fixed-effect sizes, and scales for single-marker scan.
 
         Parameters
         ----------
@@ -185,8 +182,10 @@ class FastScanner(object):
         -------
         lmls : ndarray
             Log of the marginal likelihoods.
-        effsizes : ndarray
-            Fixed-effect sizes.
+        effsizes0 : ndarray
+            Covariate fixed-effect sizes.
+        effsizes1 : ndarray
+            Candidate set fixed-effect sizes.
         scales : ndarray
             Scales.
         """
@@ -225,10 +224,6 @@ class FastScanner(object):
         """
         LML, fixed-effect sizes, and scale of the candidate set.
 
-        If the scaling factor ``s`` is not set by the user via method
-        :func:`set_scale`, its optimal value will be found and
-        used in the calculation.
-
         Parameters
         ----------
         M : array_like
@@ -237,11 +232,11 @@ class FastScanner(object):
         Returns
         -------
         lml : float
-            Log of the marginal likelihood for each set.
+            Log of the marginal likelihood.
         effsizes0 : ndarray
-            Fixed-effect sizes for the covariates.
+            Covariates fixed-effect sizes.
         effsizes1 : ndarray
-            Fixed-effect sizes for each marker.
+            Candidate set fixed-effect sizes.
         scale : ndarray
             Optimal scale.
         """

@@ -9,9 +9,6 @@ class LMM(LMMCore):
     r"""
     Fast Linear Mixed Models inference via maximum likelihood.
 
-    It perform inference on the model :eq:`lmm1`, explained in the
-    :ref:`lmm-intro` section.
-
     Examples
     --------
     .. doctest::

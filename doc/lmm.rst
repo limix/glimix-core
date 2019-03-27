@@ -1,19 +1,12 @@
+.. py:currentmodule:: glimix_core.lmm
+
 *******************
 Linear Mixed Models
 *******************
 
 Linear mixed models (LMMs) are a generalisation of linear models [#f1]_ to allow the
-ouctome to be described as a summation of both fixed and random effects [#f2]_.
-LMM inference is implemented by the :mod:`glimix_core.lmm` module and described here.
-
-.. |n| replace:: :math:`n`
-.. |m| replace:: :math:`m`
-.. |c| replace:: :math:`c`
-.. |d| replace:: :math:`d`
-.. |k| replace:: :math:`k`
-.. |r| replace:: :math:`r`
-
-.. _lmm-intro:
+outcome to be described as a summation of both fixed and random effects [#f2]_.
+LMM inference is implemented by the :mod:`glimix_core.lmm` module and is described here.
 
 Introduction
 ============
@@ -23,18 +16,19 @@ A LMM can be described as ::
     𝐲 = X𝜷 + G𝐮 + 𝛜,
 
 where 𝐮 ∼ 𝓝(𝟎, v₀I) is a
-vector of random effects and \epsilonᵢ are iid Normal random variables
+vector of random effects and 𝛜 are iid Normal random variables
 with zero-mean and variance v₁ each.
 The outcome-vector is thus distributed according to ::
 
-    𝐲 ∼ 𝓝(X𝜷, v₀GGᵀ + v₁I)
+    𝐲 ∼ 𝓝(X𝜷, v₀GGᵀ + v₁I).
 
 The :class:`.LMM` class provides a FastLMM [#f3]_
 implementation to perform inference over the variance parameters
 v₀ and v₁ and over the vector
 𝜷 of fixed-effect sizes.
-An instance of this class is created by providing the outcome ``y``,
-the covariates ``X``, and the covariance ``K`` via its economic eigendecomposition.
+Let K = GGᵀ and observe that K can be any symmetric positive definite matrix.
+An instance of this class is created by providing the outcome 𝐲,
+the covariates X, and the covariance K via its economic eigendecomposition.
 Here is an example:
 
 .. doctest::
@@ -53,15 +47,14 @@ Here is an example:
     >>> lmm.lml()  # doctest: +FLOAT_CMP
     -2.2726234086180557
 
-The method :func:`.LMM.fit` is called to optimise the marginal
-likelihood over the fixed-effect sizes 𝜷 and over the
-variances v₀ and v₁.
+The method :meth:`.LMM.fit` is called to optimise the marginal likelihood over the
+fixed-effect sizes 𝜷 and over the variances v₀ and v₁.
 The resulting values for the above inference are:
 
 .. doctest::
 
-    >>> lmm.beta[0]  # doctest: +FLOAT_CMP
-    0.0664650291693258
+    >>> lmm.beta  # doctest: +FLOAT_CMP
+    array([0.06646503])
     >>> lmm.v0  # doctest: +FLOAT_CMP
     0.33736446158226896
     >>> lmm.v1  # doctest: +FLOAT_CMP
@@ -76,7 +69,7 @@ Multi-Trait
 ===========
 
 This package also provides a variant of LMM that models multiple outcomes (or traits) of
-the same set of samples.
+the same set of samples [#f4]_.
 Let p be the number of traits.
 The outcome matrix Y is the concatenation of p vectors::
 
@@ -87,12 +80,12 @@ The mean definition will involve three matrices::
     M = (A ⊗ F) vec(B),
 
 where vec(·) stacks the columns of the input matrix into a single-column matrix.
-B is a c×p matrix of effect sizes for c being the number of covariates.
+B is a c×p matrix of effect sizes for which c is the number of covariates.
 A is a p×p design matrix that determines the covariance between the traits over the mean
 vector.
 F is a n×p design matrix of covariates.
 
-The covariance matrix will be::
+The covariance matrix is defined by ::
 
     K = C₀ ⊗ GGᵀ + C₁ ⊗ I.
 
@@ -100,7 +93,7 @@ C₀ and C₁ are p×p symmetric matrices whose values will be optimized.
 GGᵀ gives the covariance between samples, while (C₀ ⊗ GGᵀ) gives the covariance between
 samples when traits are taken into account.
 
-Putting the outcome, mean, and covariance-matrix together, we have the distribution ::
+The outcome, mean, and covariance-matrix together define the distribution ::
 
     vec(Y) ~ N((A ⊗ F) vec(B), K = C₀ ⊗ GGᵀ + C₁ ⊗ I).
 
@@ -118,24 +111,24 @@ B, C₀, and C₁.
     >>> c = 3
     >>> Y = random.randn(n, p)
     >>> A = random.randn(p, p)
-    >>> A = A @ A.T
+    >>> A = A.dot(A.T)
     >>> F = random.randn(n, c)
     >>> G = random.randn(n, 4)
     >>>
-    >>> mlmm = Kron2Sum(Y, A, F, G)
+    >>> mlmm = Kron2Sum(Y, A, F, G, restricted=False)
     >>> mlmm.fit(verbose=False)
     >>> mlmm.lml()  # doctest: +FLOAT_CMP
-    -5.666702537532974
+    -6.520026228479136
     >>> mlmm.B  # doctest: +FLOAT_CMP
-    array([[-0.17170011,  0.45565163],
-           [ 0.57532031, -0.86070064],
-           [ 0.21050686, -0.02573517]])
+    array([[-0.20990354,  0.8591872 ],
+           [ 0.75940886,  1.92312386],
+           [ 0.6327708 ,  1.4671608 ]])
     >>> mlmm.cov.C0.value()  # doctest: +FLOAT_CMP
-    array([[ 0.01598945, -0.04374046],
-           [-0.04374046,  0.11965561]])
+    array([[0.39369194, 0.35994197],
+           [0.35994197, 0.32908528]])
     >>> mlmm.cov.C1.value()  # doctest: +FLOAT_CMP
-    array([[1.2051213 , 1.49844327],
-           [1.49844327, 1.86319675]])
+    array([[1.59675053e-05, 8.19034376e-04],
+           [8.19034376e-04, 6.29678697e-01]])
 
 We also provide :class:`.KronFastScanner` for performing an even faster
 inference across several (millions, for example) covariates independently.
@@ -160,10 +153,10 @@ parameters v₀ and v₁ are held fixed. The v₀ and v₁ values are first foun
     >>> lml, eff0, eff1, scale = scanner.scan(M)
     >>> lml  # doctest: +FLOAT_CMP
     -0.7322976913217882
-    >>> print(eff0)  # doctest: +FLOAT_CMP
-    [-0.42323051]
-    >>> print(eff1)  # doctest: +FLOAT_CMP
-    [-0.05913491  0.37079162]
+    >>> eff0  # doctest: +FLOAT_CMP
+    array([-0.42323051])
+    >>> eff1  # doctest: +FLOAT_CMP
+    array([-0.05913491,  0.37079162])
     >>> scale  # doctest: +FLOAT_CMP
     0.4629376687687552
 
@@ -195,7 +188,7 @@ The parameters 𝚩ⱼ, 𝚨ⱼ, and sⱼ are found via maximum likelihood.
     >>> F = random.randn(5, 3)
     >>> lml, eff0, eff1, scale = mscanner.scan(A, F)
     >>> lml
-    81.87502470339223
+    83.08864898305367
     >>> eff0
     array([[ 0.01482133,  0.45189275],
            [ 0.43706748, -0.71162517],
@@ -205,7 +198,7 @@ The parameters 𝚩ⱼ, 𝚨ⱼ, and sⱼ are found via maximum likelihood.
            [ 0.05780863, -0.24744739, -0.11882984, -0.19331759,  0.74964805],
            [ 0.01051071, -1.61751886, -0.0654883 , -1.09931899,  1.51034738]])
     >>> scale
-    2.220446049250313e-16
+    5.238689482212067e-11
 
 API
 ===
@@ -235,3 +228,7 @@ API
          Davidson, Robert I & Heckerman, David (2011). FaST linear mixed
          models for genome-wide association studies. Nature methods, 8,
          833-835.
+
+.. [#f4] Casale, F. P., Horta, D., Rakitsch, B., & Stegle, O. (2017). Joint genetic
+         analysis using variant sets reveals polygenic gene-context interactions. PLoS
+         genetics, 13(4), e1006693.

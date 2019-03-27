@@ -4,7 +4,7 @@ from ..link import IdentityLink, LogitLink, LogLink
 
 
 def _sample_doc(func):
-    func.__doc__ = r"""Sample from the likelihood distribution.
+    func.__doc__ = """Sample from the likelihood distribution.
 
         Parameters
         ----------
@@ -22,7 +22,8 @@ def _sample_doc(func):
 
 
 class DeltaProdLik(object):
-    r"""Represents a product of Kronecker delta likelihoods.
+    r"""
+    Product of Kronecker delta likelihoods.
 
     The product can be written as
 
@@ -72,7 +73,8 @@ class DeltaProdLik(object):
 
 
 class BernoulliProdLik(object):
-    r"""Represents a product of Bernoulli likelihoods.
+    r"""
+    Product of Bernoulli likelihoods.
 
     The product can be written as
 
@@ -127,7 +129,8 @@ class BernoulliProdLik(object):
 
 
 class BinomialProdLik(object):
-    r"""Represents a product of Binomial likelihoods.
+    r"""
+    Product of Binomial likelihoods.
 
     The product can be written as
 
@@ -192,7 +195,8 @@ class BinomialProdLik(object):
 
 
 class PoissonProdLik(object):
-    r"""Represents a product of Poisson likelihoods.
+    r"""
+    Product of Poisson likelihoods.
 
     Parameters
     ----------
