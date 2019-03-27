@@ -14,15 +14,16 @@ from numpy import (
     sum as npsum,
     zeros,
 )
+from numpy.linalg import slogdet
 
-from glimix_core._util import log2pi
+from glimix_core._util import cache, log2pi
 from optimix import Function, Scalar
 
 from .._util import economic_qs_zeros, numbers
 
 
 class LMMCore(Function):
-    def __init__(self, y, X=None, QS=None, SVD=None):
+    def __init__(self, y, X=None, QS=None, SVD=None, restricted=False):
         Function.__init__(self, "LMMCore", logistic=Scalar(0.0))
         y = asarray(y, float).ravel()
 
@@ -75,6 +76,39 @@ class LMMCore(Function):
         self._svd = None
         self._set_X(X=X, SVD=SVD)
         self._verbose = False
+        self._restricted = restricted
+
+    @property
+    def nsamples(self):
+        """
+        Number of samples, n.
+        """
+        return self._y.shape[0]
+
+    @cache
+    def _logdetMM(self):
+        """
+        log(｜MᵀM｜).
+        """
+        if not self._restricted:
+            return 0.0
+
+        M = self._tM.T
+        ldet = slogdet(M.T @ M)
+        if ldet[0] != 1.0:
+            raise ValueError("The determinant of MᵀM should be positive.")
+        return ldet[1]
+
+    def _logdetH(self):
+        """
+        log(｜H｜) for H = s⁻¹MᵀQD⁻¹QᵀM.
+        """
+        if not self._restricted:
+            return 0.0
+        ldet = slogdet(sum(self._mTQDiQTm) / self.scale)
+        if ldet[0] != 1.0:
+            raise ValueError("The determinant of H should be positive.")
+        return ldet[1]
 
     def _set_X(self, X=None, SVD=None):
         from numpy_sugar.linalg import ddot, economic_svd
@@ -105,7 +139,7 @@ class LMMCore(Function):
         By using the optimal 𝜷, the log of the marginal likelihood can be rewritten
         as::
 
-            2⋅log(p(𝐲)) = -log(2π) - log(s) - log|D| + (Qᵀ𝐲)ᵀs⁻¹D⁻¹Qᵀ(X𝜷-𝐲).
+            2⋅log(p(𝐲)) = -n⋅log(2π) - n⋅log(s) - log|D| + (Qᵀ𝐲)ᵀs⁻¹D⁻¹Qᵀ(X𝜷-𝐲).
 
 
         In the extreme case where 𝜷 is such that 𝐲 = X𝜷, the maximum is attained as
@@ -116,9 +150,10 @@ class LMMCore(Function):
 
             2⋅log(p(𝐲; 𝜷, s)) = -n⋅log(2π) - n⋅log s - log|D| - n.
         """
+        reml = (self._logdetMM() - self._logdetH()) / 2
         if self.isfixed("scale"):
-            return self._lml_arbitrary_scale()
-        return self._lml_optimal_scale()
+            return self._lml_arbitrary_scale() + reml
+        return self._lml_optimal_scale() + reml
 
     def _lml_optimal_scale(self):
         """
@@ -128,15 +163,30 @@ class LMMCore(Function):
         -------
         float
             Log of the marginal likelihood.
-
         """
         self._update_fixed_effects()
 
         n = len(self._y)
-        lml = -n * log2pi - n - n * log(self.scale)
+        lml = -self._df * log2pi - n - n * log(self.scale)
         lml -= sum(npsum(log(D)) for D in self._D)
 
+        # 2⋅log(p(𝐲)) = -(n - c) log(2π) + log(｜MᵀM｜) - log(｜H｜) - log(｜K｜)
+        # - (𝐲-𝐦)ᵀ K⁻¹ (𝐲-𝐦),
+        # optimal beta: 𝛃 = H⁻¹MᵀK⁻¹𝐲.
+        # by using the optimal beta,
+        # 2⋅log(p(𝐲)) = -(n - c)log(2π) + log(｜MᵀM｜) - log(｜H｜) - log(｜K｜)
+        #              + 𝐲ᵀK⁻¹(X𝜷-𝐲).
+        # ?? s = n⁻¹(Qᵀ𝐲)ᵀD⁻¹ Qᵀ(𝐲-X𝜷) ??
+        # Under REML:
+        # s = (n-2c)⁻¹(Qᵀ𝐲)ᵀD⁻¹ Qᵀ(𝐲-X𝜷)
+
         return lml / 2
+
+    @property
+    def _df(self):
+        if not self._restricted:
+            return self.nsamples
+        return self.nsamples - self._tM.shape[1]
 
     def _lml_arbitrary_scale(self):
         """
@@ -151,7 +201,7 @@ class LMMCore(Function):
         s = self.scale
 
         n = len(self._y)
-        lml = -n * log2pi - n * log(s)
+        lml = -self._df * log2pi - n * log(s)
 
         lml -= sum(npsum(log(D)) for D in self._D)
 
@@ -171,7 +221,7 @@ class LMMCore(Function):
         b = self._tbeta
         p0 = sum(i - 2 * dot(j, b) for (i, j) in zip(yTQDiQTy, yTQDiQTm))
         p1 = sum(dot(dot(b, i), b) for i in self._mTQDiQTm)
-        return maximum((p0 + p1) / len(self._y), epsilon.small)
+        return maximum((p0 + p1) / self._df, epsilon.small)
 
     def _optimal_scale_using_optimal_beta(self):
         from numpy_sugar import epsilon
@@ -179,7 +229,7 @@ class LMMCore(Function):
         yTQDiQTy = self._yTQDiQTy
         yTQDiQTm = self._yTQDiQTm
         s = sum(i - dot(j, self._tbeta) for (i, j) in zip(yTQDiQTy, yTQDiQTm))
-        return maximum(s / len(self._y), epsilon.small)
+        return maximum(s / self._df, epsilon.small)
 
     def _update_fixed_effects(self):
         from numpy_sugar.linalg import rsolve
