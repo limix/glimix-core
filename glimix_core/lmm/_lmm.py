@@ -1,5 +1,4 @@
 from numpy import (
-    all as npall,
     asarray,
     atleast_2d,
     clip,
@@ -7,10 +6,8 @@ from numpy import (
     errstate,
     exp,
     full,
-    isfinite,
     log,
     maximum,
-    sqrt,
     sum as npsum,
     zeros,
 )
@@ -71,7 +68,6 @@ class LMM(Function):
 
     Notes
     -----
-
     The LMM model can be equivalently written as ::
 
         𝐲 ∼ 𝓝(X𝜷, s((1-𝛿)K + 𝛿I)),
@@ -102,18 +98,14 @@ class LMM(Function):
             \end{array}
         \right].
 
-    We thus have
+    We thus have ::
 
-    .. math::
-
-        ((1-𝛿)\mathrm K + 𝛿I)⁻¹ = \mathrm Q\mathrm D⁻¹\mathrm Qᵀ.
+        ((1-𝛿)K + 𝛿I)⁻¹ = QD⁻¹Qᵀ.
 
     A diagonal covariance-matrix can then be used to define an equivalent
-    marginal likelihood:
+    marginal likelihood::
 
-    .. math::
-
-        𝓝(Qᵀ 𝐲 ~|~ Qᵀ X𝜷,~ s D).
+        𝓝(Qᵀ𝐲|QᵀX𝜷, sD).
 
     """
 
@@ -130,6 +122,9 @@ class LMM(Function):
         QS : tuple
             Economic eigendecompositon in form of ``((Q0, Q1), S0)`` of a
             covariance matrix ``K``.
+        restricted : bool
+            ``True`` for restricted maximum likelihood optimization; ``False``
+            otherwise. Defaults to ``False``.
         """
         from numpy_sugar import is_all_finite
         from numpy_sugar.linalg import ddot, economic_svd
@@ -172,10 +167,6 @@ class LMM(Function):
         self._fix = {"beta": False, "scale": False}
         self._restricted = restricted
 
-    def _delta_update(self):
-        self._optimal["beta"] = False
-        self._optimal["scale"] = False
-
     @property
     def beta(self):
         """
@@ -205,12 +196,28 @@ class LMM(Function):
         self._optimal["scale"] = False
 
     def fix(self, param):
+        """
+        Disable parameter optimization.
+
+        Parameters
+        ----------
+        param : str
+            Possible values are ``"delta"``, ``"beta"``, and ``"scale"``.
+        """
         if param == "delta":
             super()._fix("logistic")
         else:
             self._fix[param] = True
 
     def unfix(self, param):
+        """
+        Enable parameter optimization.
+
+        Parameters
+        ----------
+        param : str
+            Possible values are ``"delta"``, ``"beta"``, and ``"scale"``.
+        """
         if param == "delta":
             self._unfix("logistic")
         else:
@@ -274,6 +281,9 @@ class LMM(Function):
         return FastScanner(self._y, self.X, QS, v1)
 
     def value(self):
+        """
+        Internal use only.
+        """
         if not self._fix["beta"]:
             self._update_beta()
 
@@ -287,7 +297,7 @@ class LMM(Function):
         ks = self.covariance_star(ks)
         m = self.mean
         K = self.covariance()
-        return mstar + dot(ks, solve(K, self._y - m))
+        return mstar + ks @ solve(K, self._y - m)
 
     def predictive_covariance(self, Xstar, ks, kss):
         kss = self.variance_star(kss)
@@ -296,7 +306,7 @@ class LMM(Function):
         ktk = solve(K, ks.T)
         b = []
         for i in range(len(kss)):
-            b += [dot(ks[i, :], ktk[:, i])]
+            b += [ks[i, :] @ ktk[:, i]]
         b = asarray(b)
         return kss - b
 
@@ -307,37 +317,13 @@ class LMM(Function):
         """
         return len(self._y)
 
-    @cache
-    def _logdetMM(self):
-        """
-        log(｜MᵀM｜).
-        """
-        if not self._restricted:
-            return 0.0
-
-        ldet = slogdet(self._X["tX"].T @ self._X["tX"])
-        if ldet[0] != 1.0:
-            raise ValueError("The determinant of XᵀX should be positive.")
-        return ldet[1]
-
-    def _logdetH(self):
-        """
-        log(｜H｜) for H = s⁻¹XᵀQD⁻¹QᵀX.
-        """
-        if not self._restricted:
-            return 0.0
-        ldet = slogdet(sum(self._XTQDiQTX) / self.scale)
-        if ldet[0] != 1.0:
-            raise ValueError("The determinant of H should be positive.")
-        return ldet[1]
-
     def lml(self):
         """
         Log of the marginal likelihood.
 
         Returns
         -------
-        float
+        lml : float
             Log of the marginal likelihood.
 
         Notes
@@ -361,169 +347,21 @@ class LMM(Function):
 
             2⋅log(p(𝐲; 𝜷, s)) = -n⋅log(2π) - n⋅log s - log|D| - n.
         """
-        reml = (self._logdetMM() - self._logdetH()) / 2
+        reml = (self._logdetXX() - self._logdetH()) / 2
         if self._optimal["scale"]:
             lml = self._lml_optimal_scale()
         else:
             lml = self._lml_arbitrary_scale()
         return lml + reml
 
-    def _lml_optimal_scale(self):
-        """
-        Log of the marginal likelihood.
-
-        Returns
-        -------
-        float
-            Log of the marginal likelihood.
-        """
-        assert self._optimal["scale"]
-
-        n = len(self._y)
-        # lml = -self._df * log2pi - n - n * log(self.scale)
-        lml = -self._df * log2pi - self._df - n * log(self.scale)
-        lml -= sum(npsum(log(D)) for D in self._D)
-
-        # 2⋅log(p(𝐲)) = -(n - c) log(2π) + log(｜MᵀM｜) - log(｜H｜) - log(｜K｜)
-        # - (𝐲-𝐦)ᵀ K⁻¹ (𝐲-𝐦),
-        # optimal beta: 𝛃 = H⁻¹MᵀK⁻¹𝐲.
-        # by using the optimal beta,
-        # 2⋅log(p(𝐲)) = -(n - c)log(2π) + log(｜MᵀM｜) - log(｜H｜) - log(｜K｜)
-        #              + 𝐲ᵀK⁻¹(X𝜷-𝐲).
-        # ?? s = n⁻¹(Qᵀ𝐲)ᵀD⁻¹ Qᵀ(𝐲-X𝜷) ??
-        # Under REML:
-        # s = (n-c)⁻¹(Qᵀ𝐲)ᵀD⁻¹ Qᵀ(𝐲-X𝜷)
-
-        return lml / 2
-
-    def _lml_arbitrary_scale(self):
-        """
-        Log of the marginal likelihood.
-
-        Returns
-        -------
-        float
-            Log of the marginal likelihood.
-        """
-        s = self.scale
-        n = len(self._y)
-        lml = -self._df * log2pi - n * log(s)
-        lml -= sum(npsum(log(D)) for D in self._D)
-        d = (mTQ - yTQ for (mTQ, yTQ) in zip(self._mTQ, self._yTQ))
-        lml -= sum((i / j) @ i for (i, j) in zip(d, self._D)) / s
-
-        return lml / 2
-
-    @property
-    def _df(self):
-        if not self._restricted:
-            return self.nsamples
-        return self.nsamples - self._X["tX"].shape[1]
-
-    def _optimal_scale_using_optimal_beta(self):
-        from numpy_sugar import epsilon
-
-        assert self._optimal["beta"]
-
-        yTQDiQTy = self._yTQDiQTy
-        yTQDiQTm = self._yTQDiQTm
-        s = sum(i - dot(j, self._tbeta) for (i, j) in zip(yTQDiQTy, yTQDiQTm))
-        return maximum(s / self._df, epsilon.small)
-
-    def _update_beta(self):
-        from numpy_sugar.linalg import rsolve
-
-        assert not self._fix["beta"]
-        if self._optimal["beta"]:
-            return
-
-        yTQDiQTm = list(self._yTQDiQTm)
-        mTQDiQTm = list(self._mTQDiQTm)
-        nominator = yTQDiQTm[0]
-        denominator = mTQDiQTm[0]
-
-        if len(yTQDiQTm) > 1:
-            nominator += yTQDiQTm[1]
-            denominator += mTQDiQTm[1]
-
-        self._tbeta[:] = rsolve(denominator, nominator)
-        self._optimal["beta"] = True
-        self._optimal["scale"] = False
-
-    def _update_scale(self):
-        from numpy_sugar import epsilon
-
-        if self._optimal["beta"]:
-            self._scale = self._optimal_scale_using_optimal_beta()
-        else:
-            yTQDiQTy = self._yTQDiQTy
-            yTQDiQTm = self._yTQDiQTm
-            b = self._tbeta
-            p0 = sum(i - 2 * dot(j, b) for (i, j) in zip(yTQDiQTy, yTQDiQTm))
-            p1 = sum(dot(dot(b, i), b) for i in self._mTQDiQTm)
-            self._scale = maximum((p0 + p1) / self._df, epsilon.small)
-
-        self._optimal["scale"] = True
-
-    @property
-    def _D(self):
-        D = []
-        n = self._y.shape[0]
-        if self._QS[1].size > 0:
-            D += [self._QS[1] * (1 - self.delta) + self.delta]
-        if self._QS[1].size < n:
-            D += [full(n - self._QS[1].size, self.delta)]
-        return D
-
-    @property
-    def _mTQDiQTm(self):
-        return (dot(i / j, i.T) for (i, j) in zip(self._tMTQ, self._D))
-
-    @property
-    def _mTQ(self):
-        return (dot(self.mean.T, Q) for Q in self._QS[0] if Q.size > 0)
-
-    @property
-    def _tMTQ(self):
-        return (self._X["tX"].T.dot(Q) for Q in self._QS[0] if Q.size > 0)
-
-    @property
-    def _XTQDiQTX(self):
-        return (dot(i / j, i.T) for (i, j) in zip(self._XTQ, self._D))
-
-    @property
-    def _XTQ(self):
-        return (self._X["tX"].T.dot(Q) for Q in self._QS[0] if Q.size > 0)
-
-    @property
-    def _yTQ(self):
-        return (dot(self._y.T, Q) for Q in self._QS[0] if Q.size > 0)
-
-    @property
-    def _yTQQTy(self):
-        return (yTQ ** 2 for yTQ in self._yTQ)
-
-    @property
-    def _yTQDiQTy(self):
-        return (npsum(i / j) for (i, j) in zip(self._yTQQTy, self._D))
-
-    @property
-    def _yTQDiQTm(self):
-        yTQ = self._yTQ
-        D = self._D
-        tMTQ = self._tMTQ
-        return (dot(i / j, l.T) for (i, j, l) in zip(yTQ, D, tMTQ))
-
     @property
     def X(self):
         """
-        Covariates set by the user.
-
-        It has to be a matrix of number-of-samples by number-of-covariates.
+        Covariates matrix.
 
         Returns
         -------
-        ndarray
+        X : ndarray
             Covariates.
         """
         return self._X["X"]
@@ -556,8 +394,8 @@ class LMM(Function):
 
         Returns
         -------
-        float
-            Current scale if fixed; optimal scale otherwise.
+        scale : float
+            Scaling factor.
 
         Notes
         -----
@@ -565,6 +403,12 @@ class LMM(Function):
         scale equal to zero leads to the maximum ::
 
             s = n⁻¹(Qᵀ𝐲)ᵀD⁻¹ Qᵀ(𝐲-X𝜷).
+
+        In the case of restricted marginal likelihood ::
+
+            s = (n-c)⁻¹(Qᵀ𝐲)ᵀD⁻¹ Qᵀ(𝐲-X𝜷),
+
+        where s is the number of covariates.
         """
         return self._scale
 
@@ -610,3 +454,166 @@ class LMM(Function):
         Q0 = self._QS[0][0]
         S0 = self._QS[1]
         return sum2diag(dot(ddot(Q0, self.v0 * S0), Q0.T), self.v1)
+
+    def _delta_update(self):
+        self._optimal["beta"] = False
+        self._optimal["scale"] = False
+
+    @cache
+    def _logdetXX(self):
+        """
+        log(｜XᵀX｜).
+        """
+        if not self._restricted:
+            return 0.0
+
+        ldet = slogdet(self._X["tX"].T @ self._X["tX"])
+        if ldet[0] != 1.0:
+            raise ValueError("The determinant of XᵀX should be positive.")
+        return ldet[1]
+
+    def _logdetH(self):
+        """
+        log(｜H｜) for H = s⁻¹XᵀQD⁻¹QᵀX.
+        """
+        if not self._restricted:
+            return 0.0
+        ldet = slogdet(sum(self._XTQDiQTX) / self.scale)
+        if ldet[0] != 1.0:
+            raise ValueError("The determinant of H should be positive.")
+        return ldet[1]
+
+    def _lml_optimal_scale(self):
+        """
+        Log of the marginal likelihood for optimal scale.
+
+        Implementation for unrestricted LML::
+
+        Returns
+        -------
+        lml : float
+            Log of the marginal likelihood.
+        """
+        assert self._optimal["scale"]
+
+        n = len(self._y)
+        lml = -self._df * log2pi - self._df - n * log(self.scale)
+        lml -= sum(npsum(log(D)) for D in self._D)
+        return lml / 2
+
+    def _lml_arbitrary_scale(self):
+        """
+        Log of the marginal likelihood for arbitrary scale.
+
+        Returns
+        -------
+        lml : float
+            Log of the marginal likelihood.
+        """
+        s = self.scale
+        n = len(self._y)
+        lml = -self._df * log2pi - n * log(s)
+        lml -= sum(npsum(log(D)) for D in self._D)
+        d = (mTQ - yTQ for (mTQ, yTQ) in zip(self._mTQ, self._yTQ))
+        lml -= sum((i / j) @ i for (i, j) in zip(d, self._D)) / s
+
+        return lml / 2
+
+    @property
+    def _df(self):
+        """
+        Degrees of freedom.
+        """
+        if not self._restricted:
+            return self.nsamples
+        return self.nsamples - self._X["tX"].shape[1]
+
+    def _optimal_scale_using_optimal_beta(self):
+        from numpy_sugar import epsilon
+
+        assert self._optimal["beta"]
+
+        yTQDiQTy = self._yTQDiQTy
+        yTQDiQTm = self._yTQDiQTX
+        s = sum(i - j @ self._tbeta for (i, j) in zip(yTQDiQTy, yTQDiQTm))
+        return maximum(s / self._df, epsilon.small)
+
+    def _update_beta(self):
+        from numpy_sugar.linalg import rsolve
+
+        assert not self._fix["beta"]
+        if self._optimal["beta"]:
+            return
+
+        yTQDiQTm = list(self._yTQDiQTX)
+        mTQDiQTm = list(self._XTQDiQTX)
+        nominator = yTQDiQTm[0]
+        denominator = mTQDiQTm[0]
+
+        if len(yTQDiQTm) > 1:
+            nominator += yTQDiQTm[1]
+            denominator += mTQDiQTm[1]
+
+        self._tbeta[:] = rsolve(denominator, nominator)
+        self._optimal["beta"] = True
+        self._optimal["scale"] = False
+
+    def _update_scale(self):
+        from numpy_sugar import epsilon
+
+        if self._optimal["beta"]:
+            self._scale = self._optimal_scale_using_optimal_beta()
+        else:
+            yTQDiQTy = self._yTQDiQTy
+            yTQDiQTm = self._yTQDiQTX
+            b = self._tbeta
+            p0 = sum(i - 2 * j @ b for (i, j) in zip(yTQDiQTy, yTQDiQTm))
+            p1 = sum((b @ i) @ b for i in self._XTQDiQTX)
+            self._scale = maximum((p0 + p1) / self._df, epsilon.small)
+
+        self._optimal["scale"] = True
+
+    @property
+    def _D(self):
+        D = []
+        n = self._y.shape[0]
+        if self._QS[1].size > 0:
+            D += [self._QS[1] * (1 - self.delta) + self.delta]
+        if self._QS[1].size < n:
+            D += [full(n - self._QS[1].size, self.delta)]
+        return D
+
+    @property
+    def _XTQDiQTX(self):
+        return (i / j @ i.T for (i, j) in zip(self._tXTQ, self._D))
+
+    @property
+    def _mTQ(self):
+        return (self.mean.T @ Q for Q in self._QS[0] if Q.size > 0)
+
+    @property
+    def _tXTQ(self):
+        return (self._X["tX"].T @ Q for Q in self._QS[0] if Q.size > 0)
+
+    @property
+    def _XTQ(self):
+        return (self._X["tX"].T @ Q for Q in self._QS[0] if Q.size > 0)
+
+    @property
+    def _yTQ(self):
+        return (self._y.T @ Q for Q in self._QS[0] if Q.size > 0)
+
+    @property
+    def _yTQQTy(self):
+        return (yTQ ** 2 for yTQ in self._yTQ)
+
+    @property
+    def _yTQDiQTy(self):
+        return (npsum(i / j) for (i, j) in zip(self._yTQQTy, self._D))
+
+    @property
+    def _yTQDiQTX(self):
+        yTQ = self._yTQ
+        D = self._D
+        tXTQ = self._tXTQ
+        return (i / j @ l.T for (i, j, l) in zip(yTQ, D, tXTQ))
