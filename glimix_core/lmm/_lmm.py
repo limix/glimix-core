@@ -1,11 +1,29 @@
-from numpy import asarray, clip, dot, exp
-from numpy.linalg import solve
+from numpy import (
+    all as npall,
+    asarray,
+    atleast_2d,
+    clip,
+    dot,
+    errstate,
+    exp,
+    full,
+    isfinite,
+    log,
+    maximum,
+    sqrt,
+    sum as npsum,
+    zeros,
+)
+from numpy.linalg import slogdet, solve
 
-from ._lmm_core import LMMCore
+from glimix_core._util import cache, log2pi
+from optimix import Function, Scalar
+
+from .._util import economic_qs_zeros, numbers
 from ._lmm_scan import FastScanner
 
 
-class LMM(LMMCore):
+class LMM(Function):
     r"""
     Fast Linear Mixed Models inference via maximum likelihood.
 
@@ -95,11 +113,11 @@ class LMM(LMMCore):
 
     .. math::
 
-        𝓝\left(\mathrm Qᵀ 𝐲 ~|~ \mathrm Qᵀ \mathrm X𝜷,~ s \mathrm D \right).
+        𝓝(Qᵀ 𝐲 ~|~ Qᵀ X𝜷,~ s D).
 
     """
 
-    def __init__(self, y, X, QS=None):
+    def __init__(self, y, X, QS=None, restricted=False):
         """
         Constructor.
 
@@ -114,79 +132,89 @@ class LMM(LMMCore):
             covariance matrix ``K``.
         """
         from numpy_sugar import is_all_finite
+        from numpy_sugar.linalg import ddot, economic_svd
 
-        LMMCore.__init__(self, y, X, QS)
+        delta = Scalar(0.0)
+        delta.listen(self._delta_update)
+        delta.bounds = (-numbers.logmax, +numbers.logmax)
+        Function.__init__(self, "LMM", logistic=delta)
 
+        y = asarray(y, float).ravel()
         if not is_all_finite(y):
             raise ValueError("There are non-finite values in the outcome.")
 
-    def _get_delta(self):
-        from numpy_sugar import epsilon
+        X = atleast_2d(asarray(X, float).T).T
+        if not is_all_finite(X):
+            raise ValueError("There are non-finite values in the covariates matrix.")
 
-        v = clip(self._variables.get("logistic").value, -20, 20)
-        x = 1 / (1 + exp(-v))
-        return clip(x, epsilon.tiny, 1 - epsilon.tiny)
+        self._optimal = {"beta": False, "scale": False}
+        if QS is None:
+            QS = economic_qs_zeros(len(y))
+            delta.value = 1.0
+            delta.fix()
+        else:
+            delta.value = 0.5
+
+        if QS[0][0].shape[0] != len(y):
+            msg = "Sample size differs between outcome and covariance decomposition."
+            raise ValueError(msg)
+
+        if y.shape[0] != X.shape[0]:
+            msg = "Sample size differs between outcome and covariates."
+            raise ValueError(msg)
+
+        self._y = y
+        self._QS = QS
+        SVD = economic_svd(X)
+        self._X = {"X": X, "tX": ddot(SVD[0], SVD[1]), "VT": SVD[2]}
+        self._tbeta = zeros(len(SVD[1]))
+        self._scale = 1.0
+        self._fix = {"beta": False, "scale": False}
+        self._restricted = restricted
+
+    def _delta_update(self):
+        self._optimal["beta"] = False
+        self._optimal["scale"] = False
 
     @property
     def beta(self):
         """
-        Get or set fixed-effect sizes.
+        Fixed-effect sizes.
+
+        Returns
+        -------
+        effect-sizes : numpy.ndarray
+            Optimal fixed-effect sizes.
+
+        Notes
+        -----
+        Setting the derivative of log(p(𝐲)) over effect sizes equal
+        to zero leads to solutions 𝜷 from equation ::
+
+            (QᵀX)ᵀD⁻¹(QᵀX)𝜷 = (QᵀX)ᵀD⁻¹(Qᵀ𝐲).
         """
-        return LMMCore.beta.fget(self)
+        from numpy_sugar.linalg import rsolve
+
+        return rsolve(self._X["VT"], rsolve(self._X["tX"], self.mean))
 
     @beta.setter
     def beta(self, beta):
-        LMMCore.beta.fset(self, beta)
+        beta = asarray(beta, float).ravel()
+        self._tbeta[:] = self._X["VT"] @ beta
+        self._optimal["beta"] = False
+        self._optimal["scale"] = False
 
-    def copy(self):
-        """
-        Return a copy of this object.
+    def fix(self, param):
+        if param == "delta":
+            super()._fix("logistic")
+        else:
+            self._fix[param] = True
 
-        This is useful for performing new inference based on the results
-        of the copied object, as the new LMM object will start its inference
-        from the initial solution found in the copied object.
-
-        Returns
-        -------
-        :class:`.LMM`
-            Copy of this object.
-        """
-        o = LMM.__new__(LMM)
-
-        LMMCore.__init__(o, self._y, self.X, self._QS)
-        o.delta = self.delta
-        if self.isfixed("delta"):
-            o.fix("delta")
-
-        setattr(o, "_fix_scale", self._fix_scale)
-        setattr(o, "_scale", self._scale)
-        setattr(o, "_fix_beta", self._fix_beta)
-        setattr(o, "_verbose", self._verbose)
-
-        return o
-
-    def isfixed(self, var_name):
-        """
-        Return whether a variable it is fixed or not.
-
-        Parameters
-        ----------
-        var_name : str
-            Possible values are ``"delta"`` and ``"scale"``.
-
-        Returns
-        -------
-        bool
-            ``True`` if fixed; ``False`` otherwise.
-        """
-        if var_name not in ["delta", "scale", "beta"]:
-            msg = "Possible values are 'delta', 'scale', and 'beta'."
-            raise ValueError(msg)
-        if var_name == "delta":
-            return super(LMM, self)._isfixed("logistic")
-        if var_name == "beta":
-            return self._fix_beta
-        return self._fix_scale
+    def unfix(self, param):
+        if param == "delta":
+            self._unfix("logistic")
+        else:
+            self._fix[param] = False
 
     @property
     def v0(self):
@@ -195,7 +223,7 @@ class LMM(LMMCore):
 
         Returns
         -------
-        float
+        v0 : float
             1 - 𝛿.
         """
         return self.scale * (1 - self.delta)
@@ -207,7 +235,7 @@ class LMM(LMMCore):
 
         Returns
         -------
-        float
+        v1 : float
             𝛿.
         """
         return self.scale * self.delta
@@ -222,48 +250,14 @@ class LMM(LMMCore):
             ``True`` for progress output; ``False`` otherwise.
             Defaults to ``True``.
         """
-        self._verbose = verbose
-        if not self.isfixed("delta"):
+        if not self._isfixed("logistic"):
             self._maximize_scalar(desc="LMM", verbose=verbose)
-        self.delta = self._get_delta()
-        self._update_fixed_effects()
-        self._verbose = False
 
-    def fix(self, var_name):
-        """
-        Disable the optimisation of a given variable.
+        if not self._fix["beta"]:
+            self._update_beta()
 
-        Parameters
-        ----------
-        var_name : str
-            Possible values are ``"delta"`` and ``"scale"``.
-        """
-        if var_name not in ["delta", "scale", "beta"]:
-            msg = "Possible values are 'delta', 'scale', and 'beta'."
-            raise ValueError(msg)
-
-        if var_name == "delta":
-            super(LMM, self)._fix("logistic")
-        elif var_name == "beta":
-            self._fix_beta = True
-        else:
-            if not self._fix_scale:
-                self._scale = self.scale
-            self._fix_scale = True
-
-    @property
-    def fixed_effects_variance(self):
-        """
-        Variance of the fixed-effects.
-
-        It is defined as the empirical variance of the prior mean.
-
-        Returns
-        -------
-        var : float
-            Estimated variance of the fixed-effects.
-        """
-        return self.mean.var()
+        if not self._fix["scale"]:
+            self._update_scale()
 
     def get_fast_scanner(self):
         """
@@ -271,7 +265,7 @@ class LMM(LMMCore):
 
         Returns
         -------
-        :class:`.FastScanner`
+        fast-scanner : :class:`.FastScanner`
             Instance of a class designed to perform very fast association scan.
         """
         v0 = self.v0
@@ -279,77 +273,340 @@ class LMM(LMMCore):
         QS = (self._QS[0], v0 * self._QS[1])
         return FastScanner(self._y, self.X, QS, v1)
 
-    def lml(self):
-        self.delta = self._get_delta()
-        return LMMCore.lml(self)
+    def value(self):
+        if not self._fix["beta"]:
+            self._update_beta()
 
-    @property
-    def mean(self):
-        """
-        Estimated mean X𝞫.
+        if not self._fix["scale"]:
+            self._update_scale()
 
-        Returns
-        -------
-        mean : ndarray
-            Mean of the prior.
-        """
-        return LMMCore.mean.fget(self)
-
-    @property
-    def scale(self):
-        if self._fix_scale:
-            return self._scale
-        return LMMCore.scale.fget(self)
-
-    @scale.setter
-    def scale(self, v):
-        self._scale = v
-
-    def unfix(self, var_name):
-        """
-        Enable the optimisation of a given variable.
-
-        Parameters
-        ----------
-        var_name : str
-            Possible values are ``"delta"`` and ``"scale"``.
-        """
-        if var_name not in ["delta", "scale", "beta"]:
-            msg = "Possible values are 'delta', 'scale', and 'beta'."
-            raise ValueError(msg)
-        if var_name == "delta":
-            super(LMM, self)._unfix("logistic")
-        elif var_name == "beta":
-            self._fix_beta = False
-        else:
-            self._fix_scale = False
-
-    def value(self, *_):
-        self.delta = self._get_delta()
         return self.lml()
-
-    @property
-    def X(self):
-        return LMMCore.X.fget(self)
-
-    @X.setter
-    def X(self, X):
-        LMMCore.X.fset(self, X)
 
     def predictive_mean(self, Xstar, ks, kss):
         mstar = self.mean_star(Xstar)
         ks = self.covariance_star(ks)
         m = self.mean
-        K = LMMCore.covariance(self)
+        K = self.covariance()
         return mstar + dot(ks, solve(K, self._y - m))
 
     def predictive_covariance(self, Xstar, ks, kss):
         kss = self.variance_star(kss)
         ks = self.covariance_star(ks)
-        K = LMMCore.covariance(self)
+        K = self.covariance()
         ktk = solve(K, ks.T)
         b = []
         for i in range(len(kss)):
             b += [dot(ks[i, :], ktk[:, i])]
         b = asarray(b)
         return kss - b
+
+    @property
+    def nsamples(self):
+        """
+        Number of samples, n.
+        """
+        return len(self._y)
+
+    @cache
+    def _logdetMM(self):
+        """
+        log(｜MᵀM｜).
+        """
+        if not self._restricted:
+            return 0.0
+
+        ldet = slogdet(self._X["tX"].T @ self._X["tX"])
+        if ldet[0] != 1.0:
+            raise ValueError("The determinant of XᵀX should be positive.")
+        return ldet[1]
+
+    def _logdetH(self):
+        """
+        log(｜H｜) for H = s⁻¹XᵀQD⁻¹QᵀX.
+        """
+        if not self._restricted:
+            return 0.0
+        ldet = slogdet(sum(self._XTQDiQTX) / self.scale)
+        if ldet[0] != 1.0:
+            raise ValueError("The determinant of H should be positive.")
+        return ldet[1]
+
+    def lml(self):
+        """
+        Log of the marginal likelihood.
+
+        Returns
+        -------
+        float
+            Log of the marginal likelihood.
+
+        Notes
+        -----
+        The log of the marginal likelihood is given by ::
+
+            2⋅log(p(𝐲)) = -n⋅log(2π) - n⋅log(s) - log|D| - (Qᵀ𝐲)ᵀs⁻¹D⁻¹(Qᵀ𝐲)
+                        + (Qᵀ𝐲)ᵀs⁻¹D⁻¹(QᵀX𝜷)/2 - (QᵀX𝜷)ᵀs⁻¹D⁻¹(QᵀX𝜷).
+
+        By using the optimal 𝜷, the log of the marginal likelihood can be rewritten
+        as::
+
+            2⋅log(p(𝐲)) = -n⋅log(2π) - n⋅log(s) - log|D| + (Qᵀ𝐲)ᵀs⁻¹D⁻¹Qᵀ(X𝜷-𝐲).
+
+
+        In the extreme case where 𝜷 is such that 𝐲 = X𝜷, the maximum is attained as
+        s→0.
+
+        For optimals 𝜷 and s, the log of the marginal likelihood can be further
+        simplified to ::
+
+            2⋅log(p(𝐲; 𝜷, s)) = -n⋅log(2π) - n⋅log s - log|D| - n.
+        """
+        reml = (self._logdetMM() - self._logdetH()) / 2
+        if self._optimal["scale"]:
+            lml = self._lml_optimal_scale()
+        else:
+            lml = self._lml_arbitrary_scale()
+        return lml + reml
+
+    def _lml_optimal_scale(self):
+        """
+        Log of the marginal likelihood.
+
+        Returns
+        -------
+        float
+            Log of the marginal likelihood.
+        """
+        assert self._optimal["scale"]
+
+        n = len(self._y)
+        # lml = -self._df * log2pi - n - n * log(self.scale)
+        lml = -self._df * log2pi - self._df - n * log(self.scale)
+        lml -= sum(npsum(log(D)) for D in self._D)
+
+        # 2⋅log(p(𝐲)) = -(n - c) log(2π) + log(｜MᵀM｜) - log(｜H｜) - log(｜K｜)
+        # - (𝐲-𝐦)ᵀ K⁻¹ (𝐲-𝐦),
+        # optimal beta: 𝛃 = H⁻¹MᵀK⁻¹𝐲.
+        # by using the optimal beta,
+        # 2⋅log(p(𝐲)) = -(n - c)log(2π) + log(｜MᵀM｜) - log(｜H｜) - log(｜K｜)
+        #              + 𝐲ᵀK⁻¹(X𝜷-𝐲).
+        # ?? s = n⁻¹(Qᵀ𝐲)ᵀD⁻¹ Qᵀ(𝐲-X𝜷) ??
+        # Under REML:
+        # s = (n-c)⁻¹(Qᵀ𝐲)ᵀD⁻¹ Qᵀ(𝐲-X𝜷)
+
+        return lml / 2
+
+    def _lml_arbitrary_scale(self):
+        """
+        Log of the marginal likelihood.
+
+        Returns
+        -------
+        float
+            Log of the marginal likelihood.
+        """
+        s = self.scale
+        n = len(self._y)
+        lml = -self._df * log2pi - n * log(s)
+        lml -= sum(npsum(log(D)) for D in self._D)
+        d = (mTQ - yTQ for (mTQ, yTQ) in zip(self._mTQ, self._yTQ))
+        lml -= sum((i / j) @ i for (i, j) in zip(d, self._D)) / s
+
+        return lml / 2
+
+    @property
+    def _df(self):
+        if not self._restricted:
+            return self.nsamples
+        return self.nsamples - self._X["tX"].shape[1]
+
+    def _optimal_scale_using_optimal_beta(self):
+        from numpy_sugar import epsilon
+
+        assert self._optimal["beta"]
+
+        yTQDiQTy = self._yTQDiQTy
+        yTQDiQTm = self._yTQDiQTm
+        s = sum(i - dot(j, self._tbeta) for (i, j) in zip(yTQDiQTy, yTQDiQTm))
+        return maximum(s / self._df, epsilon.small)
+
+    def _update_beta(self):
+        from numpy_sugar.linalg import rsolve
+
+        assert not self._fix["beta"]
+        if self._optimal["beta"]:
+            return
+
+        yTQDiQTm = list(self._yTQDiQTm)
+        mTQDiQTm = list(self._mTQDiQTm)
+        nominator = yTQDiQTm[0]
+        denominator = mTQDiQTm[0]
+
+        if len(yTQDiQTm) > 1:
+            nominator += yTQDiQTm[1]
+            denominator += mTQDiQTm[1]
+
+        self._tbeta[:] = rsolve(denominator, nominator)
+        self._optimal["beta"] = True
+        self._optimal["scale"] = False
+
+    def _update_scale(self):
+        from numpy_sugar import epsilon
+
+        if self._optimal["beta"]:
+            self._scale = self._optimal_scale_using_optimal_beta()
+        else:
+            yTQDiQTy = self._yTQDiQTy
+            yTQDiQTm = self._yTQDiQTm
+            b = self._tbeta
+            p0 = sum(i - 2 * dot(j, b) for (i, j) in zip(yTQDiQTy, yTQDiQTm))
+            p1 = sum(dot(dot(b, i), b) for i in self._mTQDiQTm)
+            self._scale = maximum((p0 + p1) / self._df, epsilon.small)
+
+        self._optimal["scale"] = True
+
+    @property
+    def _D(self):
+        D = []
+        n = self._y.shape[0]
+        if self._QS[1].size > 0:
+            D += [self._QS[1] * (1 - self.delta) + self.delta]
+        if self._QS[1].size < n:
+            D += [full(n - self._QS[1].size, self.delta)]
+        return D
+
+    @property
+    def _mTQDiQTm(self):
+        return (dot(i / j, i.T) for (i, j) in zip(self._tMTQ, self._D))
+
+    @property
+    def _mTQ(self):
+        return (dot(self.mean.T, Q) for Q in self._QS[0] if Q.size > 0)
+
+    @property
+    def _tMTQ(self):
+        return (self._X["tX"].T.dot(Q) for Q in self._QS[0] if Q.size > 0)
+
+    @property
+    def _XTQDiQTX(self):
+        return (dot(i / j, i.T) for (i, j) in zip(self._XTQ, self._D))
+
+    @property
+    def _XTQ(self):
+        return (self._X["tX"].T.dot(Q) for Q in self._QS[0] if Q.size > 0)
+
+    @property
+    def _yTQ(self):
+        return (dot(self._y.T, Q) for Q in self._QS[0] if Q.size > 0)
+
+    @property
+    def _yTQQTy(self):
+        return (yTQ ** 2 for yTQ in self._yTQ)
+
+    @property
+    def _yTQDiQTy(self):
+        return (npsum(i / j) for (i, j) in zip(self._yTQQTy, self._D))
+
+    @property
+    def _yTQDiQTm(self):
+        yTQ = self._yTQ
+        D = self._D
+        tMTQ = self._tMTQ
+        return (dot(i / j, l.T) for (i, j, l) in zip(yTQ, D, tMTQ))
+
+    @property
+    def X(self):
+        """
+        Covariates set by the user.
+
+        It has to be a matrix of number-of-samples by number-of-covariates.
+
+        Returns
+        -------
+        ndarray
+            Covariates.
+        """
+        return self._X["X"]
+
+    @property
+    def delta(self):
+        """
+        Variance ratio between ``K`` and ``I``.
+        """
+        from numpy_sugar import epsilon
+
+        v = float(self._variables.get("logistic").value)
+        with errstate(over="ignore", under="ignore"):
+            v = 1 / (1 + exp(-v))
+        return clip(v, epsilon.tiny, 1 - epsilon.tiny)
+
+    @delta.setter
+    def delta(self, delta):
+        from numpy_sugar import epsilon
+
+        delta = clip(delta, epsilon.tiny, 1 - epsilon.tiny)
+        self._variables.set(dict(logistic=log(delta / (1 - delta))))
+        self._optimal["beta"] = False
+        self._optimal["scale"] = False
+
+    @property
+    def scale(self):
+        """
+        Scaling factor.
+
+        Returns
+        -------
+        float
+            Current scale if fixed; optimal scale otherwise.
+
+        Notes
+        -----
+        Setting the derivative of log(p(𝐲; 𝜷)), for which 𝜷 is optimal, over
+        scale equal to zero leads to the maximum ::
+
+            s = n⁻¹(Qᵀ𝐲)ᵀD⁻¹ Qᵀ(𝐲-X𝜷).
+        """
+        return self._scale
+
+    @scale.setter
+    def scale(self, scale):
+        self._scale = scale
+        self._optimal["scale"] = False
+
+    @property
+    def mean(self):
+        """
+        Mean of the prior.
+
+        Formally, 𝐦 = X𝜷.
+
+        Returns
+        -------
+        mean : ndarray
+            Mean of the prior.
+        """
+        return self._X["tX"] @ self._tbeta
+
+    def mean_star(self, Xstar):
+        return Xstar @ self.beta
+
+    def variance_star(self, kss):
+        return kss * self.v0 + self.v1
+
+    def covariance_star(self, ks):
+        return ks * self.v0
+
+    def covariance(self):
+        """
+        Covariance of the prior.
+
+        Returns
+        -------
+        covariance : ndarray
+            v₀K + v₁I.
+        """
+        from numpy_sugar.linalg import ddot, sum2diag
+
+        Q0 = self._QS[0][0]
+        S0 = self._QS[1]
+        return sum2diag(dot(ddot(Q0, self.v0 * S0), Q0.T), self.v1)

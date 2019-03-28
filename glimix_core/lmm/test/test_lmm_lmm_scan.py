@@ -1,8 +1,10 @@
 import pytest
-from numpy import array, concatenate, inf, nan, newaxis, ones, sqrt, zeros
+import scipy.stats as st
+from numpy import array, concatenate, exp, eye, inf, nan, newaxis, ones, sqrt, zeros
 from numpy.random import RandomState
 from numpy.testing import assert_allclose
 from numpy_sugar.linalg import economic_qs, economic_qs_linear
+from scipy.optimize import minimize
 
 from glimix_core._util import assert_interface
 from glimix_core.cov import EyeCov, LinearCov, SumCov
@@ -12,54 +14,7 @@ from glimix_core.mean import OffsetMean
 from glimix_core.random import GGPSampler
 
 
-def test_lmm_scan_fix_unfix():
-    random = RandomState(12)
-    n = 100
-    X = _covariates_sample(random, n, n + 1)
-    offset = 0.1
-
-    y = _outcome_sample(random, offset, X)
-    QS = economic_qs_linear(X)
-    lmm = LMM(y, ones((n, 1)), QS)
-
-    lmm.fit(verbose=False)
-
-    lml0 = lmm.lml()
-    assert_allclose(lml0, -193.88684605236722)
-    lmm.fix("scale")
-    lml1 = lmm.lml()
-
-    assert_allclose(lml0, lml1)
-
-    scale = lmm.scale
-    lmm.fit(verbose=False)
-    assert_allclose(scale, lmm.scale)
-
-    assert_allclose(lmm.delta, 0.546799614073)
-    lmm.delta = 0.5
-    assert_allclose(lmm.delta, 0.5)
-
-    assert_allclose(lmm.lml(), -193.947028697)
-
-    assert_allclose(lmm.scale, 3.10605443333)
-
-    lmm.scale = 0.5
-
-    lmm.fit(verbose=False)
-
-    assert_allclose(lmm.scale, 0.5)
-    assert_allclose(lmm.delta, 0.775021320328)
-    assert_allclose(lmm.lml(), -351.381863666)
-
-    lmm.fix("delta")
-    lmm.delta = 0.1
-
-    assert_allclose(lmm.scale, 0.5)
-    assert_allclose(lmm.delta, 0.1)
-    assert_allclose(lmm.lml(), -615.1757214529657)
-
-
-def test_lmm_scan_fast_scan():
+def test_lmm_scan_fast_scan_fix():
     random = RandomState(9458)
     n = 30
     X = _covariates_sample(random, n, n + 1)
@@ -104,7 +59,7 @@ def test_lmm_scan_fastlmm_redundant_candidates():
     QS = economic_qs_linear(X)
 
     M = ones((n, 5))
-    lmm = LMM(y, M, QS)
+    lmm = LMM(y, M, QS, restricted=False)
 
     lmm.fit(verbose=False)
 
@@ -457,43 +412,67 @@ def test_lmm_scan_public_attrs():
         FastScanner, ["null_lml", "null_effsizes", "null_scale", "fast_scan", "scan"]
     )
 
-
 def test_lmm_scan_scan():
     random = RandomState(9458)
     n = 30
     X = _covariates_sample(random, n, n + 1)
     offset = 1.0
-
     y = _outcome_sample(random, offset, X)
-
     QS = economic_qs_linear(X)
+    M0 = random.randn(n, 2)
+    M1 = random.randn(n, 2)
 
-    lmm = LMM(y, ones((n, 1)), QS)
+    lmm = LMM(y, M0, QS)
     lmm.fit(verbose=False)
+
+    v0 = lmm.v0
+    v1 = lmm.v1
+    K = v0 * X @ X.T + v1 * eye(n)
+    M = concatenate((M0, M1), axis=1)
+
+    def fun(x):
+        beta = x[:4]
+        scale = exp(x[4])
+        return -st.multivariate_normal(M @ beta, scale * K).logpdf(y)
+
+    res = minimize(fun, [0, 0, 0, 0, 0])
     fast_scanner = lmm.get_fast_scanner()
+    lml, eff0, eff1, scale = fast_scanner.scan(M1)
 
-    markers = [random.randn(n, 2), random.randn(n, 3)]
-    lml, eff0, eff1, scale = fast_scanner.scan(markers[0])
-    assert_allclose(lml, -51.176103656322304)
-    assert_allclose(eff0, [0.6027876492916453])
-    assert_allclose(eff1, [0.16683458074028157, 0.23266357557893075])
-    assert_allclose(scale, [0.9564527908242139])
+    assert_allclose(lml, -res.fun)
+    assert_allclose(eff0, res.x[:2], rtol=1e-5)
+    assert_allclose(eff1, res.x[2:4], rtol=1e-5)
+    assert_allclose(scale, exp(res.x[4]), rtol=1e-5)
 
-    lml, eff0, eff1, scale = fast_scanner.scan(markers[1])
-    assert_allclose(lml, -50.279756791246925)
-    assert_allclose(eff0, [0.823889122685148])
-    assert_allclose(eff1, [0.095240122340569, -0.097972188424052, 0.47925863412073])
-    assert_allclose(scale, [0.900972714721136])
 
-    markers = [random.randn(n, 1), random.randn(n, 1)]
-    lml00, _, effsizes00, scale00 = fast_scanner.scan(markers[0])
-    lml01, _, effsizes01, scale01 = fast_scanner.scan(markers[1])
-    lmls0 = array([lml00, lml01])
-    effsizes0 = concatenate([effsizes00, effsizes01])
-    scales0 = array([scale00, scale01])
+def test_lmm_scan_fast_scan():
+    random = RandomState(9458)
+    n = 30
+    X = _covariates_sample(random, n, n + 1)
+    offset = 1.0
+    y = _outcome_sample(random, offset, X)
+    QS = economic_qs_linear(X)
+    M0 = random.randn(n, 2)
+    M1 = random.randn(n, 2)
 
-    x = concatenate(markers, axis=1)
-    lmls1, eff01, eff11, scales1 = fast_scanner.fast_scan(x, verbose=False)
-    assert_allclose(lmls0, lmls1)
-    assert_allclose(effsizes0, eff11)
-    assert_allclose(scales0, scales1)
+    lmm = LMM(y, M0, QS)
+    lmm.fit(verbose=False)
+
+    v0 = lmm.v0
+    v1 = lmm.v1
+    K = v0 * X @ X.T + v1 * eye(n)
+    M = concatenate((M0, M1[:, [0]]), axis=1)
+
+    def fun(x):
+        beta = x[:3]
+        scale = exp(x[3])
+        return -st.multivariate_normal(M @ beta, scale * K).logpdf(y)
+
+    res = minimize(fun, [0, 0, 0, 0])
+    fast_scanner = lmm.get_fast_scanner()
+    lml, eff0, eff1, scales = fast_scanner.fast_scan(M1, verbose=False)
+
+    assert_allclose(lml[0], -res.fun)
+    assert_allclose(eff0[0], res.x[:2], rtol=1e-5)
+    assert_allclose(eff1[0], res.x[2:3], rtol=1e-5)
+    assert_allclose(scales[0], exp(res.x[3]), rtol=1e-5)
