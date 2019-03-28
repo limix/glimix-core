@@ -16,7 +16,7 @@ def test_lmm_kron_scan():
     A = A @ A.T
     F = random.randn(n, 2)
     G = random.randn(n, 6)
-    lmm = Kron2Sum(Y, A, F, G)
+    lmm = Kron2Sum(Y, A, F, G, restricted=True)
     lmm.fit(verbose=False)
     scan = lmm.get_fast_scanner()
 
@@ -74,7 +74,7 @@ def test_lmm_kron_scan_redundant():
     F = random.randn(n, 2)
     G = random.randn(n, 6)
     G = concatenate([G, G], axis=1)
-    lmm = Kron2Sum(Y, A, F, G)
+    lmm = Kron2Sum(Y, A, F, G, restricted=True)
     lmm.fit(verbose=False)
     scan = lmm.get_fast_scanner()
 

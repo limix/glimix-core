@@ -9,7 +9,7 @@ from glimix_core._util import assert_interface, vec
 from glimix_core.lmm import Kron2Sum
 
 
-def test_lmm_kron2sum_restricted():
+def test_kron2sum_restricted():
     random = RandomState(0)
     n = 5
     Y = random.randn(n, 3)
@@ -17,7 +17,7 @@ def test_lmm_kron2sum_restricted():
     A = A @ A.T
     F = random.randn(n, 2)
     G = random.randn(n, 4)
-    lmm = Kron2Sum(Y, A, F, G)
+    lmm = Kron2Sum(Y, A, F, G, restricted=True)
 
     assert_allclose(lmm.lml(), -16.580821931417656)
     assert_allclose(lmm._check_grad(step=1e-7), 0, atol=1e-4)
@@ -31,7 +31,7 @@ def test_lmm_kron2sum_restricted():
     A = A @ A.T
     F = random.randn(n, 2)
     G = random.randn(n, 4)
-    lmm = Kron2Sum(Y, A, F, G)
+    lmm = Kron2Sum(Y, A, F, G, restricted=True)
     lmm.name = "KronSum"
 
     assert_allclose(lmm.lml(), -4.582089407009583)
@@ -65,7 +65,7 @@ def test_lmm_kron2sum_restricted():
     assert_allclose(lmm.lml(), -0.6930197958236421, rtol=1e-5)
 
 
-def test_lmm_kron2sum_unrestricted():
+def test_kron2sum_unrestricted():
     random = RandomState(0)
     n = 5
     Y = random.randn(n, 3)
@@ -73,9 +73,9 @@ def test_lmm_kron2sum_unrestricted():
     A = A @ A.T
     F = random.randn(n, 2)
     G = random.randn(n, 4)
-    lmm = Kron2Sum(Y, A, F, G)
+    lmm = Kron2Sum(Y, A, F, G, restricted=False)
 
-    assert_allclose(lmm.lml(), -16.580821931417656)
+    assert_allclose(lmm.lml(), -22.700472625381742)
     assert_allclose(lmm._check_grad(step=1e-7), 0, atol=1e-4)
     assert_equal(lmm.nsamples, n)
     assert_equal(lmm.ntraits, 3)
@@ -121,7 +121,7 @@ def test_lmm_kron2sum_unrestricted():
     assert_allclose(lmm.lml(), 2.3394131683160992, rtol=1e-5)
 
 
-def test_lmm_kron2sum_unrestricted_lml():
+def test_kron2sum_unrestricted_lml():
     random = RandomState(0)
     Y = random.randn(5, 3)
     A = random.randn(3, 3)
@@ -146,7 +146,7 @@ def test_lmm_kron2sum_unrestricted_lml():
     assert_allclose(lmm.lml(), st.multivariate_normal(m, K).logpdf(y))
 
 
-def test_lmm_kron2sum_public_attrs():
+def test_kron2sum_public_attrs():
     assert_interface(
         Kron2Sum,
         [
@@ -166,7 +166,7 @@ def test_lmm_kron2sum_public_attrs():
     )
 
 
-def test_lmm_kron2sum_gradient_unrestricted():
+def test_kron2sum_gradient_unrestricted():
     random = RandomState(2)
     Y = random.randn(5, 3)
     A = random.randn(3, 3)
@@ -191,7 +191,7 @@ def test_lmm_kron2sum_gradient_unrestricted():
     assert_allclose(check_grad(func, grad, random.randn(9), epsilon=1e-8), 0, atol=1e-3)
 
 
-def test_lmm_kron2sum_fit_ill_conditioned_unrestricted():
+def test_kron2sum_fit_ill_conditioned_unrestricted():
     random = RandomState(0)
     n = 30
     Y = random.randn(n, 3)
@@ -209,7 +209,7 @@ def test_lmm_kron2sum_fit_ill_conditioned_unrestricted():
     assert_allclose(concatenate([grad[var] for var in vars]), [0] * 9, atol=1e-3)
 
 
-def test_lmm_kron2sum_fit_C1_well_cond_unrestricted():
+def test_kron2sum_fit_C1_well_cond_unrestricted():
     random = RandomState(0)
     Y = random.randn(5, 2)
     A = random.randn(2, 2)
@@ -226,7 +226,7 @@ def test_lmm_kron2sum_fit_C1_well_cond_unrestricted():
     assert_allclose(concatenate([grad[var] for var in vars]), [0] * 5, atol=1e-2)
 
 
-def test_lmm_kron2sum_fit_C1_well_cond_C0_fullrank_unrestricted():
+def test_kron2sum_fit_C1_well_cond_C0_fullrank_unrestricted():
     random = RandomState(0)
     Y = random.randn(5, 2)
     A = random.randn(2, 2)
@@ -243,7 +243,7 @@ def test_lmm_kron2sum_fit_C1_well_cond_C0_fullrank_unrestricted():
     assert_allclose(concatenate([grad[var] for var in vars]), [0] * 7, atol=1e-2)
 
 
-def test_lmm_kron2sum_fit_C1_well_cond_redutant_F_unrestricted():
+def test_kron2sum_fit_C1_well_cond_redutant_F_unrestricted():
     random = RandomState(0)
     Y = random.randn(5, 2)
     A = random.randn(2, 2)
@@ -255,7 +255,7 @@ def test_lmm_kron2sum_fit_C1_well_cond_redutant_F_unrestricted():
         Kron2Sum(Y, A, F, G, restricted=False)
 
 
-def test_lmm_kron2sum_fit_C1_well_cond_redundant_Y_unrestricted():
+def test_kron2sum_fit_C1_well_cond_redundant_Y_unrestricted():
     random = RandomState(0)
     Y = random.randn(5, 2)
     Y = concatenate((Y, Y), axis=1)

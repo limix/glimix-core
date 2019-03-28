@@ -317,6 +317,13 @@ class LMM(Function):
         """
         return len(self._y)
 
+    @property
+    def ncovariates(self):
+        """
+        Number of covariates, c.
+        """
+        return self._X["X"].shape[1]
+
     def lml(self):
         """
         Log of the marginal likelihood.

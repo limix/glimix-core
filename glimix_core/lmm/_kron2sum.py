@@ -49,7 +49,7 @@ class Kron2Sum(Function):
        755.
     """
 
-    def __init__(self, Y, A, F, G, rank=1, restricted=True):
+    def __init__(self, Y, A, F, G, rank=1, restricted=False):
         """
         Constructor.
 
