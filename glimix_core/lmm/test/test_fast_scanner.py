@@ -14,41 +14,7 @@ from glimix_core.mean import OffsetMean
 from glimix_core.random import GGPSampler
 
 
-def test_lmm_scan_fast_scan_fix():
-    random = RandomState(9458)
-    n = 30
-    X = _covariates_sample(random, n, n + 1)
-    offset = 1.0
-
-    y = _outcome_sample(random, offset, X)
-
-    QS = economic_qs_linear(X)
-
-    lmm = LMM(y, ones((n, 1)), QS)
-
-    lmm.fit(verbose=False)
-
-    markers = random.randn(n, 2)
-
-    lmm_ = lmm.copy()
-    lmm_.X = concatenate([lmm.X, markers[:, 0][:, newaxis]], axis=1)
-    lmm_.fix("delta")
-    lmm_.fit(verbose=False)
-    lml0 = lmm_.lml()
-
-    lmm_ = lmm.copy()
-    lmm_.X = concatenate([lmm.X, markers[:, 1][:, newaxis]], axis=1)
-    lmm_.fix("delta")
-    lmm_.fit(verbose=False)
-    lml1 = lmm_.lml()
-
-    fast_scanner = lmm.get_fast_scanner()
-
-    lmls = fast_scanner.fast_scan(markers, verbose=False)[0]
-    assert_allclose(lmls, [lml0, lml1])
-
-
-def test_lmm_scan_fastlmm_redundant_candidates():
+def test_fast_scanner_redundant_candidates():
     random = RandomState(9458)
     n = 10
     X = _covariates_sample(random, n, n + 1)
@@ -65,13 +31,13 @@ def test_lmm_scan_fastlmm_redundant_candidates():
 
     markers = M.copy()
 
-    fast_scanner = lmm.get_fast_scanner()
+    scanner = lmm.get_fast_scanner()
 
-    lmls = fast_scanner.fast_scan(markers, verbose=False)[0]
-    assert_allclose(lmls, [-9.929912871392519] * 5, rtol=1e-5)
+    lmls = scanner.fast_scan(markers, verbose=False)[0]
+    assert_allclose(lmls, [-9.573775307076174] * 5, rtol=1e-5)
 
 
-def test_lmm_scan_fastlmm_set_scale_1covariate():
+def test_fast_scanner_set_scale_1covariate():
     random = RandomState(9458)
     n = 10
     X = _covariates_sample(random, n, n + 1)
@@ -91,8 +57,8 @@ def test_lmm_scan_fastlmm_set_scale_1covariate():
 
     markers = M.copy() + random.randn(n, 1)
 
-    fast_scanner = lmm.get_fast_scanner()
-    lmls, eff0, eff1, scales = fast_scanner.fast_scan(markers, verbose=False)
+    scanner = lmm.get_fast_scanner()
+    lmls, eff0, eff1, scales = scanner.fast_scan(markers, verbose=False)
 
     assert_allclose(lmls, [-21.509721], rtol=1e-6)
     assert_allclose(eff0, [[-1.43206379971882]])
@@ -100,10 +66,10 @@ def test_lmm_scan_fastlmm_set_scale_1covariate():
     assert_allclose(scales, [0.8440354018505616], rtol=1e-6)
 
     beta = lmm.beta
-    assert_allclose(fast_scanner.fast_scan(zeros((10, 1)), verbose=False)[1][0], beta)
+    assert_allclose(scanner.fast_scan(zeros((10, 1)), verbose=False)[1][0], beta)
 
 
-def test_lmm_scan_fastlmm_set_scale_1covariate_redundant():
+def test_fast_scanner_set_scale_1covariate_redundant():
     random = RandomState(9458)
     n = 10
     X = _covariates_sample(random, n, n + 1)
@@ -120,15 +86,15 @@ def test_lmm_scan_fastlmm_set_scale_1covariate_redundant():
 
     markers = M.copy()
 
-    fast_scanner = lmm.get_fast_scanner()
-    lmls, eff0, eff1, scales = fast_scanner.fast_scan(markers, verbose=False)
+    scanner = lmm.get_fast_scanner()
+    lmls, eff0, eff1, scales = scanner.fast_scan(markers, verbose=False)
     assert_allclose(lmls[0], -22.357525517597185, rtol=1e-6)
     assert_allclose(eff0, [[0.029985622694805182]])
     assert_allclose(eff1[0], 0.02998562491058301, rtol=1e-6, atol=1e-6)
     assert_allclose(scales, [1.0], rtol=1e-6)
 
 
-def test_lmm_scan_fastlmm_set_scale_multicovariates():
+def test_fast_scanner_set_scale_multicovariates():
     random = RandomState(9458)
     n = 10
     X = _covariates_sample(random, n, n + 1)
@@ -145,8 +111,8 @@ def test_lmm_scan_fastlmm_set_scale_multicovariates():
 
     markers = M.copy()
 
-    fast_scanner = lmm.get_fast_scanner()
-    lmls, eff0, eff1, scales = fast_scanner.fast_scan(markers, verbose=False)
+    scanner = lmm.get_fast_scanner()
+    lmls, eff0, eff1, scales = scanner.fast_scan(markers, verbose=False)
 
     want = [-19.318845, -19.318845, -19.318845]
     assert_allclose(lmls, want, rtol=1e-6, atol=1e-6)
@@ -374,8 +340,8 @@ def test_lmm_scan_lmm_iid_prior():
     lmm = LMM(y, ones((n, 1)), None)
 
     lmm.fit(verbose=False)
-    fast_scanner = lmm.get_fast_scanner()
-    lmls = fast_scanner.fast_scan(markers, verbose=False)[0]
+    scanner = lmm.get_fast_scanner()
+    lmls = scanner.fast_scan(markers, verbose=False)[0]
     assert_allclose(lmls[:2], [-63.16019973550036, -62.489358539276715])
 
 
@@ -412,6 +378,7 @@ def test_lmm_scan_public_attrs():
         FastScanner, ["null_lml", "null_effsizes", "null_scale", "fast_scan", "scan"]
     )
 
+
 def test_lmm_scan_scan():
     random = RandomState(9458)
     n = 30
@@ -436,8 +403,8 @@ def test_lmm_scan_scan():
         return -st.multivariate_normal(M @ beta, scale * K).logpdf(y)
 
     res = minimize(fun, [0, 0, 0, 0, 0])
-    fast_scanner = lmm.get_fast_scanner()
-    lml, eff0, eff1, scale = fast_scanner.scan(M1)
+    scanner = lmm.get_fast_scanner()
+    lml, eff0, eff1, scale = scanner.scan(M1)
 
     assert_allclose(lml, -res.fun)
     assert_allclose(eff0, res.x[:2], rtol=1e-5)
@@ -469,8 +436,8 @@ def test_lmm_scan_fast_scan():
         return -st.multivariate_normal(M @ beta, scale * K).logpdf(y)
 
     res = minimize(fun, [0, 0, 0, 0])
-    fast_scanner = lmm.get_fast_scanner()
-    lml, eff0, eff1, scales = fast_scanner.fast_scan(M1, verbose=False)
+    scanner = lmm.get_fast_scanner()
+    lml, eff0, eff1, scales = scanner.fast_scan(M1, verbose=False)
 
     assert_allclose(lml[0], -res.fun)
     assert_allclose(eff0[0], res.x[:2], rtol=1e-5)
