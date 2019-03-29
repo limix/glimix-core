@@ -93,6 +93,7 @@ def test_lmm_lmm_public_attrs():
             "unfix",
             "fix",
             "nsamples",
+            "ncovariates",
         ],
     )
 

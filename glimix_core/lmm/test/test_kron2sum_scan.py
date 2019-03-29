@@ -30,7 +30,7 @@ def test_lmm_kron_scan():
     s = minimize(func, 1e-3, 5.0, 1e-5)[0]
 
     assert_allclose(scan.null_lml(), st.multivariate_normal(m, s * K).logpdf(vec(Y)))
-    assert_allclose(kron(A, F) @ scan.null_effsizes(), m)
+    assert_allclose(kron(A, F) @ vec(scan.null_effsizes()), m)
 
     A1 = random.randn(3, 2)
     F1 = random.randn(n, 4)
@@ -54,12 +54,8 @@ def test_lmm_kron_scan():
     assert_allclose(
         effsizes0,
         [
-            1.411082677273241,
-            -0.6753042112998789,
-            0.41436234081257045,
-            -0.20299590400182352,
-            -1.5337251391408189,
-            0.6723874047807074,
+            [1.411082677273241, 0.41436234081257045, -1.5337251391408189],
+            [-0.6753042112998789, -0.20299590400182352, 0.6723874047807074],
         ],
     )
     assert_allclose(effsizes1, [])

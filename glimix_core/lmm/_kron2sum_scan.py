@@ -90,7 +90,8 @@ class KronFastScanner:
         effsizes : ndarray
             Optimal 𝚩.
         """
-        return rsolve(self._MKiM, self._MKiy)
+        ntraits = self._Y.shape[1]
+        return unvec(rsolve(self._MKiM, self._MKiy), (-1, ntraits))
 
     @cache
     def null_scale(self):
@@ -109,7 +110,7 @@ class KronFastScanner:
             Optimal scale.
         """
         np = self._nsamples * self._ntraits
-        b = self.null_effsizes()
+        b = vec(self.null_effsizes())
         mKiy = b.T @ self._MKiy
         sqrtdot = self._yKiy - mKiy
         scale = sqrtdot / np
