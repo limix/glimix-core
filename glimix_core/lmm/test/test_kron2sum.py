@@ -165,18 +165,19 @@ def test_kron2sum_public_attrs():
     assert_interface(
         Kron2Sum,
         [
+            "B",
+            "beta_covariance",
+            "cov",
             "fit",
-            "ntraits",
+            "get_fast_scanner",
+            "gradient",
             "lml",
             "mean",
-            "nsamples",
-            "value",
-            "cov",
-            "ncovariates",
             "name",
-            "gradient",
-            "B",
-            "get_fast_scanner",
+            "ncovariates",
+            "nsamples",
+            "ntraits",
+            "value",
         ],
     )
 
