@@ -67,6 +67,65 @@ def test_lmm_prediction():
     assert_allclose(corrcoef(y, pm)[0, 1], 0.8358820971891354)
 
 
+def test_lmm_beta_covariance():
+    random = RandomState(0)
+
+    (y, X, G) = _full_rank(random)
+    QS = economic_qs_linear(G)
+    lmm = LMM(y, X, QS)
+    lmm.fit(verbose=False)
+
+    A = [
+        [0.015685784760937037, 0.006509918649859495],
+        [0.006509918649859495, 0.007975242272006645],
+    ]
+    assert_allclose(lmm.beta_covariance, A)
+
+    (y, X, G) = _low_rank(random)
+    QS = economic_qs_linear(G)
+    lmm = LMM(y, X[:, :2], QS)
+    lmm.fit(verbose=False)
+
+    A = [
+        [0.002763268929325623, 0.0006651810010328699],
+        [0.0006651810010328708, 0.0016910004907565248],
+    ]
+    assert_allclose(lmm.beta_covariance, A)
+
+    (y, X, G) = _low_rank(random)
+    QS = economic_qs_linear(G)
+    lmm = LMM(y, X, QS)
+    lmm.fit(verbose=False)
+
+    A = [
+        [
+            0.003892850639339253,
+            0.0012112513279299796,
+            0.003892850639339256,
+            0.0012112513279299794,
+        ],
+        [
+            0.0012112513279299794,
+            0.009340423857663259,
+            0.0012112513279299833,
+            0.009340423857663257,
+        ],
+        [
+            0.0038928506393392562,
+            0.0012112513279299835,
+            0.003892850639339259,
+            0.0012112513279299833,
+        ],
+        [
+            0.0012112513279299794,
+            0.009340423857663257,
+            0.0012112513279299833,
+            0.009340423857663257,
+        ],
+    ]
+    assert_allclose(lmm.beta_covariance, A)
+
+
 def test_lmm_lmm_public_attrs():
     assert_interface(
         LMM,
@@ -94,6 +153,7 @@ def test_lmm_lmm_public_attrs():
             "fix",
             "nsamples",
             "ncovariates",
+            "beta_covariance",
         ],
     )
 

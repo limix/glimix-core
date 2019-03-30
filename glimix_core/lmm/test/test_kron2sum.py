@@ -64,6 +64,15 @@ def test_kron2sum_restricted():
     assert_allclose(grad["C1.Lu"], [0], atol=1e-4)
     assert_allclose(lmm.lml(), -0.6930197958236421, rtol=1e-5)
 
+    A = lmm.beta_covariance
+    assert_allclose(
+        A,
+        [
+            [4.831846800714217, -2.132053997665423],
+            [-2.1320539976654262, 0.9438168959531027],
+        ],
+    )
+
 
 def test_kron2sum_unrestricted():
     random = RandomState(0)
@@ -119,6 +128,12 @@ def test_kron2sum_unrestricted():
     assert_allclose(grad["C0.Lu"], [0], atol=1e-4)
     assert_allclose(grad["C1.Lu"], [0], atol=1e-4)
     assert_allclose(lmm.lml(), 2.3394131683160992, rtol=1e-5)
+
+    A = [
+        [3.621697718251791, -1.5979868630471679],
+        [-1.5979868630471754, 0.7081138470260712],
+    ]
+    assert_allclose(lmm.beta_covariance, A)
 
 
 def test_kron2sum_unrestricted_lml():

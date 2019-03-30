@@ -2,7 +2,7 @@ import warnings
 from functools import reduce
 
 from numpy import asarray, asfortranarray, kron, log, sqrt, tensordot, trace
-from numpy.linalg import matrix_rank, slogdet
+from numpy.linalg import inv, matrix_rank, slogdet
 
 from glimix_core._util import cache, log2pi, unvec, vec
 from glimix_core.cov import Kron2SumCov
@@ -94,6 +94,24 @@ class Kron2Sum(Function):
         self._restricted = restricted
         composite = [("C0", self._cov.C0), ("C1", self._cov.C1)]
         Function.__init__(self, "Kron2Sum", composite=composite)
+
+    @property
+    def beta_covariance(self):
+        """
+        Estimates the covariance-matrix of the optimal beta [R08]_.
+
+        Returns
+        -------
+        beta-covariance : ndarray
+            (MᵀK⁻¹M)⁻¹.
+
+        References
+        ----------
+        .. [R08] Rencher, A. C., & Schaalje, G. B. (2008). Linear models in statistics.
+        John Wiley & Sons.
+        """
+        H = self._terms["H"]
+        return inv(H)
 
     def _parameters_update(self):
         self._cache["terms"] = None
@@ -240,6 +258,7 @@ class Kron2Sum(Function):
             "mRiy": mRiy,
             "XRim": XRim,
             "yKiy": yKiy,
+            "H": H,
             "Lh": Lh,
             "MRiXZiXRiy": MRiXZiXRiy,
             "MRiXZiXRiM": MRiXZiXRiM,

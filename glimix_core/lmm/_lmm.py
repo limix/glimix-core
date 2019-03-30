@@ -2,6 +2,7 @@ from numpy import (
     asarray,
     atleast_2d,
     clip,
+    concatenate,
     dot,
     errstate,
     exp,
@@ -11,7 +12,7 @@ from numpy import (
     sum as npsum,
     zeros,
 )
-from numpy.linalg import slogdet, solve
+from numpy.linalg import inv, slogdet, solve, lstsq
 
 from glimix_core._util import cache, log2pi
 from optimix import Function, Scalar
@@ -194,6 +195,34 @@ class LMM(Function):
         self._tbeta[:] = self._X["VT"] @ beta
         self._optimal["beta"] = False
         self._optimal["scale"] = False
+
+    @property
+    def beta_covariance(self):
+        """
+        Estimates the covariance-matrix of the optimal beta [R08]_.
+
+        Returns
+        -------
+        beta-covariance : ndarray
+            (Xᵀ(s((1-𝛿)K + 𝛿I))⁻¹X)⁻¹.
+
+        References
+        ----------
+        .. [R08] Rencher, A. C., & Schaalje, G. B. (2008). Linear models in statistics.
+        John Wiley & Sons.
+        """
+        from numpy_sugar.linalg import ddot
+
+        tX = self._X["tX"]
+        Q = concatenate(self._QS[0], axis=1)
+        S0 = self._QS[1]
+        D = self.v0 * S0 + self.v1
+        D = D.tolist() + [self.v1] * (len(self._y) - len(D))
+        D = asarray(D)
+        A = inv(tX.T @ (Q @ ddot(1 / D, Q.T @ tX)))
+        VT = self._X["VT"]
+        H = lstsq(VT, A, rcond=None)[0]
+        return lstsq(VT, H.T, rcond=None)[0]
 
     def fix(self, param):
         """
