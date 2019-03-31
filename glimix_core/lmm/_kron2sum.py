@@ -99,7 +99,7 @@ class Kron2Sum(Function):
     @property
     def beta_covariance(self):
         """
-        Estimates the covariance-matrix of the optimal beta [R08]_.
+        Estimates the covariance-matrix of the optimal beta.
 
         Returns
         -------
@@ -108,8 +108,8 @@ class Kron2Sum(Function):
 
         References
         ----------
-        .. [R08] Rencher, A. C., & Schaalje, G. B. (2008). Linear models in statistics.
-        John Wiley & Sons.
+        .. Rencher, A. C., & Schaalje, G. B. (2008). Linear models in statistics. John
+           Wiley & Sons.
         """
         H = self._terms["H"]
         return inv(H)
@@ -153,6 +153,14 @@ class Kron2Sum(Function):
 
     @property
     def beta(self):
+        """
+        Fixed-effect sizes 𝛃 = vec(B).
+
+        Returns
+        -------
+        fixed-effects : ndarray
+            𝛃 from 𝛃 = vec(B).
+        """
         return vec(self.B)
 
     @property

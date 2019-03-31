@@ -77,13 +77,13 @@ The outcome matrix Y is the concatenation of p vectors::
 
 The mean definition will involve three matrices::
 
-    M = (A ⊗ F) vec(B),
+    M = (A ⊗ X) vec(B),
 
 where vec(·) stacks the columns of the input matrix into a single-column matrix.
 B is a c×p matrix of effect sizes for which c is the number of covariates.
 A is a p×p design matrix that determines the covariance between the traits over the mean
 vector.
-F is a n×p design matrix of covariates.
+X is a n×p design matrix of covariates.
 
 The covariance matrix is defined by ::
 
@@ -95,7 +95,7 @@ samples when traits are taken into account.
 
 The outcome, mean, and covariance-matrix together define the distribution ::
 
-    vec(Y) ~ N((A ⊗ F) vec(B), K = C₀ ⊗ GGᵀ + C₁ ⊗ I).
+    vec(Y) ~ N((A ⊗ X) vec(B), K = C₀ ⊗ GGᵀ + C₁ ⊗ I).
 
 The parameters of the multi-trait LMM to be fit via maximum likelihood are the matrices
 B, C₀, and C₁.
@@ -112,10 +112,10 @@ B, C₀, and C₁.
     >>> Y = random.randn(n, p)
     >>> A = random.randn(p, p)
     >>> A = A.dot(A.T)
-    >>> F = random.randn(n, c)
+    >>> X = random.randn(n, c)
     >>> G = random.randn(n, 4)
     >>>
-    >>> mlmm = Kron2Sum(Y, A, F, G, restricted=False)
+    >>> mlmm = Kron2Sum(Y, A, X, G, restricted=False)
     >>> mlmm.fit(verbose=False)
     >>> mlmm.lml()  # doctest: +FLOAT_CMP
     -6.520026228479136
@@ -175,18 +175,18 @@ likelihood and the values of 𝜷 and s can be found as follows.
 We also provide a fast scanner for the multi-trait case, :class:`.KronFastScanner`.
 Its model is given by ::
 
-    vec(Y) ∼ 𝓝(vec(Y) | (A ⊗ F)vec(𝚩ⱼ) + (Aⱼ ⊗ Fⱼ)vec(𝚨ⱼ), sⱼ(C₀ ⊗ GGᵀ + C₁ ⊗ I)).
+    vec(Y) ∼ 𝓝(vec(Y) | (A ⊗ X)vec(𝚩ⱼ) + (Aⱼ ⊗ Xⱼ)vec(𝚨ⱼ), sⱼ(C₀ ⊗ GGᵀ + C₁ ⊗ I)).
 
 As before, the parameters C₀ and C₁ are set to the values found by :class:`.Kron2Sum`.
-A candidate set is defined by providing the matrices Aⱼ and Fⱼ.
+A candidate set is defined by providing the matrices Aⱼ and Xⱼ.
 The parameters 𝚩ⱼ, 𝚨ⱼ, and sⱼ are found via maximum likelihood.
 
 .. doctest::
 
     >>> mscanner = mlmm.get_fast_scanner()
     >>> A = random.randn(2, 5)
-    >>> F = random.randn(5, 3)
-    >>> lml, eff0, eff1, scale = mscanner.scan(A, F)
+    >>> X = random.randn(5, 3)
+    >>> lml, eff0, eff1, scale = mscanner.scan(A, X)
     >>> lml
     83.08864898305367
     >>> eff0

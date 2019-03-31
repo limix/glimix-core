@@ -199,7 +199,7 @@ class LMM(Function):
     @property
     def beta_covariance(self):
         """
-        Estimates the covariance-matrix of the optimal beta [R08]_.
+        Estimates the covariance-matrix of the optimal beta.
 
         Returns
         -------
@@ -208,8 +208,8 @@ class LMM(Function):
 
         References
         ----------
-        .. [R08] Rencher, A. C., & Schaalje, G. B. (2008). Linear models in statistics.
-        John Wiley & Sons.
+        .. Rencher, A. C., & Schaalje, G. B. (2008). Linear models in statistics. John
+           Wiley & Sons.
         """
         from numpy_sugar.linalg import ddot
 
@@ -320,6 +320,11 @@ class LMM(Function):
             self._update_scale()
 
         return self.lml()
+
+    def gradient(self):
+        """
+        Not implemented.
+        """
 
     @property
     def nsamples(self):
