@@ -20,10 +20,10 @@ class Kron2Sum(Function):
     Let n, c, and p be the number of samples, covariates, and traits, respectively.
     The outcome variable Y is a n×p matrix distributed according to::
 
-        vec(Y) ~ N((A ⊗ F) vec(B), K = C₀ ⊗ GGᵀ + C₁ ⊗ I).
+        vec(Y) ~ N((A ⊗ X) vec(B), K = C₀ ⊗ GGᵀ + C₁ ⊗ I).
 
-    A and F are design matrices of dimensions p×p and n×c provided by the user,
-    where F is the usual matrix of covariates commonly used in single-trait models.
+    A and X are design matrices of dimensions p×p and n×c provided by the user,
+    where X is the usual matrix of covariates commonly used in single-trait models.
     B is a c×p matrix of fixed-effect sizes per trait.
     G is a n×r matrix provided by the user and I is a n×n identity matrices.
     C₀ and C₁ are both symmetric matrices of dimensions p×p, for which C₁ is
@@ -32,11 +32,12 @@ class Kron2Sum(Function):
 
     For implementation purpose, we make use of the following definitions:
 
-    - M = A ⊗ F
+    - 𝛃 = vec(B)
+    - M = A ⊗ X
     - H = MᵀK⁻¹M
     - Yₓ = LₓY
     - Yₕ = YₓLₕᵀ
-    - Mₓ = LₓF
+    - Mₓ = LₓX
     - Mₕ = (LₕA) ⊗ Mₓ
     - mₕ = Mₕvec(B)
 
@@ -49,7 +50,7 @@ class Kron2Sum(Function):
        755.
     """
 
-    def __init__(self, Y, A, F, G, rank=1, restricted=False):
+    def __init__(self, Y, A, X, G, rank=1, restricted=False):
         """
         Constructor.
 
@@ -59,7 +60,7 @@ class Kron2Sum(Function):
             Outcome matrix.
         A : (n, n) array_like
             Trait-by-trait design matrix.
-        F : (n, c) array_like
+        X : (n, c) array_like
             Covariates design matrix.
         G : (n, r) array_like
             Matrix G from the GGᵀ term.
@@ -76,11 +77,11 @@ class Kron2Sum(Function):
             )
 
         A = asarray(A, float)
-        F = asarray(F, float)
-        Frank = matrix_rank(F)
-        if F.shape[1] > Frank:
+        X = asarray(X, float)
+        Xrank = matrix_rank(X)
+        if X.shape[1] > Xrank:
             warnings.warn(
-                f"F is not full column rank: rank(F)={Frank}. "
+                f"X is not full column rank: rank(X)={Xrank}. "
                 + "Convergence might be problematic.",
                 UserWarning,
             )
@@ -88,7 +89,7 @@ class Kron2Sum(Function):
         G = asarray(G, float)
         self._Y = Y
         self._cov = Kron2SumCov(G, Y.shape[1], rank)
-        self._mean = KronMean(A, F)
+        self._mean = KronMean(A, X)
         self._cache = {"terms": None}
         self._cov.listen(self._parameters_update)
         self._restricted = restricted
@@ -123,12 +124,12 @@ class Kron2Sum(Function):
             Instance of a class designed to perform very fast association scan.
         """
         terms = self._terms
-        return KronFastScanner(self._Y, self._mean.A, self._mean.F, self._cov.Ge, terms)
+        return KronFastScanner(self._Y, self._mean.A, self._mean.X, self._cov.Ge, terms)
 
     @property
     def A(self):
         """
-        A from the equation 𝐦 = (A ⊗ F) vec(B).
+        A from the equation 𝐦 = (A ⊗ X) vec(B).
 
         Returns
         -------
@@ -140,12 +141,12 @@ class Kron2Sum(Function):
     @property
     def B(self):
         """
-        Fixed-effect sizes B from 𝐦 = (A ⊗ F) vec(B).
+        Fixed-effect sizes B from 𝐦 = (A ⊗ X) vec(B).
 
         Returns
         -------
         fixed-effects : ndarray
-            B from 𝐦 = (A ⊗ F) vec(B).
+            B from 𝐦 = (A ⊗ X) vec(B).
         """
         self._terms
         return asarray(self._mean.B, float)
@@ -180,7 +181,7 @@ class Kron2Sum(Function):
 
     def mean(self):
         """
-        Mean 𝐦 = (A ⊗ F) vec(B).
+        Mean 𝐦 = (A ⊗ X) vec(B).
 
         Returns
         -------
@@ -211,7 +212,7 @@ class Kron2Sum(Function):
         X : ndarray
             X from M = (A ⊗ X).
         """
-        return self._mean.F
+        return self._mean.X
 
     @property
     def M(self):
@@ -223,7 +224,7 @@ class Kron2Sum(Function):
         M : ndarray
             M from M = (A ⊗ X).
         """
-        return self._mean.AF
+        return self._mean.AX
 
     @property
     def nsamples(self):
@@ -244,7 +245,7 @@ class Kron2Sum(Function):
         """
         Number of covariates, c.
         """
-        return self._mean.F.shape[1]
+        return self._mean.X.shape[1]
 
     def value(self):
         """
@@ -262,7 +263,7 @@ class Kron2Sum(Function):
         """
         Log of the marginal likelihood.
 
-        Let 𝐲 = vec(Y), M = A⊗F, and H = MᵀK⁻¹M. The restricted log of the marginal
+        Let 𝐲 = vec(Y), M = A⊗X, and H = MᵀK⁻¹M. The restricted log of the marginal
         likelihood is given by [R07]_::
 
             2⋅log(p(𝐲)) = -(n⋅p - c⋅p) log(2π) + log(｜MᵀM｜) - log(｜K｜) - log(｜H｜)
@@ -286,9 +287,9 @@ class Kron2Sum(Function):
         where W = U₁S₁⁻¹U₁ᵀ. The term GᵀY can be calculated only once and it will form a
         r×p matrix. We similarly have ::
 
-            XᵀR⁻¹M = (L₀ᵀWA) ⊗ (GᵀF),
+            XᵀR⁻¹M = (L₀ᵀWA) ⊗ (GᵀX),
 
-        for which GᵀF is pre-computed.
+        for which GᵀX is pre-computed.
 
         The log-determinant of the covariance matrix is given by
 
@@ -368,33 +369,33 @@ class Kron2Sum(Function):
 
     @property
     @cache
-    def _FF(self):
-        return self._mean.F.T @ self._mean.F
+    def _XX(self):
+        return self._mean.X.T @ self._mean.X
 
     @property
     @cache
-    def _GF(self):
-        return self._cov.Ge.T @ self._mean.F
+    def _GX(self):
+        return self._cov.Ge.T @ self._mean.X
 
     @property
     @cache
-    def _FGGG(self):
-        return self._GF.T @ self._GG
+    def _XGGG(self):
+        return self._GX.T @ self._GG
 
     @property
     @cache
-    def _FGGY(self):
-        return self._GF.T @ self._GY
+    def _XGGY(self):
+        return self._GX.T @ self._GY
 
     @property
     @cache
-    def _FGGF(self):
-        return self._GF.T @ self._GF
+    def _XGGX(self):
+        return self._GX.T @ self._GX
 
     @property
     @cache
-    def _FY(self):
-        return self._mean.F.T @ self._Y
+    def _XY(self):
+        return self._mean.X.T @ self._Y
 
     @property
     def _terms(self):
@@ -422,14 +423,14 @@ class Kron2Sum(Function):
 
         # 𝐲ᵀR⁻¹𝐲 = vec(YW)ᵀ𝐲
         yRiy = (YW * self._Y).sum()
-        # MᵀR⁻¹M = AᵀWA ⊗ FᵀF
-        MRiM = kron(A.T @ WA, self._FF)
+        # MᵀR⁻¹M = AᵀWA ⊗ XᵀX
+        MRiM = kron(A.T @ WA, self._XX)
         # XᵀR⁻¹𝐲 = vec(GᵀYWL₀)
         XRiy = vec(self._GY @ WL0)
-        # XᵀR⁻¹M = (L₀ᵀWA) ⊗ (GᵀF)
-        XRiM = kron(L0WA, self._GF)
-        # MᵀR⁻¹𝐲 = vec(FᵀYWA)
-        MRiy = vec(self._FY @ WA)
+        # XᵀR⁻¹M = (L₀ᵀWA) ⊗ (GᵀX)
+        XRiM = kron(L0WA, self._GX)
+        # MᵀR⁻¹𝐲 = vec(XᵀYWA)
+        MRiy = vec(self._XY @ WA)
 
         ZiXRiM = cho_solve(Lz, XRiM)
         ZiXRiy = cho_solve(Lz, XRiy)
@@ -529,9 +530,9 @@ class Kron2Sum(Function):
         the other instances of the aBc form, which follow similar derivations::
 
             Xᵀ𝓡X = (L₀ᵀW∂CᵢWL₀) ⊗ (GᵀEᵢEᵢᵀG)
-            Mᵀ𝓡y = (AᵀW∂Cᵢ⊗FᵀEᵢ)vec(EᵢᵀYW) = vec(FᵀEᵢEᵢᵀYW∂CᵢWA)
-            Mᵀ𝓡X = AᵀW∂CᵢWL₀ ⊗ FᵀEᵢEᵢᵀG
-            Mᵀ𝓡M = AᵀW∂CᵢWA ⊗ FᵀEᵢEᵢᵀF
+            Mᵀ𝓡y = (AᵀW∂Cᵢ⊗XᵀEᵢ)vec(EᵢᵀYW) = vec(XᵀEᵢEᵢᵀYW∂CᵢWA)
+            Mᵀ𝓡X = AᵀW∂CᵢWL₀ ⊗ XᵀEᵢEᵢᵀG
+            Mᵀ𝓡M = AᵀW∂CᵢWA ⊗ XᵀEᵢEᵢᵀX
             Xᵀ𝓡𝐲 = GᵀEᵢEᵢᵀYW∂CᵢWL₀
 
         From Woodbury matrix identity and Kronecker product properties we have ::
@@ -570,35 +571,35 @@ class Kron2Sum(Function):
         ZiXRiM = terms["ZiXRiM"]
         ZiXRiy = terms["ZiXRiy"]
 
-        WdC0 = mdot(W, dC0)
-        WdC1 = mdot(W, dC1)
+        WdC0 = _mdot(W, dC0)
+        WdC1 = _mdot(W, dC1)
 
-        AWdC0 = mdot(WA.T, dC0)
-        AWdC1 = mdot(WA.T, dC1)
+        AWdC0 = _mdot(WA.T, dC0)
+        AWdC1 = _mdot(WA.T, dC1)
 
         # Mᵀ𝓡M
-        MR0M = mkron(mdot(AWdC0, WA), self._FGGF)
-        MR1M = mkron(mdot(AWdC1, WA), self._FF)
+        MR0M = _mkron(_mdot(AWdC0, WA), self._XGGX)
+        MR1M = _mkron(_mdot(AWdC1, WA), self._XX)
 
         # Mᵀ𝓡X
-        MR0X = mkron(mdot(AWdC0, WL0), self._FGGG)
-        MR1X = mkron(mdot(AWdC1, WL0), self._GF.T)
+        MR0X = _mkron(_mdot(AWdC0, WL0), self._XGGG)
+        MR1X = _mkron(_mdot(AWdC1, WL0), self._GX.T)
 
-        # Mᵀ𝓡𝐲 = (AᵀW∂Cᵢ⊗FᵀEᵢ)vec(EᵢᵀYW) = vec(FᵀEᵢEᵢᵀYW∂CᵢWA)
-        MR0y = vec(mdot(self._FGGY, mdot(WdC0, WA)))
-        MR1y = vec(mdot(self._FY, WdC1, WA))
+        # Mᵀ𝓡𝐲 = (AᵀW∂Cᵢ⊗XᵀEᵢ)vec(EᵢᵀYW) = vec(XᵀEᵢEᵢᵀYW∂CᵢWA)
+        MR0y = vec(_mdot(self._XGGY, _mdot(WdC0, WA)))
+        MR1y = vec(_mdot(self._XY, WdC1, WA))
 
         # Xᵀ𝓡X
-        XR0X = mkron(mdot(WL0.T, dC0, WL0), self._GGGG)
-        XR1X = mkron(mdot(WL0.T, dC1, WL0), self._GG)
+        XR0X = _mkron(_mdot(WL0.T, dC0, WL0), self._GGGG)
+        XR1X = _mkron(_mdot(WL0.T, dC1, WL0), self._GG)
 
         # Xᵀ𝓡𝐲
-        XR0y = vec(mdot(self._GGGY, WdC0, WL0))
-        XR1y = vec(mdot(self._GY, WdC1, WL0))
+        XR0y = vec(_mdot(self._GGGY, WdC0, WL0))
+        XR1y = vec(_mdot(self._GY, WdC1, WL0))
 
         # 𝐲ᵀ𝓡𝐲 = vec(EᵢᵀYW∂Cᵢ)ᵀvec(EᵢᵀYW)
-        yR0y = vec(mdot(self._GY, WdC0)).T @ vec(self._GY @ W)
-        yR1y = (YW.T * mdot(self._Y, WdC1).T).T.sum(axis=(0, 1))
+        yR0y = vec(_mdot(self._GY, WdC0)).T @ vec(self._GY @ W)
+        yR1y = (YW.T * _mdot(self._Y, WdC1).T).T.sum(axis=(0, 1))
 
         ZiXR0X = cho_solve(Lz, XR0X)
         ZiXR1X = cho_solve(Lz, XR1X)
@@ -607,28 +608,28 @@ class Kron2Sum(Function):
 
         # Mᵀ𝕂y = Mᵀ𝓡𝐲 - (MᵀR⁻¹X)Z⁻¹(Xᵀ𝓡𝐲) - (Mᵀ𝓡X)Z⁻¹(XᵀR⁻¹𝐲)
         #       + (MᵀR⁻¹X)Z⁻¹(Xᵀ𝓡X)Z⁻¹(XᵀR⁻¹𝐲)
-        MK0y = MR0y - mdot(XRiM.T, ZiXR0y) - mdot(MR0X, ZiXRiy)
-        MK0y += mdot(XRiM.T, ZiXR0X, ZiXRiy)
-        MK1y = MR1y - mdot(XRiM.T, ZiXR1y) - mdot(MR1X, ZiXRiy)
-        MK1y += mdot(XRiM.T, ZiXR1X, ZiXRiy)
+        MK0y = MR0y - _mdot(XRiM.T, ZiXR0y) - _mdot(MR0X, ZiXRiy)
+        MK0y += _mdot(XRiM.T, ZiXR0X, ZiXRiy)
+        MK1y = MR1y - _mdot(XRiM.T, ZiXR1y) - _mdot(MR1X, ZiXRiy)
+        MK1y += _mdot(XRiM.T, ZiXR1X, ZiXRiy)
 
         # 𝐲ᵀ𝕂𝐲 = 𝐲ᵀ𝓡𝐲 - 2(𝐲ᵀ𝓡X)Z⁻¹(XᵀR⁻¹𝐲) + (𝐲ᵀR⁻¹X)Z⁻¹(Xᵀ𝓡X)Z⁻¹(XᵀR⁻¹𝐲)
-        yK0y = yR0y - 2 * XR0y.T @ ZiXRiy + ZiXRiy.T @ mdot(XR0X, ZiXRiy)
-        yK1y = yR1y - 2 * XR1y.T @ ZiXRiy + ZiXRiy.T @ mdot(XR1X, ZiXRiy)
+        yK0y = yR0y - 2 * XR0y.T @ ZiXRiy + ZiXRiy.T @ _mdot(XR0X, ZiXRiy)
+        yK1y = yR1y - 2 * XR1y.T @ ZiXRiy + ZiXRiy.T @ _mdot(XR1X, ZiXRiy)
 
         # Mᵀ𝕂M = Mᵀ𝓡M - (Mᵀ𝓡X)Z⁻¹(XᵀR⁻¹M) - (MᵀR⁻¹X)Z⁻¹(Xᵀ𝓡M)
         #       + (MᵀR⁻¹X)Z⁻¹(Xᵀ𝓡X)Z⁻¹(XᵀR⁻¹M)
-        MR0XZiXRiM = mdot(MR0X, ZiXRiM)
+        MR0XZiXRiM = _mdot(MR0X, ZiXRiM)
         MK0M = MR0M - MR0XZiXRiM - MR0XZiXRiM.transpose([1, 0, 2])
-        MK0M += mdot(ZiXRiM.T, XR0X, ZiXRiM)
-        MR1XZiXRiM = mdot(MR1X, ZiXRiM)
+        MK0M += _mdot(ZiXRiM.T, XR0X, ZiXRiM)
+        MR1XZiXRiM = _mdot(MR1X, ZiXRiM)
         MK1M = MR1M - MR1XZiXRiM - MR1XZiXRiM.transpose([1, 0, 2])
-        MK1M += mdot(ZiXRiM.T, XR1X, ZiXRiM)
+        MK1M += _mdot(ZiXRiM.T, XR1X, ZiXRiM)
 
-        MK0m = mdot(MK0M, b)
+        MK0m = _mdot(MK0M, b)
         mK0y = b.T @ MK0y
         mK0m = b.T @ MK0m
-        MK1m = mdot(MK1M, b)
+        MK1m = _mdot(MK1M, b)
         mK1y = b.T @ MK1y
         mK1m = b.T @ MK1m
         XRim = XRiM @ b
@@ -648,10 +649,10 @@ class Kron2Sum(Function):
         mKiM = MRim.T - XRim.T @ ZiXRiM
         yKiM = MRiy.T - XRiy.T @ ZiXRiM
 
-        grad["C0.Lu"] += yK0y - 2 * mK0y + mK0m - 2 * mdot(mKiM, db["C0.Lu"])
-        grad["C0.Lu"] += 2 * mdot(yKiM, db["C0.Lu"])
-        grad["C1.Lu"] += yK1y - 2 * mK1y + mK1m - 2 * mdot(mKiM, db["C1.Lu"])
-        grad["C1.Lu"] += 2 * mdot(yKiM, db["C1.Lu"])
+        grad["C0.Lu"] += yK0y - 2 * mK0y + mK0m - 2 * _mdot(mKiM, db["C0.Lu"])
+        grad["C0.Lu"] += 2 * _mdot(yKiM, db["C0.Lu"])
+        grad["C1.Lu"] += yK1y - 2 * mK1y + mK1m - 2 * _mdot(mKiM, db["C1.Lu"])
+        grad["C1.Lu"] += 2 * _mdot(yKiM, db["C1.Lu"])
 
         grad["C0.Lu"] /= 2
         grad["C1.Lu"] /= 2
@@ -664,7 +665,7 @@ class Kron2Sum(Function):
         if not self._restricted:
             return 0.0
 
-        M = self._mean.AF
+        M = self._mean.AX
         ldet = slogdet(M.T @ M)
         if ldet[0] != 1.0:
             raise ValueError("The determinant of MᵀM should be positive.")
@@ -706,7 +707,7 @@ def _dot(a, b):
     return r
 
 
-def mdot(*args):
+def _mdot(*args):
     return reduce(_dot, args)
 
 
@@ -714,7 +715,7 @@ def _sum(a):
     return a.sum(axis=(0, 1))
 
 
-def mkron(a, b):
+def _mkron(a, b):
     if a.ndim == 3:
         return kron(a.transpose([2, 0, 1]), b).transpose([1, 2, 0])
     return kron(a, b)

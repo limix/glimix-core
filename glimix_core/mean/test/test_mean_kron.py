@@ -16,11 +16,10 @@ def test_mean_kron():
     n = 4
 
     A = random.randn(p, p)
-    F = random.randn(n, c)
+    X = random.randn(n, c)
     B = random.randn(p, c)
-    # vecB = random.randn(c, p).ravel()
 
-    mean = KronMean(A, F)
+    mean = KronMean(A, X)
     mean.B = B
-    assert_allclose(mean.value(), kron(A, F) @ ravel(B, order="F"))
+    assert_allclose(mean.value(), kron(A, X) @ ravel(B, order="F"))
     assert_allclose(mean._check_grad(), 0, atol=1e-5)

@@ -6,7 +6,7 @@ from optimix import Function, Vector
 
 class KronMean(Function):
     """
-    Kronecker mean function, (A⊗F)vec(B).
+    Kronecker mean function, (A⊗X)vec(B).
 
     Let
 
@@ -16,13 +16,13 @@ class KronMean(Function):
 
     The mathematical representation is
 
-        𝐦 = (A⊗F)vec(B)
+        𝐦 = (A⊗X)vec(B)
 
-    where A is a p×p trait design matrix of fixed effects and F is a n×c sample design
+    where A is a p×p trait design matrix of fixed effects and X is a n×c sample design
     matrix of fixed effects. B is a c×p matrix of fixed-effect sizes.
     """
 
-    def __init__(self, A, F):
+    def __init__(self, A, X):
         """
         Constructor.
 
@@ -30,12 +30,12 @@ class KronMean(Function):
         ----------
         A : array_like
             p×p array.
-        F : array_like
+        X : array_like
             n×c array.
         """
         self._A = asarray(A, float)
-        self._F = asarray(F, float)
-        vecB = zeros((F.shape[1], A.shape[0])).ravel()
+        self._X = asarray(X, float)
+        vecB = zeros((X.shape[1], A.shape[0])).ravel()
         self._vecB = Vector(vecB)
         Function.__init__(self, "KronMean", vecB=self._vecB)
 
@@ -47,18 +47,18 @@ class KronMean(Function):
         return self._A
 
     @property
-    def F(self):
+    def X(self):
         """
-        Matrix F.
+        Matrix X.
         """
-        return self._F
+        return self._X
 
     @property
-    def AF(self):
+    def AX(self):
         """
-        A ⊗ F.
+        A ⊗ X.
         """
-        return kron(self.A, self.F)
+        return kron(self.A, self.X)
 
     def value(self):
         """
@@ -67,9 +67,9 @@ class KronMean(Function):
         Returns
         -------
         𝐦 : ndarray
-            (A⊗F)vec(B).
+            (A⊗X)vec(B).
         """
-        return self.AF @ self._vecB.value
+        return self.AX @ self._vecB.value
 
     def gradient(self):
         """
@@ -80,14 +80,14 @@ class KronMean(Function):
         vecB : ndarray
             Derivative of M over vec(B).
         """
-        return {"vecB": self.AF}
+        return {"vecB": self.AX}
 
     @property
     def B(self):
         """
         Effect-sizes parameter, B.
         """
-        return unvec(self._vecB.value, (self.F.shape[1], self.A.shape[0]))
+        return unvec(self._vecB.value, (self.X.shape[1], self.A.shape[0]))
 
     @B.setter
     def B(self, v):
@@ -95,7 +95,7 @@ class KronMean(Function):
 
     def __str__(self):
         tname = type(self).__name__
-        msg = "{}(A=..., B=...)".format(tname)
+        msg = "{}(A=..., X=...)".format(tname)
         if self.name is not None:
             msg += ": {}".format(self.name)
         msg += "\n"

@@ -11,14 +11,14 @@ class KronFastScanner:
 
     Specifically, it maximizes the log of the marginal likelihood ::
 
-        log(p(Y)ⱼ) = log𝓝(vec(Y) | (A ⊗ F)vec(𝚩ⱼ) + (Aⱼ ⊗ Fⱼ)vec(𝚨ⱼ), sⱼK),
+        log(p(Y)ⱼ) = log𝓝(vec(Y) | (A ⊗ X)vec(𝚩ⱼ) + (Aⱼ ⊗ Xⱼ)vec(𝚨ⱼ), sⱼK),
 
     where K = C₀ ⊗ GGᵀ + C₁ ⊗ I and ⱼ index the candidates set. For performance purpose,
     we optimise only the fixed-effect sizes and scale parameters. Therefore, K is fixed
     throughout the process.
     """
 
-    def __init__(self, Y, A, F, G, terms):
+    def __init__(self, Y, A, X, G, terms):
         """
         Constructor.
 
@@ -28,7 +28,7 @@ class KronFastScanner:
             Outcome matrix.
         A : (n, n) array_like
             Trait-by-trait design matrix.
-        F : (n, c) array_like
+        X : (n, c) array_like
             Covariates design matrix.
         G : (n, r) array_like
             Matrix G from the GGᵀ term.
@@ -38,7 +38,7 @@ class KronFastScanner:
 
         self._Y = asarray(Y, float)
         self._A = asarray(A, float)
-        self._F = asarray(F, float)
+        self._X = asarray(X, float)
         self._G = asarray(G, float)
         self._logdetK = terms["logdetK"]
         self._W = terms["W"]
@@ -83,7 +83,7 @@ class KronFastScanner:
 
             MᵀK⁻¹Mvec(𝚩) = MᵀK⁻¹𝐲,
 
-        for 𝐲 = vec(Y) and M = (A ⊗ F)vec(𝚩).
+        for 𝐲 = vec(Y) and M = (A ⊗ X)vec(𝚩).
 
         Returns
         -------
@@ -102,7 +102,7 @@ class KronFastScanner:
 
             s = (n·p)⁻¹𝐲ᵀK⁻¹(𝐲 - 𝐦),
 
-        where 𝐦 = (A ⊗ F)vec(𝚩) and 𝚩 is optimal.
+        where 𝐦 = (A ⊗ X)vec(𝚩) and 𝚩 is optimal.
 
         Returns
         -------
@@ -116,7 +116,7 @@ class KronFastScanner:
         scale = sqrtdot / np
         return scale
 
-    def scan(self, A1, F1):
+    def scan(self, A1, X1):
         """
         LML, fixed-effect sizes, and scale of the candidate set.
 
@@ -124,7 +124,7 @@ class KronFastScanner:
         ----------
         A1 : (p, e) array_like
             Trait-by-environments design matrix.
-        F1 : (n, m) array_like
+        X1 : (n, m) array_like
             Variants set matrix.
 
         Returns
@@ -144,22 +144,22 @@ class KronFastScanner:
         from scipy.linalg import cho_solve
 
         A1 = asarray(A1, float)
-        F1 = asarray(F1, float)
+        X1 = asarray(X1, float)
 
         if A1.shape[1] == 0:
             return self.null_lml(), self.null_effsizes(), empty((0,)), self.null_scale()
 
-        F1F1 = F1.T @ F1
-        FF1 = self._F.T @ F1
+        X1X1 = X1.T @ X1
+        XX1 = self._X.T @ X1
         AWA1 = self._WA.T @ A1
         A1W = A1.T @ self._W
-        GF1 = self._G.T @ F1
+        GX1 = self._G.T @ X1
 
-        MRiM1 = kron(AWA1, FF1)
-        M1RiM1 = kron(A1W @ A1, F1F1)
+        MRiM1 = kron(AWA1, XX1)
+        M1RiM1 = kron(A1W @ A1, X1X1)
 
-        M1Riy = vec(multi_dot([F1.T, self._Y, A1W.T]))
-        XRiM1 = kron(self._WL0.T @ A1, GF1)
+        M1Riy = vec(multi_dot([X1.T, self._Y, A1W.T]))
+        XRiM1 = kron(self._WL0.T @ A1, GX1)
         ZiXRiM1 = cho_solve(self._Lz, XRiM1)
 
         MRiXZiXRiM1 = self._XRiM.T @ ZiXRiM1
@@ -178,7 +178,7 @@ class KronFastScanner:
         mKiy = beta.T @ MKiy
         cp = self._ntraits * self._ncovariates
         effsizes0 = unvec(beta[:cp], (self._ncovariates, self._ntraits))
-        effsizes1 = unvec(beta[cp:], (F1.shape[1], A1.shape[1]))
+        effsizes1 = unvec(beta[cp:], (X1.shape[1], A1.shape[1]))
 
         np = self._nsamples * self._ntraits
         sqrtdot = self._yKiy - mKiy
@@ -202,7 +202,7 @@ class KronFastScanner:
 
     @property
     def _ncovariates(self):
-        return self._F.shape[1]
+        return self._X.shape[1]
 
     @property
     @cache
