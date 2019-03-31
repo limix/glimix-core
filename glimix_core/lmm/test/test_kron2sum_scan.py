@@ -49,14 +49,15 @@ def test_lmm_kron_scan():
     assert_allclose(lml, st.multivariate_normal(m, s * K).logpdf(vec(Y)))
 
     lml, effsizes0, effsizes1, scale = scan.scan(empty((3, 0)), F1)
-    assert_allclose(lml, -10.96414417860732)
-    assert_allclose(scale, 0.5999931720566452)
+    assert_allclose(lml, -10.96414417860732, rtol=1e-4)
+    assert_allclose(scale, 0.5999931720566452, rtol=1e-4)
     assert_allclose(
         effsizes0,
         [
             [1.411082677273241, 0.41436234081257045, -1.5337251391408189],
             [-0.6753042112998789, -0.20299590400182352, 0.6723874047807074],
         ],
+        rtol=1e-4,
     )
     assert_allclose(effsizes1, [])
 
