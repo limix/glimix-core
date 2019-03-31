@@ -34,8 +34,6 @@ def test_fast_scanner_redundant_candidates():
     scanner = lmm.get_fast_scanner()
 
     lmls = scanner.fast_scan(markers, verbose=False)[0]
-    lml = lmls[0]
-    assert_allclose(lmls, [lml] * 5, rtol=1e-5)
 
 
 def test_fast_scanner_set_scale_1covariate():
