@@ -20,8 +20,8 @@ def test_lmm_kron_scan():
     lmm.fit(verbose=False)
     scan = lmm.get_fast_scanner()
 
-    m = lmm.mean
-    K = lmm.cov.value()
+    m = lmm.mean()
+    K = lmm.covariance()
 
     def func(scale):
         mv = st.multivariate_normal(m, scale * K)
@@ -74,8 +74,8 @@ def test_lmm_kron_scan_redundant():
     lmm.fit(verbose=False)
     scan = lmm.get_fast_scanner()
 
-    m = lmm.mean
-    K = lmm.cov.value()
+    m = lmm.mean()
+    K = lmm.covariance()
 
     def func(scale):
         mv = st.multivariate_normal(m, scale * K)

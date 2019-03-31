@@ -37,15 +37,15 @@ def test_kron2sum_restricted():
     assert_allclose(lmm.lml(), -4.582089407009583)
     assert_allclose(lmm._check_grad(step=1e-7), 0, atol=1e-4)
     assert_allclose(
-        [lmm.mean[0], lmm.mean[1]], [0.0497438970225256, 0.5890598193072355]
+        [lmm.mean()[0], lmm.mean()[1]], [0.0497438970225256, 0.5890598193072355]
     )
 
     assert_allclose(
         [
-            lmm.cov.value()[0, 0],
-            lmm.cov.value()[0, 1],
-            lmm.cov.value()[1, 0],
-            lmm.cov.value()[1, 1],
+            lmm.covariance()[0, 0],
+            lmm.covariance()[0, 1],
+            lmm.covariance()[1, 0],
+            lmm.covariance()[1, 1],
         ],
         [
             4.3712532668348185,
@@ -102,15 +102,15 @@ def test_kron2sum_unrestricted():
     assert_allclose(lmm.lml(), -7.8032707190765525)
     assert_allclose(lmm._check_grad(step=1e-7), 0, atol=1e-4)
     assert_allclose(
-        [lmm.mean[0], lmm.mean[1]], [0.0497438970225256, 0.5890598193072355]
+        [lmm.mean()[0], lmm.mean()[1]], [0.0497438970225256, 0.5890598193072355]
     )
 
     assert_allclose(
         [
-            lmm.cov.value()[0, 0],
-            lmm.cov.value()[0, 1],
-            lmm.cov.value()[1, 0],
-            lmm.cov.value()[1, 1],
+            lmm.covariance()[0, 0],
+            lmm.covariance()[0, 1],
+            lmm.covariance()[1, 0],
+            lmm.covariance()[1, 1],
         ],
         [
             4.3712532668348185,
@@ -146,40 +146,316 @@ def test_kron2sum_unrestricted_lml():
     lmm = Kron2Sum(Y, A, F, G, restricted=False)
     y = vec(lmm._Y)
 
-    m = lmm.mean
-    K = lmm.cov.value()
+    m = lmm.mean()
+    K = lmm.covariance()
     assert_allclose(lmm.lml(), st.multivariate_normal(m, K).logpdf(y))
 
-    lmm.cov.C0.Lu = random.randn(3)
-    m = lmm.mean
-    K = lmm.cov.value()
+    lmm._cov.C0.Lu = random.randn(3)
+    m = lmm.mean()
+    K = lmm.covariance()
     assert_allclose(lmm.lml(), st.multivariate_normal(m, K).logpdf(y))
 
-    lmm.cov.C1.Lu = random.randn(6)
-    m = lmm.mean
-    K = lmm.cov.value()
+    lmm._cov.C1.Lu = random.randn(6)
+    m = lmm.mean()
+    K = lmm.covariance()
     assert_allclose(lmm.lml(), st.multivariate_normal(m, K).logpdf(y))
 
 
 def test_kron2sum_public_attrs():
-    assert_interface(
-        Kron2Sum,
+    callables = [
+        "covariance",
+        "fit",
+        "get_fast_scanner",
+        "gradient",
+        "lml",
+        "mean",
+        "value",
+    ]
+    properties = [
+        "A",
+        "B",
+        "C0",
+        "C1",
+        "M",
+        "X",
+        "beta",
+        "beta_covariance",
+        "name",
+        "ncovariates",
+        "nsamples",
+        "ntraits",
+    ]
+    assert_interface(Kron2Sum, callables, properties)
+
+
+def test_kron2sum_interface():
+    random = RandomState(2)
+    Y = random.randn(2, 3)
+    A = random.randn(3, 3)
+    A = A @ A.T
+    F = random.randn(2, 2)
+    G = random.randn(2, 4)
+    with pytest.warns(UserWarning):
+        lmm = Kron2Sum(Y, A, F, G, restricted=False)
+
+    assert_allclose(
+        lmm.covariance(),
         [
-            "B",
-            "beta_covariance",
-            "cov",
-            "fit",
-            "get_fast_scanner",
-            "gradient",
-            "lml",
-            "mean",
-            "name",
-            "ncovariates",
-            "nsamples",
-            "ntraits",
-            "value",
+            [
+                1.8614698749913918,
+                0.16194208185167086,
+                1.861454973830198,
+                0.16194208185167086,
+                1.861454973830198,
+                0.16194208185167086,
+            ],
+            [
+                0.16194208185167086,
+                2.5548860444869783,
+                0.16194208185167086,
+                2.5548711433257845,
+                0.16194208185167086,
+                2.5548711433257845,
+            ],
+            [
+                1.861454973830198,
+                0.16194208185167086,
+                2.861469874991392,
+                0.16194208185167086,
+                2.861454973830198,
+                0.16194208185167086,
+            ],
+            [
+                0.16194208185167086,
+                2.5548711433257845,
+                0.16194208185167086,
+                3.5548860444869783,
+                0.16194208185167086,
+                3.5548711433257845,
+            ],
+            [
+                1.861454973830198,
+                0.16194208185167086,
+                2.861454973830198,
+                0.16194208185167086,
+                3.861469874991392,
+                0.16194208185167086,
+            ],
+            [
+                0.16194208185167086,
+                2.5548711433257845,
+                0.16194208185167086,
+                3.5548711433257845,
+                0.16194208185167086,
+                4.554886044486978,
+            ],
         ],
+        atol=1e-7,
     )
+    assert_allclose(
+        lmm.mean(),
+        [
+            -0.41675784808182925,
+            1.6402708080344155,
+            -0.056266827839408506,
+            -1.7934355855434205,
+            -2.136196095953572,
+            -0.8417473658908108,
+        ],
+        atol=1e-7,
+    )
+    assert_allclose(lmm.lml(), -6.29061304020919, atol=1e-7)
+    assert_allclose(lmm.value(), lmm.lml(), atol=1e-7)
+    assert_allclose(lmm.lml(), -6.29061304020919, atol=1e-7)
+    assert_allclose(
+        lmm.A,
+        [
+            [2.9228950357645274, -3.568888742838519, 0.8427306809792194],
+            [-3.568888742838519, 6.384613981254706, 0.58138966904566],
+            [0.8427306809792194, 0.58138966904566, 1.5420666949903108],
+        ],
+        atol=1e-7,
+    )
+    assert_allclose(
+        lmm.B,
+        [
+            [-155.3062975390569, -98.10726134921538, 124.0522362217501],
+            [-371.5199529125092, -234.20234587581533, 295.5028754471357],
+        ],
+        atol=1e-7,
+    )
+    assert_allclose(
+        lmm.X,
+        [
+            [-0.596159699806467, -0.019130496521151476],
+            [1.175001219500291, -0.7478709492938624],
+        ],
+        atol=1e-7,
+    )
+    assert_allclose(
+        lmm.M,
+        [
+            [
+                -1.7425122270871933,
+                -0.05591643331338421,
+                2.127627641573291,
+                0.06827461367924896,
+                -0.5024020697902709,
+                -0.016121856360740573,
+            ],
+            [
+                3.4344052314946665,
+                -2.1859482850835352,
+                -4.193448625096121,
+                2.6690682120308225,
+                0.9902095778608936,
+                -0.630253794382992,
+            ],
+            [
+                2.127627641573291,
+                0.06827461367924896,
+                -3.8062495544449777,
+                -0.12214083555728823,
+                -0.34660109056884186,
+                -0.011122273041111408,
+            ],
+            [
+                -4.193448625096121,
+                2.6690682120308225,
+                7.501929214012888,
+                -4.774867319035823,
+                0.6831335701335212,
+                -0.43480444369882226,
+            ],
+            [
+                -0.5024020697902709,
+                -0.016121856360740573,
+                -0.34660109056884186,
+                -0.011122273041111408,
+                -0.9193180179669744,
+                -0.029500501543895694,
+            ],
+            [
+                0.9902095778608936,
+                -0.630253794382992,
+                0.6831335701335212,
+                -0.43480444369882226,
+                1.8119302471643985,
+                -1.1532668830568527,
+            ],
+        ],
+        atol=1e-7,
+    )
+    assert_allclose(
+        lmm.C0, [[1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0, 1.0, 1.0]], atol=1e-7
+    )
+    assert_allclose(
+        lmm.C1,
+        [
+            [1.0000149011611938, 1.0, 1.0],
+            [1.0, 2.000014901161194, 2.0],
+            [1.0, 2.0, 3.000014901161194],
+        ],
+        atol=1e-7,
+    )
+    assert_allclose(
+        lmm.beta,
+        [
+            -155.3062975390569,
+            -371.5199529125092,
+            -98.10726134921538,
+            -234.20234587581533,
+            124.0522362217501,
+            295.5028754471357,
+        ],
+        atol=1e-7,
+    )
+    assert_allclose(
+        lmm.beta_covariance,
+        [
+            [
+                33340.729151244064,
+                53132.29845764565,
+                21057.359168750776,
+                33557.73148577052,
+                -26074.486560392546,
+                -41542.83161415311,
+            ],
+            [
+                53132.29845315848,
+                113983.22778712188,
+                33557.73148293744,
+                71992.48996769385,
+                -41542.831610621106,
+                -89070.58034910174,
+            ],
+            [
+                21057.35916875069,
+                33557.731485771306,
+                13299.457033382136,
+                21194.723227370494,
+                -16467.88018346373,
+                -26237.554441779976,
+            ],
+            [
+                33557.73148293613,
+                71992.48996769331,
+                21194.72322558043,
+                45471.00242505276,
+                -26237.554439548312,
+                -56256.685808786104,
+            ],
+            [
+                -26074.486560394453,
+                -41542.831614133334,
+                -16467.880183465,
+                -26237.55444176686,
+                20395.557350283147,
+                32487.137772705748,
+            ],
+            [
+                -41542.831610652975,
+                -89070.5803491147,
+                -26237.55443956946,
+                -56256.68580879469,
+                32487.13776996609,
+                69614.90810634504,
+            ],
+        ],
+        atol=1e-7,
+    )
+    assert_equal(lmm.ncovariates, 2)
+    assert_equal(lmm.nsamples, 2)
+    assert_equal(lmm.ntraits, 3)
+    assert_equal(lmm.name, "Kron2Sum")
+
+    # print()
+    # print(
+    #     "assert_allclose(lmm.covariance(), "
+    #     + str(lmm.covariance().tolist())
+    #     + ", atol=1e-7)"
+    # )
+    # print("assert_allclose(lmm.mean(), " + str(lmm.mean().tolist()) + ", atol=1e-7)")
+
+    # print("assert_allclose(lmm.lml(), " + str(lmm.lml()) + ", atol=1e-7)")
+    # print("assert_allclose(lmm.value(), lmm.lml(), atol=1e-7)")
+    # print("assert_allclose(lmm.lml(), " + str(lmm.lml()) + ", atol=1e-7)")
+    # print("assert_allclose(lmm.A, " + str(lmm.A.tolist()) + ", atol=1e-7)")
+    # print("assert_allclose(lmm.B, " + str(lmm.B.tolist()) + ", atol=1e-7)")
+    # print("assert_allclose(lmm.X, " + str(lmm.X.tolist()) + ", atol=1e-7)")
+    # print("assert_allclose(lmm.M, " + str(lmm.M.tolist()) + ", atol=1e-7)")
+    # print("assert_allclose(lmm.C0, " + str(lmm.C0.tolist()) + ", atol=1e-7)")
+    # print("assert_allclose(lmm.C1, " + str(lmm.C1.tolist()) + ", atol=1e-7)")
+    # print("assert_allclose(lmm.beta, " + str(lmm.beta.tolist()) + ", atol=1e-7)")
+    # print(
+    #     "assert_allclose(lmm.beta_covariance, "
+    #     + str(lmm.beta_covariance.tolist())
+    #     + ", atol=1e-7)"
+    # )
+    # print("assert_allclose(lmm.ncovariates, " + str(lmm.ncovariates) + ", atol=1e-7)")
+    # print("assert_allclose(lmm.nsamples, " + str(lmm.nsamples) + ", atol=1e-7)")
+    # print("assert_allclose(lmm.ntraits, " + str(lmm.ntraits) + ", atol=1e-7)")
+    # print("assert_allclose(lmm.name, " + str(lmm.name) + ", atol=1e-7)")
 
 
 def test_kron2sum_gradient_unrestricted():
@@ -190,17 +466,17 @@ def test_kron2sum_gradient_unrestricted():
     F = random.randn(5, 2)
     G = random.randn(5, 4)
     lmm = Kron2Sum(Y, A, F, G, restricted=False)
-    lmm.cov.C0.Lu = random.randn(3)
-    lmm.cov.C1.Lu = random.randn(6)
+    lmm._cov.C0.Lu = random.randn(3)
+    lmm._cov.C1.Lu = random.randn(6)
 
     def func(x):
-        lmm.cov.C0.Lu = x[:3]
-        lmm.cov.C1.Lu = x[3:9]
+        lmm._cov.C0.Lu = x[:3]
+        lmm._cov.C1.Lu = x[3:9]
         return lmm.lml()
 
     def grad(x):
-        lmm.cov.C0.Lu = x[:3]
-        lmm.cov.C1.Lu = x[3:9]
+        lmm._cov.C0.Lu = x[:3]
+        lmm._cov.C1.Lu = x[3:9]
         D = lmm.gradient()
         return concatenate((D["C0.Lu"], D["C1.Lu"]))
 

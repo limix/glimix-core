@@ -123,10 +123,10 @@ B, C₀, and C₁.
     array([[-0.20990354,  0.8591872 ],
            [ 0.75940886,  1.92312386],
            [ 0.6327708 ,  1.4671608 ]])
-    >>> mlmm.cov.C0.value()  # doctest: +FLOAT_CMP
+    >>> mlmm.C0  # doctest: +FLOAT_CMP
     array([[0.39369194, 0.35994197],
            [0.35994197, 0.32908528]])
-    >>> mlmm.cov.C1.value()  # doctest: +FLOAT_CMP
+    >>> mlmm.C1  # doctest: +FLOAT_CMP
     array([[1.59675053e-05, 8.19034376e-04],
            [8.19034376e-04, 6.29678697e-01]])
 

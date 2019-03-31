@@ -1,17 +1,14 @@
+import pytest
 import scipy.stats as st
-from numpy import concatenate, corrcoef, dot, exp, eye, log, ones, pi, sqrt
+from numpy import concatenate, exp, eye, log, pi
 from numpy.linalg import slogdet, solve
 from numpy.random import RandomState
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_equal
 from numpy_sugar.linalg import ddot, economic_qs_linear, economic_svd
 from scipy.optimize import minimize
 
 from glimix_core._util import assert_interface
-from glimix_core.cov import EyeCov, LinearCov, SumCov
-from glimix_core.lik import DeltaProdLik
 from glimix_core.lmm import LMM
-from glimix_core.mean import OffsetMean
-from glimix_core.random import GGPSampler
 
 
 def test_lmm():
@@ -28,43 +25,6 @@ def test_lmm():
 
     (y, X, G) = _low_rank(random)
     _test_lmm(random, y, X, G, _get_mvn_restricted(y, X, G), True)
-
-
-def test_lmm_prediction():
-    random = RandomState(9458)
-    n = 30
-
-    X = random.randn(n, n + 1)
-    X -= X.mean(0)
-    X /= X.std(0)
-    X /= sqrt(X.shape[1])
-
-    offset = 1.0
-
-    mean = OffsetMean(n)
-    mean.offset = offset
-
-    cov_left = LinearCov(X)
-    cov_left.scale = 1.5
-
-    cov_right = EyeCov(n)
-    cov_right.scale = 1.5
-
-    cov = SumCov([cov_left, cov_right])
-
-    lik = DeltaProdLik()
-
-    y = GGPSampler(lik, mean, cov).sample(random)
-
-    QS = economic_qs_linear(X)
-
-    lmm = LMM(y, ones((n, 1)), QS)
-
-    lmm.fit(verbose=False)
-
-    K = dot(X, X.T)
-    pm = lmm.predictive_mean(ones((n, 1)), K, K.diagonal())
-    assert_allclose(corrcoef(y, pm)[0, 1], 0.8358820971891354)
 
 
 def test_lmm_beta_covariance():
@@ -126,36 +86,92 @@ def test_lmm_beta_covariance():
     assert_allclose(lmm.beta_covariance, A)
 
 
-def test_lmm_lmm_public_attrs():
-    assert_interface(
-        LMM,
+def test_lmm_public_attrs():
+    callables = [
+        "covariance",
+        "fit",
+        "fix",
+        "get_fast_scanner",
+        "gradient",
+        "lml",
+        "mean",
+        "unfix",
+        "value",
+    ]
+    properties = [
+        "X",
+        "beta",
+        "beta_covariance",
+        "delta",
+        "name",
+        "ncovariates",
+        "nsamples",
+        "scale",
+        "v0",
+        "v1",
+    ]
+    assert_interface(LMM, callables, properties)
+
+
+def test_lmm_interface():
+    random = RandomState(1)
+    n = 3
+    G = random.randn(n, n + 1)
+    X = random.randn(n, 2)
+    y = X @ random.randn(2) + G @ random.randn(G.shape[1]) + random.randn(n)
+    y -= y.mean(0)
+    y /= y.std(0)
+
+    QS = economic_qs_linear(G)
+    lmm = LMM(y, X, QS, restricted=False)
+    lmm.name = "lmm"
+    lmm.fit(verbose=False)
+
+    assert_allclose(
+        lmm.covariance(),
         [
-            "X",
-            "beta",
-            "beta_covariance",
-            "covariance",
-            "covariance_star",
-            "delta",
-            "fit",
-            "fix",
-            "get_fast_scanner",
-            "gradient",
-            "lml",
-            "mean",
-            "mean_star",
-            "name",
-            "ncovariates",
-            "nsamples",
-            "predictive_covariance",
-            "predictive_mean",
-            "scale",
-            "unfix",
-            "v0",
-            "v1",
-            "value",
-            "variance_star",
+            [0.436311031439718, 2.6243891396439837e-16, 2.0432156171727483e-16],
+            [2.6243891396439837e-16, 0.4363110314397185, 4.814313140426306e-16],
+            [2.0432156171727483e-16, 4.814313140426305e-16, 0.43631103143971817],
         ],
+        atol=1e-7,
     )
+    assert_allclose(
+        lmm.mean(),
+        [0.6398184791042468, -0.8738254794097052, 0.7198112606871158],
+        atol=1e-7,
+    )
+    assert_allclose(lmm.lml(), -3.012715726960625, atol=1e-7)
+    assert_allclose(lmm.value(), lmm.lml(), atol=1e-7)
+    assert_allclose(lmm.lml(), -3.012715726960625, atol=1e-7)
+    assert_allclose(
+        lmm.X,
+        [
+            [-0.3224172040135075, -0.38405435466841564],
+            [1.1337694423354374, -1.0998912673140309],
+            [-0.17242820755043575, -0.8778584179213718],
+        ],
+        atol=1e-7,
+    )
+    assert_allclose(lmm.beta, [-1.3155159120000266, -0.5615702941530938], atol=1e-7)
+    assert_allclose(
+        lmm.beta_covariance,
+        [
+            [0.44737305797088345, 0.20431961864892412],
+            [0.20431961864892412, 0.29835835133251526],
+        ],
+        atol=1e-7,
+    )
+    assert_allclose(lmm.delta, 0.9999999999999998, atol=1e-7)
+    assert_equal(lmm.ncovariates, 2)
+    assert_equal(lmm.nsamples, 3)
+    assert_allclose(lmm.scale, 0.43631103143971767, atol=1e-7)
+    assert_allclose(lmm.v0, 9.688051060046502e-17, atol=1e-7)
+    assert_allclose(lmm.v1, 0.43631103143971756, atol=1e-7)
+    assert_equal(lmm.name, "lmm")
+
+    with pytest.raises(NotImplementedError):
+        lmm.gradient()
 
 
 def _test_lmm(random, y, X, G, mvn, restricted):

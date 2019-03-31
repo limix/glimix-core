@@ -12,7 +12,7 @@ from numpy import (
     sum as npsum,
     zeros,
 )
-from numpy.linalg import inv, slogdet, solve, lstsq
+from numpy.linalg import inv, lstsq, slogdet
 
 from glimix_core._util import cache, log2pi
 from optimix import Function, Scalar
@@ -187,7 +187,7 @@ class LMM(Function):
         """
         from numpy_sugar.linalg import rsolve
 
-        return rsolve(self._X["VT"], rsolve(self._X["tX"], self.mean))
+        return rsolve(self._X["VT"], rsolve(self._X["tX"], self.mean()))
 
     @beta.setter
     def beta(self, beta):
@@ -321,24 +321,6 @@ class LMM(Function):
 
         return self.lml()
 
-    def predictive_mean(self, Xstar, ks, kss):
-        mstar = self.mean_star(Xstar)
-        ks = self.covariance_star(ks)
-        m = self.mean
-        K = self.covariance()
-        return mstar + ks @ solve(K, self._y - m)
-
-    def predictive_covariance(self, Xstar, ks, kss):
-        kss = self.variance_star(kss)
-        ks = self.covariance_star(ks)
-        K = self.covariance()
-        ktk = solve(K, ks.T)
-        b = []
-        for i in range(len(kss)):
-            b += [ks[i, :] @ ktk[:, i]]
-        b = asarray(b)
-        return kss - b
-
     @property
     def nsamples(self):
         """
@@ -453,7 +435,6 @@ class LMM(Function):
         self._scale = scale
         self._optimal["scale"] = False
 
-    @property
     def mean(self):
         """
         Mean of the prior.
@@ -466,15 +447,6 @@ class LMM(Function):
             Mean of the prior.
         """
         return self._X["tX"] @ self._tbeta
-
-    def mean_star(self, Xstar):
-        return Xstar @ self.beta
-
-    def variance_star(self, kss):
-        return kss * self.v0 + self.v1
-
-    def covariance_star(self, ks):
-        return ks * self.v0
 
     def covariance(self):
         """
@@ -625,7 +597,7 @@ class LMM(Function):
 
     @property
     def _mTQ(self):
-        return (self.mean.T @ Q for Q in self._QS[0] if Q.size > 0)
+        return (self.mean().T @ Q for Q in self._QS[0] if Q.size > 0)
 
     @property
     def _tXTQ(self):

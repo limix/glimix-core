@@ -113,6 +113,229 @@ class Kron2Sum(Function):
         H = self._terms["H"]
         return inv(H)
 
+    def get_fast_scanner(self):
+        """
+        Return :class:`.FastScanner` for association scan.
+
+        Returns
+        -------
+        :class:`.FastScanner`
+            Instance of a class designed to perform very fast association scan.
+        """
+        terms = self._terms
+        return KronFastScanner(self._Y, self._mean.A, self._mean.F, self._cov.Ge, terms)
+
+    @property
+    def A(self):
+        """
+        A from the equation 𝐦 = (A ⊗ F) vec(B).
+
+        Returns
+        -------
+        A : ndarray
+            A.
+        """
+        return self._mean.A
+
+    @property
+    def B(self):
+        """
+        Fixed-effect sizes B from 𝐦 = (A ⊗ F) vec(B).
+
+        Returns
+        -------
+        fixed-effects : ndarray
+            B from 𝐦 = (A ⊗ F) vec(B).
+        """
+        self._terms
+        return asarray(self._mean.B, float)
+
+    @property
+    def beta(self):
+        return vec(self.B)
+
+    @property
+    def C0(self):
+        """
+        C₀ from equation K = C₀ ⊗ GGᵀ + C₁ ⊗ I.
+
+        Returns
+        -------
+        C0 : ndarray
+            C₀.
+        """
+        return self._cov.C0.value()
+
+    @property
+    def C1(self):
+        """
+        C₁ from equation K = C₀ ⊗ GGᵀ + C₁ ⊗ I.
+
+        Returns
+        -------
+        C1 : ndarray
+            C₁.
+        """
+        return self._cov.C1.value()
+
+    def mean(self):
+        """
+        Mean 𝐦 = (A ⊗ F) vec(B).
+
+        Returns
+        -------
+        mean : ndarray
+            𝐦.
+        """
+        self._terms
+        return self._mean.value()
+
+    def covariance(self):
+        """
+        Covariance K = C₀ ⊗ GGᵀ + C₁ ⊗ I.
+
+        Returns
+        -------
+        covariance : ndarray
+            K.
+        """
+        return self._cov.value()
+
+    @property
+    def X(self):
+        """
+        X from equation M = (A ⊗ X).
+
+        Returns
+        -------
+        X : ndarray
+            X from M = (A ⊗ X).
+        """
+        return self._mean.F
+
+    @property
+    def M(self):
+        """
+        M = (A ⊗ X).
+
+        Returns
+        -------
+        M : ndarray
+            M from M = (A ⊗ X).
+        """
+        return self._mean.AF
+
+    @property
+    def nsamples(self):
+        """
+        Number of samples, n.
+        """
+        return self._Y.shape[0]
+
+    @property
+    def ntraits(self):
+        """
+        Number of traits, p.
+        """
+        return self._Y.shape[1]
+
+    @property
+    def ncovariates(self):
+        """
+        Number of covariates, c.
+        """
+        return self._mean.F.shape[1]
+
+    def value(self):
+        """
+        Log of the marginal likelihood.
+        """
+        return self.lml()
+
+    def gradient(self):
+        """
+        Gradient of the log of the marginal likelihood.
+        """
+        return self._lml_gradient()
+
+    def lml(self):
+        """
+        Log of the marginal likelihood.
+
+        Let 𝐲 = vec(Y), M = A⊗F, and H = MᵀK⁻¹M. The restricted log of the marginal
+        likelihood is given by [R07]_::
+
+            2⋅log(p(𝐲)) = -(n⋅p - c⋅p) log(2π) + log(｜MᵀM｜) - log(｜K｜) - log(｜H｜)
+                - (𝐲-𝐦)ᵀ K⁻¹ (𝐲-𝐦),
+
+        where 𝐦 = M𝛃 for 𝛃 = H⁻¹MᵀK⁻¹𝐲.
+
+        For implementation purpose, let X = (L₀ ⊗ G) and R = (L₁ ⊗ I)(L₁ ⊗ I)ᵀ.
+        The covariance can be written as::
+
+            K = XXᵀ + R.
+
+        From the Woodbury matrix identity, we have
+
+            𝐲ᵀK⁻¹𝐲 = 𝐲ᵀR⁻¹𝐲 - 𝐲ᵀR⁻¹XZ⁻¹XᵀR⁻¹𝐲,
+
+        where Z = I + XᵀR⁻¹X. Note that R⁻¹ = (U₁S₁⁻¹U₁ᵀ) ⊗ I and ::
+
+            XᵀR⁻¹𝐲 = (L₀ᵀW ⊗ Gᵀ)𝐲 = vec(GᵀYWL₀),
+
+        where W = U₁S₁⁻¹U₁ᵀ. The term GᵀY can be calculated only once and it will form a
+        r×p matrix. We similarly have ::
+
+            XᵀR⁻¹M = (L₀ᵀWA) ⊗ (GᵀF),
+
+        for which GᵀF is pre-computed.
+
+        The log-determinant of the covariance matrix is given by
+
+            log(｜K｜) = log(｜Z｜) - log(｜R⁻¹｜) = log(｜Z｜) - 2·n·log(｜U₁S₁⁻½｜).
+
+        The log of the marginal likelihood can be rewritten as::
+
+            2⋅log(p(𝐲)) = -(n⋅p - c⋅p) log(2π) + log(｜MᵀM｜)
+            - log(｜Z｜) + 2·n·log(｜U₁S₁⁻½｜)
+            - log(｜MᵀR⁻¹M - MᵀR⁻¹XZ⁻¹XᵀR⁻¹M｜)
+            - 𝐲ᵀR⁻¹𝐲 + (𝐲ᵀR⁻¹X)Z⁻¹(XᵀR⁻¹𝐲)
+            - 𝐦ᵀR⁻¹𝐦 + (𝐦ᵀR⁻¹X)Z⁻¹(XᵀR⁻¹𝐦)
+            + 2𝐲ᵀR⁻¹𝐦 - 2(𝐲ᵀR⁻¹X)Z⁻¹(XᵀR⁻¹𝐦).
+
+        Returns
+        -------
+        lml : float
+            Log of the marginal likelihood.
+
+        References
+        ----------
+        .. [R07] LaMotte, L. R. (2007). A direct derivation of the REML likelihood
+           function. Statistical Papers, 48(2), 321-327.
+        """
+        terms = self._terms
+        yKiy = terms["yKiy"]
+        mKiy = terms["mKiy"]
+        mKim = terms["mKim"]
+
+        lml = -self._df * log2pi + self._logdet_MM - self._logdetK
+        lml -= self._logdetH
+        lml += -yKiy - mKim + 2 * mKiy
+
+        return lml / 2
+
+    def fit(self, verbose=True):
+        """
+        Maximise the marginal likelihood.
+
+        Parameters
+        ----------
+        verbose : bool, optional
+            ``True`` for progress output; ``False`` otherwise.
+            Defaults to ``True``.
+        """
+        self._maximize(verbose=verbose, pgtol=1e-5, factr=1e8)
+
     def _parameters_update(self):
         self._cache["terms"] = None
 
@@ -264,184 +487,6 @@ class Kron2Sum(Function):
             "MRiXZiXRiM": MRiXZiXRiM,
         }
         return self._cache["terms"]
-
-    def get_fast_scanner(self):
-        """
-        Return :class:`.FastScanner` for association scan.
-
-        Returns
-        -------
-        :class:`.FastScanner`
-            Instance of a class designed to perform very fast association scan.
-        """
-        terms = self._terms
-        return KronFastScanner(self._Y, self._mean.A, self._mean.F, self._cov.Ge, terms)
-
-    @property
-    def mean(self):
-        """
-        Mean 𝐦 = (A ⊗ F) vec(B).
-
-        Returns
-        -------
-        mean : ndarray
-            𝐦.
-        """
-        self._terms
-        return self._mean.value()
-
-    @property
-    def B(self):
-        """
-        Fixed-effect sizes B from 𝐦 = (A ⊗ F) vec(B).
-
-        Returns
-        -------
-        fixed-effects : ndarray
-            B from 𝐦 = (A ⊗ F) vec(B).
-        """
-        self._terms
-        return asarray(self._mean.B, float)
-
-    @property
-    def cov(self):
-        """
-        Covariance K = C₀ ⊗ GGᵀ + C₁ ⊗ I.
-
-        Returns
-        -------
-        covariance : Kron2SumCov
-        """
-        return self._cov
-
-    @property
-    def nsamples(self):
-        """
-        Number of samples, n.
-        """
-        return self._Y.shape[0]
-
-    @property
-    def ntraits(self):
-        """
-        Number of traits, p.
-        """
-        return self._Y.shape[1]
-
-    @property
-    def ncovariates(self):
-        """
-        Number of covariates, c.
-        """
-        return self._mean.F.shape[1]
-
-    def value(self):
-        """
-        Log of the marginal likelihood.
-        """
-        return self.lml()
-
-    def gradient(self):
-        """
-        Gradient of the log of the marginal likelihood.
-        """
-        return self._lml_gradient()
-
-    @property
-    @cache
-    def _logdet_MM(self):
-        if not self._restricted:
-            return 0.0
-
-        M = self._mean.AF
-        ldet = slogdet(M.T @ M)
-        if ldet[0] != 1.0:
-            raise ValueError("The determinant of MᵀM should be positive.")
-        return ldet[1]
-
-    @property
-    def _logdetH(self):
-        if not self._restricted:
-            return 0.0
-        terms = self._terms
-        MKiM = terms["MRiM"] - terms["XRiM"].T @ terms["ZiXRiM"]
-        return slogdet(MKiM)[1]
-
-    @property
-    def _logdetK(self):
-        terms = self._terms
-        S = terms["S"]
-        Lz = terms["Lz"]
-
-        cov_logdet = log(Lz[0].diagonal()).sum() * 2
-        cov_logdet -= 2 * log(S).sum() * self.nsamples
-        return cov_logdet
-
-    def lml(self):
-        """
-        Log of the marginal likelihood.
-
-        Let 𝐲 = vec(Y), M = A⊗F, and H = MᵀK⁻¹M. The restricted log of the marginal
-        likelihood is given by [R07]_::
-
-            2⋅log(p(𝐲)) = -(n⋅p - c⋅p) log(2π) + log(｜MᵀM｜) - log(｜K｜) - log(｜H｜)
-                - (𝐲-𝐦)ᵀ K⁻¹ (𝐲-𝐦),
-
-        where 𝐦 = M𝛃 for 𝛃 = H⁻¹MᵀK⁻¹𝐲.
-
-        For implementation purpose, let X = (L₀ ⊗ G) and R = (L₁ ⊗ I)(L₁ ⊗ I)ᵀ.
-        The covariance can be written as::
-
-            K = XXᵀ + R.
-
-        From the Woodbury matrix identity, we have
-
-            𝐲ᵀK⁻¹𝐲 = 𝐲ᵀR⁻¹𝐲 - 𝐲ᵀR⁻¹XZ⁻¹XᵀR⁻¹𝐲,
-
-        where Z = I + XᵀR⁻¹X. Note that R⁻¹ = (U₁S₁⁻¹U₁ᵀ) ⊗ I and ::
-
-            XᵀR⁻¹𝐲 = (L₀ᵀW ⊗ Gᵀ)𝐲 = vec(GᵀYWL₀),
-
-        where W = U₁S₁⁻¹U₁ᵀ. The term GᵀY can be calculated only once and it will form a
-        r×p matrix. We similarly have ::
-
-            XᵀR⁻¹M = (L₀ᵀWA) ⊗ (GᵀF),
-
-        for which GᵀF is pre-computed.
-
-        The log-determinant of the covariance matrix is given by
-
-            log(｜K｜) = log(｜Z｜) - log(｜R⁻¹｜) = log(｜Z｜) - 2·n·log(｜U₁S₁⁻½｜).
-
-        The log of the marginal likelihood can be rewritten as::
-
-            2⋅log(p(𝐲)) = -(n⋅p - c⋅p) log(2π) + log(｜MᵀM｜)
-            - log(｜Z｜) + 2·n·log(｜U₁S₁⁻½｜)
-            - log(｜MᵀR⁻¹M - MᵀR⁻¹XZ⁻¹XᵀR⁻¹M｜)
-            - 𝐲ᵀR⁻¹𝐲 + (𝐲ᵀR⁻¹X)Z⁻¹(XᵀR⁻¹𝐲)
-            - 𝐦ᵀR⁻¹𝐦 + (𝐦ᵀR⁻¹X)Z⁻¹(XᵀR⁻¹𝐦)
-            + 2𝐲ᵀR⁻¹𝐦 - 2(𝐲ᵀR⁻¹X)Z⁻¹(XᵀR⁻¹𝐦).
-
-        Returns
-        -------
-        lml : float
-            Log of the marginal likelihood.
-
-        References
-        ----------
-        .. [R07] LaMotte, L. R. (2007). A direct derivation of the REML likelihood
-           function. Statistical Papers, 48(2), 321-327.
-        """
-        terms = self._terms
-        yKiy = terms["yKiy"]
-        mKiy = terms["mKiy"]
-        mKim = terms["mKim"]
-
-        lml = -self._df * log2pi + self._logdet_MM - self._logdetK
-        lml -= self._logdetH
-        lml += -yKiy - mKim + 2 * mKiy
-
-        return lml / 2
 
     def _lml_gradient(self):
         """
@@ -613,17 +658,35 @@ class Kron2Sum(Function):
 
         return grad
 
-    def fit(self, verbose=True):
-        """
-        Maximise the marginal likelihood.
+    @property
+    @cache
+    def _logdet_MM(self):
+        if not self._restricted:
+            return 0.0
 
-        Parameters
-        ----------
-        verbose : bool, optional
-            ``True`` for progress output; ``False`` otherwise.
-            Defaults to ``True``.
-        """
-        self._maximize(verbose=verbose, pgtol=1e-5, factr=1e8)
+        M = self._mean.AF
+        ldet = slogdet(M.T @ M)
+        if ldet[0] != 1.0:
+            raise ValueError("The determinant of MᵀM should be positive.")
+        return ldet[1]
+
+    @property
+    def _logdetH(self):
+        if not self._restricted:
+            return 0.0
+        terms = self._terms
+        MKiM = terms["MRiM"] - terms["XRiM"].T @ terms["ZiXRiM"]
+        return slogdet(MKiM)[1]
+
+    @property
+    def _logdetK(self):
+        terms = self._terms
+        S = terms["S"]
+        Lz = terms["Lz"]
+
+        cov_logdet = log(Lz[0].diagonal()).sum() * 2
+        cov_logdet -= 2 * log(S).sum() * self.nsamples
+        return cov_logdet
 
     @property
     def _df(self):

@@ -1,6 +1,6 @@
 import pytest
 import scipy.stats as st
-from numpy import array, concatenate, exp, eye, inf, nan, newaxis, ones, sqrt, zeros
+from numpy import array, concatenate, exp, eye, inf, nan, ones, sqrt, zeros
 from numpy.random import RandomState
 from numpy.testing import assert_allclose
 from numpy_sugar.linalg import economic_qs, economic_qs_linear
@@ -375,7 +375,9 @@ def test_lmm_scan_interface():
 
 def test_lmm_scan_public_attrs():
     assert_interface(
-        FastScanner, ["null_lml", "null_effsizes", "null_scale", "fast_scan", "scan"]
+        FastScanner,
+        ["null_lml", "null_effsizes", "null_scale", "fast_scan", "scan"],
+        [],
     )
 
 
