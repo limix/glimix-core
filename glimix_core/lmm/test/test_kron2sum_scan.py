@@ -36,7 +36,7 @@ def test_lmm_kron_scan():
     F1 = random.randn(n, 4)
 
     lml, effsizes0, effsizes1, scale = scan.scan(A1, F1)
-    assert_allclose(scale, 0.3000748879939645)
+    assert_allclose(scale, 0.3000748879939645, rtol=1e-5)
 
     m = kron(A, F) @ vec(effsizes0) + kron(A1, F1) @ vec(effsizes1)
 
@@ -91,7 +91,7 @@ def test_lmm_kron_scan_redundant():
     F1 = concatenate([F1, F1], axis=1)
 
     lml, effsizes0, effsizes1, scale = scan.scan(A1, F1)
-    assert_allclose(scale, 0.3005376956901813, rtol=1e-5)
+    assert_allclose(scale, 0.3005376956901813, rtol=1e-4)
 
     m = kron(A, F) @ vec(effsizes0) + kron(A1, F1) @ vec(effsizes1)
 

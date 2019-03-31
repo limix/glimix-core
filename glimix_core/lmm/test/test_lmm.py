@@ -209,10 +209,10 @@ def _test_lmm(random, y, X, G, mvn, restricted):
 
     res = minimize(fun, [0] * c + [0, 0])
     lmm.fit(verbose=False)
-    assert_allclose(lmm.lml(), -res.fun, rtol=1e-5, atol=1e-6)
-    assert_allclose(lmm.beta, res.x[:c], rtol=1e-5, atol=1e-6)
-    assert_allclose(lmm.v0, exp(res.x[c]), rtol=1e-5, atol=1e-6)
-    assert_allclose(lmm.v1, exp(res.x[c + 1]), rtol=1e-5, atol=1e-6)
+    assert_allclose(lmm.lml(), -res.fun, rtol=1e-4, atol=1e-6)
+    assert_allclose(lmm.beta, res.x[:c], rtol=1e-4, atol=1e-6)
+    assert_allclose(lmm.v0, exp(res.x[c]), rtol=1e-4, atol=1e-6)
+    assert_allclose(lmm.v1, exp(res.x[c + 1]), rtol=1e-4, atol=1e-6)
 
     lmm = LMM(y, X, QS, restricted=restricted)
     beta = random.randn(c)
@@ -228,9 +228,9 @@ def _test_lmm(random, y, X, G, mvn, restricted):
 
     res = minimize(fun, [0, 0])
     lmm.fit(verbose=False)
-    assert_allclose(lmm.lml(), -res.fun, rtol=1e-5, atol=1e-6)
-    assert_allclose(lmm.v0, exp(res.x[0]), rtol=1e-5, atol=1e-6)
-    assert_allclose(lmm.v1, exp(res.x[1]), rtol=1e-5, atol=1e-6)
+    assert_allclose(lmm.lml(), -res.fun, rtol=1e-4, atol=1e-6)
+    assert_allclose(lmm.v0, exp(res.x[0]), rtol=1e-4, atol=1e-6)
+    assert_allclose(lmm.v1, exp(res.x[1]), rtol=1e-4, atol=1e-6)
 
     lmm = LMM(y, X, QS, restricted=restricted)
     lmm.beta = random.randn(c)
