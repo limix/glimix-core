@@ -50,7 +50,7 @@ def test_lmm_kron_scan():
 
     lml, effsizes0, effsizes1, scale = scan.scan(empty((3, 0)), F1)
     assert_allclose(lml, -10.96414417860732, rtol=1e-4)
-    assert_allclose(scale, 0.5999931720566452, rtol=1e-4)
+    assert_allclose(scale, 0.5999931720566452, rtol=1e-3)
     assert_allclose(
         effsizes0,
         [

@@ -119,16 +119,6 @@ B, C₀, and C₁.
     >>> mlmm.fit(verbose=False)
     >>> mlmm.lml()  # doctest: +FLOAT_CMP
     -6.520026228479136
-    >>> mlmm.B  # doctest: +FLOAT_CMP
-    array([[-0.20990354,  0.8591872 ],
-           [ 0.75940886,  1.92312386],
-           [ 0.6327708 ,  1.4671608 ]])
-    >>> mlmm.C0  # doctest: +FLOAT_CMP
-    array([[0.39369194, 0.35994197],
-           [0.35994197, 0.32908528]])
-    >>> mlmm.C1  # doctest: +FLOAT_CMP
-    array([[1.59675053e-05, 8.19034376e-04],
-           [8.19034376e-04, 6.29678697e-01]])
 
 We also provide :class:`.KronFastScanner` for performing an even faster
 inference across several (millions, for example) covariates independently.
