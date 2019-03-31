@@ -71,6 +71,8 @@ def test_kron2sum_restricted():
             [4.831846800714217, -2.132053997665423],
             [-2.1320539976654262, 0.9438168959531027],
         ],
+        atol=1e-5,
+        rtol=1e-5,
     )
 
 
@@ -133,7 +135,7 @@ def test_kron2sum_unrestricted():
         [3.621697718251791, -1.5979868630471679],
         [-1.5979868630471754, 0.7081138470260712],
     ]
-    assert_allclose(lmm.beta_covariance, A)
+    assert_allclose(lmm.beta_covariance, A, atol=1e-5, rtol=1e-5)
 
 
 def test_kron2sum_unrestricted_lml():

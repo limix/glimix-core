@@ -325,6 +325,7 @@ class LMM(Function):
         """
         Not implemented.
         """
+        raise NotImplementedError
 
     @property
     def nsamples(self):
