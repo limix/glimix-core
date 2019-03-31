@@ -33,7 +33,7 @@ def test_fast_scanner_redundant_candidates():
 
     scanner = lmm.get_fast_scanner()
 
-    lmls = scanner.fast_scan(markers, verbose=False)[0]
+    scanner.fast_scan(markers, verbose=False)[0]
 
 
 def test_fast_scanner_set_scale_1covariate():
