@@ -177,17 +177,17 @@ The parameters 𝚩ⱼ, 𝚨ⱼ, and sⱼ are found via maximum likelihood.
     >>> A = random.randn(2, 5)
     >>> X = random.randn(5, 3)
     >>> lml, eff0, eff1, scale = mscanner.scan(A, X)
-    >>> lml
+    >>> lml  # doctest: +FLOAT_CMP
     83.08864898305367
-    >>> eff0
+    >>> eff0  # doctest: +FLOAT_CMP
     array([[ 0.01482133,  0.45189275],
            [ 0.43706748, -0.71162517],
            [ 0.52595486, -1.59740035]])
-    >>> eff1
+    >>> eff1  # doctest: +FLOAT_CMP
     array([[ 0.03868156, -0.77199913, -0.09643554, -0.53973775,  1.03149564],
            [ 0.05780863, -0.24744739, -0.11882984, -0.19331759,  0.74964805],
            [ 0.01051071, -1.61751886, -0.0654883 , -1.09931899,  1.51034738]])
-    >>> scale
+    >>> scale  # doctest: +FLOAT_CMP
     5.238689482212067e-11
 
 API
