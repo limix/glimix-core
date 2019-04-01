@@ -117,7 +117,9 @@ def test_fast_scanner_set_scale_multicovariates():
     assert_allclose(lmls, want, rtol=1e-6, atol=1e-6)
 
     assert_allclose(
-        eff0[2], [-0.6923007382350215, 2.3550810825973034, -0.38157769653894497]
+        eff0[2],
+        [-0.6923007382350215, 2.3550810825973034, -0.38157769653894497],
+        rtol=1e-5,
     )
 
     want = [-0.34615, 1.177541, -0.381578]
