@@ -514,7 +514,7 @@ def test_kron2sum_fit_C1_well_cond_unrestricted():
     lml0 = lmm.lml()
     lmm.fit(verbose=False)
     lml1 = lmm.lml()
-    assert_allclose([lml0, lml1], [-19.12949904791771, -11.853021820832943])
+    assert_allclose([lml0, lml1], [-19.12949904791771, -11.853021820832943], rtol=1e-5)
     grad = lmm.gradient()
     vars = grad.keys()
     assert_allclose(concatenate([grad[var] for var in vars]), [0] * 5, atol=1e-2)
