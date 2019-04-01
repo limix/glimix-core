@@ -11,6 +11,7 @@ from numpy import (
     log,
     newaxis,
 )
+from numpy.linalg import inv
 
 from .._util import cache, hsolve, log2pi, rsolve, safe_log
 
@@ -121,9 +122,10 @@ class FastScanner(object):
             Log of the marginal likelihood.
         """
         n = self._nsamples
-        scale = self.null_scale()
+        scale = self.null_scale
         return (self._static_lml() - n * log(scale)) / 2
 
+    @property
     @cache
     def null_effsizes(self):
         """
@@ -145,6 +147,21 @@ class FastScanner(object):
         b = sum(yTBX)
         return rsolve(A, b)
 
+    @property
+    @cache
+    def null_effsizes_covariance(self):
+        """
+        Covariance of the optimal 𝜷 according to the marginal likelihood.
+
+        Returns
+        -------
+        effsizes-covariance : ndarray
+            (Xᵀ(s(K + vI))⁻¹X)⁻¹.
+        """
+        A = sum(i @ j.T for (i, j) in zip(self._XTQDi, self._XTQ))
+        return self.null_scale * inv(A)
+
+    @property
     @cache
     def null_scale(self):
         """
@@ -162,7 +179,7 @@ class FastScanner(object):
             Optimal scale.
         """
         n = self._nsamples
-        beta = self.null_effsizes()
+        beta = self.null_effsizes
         sqrdot = self._yTBy - dot(sum(self._yTBX), beta)
         return sqrdot / n
 

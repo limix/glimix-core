@@ -377,12 +377,12 @@ def test_lmm_scan_interface():
 def test_lmm_scan_public_attrs():
     assert_interface(
         FastScanner,
-        ["null_lml", "null_effsizes", "null_scale", "fast_scan", "scan"],
-        [],
+        ["null_lml", "fast_scan", "scan"],
+        ["null_effsizes", "null_effsizes_covariance", "null_scale"],
     )
 
 
-def test_lmm_scan_scan():
+def test_lmm_scan():
     random = RandomState(9458)
     n = 30
     X = _covariates_sample(random, n, n + 1)
@@ -413,6 +413,23 @@ def test_lmm_scan_scan():
     assert_allclose(eff0, res.x[:2], rtol=1e-5)
     assert_allclose(eff1, res.x[2:4], rtol=1e-5)
     assert_allclose(scale, exp(res.x[4]), rtol=1e-5)
+
+    assert_allclose(scanner.null_lml(), -53.805721275578456, rtol=1e-5)
+    assert_allclose(
+        scanner.null_effsizes, [0.26521964226797085, 0.4334778669761928], rtol=1e-5
+    )
+    assert_allclose(
+        scanner.null_effsizes_covariance,
+        [
+            [0.06302553593799207, 0.00429640179038484],
+            [0.004296401790384839, 0.05591392416235412],
+        ],
+        rtol=1e-5,
+    )
+    assert_allclose(scanner.null_scale, 1.0)
+
+    assert_allclose(scanner.null_effsizes, lmm.beta, rtol=1e-5)
+    assert_allclose(scanner.null_effsizes_covariance, lmm.beta_covariance, rtol=1e-5)
 
 
 def test_lmm_scan_fast_scan():

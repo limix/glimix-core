@@ -157,9 +157,9 @@ likelihood and the values of 𝜷 and s can be found as follows.
 
     >>> scanner.null_lml()  # doctest: +FLOAT_CMP
     -2.272623408618055
-    >>> scanner.null_effsizes()  # doctest: +FLOAT_CMP
+    >>> scanner.null_effsizes  # doctest: +FLOAT_CMP
     array([0.06646503])
-    >>> scanner.null_scale()  # doctest: +FLOAT_CMP
+    >>> scanner.null_scale  # doctest: +FLOAT_CMP
     1.0
 
 We also provide a fast scanner for the multi-trait case, :class:`.KronFastScanner`.
