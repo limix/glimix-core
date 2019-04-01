@@ -78,7 +78,7 @@ class KronFastScanner:
 
     @property
     @cache
-    def null_effsizes(self):
+    def null_beta(self):
         """
         Optimal 𝚩 according to the marginal likelihood.
 
@@ -98,7 +98,7 @@ class KronFastScanner:
 
     @property
     @cache
-    def null_effsizes_covariance(self):
+    def null_beta_covariance(self):
         """
         Covariance of the optimal 𝜷 according to the marginal likelihood.
 
@@ -127,7 +127,7 @@ class KronFastScanner:
             Optimal scale.
         """
         np = self._nsamples * self._ntraits
-        b = vec(self.null_effsizes)
+        b = vec(self.null_beta)
         mKiy = b.T @ self._MKiy
         sqrtdot = self._yKiy - mKiy
         scale = sqrtdot / np
@@ -164,7 +164,7 @@ class KronFastScanner:
         X1 = asarray(X1, float)
 
         if A1.shape[1] == 0:
-            return self.null_lml(), self.null_effsizes, empty((0,)), self.null_scale
+            return self.null_lml(), self.null_beta, empty((0,)), self.null_scale
 
         X1X1 = X1.T @ X1
         XX1 = self._X.T @ X1

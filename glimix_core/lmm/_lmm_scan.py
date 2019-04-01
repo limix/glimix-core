@@ -127,7 +127,7 @@ class FastScanner(object):
 
     @property
     @cache
-    def null_effsizes(self):
+    def null_beta(self):
         """
         Optimal 𝜷 according to the marginal likelihood.
 
@@ -149,7 +149,7 @@ class FastScanner(object):
 
     @property
     @cache
-    def null_effsizes_covariance(self):
+    def null_beta_covariance(self):
         """
         Covariance of the optimal 𝜷 according to the marginal likelihood.
 
@@ -179,7 +179,7 @@ class FastScanner(object):
             Optimal scale.
         """
         n = self._nsamples
-        beta = self.null_effsizes
+        beta = self.null_beta
         sqrdot = self._yTBy - dot(sum(self._yTBX), beta)
         return sqrdot / n
 

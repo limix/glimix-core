@@ -30,7 +30,7 @@ def test_lmm_kron_scan():
     s = minimize(func, 1e-3, 5.0, 1e-5)[0]
 
     assert_allclose(scan.null_lml(), st.multivariate_normal(m, s * K).logpdf(vec(Y)))
-    assert_allclose(kron(A, F) @ vec(scan.null_effsizes), m)
+    assert_allclose(kron(A, F) @ vec(scan.null_beta), m)
 
     A1 = random.randn(3, 2)
     F1 = random.randn(n, 4)
@@ -76,7 +76,7 @@ def test_lmm_kron_scan_unrestricted():
     scan = lmm.get_fast_scanner()
 
     assert_allclose(scan.null_scale, 1.0, rtol=1e-3)
-    assert_allclose(lmm.beta_covariance, scan.null_effsizes_covariance, rtol=1e-3)
+    assert_allclose(lmm.beta_covariance, scan.null_beta_covariance, rtol=1e-3)
 
 
 def test_lmm_kron_scan_redundant():
@@ -102,7 +102,7 @@ def test_lmm_kron_scan_redundant():
     s = minimize(func, 1e-3, 5.0, 1e-5)[0]
 
     assert_allclose(scan.null_lml(), st.multivariate_normal(m, s * K).logpdf(vec(Y)))
-    assert_allclose(kron(A, F) @ vec(scan.null_effsizes), m)
+    assert_allclose(kron(A, F) @ vec(scan.null_beta), m)
 
     A1 = random.randn(3, 2)
     F1 = random.randn(n, 4)
@@ -126,5 +126,5 @@ def test_lmm_kron_scan_public_attrs():
     assert_interface(
         KronFastScanner,
         ["null_lml", "scan"],
-        ["null_effsizes", "null_effsizes_covariance", "null_scale"],
+        ["null_beta", "null_beta_covariance", "null_scale"],
     )
