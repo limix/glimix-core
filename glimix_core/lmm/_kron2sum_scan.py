@@ -1,4 +1,5 @@
 from numpy import asarray, block, clip, inf, kron
+from numpy.linalg import inv
 
 from glimix_core._util import rsolve, unvec, vec
 
@@ -40,6 +41,7 @@ class KronFastScanner:
         self._A = asarray(A, float)
         self._X = asarray(X, float)
         self._G = asarray(G, float)
+        self._H = terms["H"]
         self._logdetK = terms["logdetK"]
         self._W = terms["W"]
         self._yKiy = terms["yKiy"]
@@ -71,9 +73,10 @@ class KronFastScanner:
             Log of the marginal likelihood.
         """
         np = self._nsamples * self._ntraits
-        scale = self.null_scale()
+        scale = self.null_scale
         return self._static_lml() / 2 - np * safe_log(scale) / 2 - np / 2
 
+    @property
     @cache
     def null_effsizes(self):
         """
@@ -93,6 +96,20 @@ class KronFastScanner:
         ntraits = self._Y.shape[1]
         return unvec(rsolve(self._MKiM, self._MKiy), (-1, ntraits))
 
+    @property
+    @cache
+    def null_effsizes_covariance(self):
+        """
+        Covariance of the optimal 𝜷 according to the marginal likelihood.
+
+        Returns
+        -------
+        effsizes-covariance : ndarray
+            s(MᵀK⁻¹M)⁻¹.
+        """
+        return self.null_scale * inv(self._H)
+
+    @property
     @cache
     def null_scale(self):
         """
@@ -110,7 +127,7 @@ class KronFastScanner:
             Optimal scale.
         """
         np = self._nsamples * self._ntraits
-        b = vec(self.null_effsizes())
+        b = vec(self.null_effsizes)
         mKiy = b.T @ self._MKiy
         sqrtdot = self._yKiy - mKiy
         scale = sqrtdot / np
@@ -147,7 +164,7 @@ class KronFastScanner:
         X1 = asarray(X1, float)
 
         if A1.shape[1] == 0:
-            return self.null_lml(), self.null_effsizes(), empty((0,)), self.null_scale()
+            return self.null_lml(), self.null_effsizes, empty((0,)), self.null_scale
 
         X1X1 = X1.T @ X1
         XX1 = self._X.T @ X1

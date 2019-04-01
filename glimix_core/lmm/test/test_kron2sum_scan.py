@@ -2,10 +2,10 @@ import scipy.stats as st
 from numpy import concatenate, empty, kron
 from numpy.random import RandomState
 from numpy.testing import assert_allclose
-from brent_search import minimize
 
-from glimix_core._util import vec
-from glimix_core.lmm import Kron2Sum
+from brent_search import minimize
+from glimix_core._util import assert_interface, vec
+from glimix_core.lmm import Kron2Sum, KronFastScanner
 
 
 def test_lmm_kron_scan():
@@ -30,7 +30,7 @@ def test_lmm_kron_scan():
     s = minimize(func, 1e-3, 5.0, 1e-5)[0]
 
     assert_allclose(scan.null_lml(), st.multivariate_normal(m, s * K).logpdf(vec(Y)))
-    assert_allclose(kron(A, F) @ vec(scan.null_effsizes()), m)
+    assert_allclose(kron(A, F) @ vec(scan.null_effsizes), m)
 
     A1 = random.randn(3, 2)
     F1 = random.randn(n, 4)
@@ -63,6 +63,22 @@ def test_lmm_kron_scan():
     assert_allclose(effsizes1, [])
 
 
+def test_lmm_kron_scan_unrestricted():
+    random = RandomState(0)
+    n = 5
+    Y = random.randn(n, 3)
+    A = random.randn(3, 3)
+    A = A @ A.T
+    F = random.randn(n, 2)
+    G = random.randn(n, 6)
+    lmm = Kron2Sum(Y, A, F, G, restricted=False)
+    lmm.fit(verbose=False)
+    scan = lmm.get_fast_scanner()
+
+    assert_allclose(scan.null_scale, 1.0, rtol=1e-3)
+    assert_allclose(lmm.beta_covariance, scan.null_effsizes_covariance, rtol=1e-3)
+
+
 def test_lmm_kron_scan_redundant():
     random = RandomState(0)
     n = 5
@@ -86,7 +102,7 @@ def test_lmm_kron_scan_redundant():
     s = minimize(func, 1e-3, 5.0, 1e-5)[0]
 
     assert_allclose(scan.null_lml(), st.multivariate_normal(m, s * K).logpdf(vec(Y)))
-    assert_allclose(kron(A, F) @ vec(scan.null_effsizes()), m)
+    assert_allclose(kron(A, F) @ vec(scan.null_effsizes), m)
 
     A1 = random.randn(3, 2)
     F1 = random.randn(n, 4)
@@ -104,3 +120,11 @@ def test_lmm_kron_scan_redundant():
     s = minimize(func, 1e-3, 5.0, 1e-5)[0]
 
     assert_allclose(lml, st.multivariate_normal(m, s * K).logpdf(vec(Y)))
+
+
+def test_lmm_kron_scan_public_attrs():
+    assert_interface(
+        KronFastScanner,
+        ["null_lml", "scan"],
+        ["null_effsizes", "null_effsizes_covariance", "null_scale"],
+    )
