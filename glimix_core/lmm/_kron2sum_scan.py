@@ -80,27 +80,26 @@ class KronFastScanner:
     @cache
     def null_beta(self):
         """
-        Optimal 𝚩 according to the marginal likelihood.
+        Optimal 𝛃 according to the marginal likelihood.
 
         It is compute by solving the equation ::
 
-            MᵀK⁻¹Mvec(𝚩) = MᵀK⁻¹𝐲,
+            MᵀK⁻¹M𝛃 = MᵀK⁻¹𝐲,
 
         for 𝐲 = vec(Y) and M = (A ⊗ X)vec(𝚩).
 
         Returns
         -------
         effsizes : ndarray
-            Optimal 𝚩.
+            Optimal 𝛃.
         """
-        ntraits = self._Y.shape[1]
-        return unvec(rsolve(self._MKiM, self._MKiy), (-1, ntraits))
+        return rsolve(self._MKiM, self._MKiy)
 
     @property
     @cache
     def null_beta_covariance(self):
         """
-        Covariance of the optimal 𝜷 according to the marginal likelihood.
+        Covariance of the optimal 𝛃 according to the marginal likelihood.
 
         Returns
         -------
@@ -164,7 +163,12 @@ class KronFastScanner:
         X1 = asarray(X1, float)
 
         if A1.shape[1] == 0:
-            return self.null_lml(), self.null_beta, empty((0,)), self.null_scale
+            return (
+                self.null_lml(),
+                unvec(self.null_beta, (self._ncovariates, -1)),
+                empty((0,)),
+                self.null_scale,
+            )
 
         X1X1 = X1.T @ X1
         XX1 = self._X.T @ X1

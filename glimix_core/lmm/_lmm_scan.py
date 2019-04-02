@@ -1,4 +1,5 @@
 from numpy import (
+    sqrt,
     add,
     all,
     asarray,
@@ -137,7 +138,7 @@ class FastScanner(object):
 
         Returns
         -------
-        effsizes : ndarray
+        beta : ndarray
             Optimal 𝜷.
         """
         ETBE = self._ETBE
@@ -155,11 +156,24 @@ class FastScanner(object):
 
         Returns
         -------
-        effsizes-covariance : ndarray
+        beta_covariance : ndarray
             (Xᵀ(s(K + vI))⁻¹X)⁻¹.
         """
         A = sum(i @ j.T for (i, j) in zip(self._XTQDi, self._XTQ))
         return self.null_scale * inv(A)
+
+    @property
+    @cache
+    def null_beta_se(self):
+        """
+        Standard errors of the optimal 𝜷.
+
+        Returns
+        -------
+        beta_se : ndarray
+            Square root of the diagonal of the beta covariance.
+        """
+        return sqrt(self.null_beta_covariance.diagonal())
 
     @property
     @cache
@@ -365,6 +379,11 @@ class FastScanner(object):
         scale = bstar / self._nsamples
         lml -= self._nsamples * safe_log(scale)
         lml /= 2
+
+        # effsizes_se = sqrt(scale * inv(left).diagonal())
+        # TODO
+        # beta_se = effsizes_se[:-set_size]
+        # alpha_se = effsizes_se[-set_size:]
 
         return lml, beta, alpha, scale
 

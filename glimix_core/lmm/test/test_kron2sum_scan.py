@@ -30,7 +30,7 @@ def test_lmm_kron_scan():
     s = minimize(func, 1e-3, 5.0, 1e-5)[0]
 
     assert_allclose(scan.null_lml(), st.multivariate_normal(m, s * K).logpdf(vec(Y)))
-    assert_allclose(kron(A, F) @ vec(scan.null_beta), m)
+    assert_allclose(kron(A, F) @ scan.null_beta, m)
 
     A1 = random.randn(3, 2)
     F1 = random.randn(n, 4)
@@ -102,7 +102,7 @@ def test_lmm_kron_scan_redundant():
     s = minimize(func, 1e-3, 5.0, 1e-5)[0]
 
     assert_allclose(scan.null_lml(), st.multivariate_normal(m, s * K).logpdf(vec(Y)))
-    assert_allclose(kron(A, F) @ vec(scan.null_beta), m)
+    assert_allclose(kron(A, F) @ scan.null_beta, m)
 
     A1 = random.randn(3, 2)
     F1 = random.randn(n, 4)

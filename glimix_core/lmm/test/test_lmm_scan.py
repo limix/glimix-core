@@ -1,9 +1,11 @@
 import pytest
 import scipy.stats as st
+import statsmodels.api as sm
 from numpy import array, concatenate, exp, eye, inf, nan, ones, sqrt, zeros
 from numpy.random import RandomState
 from numpy.testing import assert_allclose
 from numpy_sugar.linalg import economic_qs, economic_qs_linear
+from scipy.linalg import toeplitz
 from scipy.optimize import minimize
 
 from glimix_core._util import assert_interface
@@ -12,6 +14,32 @@ from glimix_core.lik import DeltaProdLik
 from glimix_core.lmm import LMM, FastScanner
 from glimix_core.mean import OffsetMean
 from glimix_core.random import GGPSampler
+
+
+def test_fast_scanner_statsmodel_gls():
+
+    data = sm.datasets.longley.load()
+    data.exog = sm.add_constant(data.exog)
+    ols_resid = sm.OLS(data.endog, data.exog).fit().resid
+    resid_fit = sm.OLS(ols_resid[1:], sm.add_constant(ols_resid[:-1])).fit()
+    rho = resid_fit.params[1]
+    order = toeplitz(range(len(ols_resid)))
+    sigma = rho ** order
+
+    QS = economic_qs(sigma)
+    lmm = LMM(data.endog, data.exog, QS)
+    lmm.fit(verbose=False)
+
+    sigma = lmm.covariance()
+    gls_model = sm.GLS(data.endog, data.exog, sigma=sigma)
+    gls_results = gls_model.fit()
+    beta_se = gls_results.bse
+    scanner = lmm.get_fast_scanner()
+    our_beta_se = sqrt(scanner.null_beta_covariance.diagonal())
+    # statsmodels scales the covariance matrix we pass, that is why
+    # we need to account for it here.
+    assert_allclose(our_beta_se, beta_se / sqrt(gls_results.scale))
+    assert_allclose(scanner.null_beta_se, beta_se / sqrt(gls_results.scale))
 
 
 def test_fast_scanner_redundant_candidates():
@@ -378,7 +406,7 @@ def test_lmm_scan_public_attrs():
     assert_interface(
         FastScanner,
         ["null_lml", "fast_scan", "scan"],
-        ["null_beta", "null_beta_covariance", "null_scale"],
+        ["null_beta", "null_beta_covariance", "null_scale", "null_beta_se"],
     )
 
 
