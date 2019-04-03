@@ -1,7 +1,26 @@
 import warnings
 
-from numpy import abs as npy_abs, array, errstate, maximum, nan_to_num, sqrt, zeros
-from numpy.linalg import LinAlgError
+from numpy import (
+    abs as npy_abs,
+    array,
+    errstate,
+    maximum,
+    nan_to_num,
+    sqrt,
+    zeros,
+    full_like,
+    abs,
+    stack,
+)
+from numpy.linalg import LinAlgError, inv, pinv
+
+
+def force_inv(A):
+    try:
+        Ai = inv(A)
+    except LinAlgError:
+        Ai = pinv(A)
+    return Ai
 
 
 def rsolve(A, y):
@@ -19,6 +38,26 @@ def rsolve(A, y):
         beta = zeros(A.shape[0])
 
     return beta
+
+
+def hinv(A00, A01, A11):
+    a = full_like(A01, A00)
+    b = A01
+    d = A11
+    m = npy_abs(stack([a, b, d])).max(0)
+
+    a /= m
+    b /= m
+    d /= m
+
+    ad_bc = a * d - b * b
+
+    with errstate(invalid="ignore", divide="ignore"):
+        ai = nan_to_num(d / ad_bc)
+        bi = nan_to_num(-b / ad_bc)
+        di = nan_to_num(a / ad_bc)
+
+    return ai / m, bi / m, di / m
 
 
 def hsolve(A00, A01, A11, y0, y1):

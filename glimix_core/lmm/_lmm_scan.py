@@ -1,5 +1,4 @@
 from numpy import (
-    sqrt,
     add,
     all,
     asarray,
@@ -11,10 +10,10 @@ from numpy import (
     isfinite,
     log,
     newaxis,
+    sqrt,
 )
-from numpy.linalg import inv
 
-from .._util import cache, hsolve, log2pi, rsolve, safe_log
+from .._util import cache, force_inv, hsolve, log2pi, rsolve, safe_log
 
 
 class FastScanner(object):
@@ -160,7 +159,7 @@ class FastScanner(object):
             (Xᵀ(s(K + vI))⁻¹X)⁻¹.
         """
         A = sum(i @ j.T for (i, j) in zip(self._XTQDi, self._XTQ))
-        return self.null_scale * inv(A)
+        return self.null_scale * force_inv(A)
 
     @property
     @cache
@@ -355,10 +354,13 @@ class FastScanner(object):
             alpha = x[-1:]
             bstar = _bstar_unpack(beta, alpha, self._yTBy, yTBE, ETBE, _bstar_1effect)
 
+            se = sqrt(force_inv(left).diagonal())
             scales[i] = bstar / self._nsamples
             lmls[i] -= self._nsamples * safe_log(scales[i])
             effs["eff0"][i, :] = beta.T
+            effs["eff0_se"][i, :] = se[:-1]
             effs["eff1"][i] = alpha[0]
+            effs["eff1_se"][i] = se[-1]
 
         lmls /= 2
 
@@ -389,7 +391,7 @@ class FastScanner(object):
         lml -= self._nsamples * safe_log(scale)
         lml /= 2
 
-        effsizes_se = sqrt(scale * inv(left).diagonal())
+        effsizes_se = sqrt(scale * force_inv(left).diagonal())
         beta_se = effsizes_se[:-set_size]
         alpha_se = effsizes_se[-set_size:]
 
@@ -419,6 +421,9 @@ class FastScanner(object):
         beta = x[0][newaxis, :]
         alpha = x[1]
         bstar = _bstar_1effect(beta, alpha, yTBy, yTBX, yTBM, XTBX, XTBM, MTBM)
+
+        breakpoint()
+        # se = sqrt(force_inv(left).diagonal())
 
         scales[:] = bstar / self._nsamples
         lmls -= self._nsamples * safe_log(scales)

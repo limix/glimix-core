@@ -1,7 +1,7 @@
 import pytest
 import scipy.stats as st
 from numpy import array, concatenate, exp, eye, inf, nan, ones, sqrt, zeros
-from numpy.linalg import inv, solve
+from numpy.linalg import inv, solve, pinv
 from numpy.random import RandomState
 from numpy.testing import assert_allclose
 from numpy_sugar.linalg import economic_qs, economic_qs_linear
@@ -194,6 +194,10 @@ def test_lmm_scan_difficult_settings_offset():
     assert_allclose(r["lmls"], [8.704135, 28.896466], rtol=1e-6)
     assert_allclose(r["effsizes0"], [[-0.9261322100000001], [-12.837513658497771]])
     assert_allclose(r["effsizes1"][1], -9.23756057859)
+    K = r["scales"][0] * low_rank_K
+    XM = concatenate((X, M[:, :1]), axis=1)
+    effsizes_se = sqrt(pinv(XM.T @ solve(K, XM)).diagonal())
+    assert_allclose(effsizes_se, concatenate((r["effsizes0_se"][0], r["effsizes1_se"])))
 
     M = array([[0.0, -1.80940339], [0.0, -0.4488265], [0.0, -2.00868376]])
     scanner = FastScanner(y, X, low_rank_QS, 0.75)

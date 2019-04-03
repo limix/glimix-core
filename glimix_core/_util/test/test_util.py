@@ -1,10 +1,11 @@
 from __future__ import division
 
 import pytest
-from numpy import array, inf, nan, ones
+from numpy import array, asarray, inf, nan, ones
+from numpy.linalg import inv
 from numpy.testing import assert_allclose
 
-from glimix_core._util import check_covariates, check_economic_qs, check_outcome
+from glimix_core._util import check_covariates, check_economic_qs, check_outcome, hinv
 
 
 def test_util_check_economic_qs():
@@ -74,3 +75,13 @@ def test_util_check_poisson_outcome():
     )
     with pytest.warns(UserWarning):
         assert_allclose(check_outcome(y, "poisson"), want)
+
+
+def test_hinv():
+    A00 = 1.3
+    A01 = asarray([0.2, 0.1, 0.15])
+    A11 = asarray([0.9, 1.1, 0.75])
+    ai, bi, di = hinv(A00, A01, A11)
+    for i in range(len(bi)):
+        Ai = inv([[A00, A01[i]], [A01[i], A11[i]]])
+        assert_allclose([[ai[i], bi[i]], [bi[i], di[i]]], Ai)
