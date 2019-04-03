@@ -1,6 +1,13 @@
 import warnings
 
 from numpy import (
+    minimum,
+    absolute,
+    atleast_1d,
+    divide,
+    logical_and,
+    logical_not,
+    isfinite,
     abs as npy_abs,
     array,
     errstate,
@@ -11,8 +18,13 @@ from numpy import (
     full_like,
     abs,
     stack,
+    arctan2,
+    cos,
+    sin,
+    sign,
 )
 from numpy.linalg import LinAlgError, inv, pinv
+from numpy_sugar import is_all_finite
 
 
 def force_inv(A):
@@ -40,24 +52,176 @@ def rsolve(A, y):
     return beta
 
 
-def hinv(A00, A01, A11):
-    a = A00
-    b = A01
-    d = A11
-    m = maximum(maximum(npy_abs(b), npy_abs(d)), 1.3)
+def heigvals(a, b, d):
+    a = float(a)
+    b = atleast_1d(b)
+    d = atleast_1d(d)
+    T = a + d
+    D = a * d - b * b
+
+    t0 = T / 2
+    t1 = sqrt(T * T / 4 - D)
+    eig0 = t0 + t1
+    eig1 = t0 - t1
+
+    eig0 = absolute(eig0)
+    eig1 = absolute(eig1)
+
+    with errstate(invalid="ignore", divide="ignore"):
+        return nan_to_num(maximum(eig0, eig1) / minimum(eig0, eig1))
+
+
+def _hinv_svd(a, b, d):
+    rcond = 1e-15
+    U, S, VT = hsvd(a, b, d)
+
+    maxi = maximum(absolute(S[0]), absolute(S[1]))
+    cutoff = rcond * maxi
+
+    large = S[0] > cutoff
+    S[0] = divide(1, S[0], where=large, out=S[0])
+    S[0][~large] = 0
+
+    large = S[1] > cutoff
+    S[1] = divide(1, S[1], where=large, out=S[1])
+    S[1][~large] = 0
+
+    SiVT = [[VT[0][0] * S[0], VT[0][1] * S[0]], [VT[1][0] * S[1], VT[1][1] * S[1]]]
+    Ai = [
+        [
+            U[0][0] * SiVT[0][0] + U[0][1] * SiVT[1][0],
+            U[0][0] * SiVT[0][1] + U[0][1] * SiVT[1][1],
+        ],
+        [
+            U[1][0] * SiVT[0][0] + U[1][1] * SiVT[1][0],
+            U[1][0] * SiVT[0][1] + U[1][1] * SiVT[1][1],
+        ],
+    ]
+    ai = Ai[0][0]
+    bi = Ai[0][1]
+    di = Ai[1][1]
+
+    return ai, bi, di
+
+
+def hinv(a, b, d):
+    rcond = 1e-7
+
+    b = atleast_1d(b)
+    d = atleast_1d(d)
+    a = float(a)
+    # a = full_like(b, float(A00))
+    cond = heigvals(a, b, d)
+
+    # cutoff = rcond * maximum.reduce([absolute(a), absolute(b), absolute(d)])
+    # large = norm > cutoff
+
+    norm = a * d - b * b
+    # ai = divide(d, norm)
+    # bi = divide(-b, norm)
+    # di = divide(a, norm)
+    with errstate(invalid="ignore", divide="ignore"):
+        ai = d / norm
+        bi = -b / norm
+        di = a / norm
+
+    nok = cond > 1 / rcond
+    ai[nok], bi[nok], di[nok] = _hinv_svd(a, b[nok], d[nok])
+    return ai, bi, di
+
+
+def _hinv(A00, A01, A11):
+    rcond = 1e-15
+    b = atleast_1d(A01)
+    d = atleast_1d(A11)
+    a = full_like(d, A00)
+    m = maximum(maximum(npy_abs(b), npy_abs(d)), abs(a))
 
     a /= m
     b = b / m
+    c = b
     d = d / m
 
-    ad_bc = a * d - b * b
-
+    bc = b * c
+    ad = a * d
     with errstate(invalid="ignore", divide="ignore"):
-        ai = nan_to_num(d / ad_bc)
-        bi = nan_to_num(-b / ad_bc)
-        di = nan_to_num(a / ad_bc)
+        ai = a / (a * a - nan_to_num((bc * a) / d))
+        bi = b / (b * b - nan_to_num(ad))
+        di = d / (d * d - nan_to_num((bc * d) / a))
 
-    return ai / m, bi / m, di / m
+    ai /= m
+    bi /= m
+    di /= m
+
+    ok = is_all_finite(ai) and is_all_finite(bi) and is_all_finite(di)
+    if not ok:
+        ok = logical_and.reduce([isfinite(ai), isfinite(bi), isfinite(di)])
+        nok = logical_not(ok)
+        U, S, VT = hsvd(a[nok], b[nok], d[nok])
+
+        maxi = maximum(npy_abs(S[0]), npy_abs(S[1]))
+        cutoff = rcond * maxi
+
+        large = S[0] > cutoff
+        S[0] = divide(1, S[0], where=large, out=S[0])
+        S[0][~large] = 0
+
+        large = S[1] > cutoff
+        S[1] = divide(1, S[1], where=large, out=S[1])
+        S[1][~large] = 0
+
+        SiVT = [[VT[0][0] * S[0], VT[0][1] * S[0]], [VT[1][0] * S[1], VT[1][1] * S[1]]]
+        Ai = [
+            [
+                U[0][0] * SiVT[0][0] + U[0][1] * SiVT[1][0],
+                U[0][0] * SiVT[0][1] + U[0][1] * SiVT[1][1],
+            ],
+            [
+                U[1][0] * SiVT[0][0] + U[1][1] * SiVT[1][0],
+                U[1][0] * SiVT[0][1] + U[1][1] * SiVT[1][1],
+            ],
+        ]
+        ai[nok] = Ai[0][0] / m
+        bi[nok] = Ai[0][1] / m
+        di[nok] = Ai[1][1] / m
+
+    return ai, bi, di
+
+
+def hsvd(a, b, d):
+    a = atleast_1d(a)
+    b = atleast_1d(b)
+    d = atleast_1d(d)
+
+    aa = a * a
+    bb = b * b
+    dd = d * d
+    ab = a * b
+    bd = b * d
+
+    e = aa - dd
+    s1 = aa + 2 * bb + dd
+    s2 = sqrt(e ** 2 + 4 * (ab + bd) ** 2)
+
+    t = 2 * ab + 2 * bd
+    theta = arctan2(t, e) / 2
+    psi = arctan2(t, aa - dd) / 2
+
+    Ct = cos(theta)
+    St = sin(theta)
+    Cp = cos(psi)
+    Sp = sin(psi)
+
+    s11 = (a * Ct + b * St) * Cp + (b * Ct + d * St) * Sp
+    s22 = (a * St - b * Ct) * Sp + (-b * St + d * Ct) * Cp
+
+    U = [[Ct, -St], [St, Ct]]
+    S = [sqrt((s1 + s2) / 2), sqrt((s1 - s2) / 2)]
+
+    VT = [[sign(s11) * Cp, sign(s11) * Sp], [-sign(s22) * Sp, sign(s22) * Cp]]
+
+    # U S V.T
+    return U, S, VT
 
 
 def hsolve(A00, A01, A11, y0, y1):

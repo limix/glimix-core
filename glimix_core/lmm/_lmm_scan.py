@@ -13,7 +13,7 @@ from numpy import (
     sqrt,
 )
 
-from .._util import cache, force_inv, hsolve, log2pi, rsolve, safe_log
+from .._util import cache, force_inv, hsolve, log2pi, rsolve, safe_log, hinv
 
 
 class FastScanner(object):
@@ -227,7 +227,9 @@ class FastScanner(object):
 
         lmls = empty(p)
         effsizes0 = empty((p, self._XTQ[0].shape[0]))
+        effsizes0_se = empty((p, self._XTQ[0].shape[0]))
         effsizes1 = empty(p)
+        effsizes1_se = empty(p)
         scales = empty(p)
 
         if verbose:
@@ -245,13 +247,17 @@ class FastScanner(object):
 
             lmls[start:stop] = r["lmls"]
             effsizes0[start:stop, :] = r["effsizes0"]
+            effsizes0_se[start:stop, :] = r["effsizes0_se"]
             effsizes1[start:stop] = r["effsizes1"]
+            effsizes1_se[start:stop] = r["effsizes1_se"]
             scales[start:stop] = r["scales"]
 
         return {
             "lmls": lmls,
             "effsizes0": effsizes0,
+            "effsizes0_se": effsizes0_se,
             "effsizes1": effsizes1,
+            "effsizes1_se": effsizes1_se,
             "scales": scales,
         }
 
@@ -333,7 +339,14 @@ class FastScanner(object):
         else:
             self._multicovariate_loop(lmls, effs, scales, yTBM, XTBM, MTBM)
 
-        return {"lmls": lmls, "effsizes0": eff0, "effsizes1": eff1, "scales": scales}
+        return {
+            "lmls": lmls,
+            "effsizes0": eff0,
+            "effsizes0_se": eff0_se,
+            "effsizes1": eff1,
+            "effsizes1_se": eff1_se,
+            "scales": scales,
+        }
 
     def _multicovariate_loop(self, lmls, effs, scales, yTBM, XTBM, MTBM):
         ETBE = self._ETBE
@@ -422,14 +435,23 @@ class FastScanner(object):
         alpha = x[1]
         bstar = _bstar_1effect(beta, alpha, yTBy, yTBX, yTBM, XTBX, XTBM, MTBM)
 
-        breakpoint()
-        # se = sqrt(force_inv(left).diagonal())
-
         scales[:] = bstar / self._nsamples
         lmls -= self._nsamples * safe_log(scales)
         lmls /= 2
         effs["eff0"][:] = beta.T
         effs["eff1"][:] = alpha
+
+        def jinv(A):
+            from numpy import eye
+            from numpy.linalg import inv
+
+            A = asarray(A, float)
+            return inv(A + eye(A.shape[0]) * 1e-7)
+
+        A00i, _, A11i = hinv(A00, A01, A11)
+        effs["eff0_se"][:, 0] = sqrt(scales * A00i)
+        effs["eff1_se"][:] = sqrt(scales * A11i)
+        pass
 
 
 class _yTBE:
