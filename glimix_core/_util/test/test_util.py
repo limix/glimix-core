@@ -78,10 +78,10 @@ def test_util_check_poisson_outcome():
 
 
 def test_hinv():
-    A00 = 1.3
-    A01 = asarray([0.2, 0.1, 0.15])
-    A11 = asarray([0.9, 1.1, 0.75])
-    ai, bi, di = hinv(A00, A01, A11)
-    for i in range(len(bi)):
-        Ai = inv([[A00, A01[i]], [A01[i], A11[i]]])
-        assert_allclose([[ai[i], bi[i]], [bi[i], di[i]]], Ai)
+    for A00 in [1.3, -1.3]:
+        A01 = asarray([0.2, 0.1, 0.15, -0.3, 1.299, -0.1])
+        A11 = asarray([0.9, 1.1, 0.75, 1.3, 1.3, 1000000.0])
+        ai, bi, di = hinv(A00, A01, A11)
+        for i in range(len(bi)):
+            Ai = inv([[A00, A01[i]], [A01[i], A11[i]]])
+            assert_allclose([[ai[i], bi[i]], [bi[i], di[i]]], Ai)

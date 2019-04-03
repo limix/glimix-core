@@ -41,14 +41,14 @@ def rsolve(A, y):
 
 
 def hinv(A00, A01, A11):
-    a = full_like(A01, A00)
+    a = A00
     b = A01
     d = A11
-    m = npy_abs(stack([a, b, d])).max(0)
+    m = maximum(maximum(npy_abs(b), npy_abs(d)), 1.3)
 
     a /= m
-    b /= m
-    d /= m
+    b = b / m
+    d = d / m
 
     ad_bc = a * d - b * b
 
