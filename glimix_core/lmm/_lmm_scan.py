@@ -286,7 +286,7 @@ class FastScanner(object):
         D = self._D
         MTBM = [ddot(i, 1 / j) @ i.T for i, j in zip(MTQ, D) if j.min() > 0]
 
-        return self._multicovariate_set_loop(yTBM, XTBM, MTBM)
+        return self._multicovariate_set(yTBM, XTBM, MTBM)
 
     @property
     def _nsamples(self):
@@ -362,7 +362,7 @@ class FastScanner(object):
 
         lmls /= 2
 
-    def _multicovariate_set_loop(self, yTBM, XTBM, MTBM):
+    def _multicovariate_set(self, yTBM, XTBM, MTBM):
 
         yTBE = [_yTBE(i, j.shape[0]) for (i, j) in zip(self._yTBX, yTBM)]
         for a, b in zip(yTBE, yTBM):

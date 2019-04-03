@@ -1,6 +1,7 @@
 import pytest
 import scipy.stats as st
 from numpy import array, concatenate, exp, eye, inf, nan, ones, sqrt, zeros
+from numpy.linalg import inv, solve
 from numpy.random import RandomState
 from numpy.testing import assert_allclose
 from numpy_sugar.linalg import economic_qs, economic_qs_linear
@@ -453,6 +454,10 @@ def test_lmm_scan():
     assert_allclose(r["effsizes0"], res.x[:2], rtol=1e-5)
     assert_allclose(r["effsizes1"], res.x[2:4], rtol=1e-5)
     assert_allclose(r["scale"], exp(res.x[4]), rtol=1e-5)
+    K = r["scale"] * lmm.covariance()
+    M = concatenate((M0, M1), axis=1)
+    effsizes_se = sqrt(inv(M.T @ solve(K, M)).diagonal())
+    assert_allclose(effsizes_se, concatenate((r["effsizes0_se"], r["effsizes1_se"])))
 
     assert_allclose(scanner.null_lml(), -53.805721275578456, rtol=1e-5)
     assert_allclose(
