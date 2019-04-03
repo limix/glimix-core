@@ -1,6 +1,5 @@
 import pytest
 import scipy.stats as st
-import statsmodels.api as sm
 from numpy import array, concatenate, exp, eye, inf, nan, ones, sqrt, zeros
 from numpy.random import RandomState
 from numpy.testing import assert_allclose
@@ -17,6 +16,7 @@ from glimix_core.random import GGPSampler
 
 
 def test_fast_scanner_statsmodel_gls():
+    import statsmodels.api as sm
 
     data = sm.datasets.longley.load()
     data.exog = sm.add_constant(data.exog)
@@ -61,7 +61,7 @@ def test_fast_scanner_redundant_candidates():
 
     scanner = lmm.get_fast_scanner()
 
-    scanner.fast_scan(markers, verbose=False)[0]
+    scanner.fast_scan(markers, verbose=False)
 
 
 def test_fast_scanner_set_scale_1covariate():
@@ -85,15 +85,17 @@ def test_fast_scanner_set_scale_1covariate():
     markers = M.copy() + random.randn(n, 1)
 
     scanner = lmm.get_fast_scanner()
-    lmls, eff0, eff1, scales = scanner.fast_scan(markers, verbose=False)
+    r = scanner.fast_scan(markers, verbose=False)
 
-    assert_allclose(lmls, [-21.509721], rtol=1e-6)
-    assert_allclose(eff0, [[-1.43206379971882]])
-    assert_allclose(eff1, [1.412239], rtol=1e-6)
-    assert_allclose(scales, [0.8440354018505616], rtol=1e-6)
+    assert_allclose(r["lmls"], [-21.509721], rtol=1e-6)
+    assert_allclose(r["effsizes0"], [[-1.43206379971882]])
+    assert_allclose(r["effsizes1"], [1.412239], rtol=1e-6)
+    assert_allclose(r["scales"], [0.8440354018505616], rtol=1e-6)
 
     beta = lmm.beta
-    assert_allclose(scanner.fast_scan(zeros((10, 1)), verbose=False)[1][0], beta)
+    assert_allclose(
+        scanner.fast_scan(zeros((10, 1)), verbose=False)["effsizes0"][0], beta
+    )
 
 
 def test_fast_scanner_set_scale_1covariate_redundant():
@@ -114,11 +116,11 @@ def test_fast_scanner_set_scale_1covariate_redundant():
     markers = M.copy()
 
     scanner = lmm.get_fast_scanner()
-    lmls, eff0, eff1, scales = scanner.fast_scan(markers, verbose=False)
-    assert_allclose(lmls[0], -22.357525517597185, rtol=1e-6)
-    assert_allclose(eff0, [[0.029985622694805182]])
-    assert_allclose(eff1[0], 0.02998562491058301, rtol=1e-6, atol=1e-6)
-    assert_allclose(scales, [1.0], rtol=1e-6)
+    r = scanner.fast_scan(markers, verbose=False)
+    assert_allclose(r["lmls"][0], -22.357525517597185, rtol=1e-6)
+    assert_allclose(r["effsizes0"], [[0.029985622694805182]])
+    assert_allclose(r["effsizes1"][0], 0.02998562491058301, rtol=1e-6, atol=1e-6)
+    assert_allclose(r["scales"], [1.0], rtol=1e-6)
 
 
 def test_fast_scanner_set_scale_multicovariates():
@@ -139,20 +141,20 @@ def test_fast_scanner_set_scale_multicovariates():
     markers = M.copy()
 
     scanner = lmm.get_fast_scanner()
-    lmls, eff0, eff1, scales = scanner.fast_scan(markers, verbose=False)
+    r = scanner.fast_scan(markers, verbose=False)
 
     want = [-19.318845, -19.318845, -19.318845]
-    assert_allclose(lmls, want, rtol=1e-6, atol=1e-6)
+    assert_allclose(r["lmls"], want, rtol=1e-6, atol=1e-6)
 
     assert_allclose(
-        eff0[2],
+        r["effsizes0"][2],
         [-0.6923007382350215, 2.3550810825973034, -0.38157769653894497],
         rtol=1e-5,
     )
 
     want = [-0.34615, 1.177541, -0.381578]
-    assert_allclose(eff1, want, rtol=1e-6, atol=1e-6)
-    assert_allclose(scales, [1.0, 1.0, 1.0])
+    assert_allclose(r["effsizes1"], want, rtol=1e-6, atol=1e-6)
+    assert_allclose(r["scales"], [1.0, 1.0, 1.0])
 
 
 def test_lmm_scan_difficult_settings_offset():
@@ -167,74 +169,78 @@ def test_lmm_scan_difficult_settings_offset():
         [[0.88766985, -1.80940339], [0.00822629, -0.4488265], [0.55807272, -2.00868376]]
     )
     scanner = FastScanner(y, X, low_rank_QS, 0)
-    lmls, eff0, eff1, scales = scanner.fast_scan(M, verbose=False)
-    assert_allclose(scales, [-2.9605947323337506e-16, 0.0], atol=1e-6)
-    assert_allclose(lmls, [28.896466, 28.896466], rtol=1e-6, atol=1e-6)
-    assert_allclose(eff0, [[3.008011016293077], [-12.837513658497771]])
-    assert_allclose(eff1, [-5.5851957509459353, -9.2375605785935715])
+    r = scanner.fast_scan(M, verbose=False)
+    assert_allclose(r["scales"], [-2.9605947323337506e-16, 0.0], atol=1e-6)
+    assert_allclose(r["lmls"], [28.896466, 28.896466], rtol=1e-6, atol=1e-6)
+    assert_allclose(r["effsizes0"], [[3.008011016293077], [-12.837513658497771]])
+    assert_allclose(r["effsizes1"], [-5.5851957509459353, -9.2375605785935715])
 
     X = ones((3, 1))
     M = array(
         [[0.88766985, -1.80940339], [0.00822629, -0.4488265], [0.55807272, -2.00868376]]
     )
     scanner = FastScanner(y, X, low_rank_QS, 0.75)
-    lmls, eff0, eff1, scales = scanner.fast_scan(M, verbose=False)
-    assert_allclose(scales, [0.00476137752581085, 0.012358877799161524], atol=1e-6)
-    assert_allclose(lmls, [0.823505300549, -0.607251148058])
-    assert_allclose(eff0, [[0.3495610486128161], [0.21723441738440089]])
-    assert_allclose(eff1, [-1.79486991632, 0.872439001906])
+    r = scanner.fast_scan(M, verbose=False)
+    assert_allclose(r["scales"], [0.00476137752581085, 0.012358877799161524], atol=1e-6)
+    assert_allclose(r["lmls"], [0.823505300549, -0.607251148058])
+    assert_allclose(r["effsizes0"], [[0.3495610486128161], [0.21723441738440089]])
+    assert_allclose(r["effsizes1"], [-1.79486991632, 0.872439001906])
 
     M = array([[0.0, -1.80940339], [0.0, -0.4488265], [0.0, -2.00868376]])
     scanner = FastScanner(y, X, low_rank_QS, 0)
-    lmls, eff0, eff1, scales = scanner.fast_scan(M, verbose=False)
-    assert_allclose(scales, [0.010459203921428906, 0.0], atol=1e-6)
-    assert_allclose(lmls, [8.704135, 28.896466], rtol=1e-6)
-    assert_allclose(eff0, [[-0.9261322100000001], [-12.837513658497771]])
-    assert_allclose(eff1[1], -9.23756057859)
+    r = scanner.fast_scan(M, verbose=False)
+    assert_allclose(r["scales"], [0.010459203921428906, 0.0], atol=1e-6)
+    assert_allclose(r["lmls"], [8.704135, 28.896466], rtol=1e-6)
+    assert_allclose(r["effsizes0"], [[-0.9261322100000001], [-12.837513658497771]])
+    assert_allclose(r["effsizes1"][1], -9.23756057859)
 
     M = array([[0.0, -1.80940339], [0.0, -0.4488265], [0.0, -2.00868376]])
     scanner = FastScanner(y, X, low_rank_QS, 0.75)
-    lmls, eff0, eff1, scales = scanner.fast_scan(M, verbose=False)
-    assert_allclose(scales, [0.49332480112228455, 0.012358877799161524], atol=1e-6)
-    assert_allclose(lmls, [-6.137441, -0.607251], rtol=1e-6, atol=1e-6)
-    assert_allclose(eff0, [[-0.9093206621461191], [0.21723441738440089]])
-    assert_allclose(eff1[1], 0.872439001906)
+    r = scanner.fast_scan(M, verbose=False)
+    assert_allclose(r["scales"], [0.49332480112228455, 0.012358877799161524], atol=1e-6)
+    assert_allclose(r["lmls"], [-6.137441, -0.607251], rtol=1e-6, atol=1e-6)
+    assert_allclose(r["effsizes0"], [[-0.9093206621461191], [0.21723441738440089]])
+    assert_allclose(r["effsizes1"][1], 0.872439001906)
 
     M = array(
         [[0.88766985, -1.80940339], [0.00822629, -0.4488265], [0.55807272, -2.00868376]]
     )
     scanner = FastScanner(y, X, full_rank_QS, 0)
-    lmls, eff0, eff1, scales = scanner.fast_scan(M, verbose=False)
-    assert_allclose(scales, [0.004736354793149378, 0.012301930830306581], atol=1e-6)
-    assert_allclose(lmls, [0.636421389625, -0.795311239268])
-    assert_allclose(eff0, [[0.355188079803773], [0.2224382967889082]])
-    assert_allclose(eff1, [-1.79757295968, 0.871806031702])
+    r = scanner.fast_scan(M, verbose=False)
+    assert_allclose(
+        r["scales"], [0.004736354793149378, 0.012301930830306581], atol=1e-6
+    )
+    assert_allclose(r["lmls"], [0.636421389625, -0.795311239268])
+    assert_allclose(r["effsizes0"], [[0.355188079803773], [0.2224382967889082]])
+    assert_allclose(r["effsizes1"], [-1.79757295968, 0.871806031702])
 
     M = array(
         [[0.88766985, -1.80940339], [0.00822629, -0.4488265], [0.55807272, -2.00868376]]
     )
     scanner = FastScanner(y, X, full_rank_QS, 0.75)
-    lmls, eff0, eff1, scales = scanner.fast_scan(M, verbose=False)
-    assert_allclose(scales, [0.004662840142176661, 0.012134195778553977], atol=1e-6)
-    assert_allclose(lmls, [0.251547678451, -1.18305656511])
-    assert_allclose(eff0, [[0.3717198167493795], [0.2377661184233066]])
-    assert_allclose(eff1, [-1.80551427016, 0.86994164292])
+    r = scanner.fast_scan(M, verbose=False)
+    assert_allclose(
+        r["scales"], [0.004662840142176661, 0.012134195778553977], atol=1e-6
+    )
+    assert_allclose(r["lmls"], [0.251547678451, -1.18305656511])
+    assert_allclose(r["effsizes0"], [[0.3717198167493795], [0.2377661184233066]])
+    assert_allclose(r["effsizes1"], [-1.80551427016, 0.86994164292])
 
     M = array([[0.0, -1.80940339], [0.0, -0.4488265], [0.0, -2.00868376]])
     scanner = FastScanner(y, X, full_rank_QS, 0)
-    lmls, eff0, eff1, scales = scanner.fast_scan(M, verbose=False)
-    assert_allclose(scales, [0.3725256920525814, 0.012301930830306581], atol=1e-6)
-    assert_allclose(lmls, [-5.911136, -0.795311], atol=1e-6, rtol=1e-6)
-    assert_allclose(eff0, [[-0.9038187010303032], [0.2224382967889082]])
-    assert_allclose(eff1[1], 0.871806031702)
+    r = scanner.fast_scan(M, verbose=False)
+    assert_allclose(r["scales"], [0.3725256920525814, 0.012301930830306581], atol=1e-6)
+    assert_allclose(r["lmls"], [-5.911136, -0.795311], atol=1e-6, rtol=1e-6)
+    assert_allclose(r["effsizes0"], [[-0.9038187010303032], [0.2224382967889082]])
+    assert_allclose(r["effsizes1"][1], 0.871806031702)
 
     M = array([[0.0, -1.80940339], [0.0, -0.4488265], [0.0, -2.00868376]])
     scanner = FastScanner(y, X, full_rank_QS, 0.75)
-    lmls, eff0, eff1, scales = scanner.fast_scan(M, verbose=False)
-    assert_allclose(scales, [0.21713469123194049, 0.012134195778553977], atol=1e-6)
-    assert_allclose(lmls, [-5.509792, -1.183057], atol=1e-6, rtol=1e-6)
-    assert_allclose(eff0, [[-0.8876088873393126], [0.2377661184233066]])
-    assert_allclose(eff1[1], 0.86994164292)
+    r = scanner.fast_scan(M, verbose=False)
+    assert_allclose(r["scales"], [0.21713469123194049, 0.012134195778553977], atol=1e-6)
+    assert_allclose(r["lmls"], [-5.509792, -1.183057], atol=1e-6, rtol=1e-6)
+    assert_allclose(r["effsizes0"], [[-0.8876088873393126], [0.2377661184233066]])
+    assert_allclose(r["effsizes1"][1], 0.86994164292)
 
 
 def test_lmm_scan_difficult_settings_multicovariates():
@@ -255,79 +261,85 @@ def test_lmm_scan_difficult_settings_multicovariates():
         [[0.88766985, -1.80940339], [0.00822629, -0.4488265], [0.55807272, -2.00868376]]
     )
     scanner = FastScanner(y, X, low_rank_QS, 0)
-    lmls, eff0, eff1, scales = scanner.fast_scan(M, verbose=False)
-    assert_allclose(lmls, [28.896466, 28.896466], atol=1e-6, rtol=1e-6)
+    r = scanner.fast_scan(M, verbose=False)
+    assert_allclose(r["lmls"], [28.896466, 28.896466], atol=1e-6, rtol=1e-6)
     assert_allclose(
-        eff0,
+        r["effsizes0"],
         [
             [-2.247703714834354, 0.8190282920748556],
             [-3.1760541039273127, 0.40265319454969883],
         ],
     )
-    assert_allclose(eff1, [-1.195493, 0.318417], atol=1e-6, rtol=1e-6)
-    assert_allclose(scales, [1.850371707708594e-17, 1.3877787807814457e-17], atol=1e-6)
+    assert_allclose(r["effsizes1"], [-1.195493, 0.318417], atol=1e-6, rtol=1e-6)
+    assert_allclose(
+        r["scales"], [1.850371707708594e-17, 1.3877787807814457e-17], atol=1e-6
+    )
 
     X = ones((3, 1))
     M = array(
         [[0.88766985, -1.80940339], [0.00822629, -0.4488265], [0.55807272, -2.00868376]]
     )
     scanner = FastScanner(y, X, low_rank_QS, 0.75)
-    lmls, eff0, eff1, scales = scanner.fast_scan(M, verbose=False)
-    assert_allclose(lmls, [0.823505300549, -0.607251148058])
-    assert_allclose(eff0, [[0.3495610486128161], [0.21723441738440089]])
-    assert_allclose(eff1, [-1.79486991632, 0.872439001906])
-    assert_allclose(scales, [0.00476137752581085, 0.012358877799161524], atol=1e-6)
+    r = scanner.fast_scan(M, verbose=False)
+    assert_allclose(r["lmls"], [0.823505300549, -0.607251148058])
+    assert_allclose(r["effsizes0"], [[0.3495610486128161], [0.21723441738440089]])
+    assert_allclose(r["effsizes1"], [-1.79486991632, 0.872439001906])
+    assert_allclose(r["scales"], [0.00476137752581085, 0.012358877799161524], atol=1e-6)
 
     M = array([[0.0, -1.80940339], [0.0, -0.4488265], [0.0, -2.00868376]])
     scanner = FastScanner(y, X, low_rank_QS, 0)
-    lmls, eff0, eff1, scales = scanner.fast_scan(M, verbose=False)
-    assert_allclose(lmls, [8.704135, 28.896466])
-    assert_allclose(eff0, [[-0.9261322100000001], [-12.837513658497771]])
-    assert_allclose(eff1[1], -9.23756057859)
-    assert_allclose(scales, [0.010459203921428906, 0.0], atol=1e-6)
+    r = scanner.fast_scan(M, verbose=False)
+    assert_allclose(r["lmls"], [8.704135, 28.896466])
+    assert_allclose(r["effsizes0"], [[-0.9261322100000001], [-12.837513658497771]])
+    assert_allclose(r["effsizes1"][1], -9.23756057859)
+    assert_allclose(r["scales"], [0.010459203921428906, 0.0], atol=1e-6)
 
     M = array([[0.0, -1.80940339], [0.0, -0.4488265], [0.0, -2.00868376]])
     scanner = FastScanner(y, X, low_rank_QS, 0.75)
-    lmls, eff0, eff1, scales = scanner.fast_scan(M, verbose=False)
-    assert_allclose(lmls, [-6.137441, -0.607251], atol=1e-6, rtol=1e-6)
-    assert_allclose(eff0, [[-0.9093206621461191], [0.21723441738440089]])
-    assert_allclose(eff1[1], 0.872439001906)
-    assert_allclose(scales, [0.49332480112228455, 0.012358877799161524], atol=1e-6)
+    r = scanner.fast_scan(M, verbose=False)
+    assert_allclose(r["lmls"], [-6.137441, -0.607251], atol=1e-6, rtol=1e-6)
+    assert_allclose(r["effsizes0"], [[-0.9093206621461191], [0.21723441738440089]])
+    assert_allclose(r["effsizes1"][1], 0.872439001906)
+    assert_allclose(r["scales"], [0.49332480112228455, 0.012358877799161524], atol=1e-6)
 
     M = array(
         [[0.88766985, -1.80940339], [0.00822629, -0.4488265], [0.55807272, -2.00868376]]
     )
     scanner = FastScanner(y, X, full_rank_QS, 0)
-    lmls, eff0, eff1, scales = scanner.fast_scan(M, verbose=False)
-    assert_allclose(lmls, [0.636421389625, -0.795311239268])
-    assert_allclose(eff1, [-1.79757295968, 0.871806031702])
-    assert_allclose(scales, [0.004736354793149378, 0.012301930830306581], atol=1e-6)
+    r = scanner.fast_scan(M, verbose=False)
+    assert_allclose(r["lmls"], [0.636421389625, -0.795311239268])
+    assert_allclose(r["effsizes1"], [-1.79757295968, 0.871806031702])
+    assert_allclose(
+        r["scales"], [0.004736354793149378, 0.012301930830306581], atol=1e-6
+    )
 
     M = array(
         [[0.88766985, -1.80940339], [0.00822629, -0.4488265], [0.55807272, -2.00868376]]
     )
     scanner = FastScanner(y, X, full_rank_QS, 0.75)
-    lmls, eff0, eff1, scales = scanner.fast_scan(M, verbose=False)
-    assert_allclose(lmls, [0.251547678451, -1.18305656511])
-    assert_allclose(eff0, [[0.3717198167493795], [0.2377661184233066]])
-    assert_allclose(eff1, [-1.80551427016, 0.86994164292])
-    assert_allclose(scales, [0.004662840142176661, 0.012134195778553977], atol=1e-6)
+    r = scanner.fast_scan(M, verbose=False)
+    assert_allclose(r["lmls"], [0.251547678451, -1.18305656511])
+    assert_allclose(r["effsizes0"], [[0.3717198167493795], [0.2377661184233066]])
+    assert_allclose(r["effsizes1"], [-1.80551427016, 0.86994164292])
+    assert_allclose(
+        r["scales"], [0.004662840142176661, 0.012134195778553977], atol=1e-6
+    )
 
     M = array([[0.0, -1.80940339], [0.0, -0.4488265], [0.0, -2.00868376]])
     scanner = FastScanner(y, X, full_rank_QS, 0)
-    lmls, eff0, eff1, scales = scanner.fast_scan(M, verbose=False)
-    assert_allclose(lmls, [-5.911136, -0.795311], atol=1e-6, rtol=1e-6)
-    assert_allclose(eff0, [[-0.9038187010303032], [0.2224382967889082]])
-    assert_allclose(eff1[1], 0.871806031702)
-    assert_allclose(scales, [0.3725256920525814, 0.012301930830306581], atol=1e-6)
+    r = scanner.fast_scan(M, verbose=False)
+    assert_allclose(r["lmls"], [-5.911136, -0.795311], atol=1e-6, rtol=1e-6)
+    assert_allclose(r["effsizes0"], [[-0.9038187010303032], [0.2224382967889082]])
+    assert_allclose(r["effsizes1"][1], 0.871806031702)
+    assert_allclose(r["scales"], [0.3725256920525814, 0.012301930830306581], atol=1e-6)
 
     M = array([[0.0, -1.80940339], [0.0, -0.4488265], [0.0, -2.00868376]])
     scanner = FastScanner(y, X, full_rank_QS, 0.75)
-    lmls, eff0, eff1, scales = scanner.fast_scan(M, verbose=False)
-    assert_allclose(lmls, [-5.509792, -1.183057], atol=1e-6, rtol=1e-6)
-    assert_allclose(eff0, [[-0.8876088873393126], [0.2377661184233066]])
-    assert_allclose(eff1, [0.0, 0.8699416429204303])
-    assert_allclose(scales, [0.21713469123194049, 0.012134195778553977], atol=1e-6)
+    r = scanner.fast_scan(M, verbose=False)
+    assert_allclose(r["lmls"], [-5.509792, -1.183057], atol=1e-6, rtol=1e-6)
+    assert_allclose(r["effsizes0"], [[-0.8876088873393126], [0.2377661184233066]])
+    assert_allclose(r["effsizes1"], [0.0, 0.8699416429204303])
+    assert_allclose(r["scales"], [0.21713469123194049, 0.012134195778553977], atol=1e-6)
 
 
 def _outcome_sample(random, offset, X):
@@ -370,7 +382,7 @@ def test_lmm_scan_lmm_iid_prior():
 
     lmm.fit(verbose=False)
     scanner = lmm.get_fast_scanner()
-    lmls = scanner.fast_scan(markers, verbose=False)[0]
+    lmls = scanner.fast_scan(markers, verbose=False)["lmls"]
     assert_allclose(lmls[:2], [-63.16019973550036, -62.489358539276715])
 
 
@@ -435,12 +447,12 @@ def test_lmm_scan():
 
     res = minimize(fun, [0, 0, 0, 0, 0])
     scanner = lmm.get_fast_scanner()
-    lml, eff0, eff1, scale = scanner.scan(M1)
+    r = scanner.scan(M1)
 
-    assert_allclose(lml, -res.fun)
-    assert_allclose(eff0, res.x[:2], rtol=1e-5)
-    assert_allclose(eff1, res.x[2:4], rtol=1e-5)
-    assert_allclose(scale, exp(res.x[4]), rtol=1e-5)
+    assert_allclose(r["lml"], -res.fun)
+    assert_allclose(r["effsizes0"], res.x[:2], rtol=1e-5)
+    assert_allclose(r["effsizes1"], res.x[2:4], rtol=1e-5)
+    assert_allclose(r["scale"], exp(res.x[4]), rtol=1e-5)
 
     assert_allclose(scanner.null_lml(), -53.805721275578456, rtol=1e-5)
     assert_allclose(
@@ -485,9 +497,9 @@ def test_lmm_scan_fast_scan():
 
     res = minimize(fun, [0, 0, 0, 0])
     scanner = lmm.get_fast_scanner()
-    lml, eff0, eff1, scales = scanner.fast_scan(M1, verbose=False)
+    r = scanner.fast_scan(M1, verbose=False)
 
-    assert_allclose(lml[0], -res.fun)
-    assert_allclose(eff0[0], res.x[:2], rtol=1e-5)
-    assert_allclose(eff1[0], res.x[2:3], rtol=1e-5)
-    assert_allclose(scales[0], exp(res.x[3]), rtol=1e-5)
+    assert_allclose(r["lmls"][0], -res.fun)
+    assert_allclose(r["effsizes0"][0], res.x[:2], rtol=1e-5)
+    assert_allclose(r["effsizes1"][0], res.x[2:3], rtol=1e-5)
+    assert_allclose(r["scales"][0], exp(res.x[3]), rtol=1e-5)

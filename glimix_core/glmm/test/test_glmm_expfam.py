@@ -126,10 +126,10 @@ def test_glmmexpfam_glmmnormal_get_fast_scanner():
     assert_allclose(0.999999994119, glmm.delta, atol=1e-3, rtol=1e-3)
 
     scanner = glmm.get_fast_scanner()
-    lmls, eff0, eff1, scales = scanner.fast_scan(X, verbose=False)
+    r = scanner.fast_scan(X, verbose=False)
 
     assert_allclose(
-        lmls,
+        r["lmls"],
         [
             3.666664259270515,
             3.6666642592705188,
@@ -140,7 +140,7 @@ def test_glmmexpfam_glmmnormal_get_fast_scanner():
         rtol=1e-6,
     )
     assert_allclose(
-        eff0,
+        r["effsizes0"],
         [
             array([-0.04114011, -0.03910684, 0.04226118, -0.05893773, 0.01718666]),
             array([-0.08228023, -0.01955342, 0.04226118, -0.05893773, 0.01718666]),
@@ -151,7 +151,7 @@ def test_glmmexpfam_glmmnormal_get_fast_scanner():
         rtol=1e-6,
     )
     assert_allclose(
-        eff1,
+        r["effsizes1"],
         [
             -0.04114011396191331,
             -0.01955341813308458,
@@ -162,7 +162,7 @@ def test_glmmexpfam_glmmnormal_get_fast_scanner():
         rtol=1e-6,
     )
     assert_allclose(
-        scales,
+        r["scales"],
         [
             0.07341651661479422,
             0.07341651661479419,

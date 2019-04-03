@@ -35,10 +35,10 @@ def test_lmm_kron_scan():
     A1 = random.randn(3, 2)
     F1 = random.randn(n, 4)
 
-    lml, effsizes0, effsizes1, scale = scan.scan(A1, F1)
-    assert_allclose(scale, 0.3000748879939645, rtol=1e-3)
+    r = scan.scan(A1, F1)
+    assert_allclose(r["scale"], 0.3000748879939645, rtol=1e-3)
 
-    m = kron(A, F) @ vec(effsizes0) + kron(A1, F1) @ vec(effsizes1)
+    m = kron(A, F) @ vec(r["effsizes0"]) + kron(A1, F1) @ vec(r["effsizes1"])
 
     def func(scale):
         mv = st.multivariate_normal(m, scale * K)
@@ -46,13 +46,13 @@ def test_lmm_kron_scan():
 
     s = minimize(func, 1e-3, 5.0, 1e-5)[0]
 
-    assert_allclose(lml, st.multivariate_normal(m, s * K).logpdf(vec(Y)))
+    assert_allclose(r["lml"], st.multivariate_normal(m, s * K).logpdf(vec(Y)))
 
-    lml, effsizes0, effsizes1, scale = scan.scan(empty((3, 0)), F1)
-    assert_allclose(lml, -10.96414417860732, rtol=1e-4)
-    assert_allclose(scale, 0.5999931720566452, rtol=1e-3)
+    r = scan.scan(empty((3, 0)), F1)
+    assert_allclose(r["lml"], -10.96414417860732, rtol=1e-4)
+    assert_allclose(r["scale"], 0.5999931720566452, rtol=1e-3)
     assert_allclose(
-        effsizes0,
+        r["effsizes0"],
         [
             [1.411082677273241, 0.41436234081257045, -1.5337251391408189],
             [-0.6753042112998789, -0.20299590400182352, 0.6723874047807074],
@@ -60,7 +60,7 @@ def test_lmm_kron_scan():
         rtol=1e-2,
         atol=1e-2,
     )
-    assert_allclose(effsizes1, [])
+    assert_allclose(r["effsizes1"], [])
 
 
 def test_lmm_kron_scan_unrestricted():
@@ -108,10 +108,10 @@ def test_lmm_kron_scan_redundant():
     F1 = random.randn(n, 4)
     F1 = concatenate([F1, F1], axis=1)
 
-    lml, effsizes0, effsizes1, scale = scan.scan(A1, F1)
-    assert_allclose(scale, 0.3005376956901813, rtol=1e-3)
+    r = scan.scan(A1, F1)
+    assert_allclose(r["scale"], 0.3005376956901813, rtol=1e-3)
 
-    m = kron(A, F) @ vec(effsizes0) + kron(A1, F1) @ vec(effsizes1)
+    m = kron(A, F) @ vec(r["effsizes0"]) + kron(A1, F1) @ vec(r["effsizes1"])
 
     def func(scale):
         mv = st.multivariate_normal(m, scale * K)
@@ -119,7 +119,7 @@ def test_lmm_kron_scan_redundant():
 
     s = minimize(func, 1e-3, 5.0, 1e-5)[0]
 
-    assert_allclose(lml, st.multivariate_normal(m, s * K).logpdf(vec(Y)))
+    assert_allclose(r["lml"], st.multivariate_normal(m, s * K).logpdf(vec(Y)))
 
 
 def test_lmm_kron_scan_public_attrs():

@@ -140,14 +140,14 @@ parameters v₀ and v₁ are held fixed. The v₀ and v₁ values are first foun
 
     >>> scanner = lmm.get_fast_scanner()
     >>> M = [[1.5, 0.1], [-0.2, 0.4], [0.0, 1.0], [-3.4, 0.6]]
-    >>> lml, eff0, eff1, scale = scanner.scan(M)
-    >>> lml  # doctest: +FLOAT_CMP
+    >>> r = scanner.scan(M)
+    >>> r["lml"]  # doctest: +FLOAT_CMP
     -0.7322976913217882
-    >>> eff0  # doctest: +FLOAT_CMP
+    >>> r["effsizes0"]  # doctest: +FLOAT_CMP
     array([-0.42323051])
-    >>> eff1  # doctest: +FLOAT_CMP
+    >>> r["effsizes1"]  # doctest: +FLOAT_CMP
     array([-0.05913491,  0.37079162])
-    >>> scale  # doctest: +FLOAT_CMP
+    >>> r["scale"]  # doctest: +FLOAT_CMP
     0.4629376687687552
 
 For the null case (i.e., when there is not candidate set Mⱼ), the log of the marginal
@@ -176,18 +176,18 @@ The parameters 𝚩ⱼ, 𝚨ⱼ, and sⱼ are found via maximum likelihood.
     >>> mscanner = mlmm.get_fast_scanner()
     >>> A = random.randn(2, 5)
     >>> X = random.randn(5, 3)
-    >>> lml, eff0, eff1, scale = mscanner.scan(A, X)
-    >>> lml  # doctest: +FLOAT_CMP
+    >>> r = mscanner.scan(A, X)
+    >>> r["lml"]  # doctest: +FLOAT_CMP
     83.08864898305367
-    >>> eff0  # doctest: +FLOAT_CMP
+    >>> r["effsizes0"]  # doctest: +FLOAT_CMP
     array([[ 0.01482133,  0.45189275],
            [ 0.43706748, -0.71162517],
            [ 0.52595486, -1.59740035]])
-    >>> eff1  # doctest: +FLOAT_CMP
+    >>> r["effsizes1"]  # doctest: +FLOAT_CMP
     array([[ 0.03868156, -0.77199913, -0.09643554, -0.53973775,  1.03149564],
            [ 0.05780863, -0.24744739, -0.11882984, -0.19331759,  0.74964805],
            [ 0.01051071, -1.61751886, -0.0654883 , -1.09931899,  1.51034738]])
-    >>> scale  # doctest: +FLOAT_CMP
+    >>> r["scale"]  # doctest: +FLOAT_CMP
     5.238689482212067e-11
 
 API

@@ -242,14 +242,19 @@ class FastScanner(object):
             start = i * chunk_size
             stop = min(start + chunk_size, M.shape[1])
 
-            l, e0, e1, s = self._fast_scan_chunk(M[:, start:stop])
+            r = self._fast_scan_chunk(M[:, start:stop])
 
-            lmls[start:stop] = l
-            effsizes0[start:stop, :] = e0
-            effsizes1[start:stop] = e1
-            scales[start:stop] = s
+            lmls[start:stop] = r["lmls"]
+            effsizes0[start:stop, :] = r["effsizes0"]
+            effsizes1[start:stop] = r["effsizes1"]
+            scales[start:stop] = r["scales"]
 
-        return lmls, effsizes0, effsizes1, scales
+        return {
+            "lmls": lmls,
+            "effsizes0": effsizes0,
+            "effsizes1": effsizes1,
+            "scales": scales,
+        }
 
     def scan(self, M):
         """
@@ -317,17 +322,21 @@ class FastScanner(object):
 
         lmls = full(M.shape[1], self._static_lml())
         eff0 = empty((M.shape[1], self._XTQ[0].shape[0]))
+        eff0_se = empty((M.shape[1], self._XTQ[0].shape[0]))
         eff1 = empty((M.shape[1]))
+        eff1_se = empty((M.shape[1]))
         scales = empty(M.shape[1])
 
+        effs = {"eff0": eff0, "eff0_se": eff0_se, "eff1": eff1, "eff1_se": eff1_se}
+
         if self._ncovariates == 1:
-            self._1covariate_loop(lmls, eff0, eff1, scales, yTBM, XTBM, MTBM)
+            self._1covariate_loop(lmls, effs, scales, yTBM, XTBM, MTBM)
         else:
-            self._multicovariate_loop(lmls, eff0, eff1, scales, yTBM, XTBM, MTBM)
+            self._multicovariate_loop(lmls, effs, scales, yTBM, XTBM, MTBM)
 
-        return lmls, eff0, eff1, scales
+        return {"lmls": lmls, "effsizes0": eff0, "effsizes1": eff1, "scales": scales}
 
-    def _multicovariate_loop(self, lmls, eff0, eff1, scales, yTBM, XTBM, MTBM):
+    def _multicovariate_loop(self, lmls, effs, scales, yTBM, XTBM, MTBM):
         ETBE = self._ETBE
         yTBE = self._yTBE
         tuple_size = len(yTBE)
@@ -348,8 +357,8 @@ class FastScanner(object):
 
             scales[i] = bstar / self._nsamples
             lmls[i] -= self._nsamples * safe_log(scales[i])
-            eff0[i, :] = beta.T
-            eff1[i] = alpha[0]
+            effs["eff0"][i, :] = beta.T
+            effs["eff1"][i] = alpha[0]
 
         lmls /= 2
 
@@ -380,14 +389,20 @@ class FastScanner(object):
         lml -= self._nsamples * safe_log(scale)
         lml /= 2
 
-        # effsizes_se = sqrt(scale * inv(left).diagonal())
-        # TODO
-        # beta_se = effsizes_se[:-set_size]
-        # alpha_se = effsizes_se[-set_size:]
+        effsizes_se = sqrt(scale * inv(left).diagonal())
+        beta_se = effsizes_se[:-set_size]
+        alpha_se = effsizes_se[-set_size:]
 
-        return lml, beta, alpha, scale
+        return {
+            "lml": lml,
+            "effsizes0": beta,
+            "effsizes0_se": beta_se,
+            "effsizes1": alpha,
+            "effsizes1_se": alpha_se,
+            "scale": scale,
+        }
 
-    def _1covariate_loop(self, lmls, effsizes0, effsizes1, scales, yTBM, XTBM, MTBM):
+    def _1covariate_loop(self, lmls, effs, scales, yTBM, XTBM, MTBM):
         ETBE = self._ETBE
         yTBX = self._yTBX
         XTBX = [i.XTBX for i in ETBE]
@@ -408,8 +423,8 @@ class FastScanner(object):
         scales[:] = bstar / self._nsamples
         lmls -= self._nsamples * safe_log(scales)
         lmls /= 2
-        effsizes0[:] = beta.T
-        effsizes1[:] = alpha
+        effs["eff0"][:] = beta.T
+        effs["eff1"][:] = alpha
 
 
 class _yTBE:

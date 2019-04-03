@@ -163,12 +163,12 @@ class KronFastScanner:
         X1 = asarray(X1, float)
 
         if A1.shape[1] == 0:
-            return (
-                self.null_lml(),
-                unvec(self.null_beta, (self._ncovariates, -1)),
-                empty((0,)),
-                self.null_scale,
-            )
+            return {
+                "lml": self.null_lml(),
+                "effsizes0": unvec(self.null_beta, (self._ncovariates, -1)),
+                "effsizes1": empty((0,)),
+                "scale": self.null_scale,
+            }
 
         X1X1 = X1.T @ X1
         XX1 = self._X.T @ X1
@@ -204,8 +204,13 @@ class KronFastScanner:
         np = self._nsamples * self._ntraits
         sqrtdot = self._yKiy - mKiy
         scale = clip(sqrtdot / np, epsilon.tiny, inf)
-        lmls = self._static_lml() / 2 - np * safe_log(scale) / 2 - np / 2
-        return lmls, effsizes0, effsizes1, scale
+        lml = self._static_lml() / 2 - np * safe_log(scale) / 2 - np / 2
+        return {
+            "lml": lml,
+            "effsizes0": effsizes0,
+            "effsizes1": effsizes1,
+            "scale": scale,
+        }
 
     @cache
     def _static_lml(self):
