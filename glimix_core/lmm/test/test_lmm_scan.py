@@ -161,41 +161,40 @@ def test_fast_scanner_set_scale_multicovariates():
 def test_fast_scanner_effsizes_se():
     full_rank_K = array([[6.0, 14.0, 23.0], [14.0, 51.0, 86.0], [23.0, 86.0, 150.0]])
     full_rank_QS = economic_qs(full_rank_K)
+    _test_fast_scanner_effsizes_se(full_rank_K, full_rank_QS, 0.2)
+    _test_fast_scanner_effsizes_se(full_rank_K, full_rank_QS, 0.0)
+
+    low_rank_K = array([[5.0, 14.0, 23.0], [14.0, 50.0, 86.0], [23.0, 86.0, 149.0]])
+    low_rank_QS = economic_qs(low_rank_K)
+    _test_fast_scanner_effsizes_se(low_rank_K, low_rank_QS, 0.2)
+    _test_fast_scanner_effsizes_se(low_rank_K, low_rank_QS, 0.0)
+
+
+def _test_fast_scanner_effsizes_se(K0, QS, v):
 
     X = ones((3, 1))
     M = array([[0.887669, -1.809403], [0.008226, -0.44882], [0.558072, -2.008683]])
     y = array([-1.0449132, 1.15229426, 0.79595129])
 
-    v = 0.2
-    scanner = FastScanner(y, X, full_rank_QS, v)
+    scanner = FastScanner(y, X, QS, v)
     r = scanner.fast_scan(M, verbose=False)
     for i in range(2):
-        K = r["scales"][i] * (full_rank_K + v * eye(3))
+        K = r["scales"][i] * (K0 + v * eye(3))
         XM = concatenate((X, M[:, i : (i + 1)]), axis=1)
-        effsizes_se = sqrt(inv(XM.T @ solve(K, XM)).diagonal())
+        effsizes_se = sqrt(abs(pinv(XM.T @ solve(K, XM)).diagonal()))
         se = concatenate((r["effsizes0_se"][i], r["effsizes1_se"][i : (i + 1)]))
-        assert_allclose(se, effsizes_se)
+        assert_allclose(se, effsizes_se, atol=1e-5)
 
-    v = 0.0
-    scanner = FastScanner(y, X, full_rank_QS, v)
-    r = scanner.fast_scan(M, verbose=False)
-    for i in range(2):
-        K = r["scales"][i] * (full_rank_K + v * eye(3))
-        XM = concatenate((X, M[:, i : (i + 1)]), axis=1)
-        effsizes_se = sqrt(inv(XM.T @ solve(K, XM)).diagonal())
-        se = concatenate((r["effsizes0_se"][i], r["effsizes1_se"][i : (i + 1)]))
-        assert_allclose(se, effsizes_se)
-
+    # Redundant covariates
     M = array([[0, 1], [0, 1], [0, 1]])
-    v = 0.0
-    scanner = FastScanner(y, X, full_rank_QS, v)
+    scanner = FastScanner(y, X, QS, v)
     r = scanner.fast_scan(M, verbose=False)
     for i in range(2):
-        K = r["scales"][i] * (full_rank_K + v * eye(3))
+        K = r["scales"][i] * (K0 + v * eye(3))
         XM = concatenate((X, M[:, i : (i + 1)]), axis=1)
-        effsizes_se = sqrt(pinv(XM.T @ solve(K, XM)).diagonal())
+        effsizes_se = sqrt(abs(pinv(XM.T @ solve(K, XM)).diagonal()))
         se = concatenate((r["effsizes0_se"][i], r["effsizes1_se"][i : (i + 1)]))
-        assert_allclose(se, effsizes_se)
+        assert_allclose(se, effsizes_se, atol=1e-5)
 
 
 def test_lmm_scan_difficult_settings_offset():

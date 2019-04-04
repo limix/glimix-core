@@ -110,16 +110,8 @@ def hinv(a, b, d):
     b = atleast_1d(b)
     d = atleast_1d(d)
     a = float(a)
-    # a = full_like(b, float(A00))
     cond = heigvals(a, b, d)
-
-    # cutoff = rcond * maximum.reduce([absolute(a), absolute(b), absolute(d)])
-    # large = norm > cutoff
-
     norm = a * d - b * b
-    # ai = divide(d, norm)
-    # bi = divide(-b, norm)
-    # di = divide(a, norm)
     with errstate(invalid="ignore", divide="ignore"):
         ai = d / norm
         bi = -b / norm
