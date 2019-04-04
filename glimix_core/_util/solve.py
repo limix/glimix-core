@@ -17,7 +17,6 @@ from numpy import (
     zeros,
     full_like,
     abs,
-    stack,
     arctan2,
     cos,
     sin,
@@ -28,6 +27,7 @@ from numpy_sugar import is_all_finite
 
 
 def force_inv(A):
+    return pinv(A)
     try:
         Ai = inv(A)
     except LinAlgError:

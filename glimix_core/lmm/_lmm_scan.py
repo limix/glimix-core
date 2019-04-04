@@ -3,17 +3,19 @@ from numpy import (
     all,
     asarray,
     atleast_2d,
+    clip,
     copyto,
     dot,
     empty,
     full,
+    inf,
     isfinite,
     log,
     newaxis,
     sqrt,
 )
 
-from .._util import cache, force_inv, hsolve, log2pi, rsolve, safe_log, hinv
+from .._util import cache, force_inv, hinv, hsolve, log2pi, rsolve, safe_log
 
 
 class FastScanner(object):
@@ -516,6 +518,7 @@ def _bstar_1effect(beta, alpha, yTBy, yTBX, yTBM, XTBX, XTBM, MTBM):
     """
     Same as :func:`_bstar_set` but for single-effect.
     """
+    from numpy_sugar import epsilon
     from numpy_sugar.linalg import dotd
     from numpy import sum
 
@@ -526,7 +529,7 @@ def _bstar_1effect(beta, alpha, yTBy, yTBX, yTBM, XTBX, XTBM, MTBM):
     r += add.reduce([dotd(beta.T, i * alpha) for i in XTBM])
     r += add.reduce([sum(alpha * i * beta, axis=0) for i in XTBM])
     r += add.reduce([alpha * i.ravel() * alpha for i in MTBM])
-    return r
+    return clip(r, epsilon.tiny, inf)
 
 
 def _bstar_set(beta, alpha, yTBy, yTBX, yTBM, XTBX, XTBM, MTBM):
@@ -535,19 +538,24 @@ def _bstar_set(beta, alpha, yTBy, yTBX, yTBM, XTBX, XTBM, MTBM):
 
     For 𝐛ⱼ = [𝜷ⱼᵀ 𝜶ⱼᵀ]ᵀ.
     """
+    from numpy_sugar import epsilon
+
     r = yTBy
     r -= 2 * add.reduce([i @ beta for i in yTBX])
     r -= 2 * add.reduce([i @ alpha for i in yTBM])
     r += add.reduce([beta.T @ i @ beta for i in XTBX])
     r += 2 * add.reduce([beta.T @ i @ alpha for i in XTBM])
     r += add.reduce([alpha.T @ i @ alpha for i in MTBM])
-    return r
+    return clip(r, epsilon.tiny, inf)
 
 
 def _bstar_unpack(beta, alpha, yTBy, yTBE, ETBE, bstar):
+    from numpy_sugar import epsilon
+
     yTBX = [j.yTBX for j in yTBE]
     yTBM = [j.yTBM for j in yTBE]
     XTBX = [j.XTBX for j in ETBE]
     XTBM = [j.XTBM for j in ETBE]
     MTBM = [j.MTBM for j in ETBE]
-    return bstar(beta, alpha, yTBy, yTBX, yTBM, XTBX, XTBM, MTBM)
+    bstar = bstar(beta, alpha, yTBy, yTBX, yTBM, XTBX, XTBM, MTBM)
+    return clip(bstar, epsilon.tiny, inf)

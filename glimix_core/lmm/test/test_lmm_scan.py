@@ -1,10 +1,9 @@
 import pytest
 import scipy.stats as st
-from numpy import array, concatenate, exp, eye, inf, nan, ones, sqrt, zeros, asarray
-from numpy.linalg import inv, solve, pinv
+from numpy import array, concatenate, exp, eye, inf, nan, ones, sqrt, zeros, errstate
+from numpy.linalg import inv, pinv, solve
 from numpy.random import RandomState
 from numpy.testing import assert_allclose
-from numpy_sugar.linalg import economic_qs, economic_qs_linear
 from scipy.linalg import toeplitz
 from scipy.optimize import minimize
 
@@ -14,10 +13,15 @@ from glimix_core.lik import DeltaProdLik
 from glimix_core.lmm import LMM, FastScanner
 from glimix_core.mean import OffsetMean
 from glimix_core.random import GGPSampler
+from numpy_sugar.linalg import economic_qs, economic_qs_linear
 
 
 def test_fast_scanner_statsmodel_gls():
     import statsmodels.api as sm
+    from numpy.linalg import lstsq
+
+    def _lstsq(A, B):
+        return lstsq(A, B, rcond=None)[0]
 
     data = sm.datasets.longley.load()
     data.exog = sm.add_constant(data.exog)
@@ -32,10 +36,30 @@ def test_fast_scanner_statsmodel_gls():
     lmm.fit(verbose=False)
 
     sigma = lmm.covariance()
-    gls_model = sm.GLS(data.endog, data.exog, sigma=sigma)
+    scanner = lmm.get_fast_scanner()
+    best_beta_se = _lstsq(data.exog.T @ _lstsq(lmm.covariance(), data.exog), eye(7))
+    best_beta_se = sqrt(best_beta_se.diagonal())
+    assert_allclose(scanner.null_beta_se, best_beta_se, atol=1e-5)
+
+    endog = data.endog.copy()
+    endog -= endog.mean(0)
+    endog /= endog.std(0)
+
+    exog = data.exog.copy()
+    exog -= exog.mean(0)
+    with errstate(invalid="ignore", divide="ignore"):
+        exog /= exog.std(0)
+    exog[:, 0] = 1
+
+    lmm = LMM(endog, exog, QS)
+    lmm.fit(verbose=False)
+
+    sigma = lmm.covariance()
+    scanner = lmm.get_fast_scanner()
+
+    gls_model = sm.GLS(endog, exog, sigma=sigma)
     gls_results = gls_model.fit()
     beta_se = gls_results.bse
-    scanner = lmm.get_fast_scanner()
     our_beta_se = sqrt(scanner.null_beta_covariance.diagonal())
     # statsmodels scales the covariance matrix we pass, that is why
     # we need to account for it here.
@@ -173,9 +197,9 @@ def test_fast_scanner_effsizes_se():
 def _test_fast_scanner_effsizes_se(K0, QS, v):
 
     X = ones((3, 1))
-    M = array([[0.887669, -1.809403], [0.008226, -0.44882], [0.558072, -2.008683]])
     y = array([-1.0449132, 1.15229426, 0.79595129])
 
+    M = array([[0.887669, -1.809403], [0.008226, -0.44882], [0.558072, -2.008683]])
     scanner = FastScanner(y, X, QS, v)
     r = scanner.fast_scan(M, verbose=False)
     for i in range(2):
@@ -195,6 +219,25 @@ def _test_fast_scanner_effsizes_se(K0, QS, v):
         effsizes_se = sqrt(abs(pinv(XM.T @ solve(K, XM)).diagonal()))
         se = concatenate((r["effsizes0_se"][i], r["effsizes1_se"][i : (i + 1)]))
         assert_allclose(se, effsizes_se, atol=1e-5)
+
+    M = array([[0.887669, -1.809403], [0.008226, -0.44882], [0.558072, -2.008683]])
+    scanner = FastScanner(y, X, QS, v)
+    r = scanner.scan(M)
+    K = r["scale"] * (K0 + v * eye(3))
+    XM = concatenate((X, M), axis=1)
+    effsizes_se = sqrt(abs(pinv(XM.T @ solve(K, XM)).diagonal()))
+    se = concatenate((r["effsizes0_se"], r["effsizes1_se"]))
+    assert_allclose(se, effsizes_se, atol=1e-5)
+
+    # Redundant covariates
+    M = array([[0, 1], [0, 1], [0, 1]])
+    scanner = FastScanner(y, X, QS, v)
+    r = scanner.scan(M)
+    K = r["scale"] * (K0 + v * eye(3))
+    XM = concatenate((X, M), axis=1)
+    effsizes_se = sqrt(abs(pinv(XM.T @ solve(K, XM)).diagonal()))
+    se = concatenate((r["effsizes0_se"], r["effsizes1_se"]))
+    assert_allclose(se, effsizes_se, atol=1e-5)
 
 
 def test_lmm_scan_difficult_settings_offset():
