@@ -1,5 +1,5 @@
-from numpy import asarray, block, clip, inf, kron
-from numpy.linalg import inv
+from numpy import asarray, block, clip, inf, kron, sqrt
+from numpy.linalg import inv, pinv
 
 from glimix_core._util import rsolve, unvec, vec
 
@@ -106,7 +106,7 @@ class KronFastScanner:
         effsizes-covariance : ndarray
             s(MᵀK⁻¹M)⁻¹.
         """
-        return self.null_scale * inv(self._H)
+        return self.null_scale * pinv(self._H)
 
     @property
     @cache
@@ -205,11 +205,18 @@ class KronFastScanner:
         sqrtdot = self._yKiy - mKiy
         scale = clip(sqrtdot / np, epsilon.tiny, inf)
         lml = self._static_lml() / 2 - np * safe_log(scale) / 2 - np / 2
+
+        effsizes_se = sqrt(scale * pinv(MKiM).diagonal())
+        effsizes0_se = unvec(effsizes_se[:cp], (self._ncovariates, self._ntraits))
+        effsizes1_se = unvec(effsizes_se[cp:], (X1.shape[1], A1.shape[1]))
+
         return {
             "lml": lml,
             "effsizes0": effsizes0,
             "effsizes1": effsizes1,
             "scale": scale,
+            "effsizes0_se": effsizes0_se,
+            "effsizes1_se": effsizes1_se,
         }
 
     @cache

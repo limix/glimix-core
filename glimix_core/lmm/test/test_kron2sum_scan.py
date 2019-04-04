@@ -1,11 +1,12 @@
 import scipy.stats as st
-from numpy import concatenate, empty, kron
+from numpy import concatenate, empty, kron, eye
 from numpy.random import RandomState
 from numpy.testing import assert_allclose
+from numpy_sugar.linalg import economic_qs
 
 from brent_search import minimize
 from glimix_core._util import assert_interface, vec
-from glimix_core.lmm import Kron2Sum, KronFastScanner
+from glimix_core.lmm import Kron2Sum, KronFastScanner, FastScanner
 
 
 def test_lmm_kron_scan():
@@ -61,6 +62,45 @@ def test_lmm_kron_scan():
         atol=1e-2,
     )
     assert_allclose(r["effsizes1"], [])
+
+
+def test_lmm_kron_scan_with_lmm():
+    random = RandomState(0)
+    n = 5
+    Y = random.randn(n, 3)
+    A = random.randn(3, 3)
+    A = A @ A.T
+    F = random.randn(n, 2)
+    G = random.randn(n, 6)
+
+    klmm = Kron2Sum(Y, A, F, G, restricted=True)
+    klmm.fit(verbose=False)
+    kscan = klmm.get_fast_scanner()
+
+    K = klmm.covariance()
+
+    X = kron(A, F)
+    QS = economic_qs(K)
+    scan = FastScanner(vec(Y), X, QS, 0.0)
+
+    assert_allclose(klmm.covariance(), K)
+    assert_allclose(kscan.null_scale, scan.null_scale)
+    assert_allclose(kscan.null_beta, scan.null_beta)
+    assert_allclose(kscan.null_lml(), scan.null_lml())
+    assert_allclose(kscan.null_beta_covariance, scan.null_beta_covariance)
+
+    A1 = random.randn(3, 2)
+    F1 = random.randn(n, 2)
+    M = kron(A1, F1)
+
+    kr = kscan.scan(A1, F1)
+    r = scan.scan(M)
+    assert_allclose(kr["lml"], r["lml"])
+    assert_allclose(kr["scale"], r["scale"])
+    assert_allclose(vec(kr["effsizes0"]), r["effsizes0"])
+    assert_allclose(vec(kr["effsizes1"]), r["effsizes1"])
+    assert_allclose(vec(kr["effsizes0_se"]), r["effsizes0_se"])
+    assert_allclose(vec(kr["effsizes1_se"]), r["effsizes1_se"])
 
 
 def test_lmm_kron_scan_unrestricted():

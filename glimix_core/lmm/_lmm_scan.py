@@ -14,8 +14,9 @@ from numpy import (
     newaxis,
     sqrt,
 )
+from numpy.linalg import pinv
 
-from .._util import cache, force_inv, hinv, hsolve, log2pi, rsolve, safe_log
+from .._util import cache, hinv, hsolve, log2pi, rsolve, safe_log
 
 
 class FastScanner(object):
@@ -161,7 +162,7 @@ class FastScanner(object):
             (Xᵀ(s(K + vI))⁻¹X)⁻¹.
         """
         A = sum(i @ j.T for (i, j) in zip(self._XTQDi, self._XTQ))
-        return self.null_scale * force_inv(A)
+        return self.null_scale * pinv(A)
 
     @property
     @cache
@@ -369,7 +370,7 @@ class FastScanner(object):
             alpha = x[-1:]
             bstar = _bstar_unpack(beta, alpha, self._yTBy, yTBE, ETBE, _bstar_1effect)
 
-            se = sqrt(force_inv(left).diagonal())
+            se = sqrt(pinv(left).diagonal())
             scales[i] = bstar / self._nsamples
             lmls[i] -= self._nsamples * safe_log(scales[i])
             effs["eff0"][i, :] = beta.T
@@ -406,7 +407,7 @@ class FastScanner(object):
         lml -= self._nsamples * safe_log(scale)
         lml /= 2
 
-        effsizes_se = sqrt(scale * force_inv(left).diagonal())
+        effsizes_se = sqrt(scale * pinv(left).diagonal())
         beta_se = effsizes_se[:-set_size]
         alpha_se = effsizes_se[-set_size:]
 

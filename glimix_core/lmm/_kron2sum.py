@@ -14,7 +14,7 @@ from ._kron2sum_scan import KronFastScanner
 
 class Kron2Sum(Function):
     """
-    LMM for multi-traits fitted via restricted maximum likelihood.
+    LMM for multi-traits fitted via maximum likelihood.
 
     This implementation follows the work published in [CA05]_.
     Let n, c, and p be the number of samples, covariates, and traits, respectively.
