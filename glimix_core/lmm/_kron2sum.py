@@ -67,6 +67,8 @@ class Kron2Sum(Function):
         rank : optional, int
             Maximum rank of matrix C₀. Defaults to ``1``.
         """
+        from numpy_sugar import is_all_finite
+
         Y = asfortranarray(Y, float)
         yrank = matrix_rank(Y)
         if Y.shape[1] > yrank:
@@ -85,8 +87,21 @@ class Kron2Sum(Function):
                 + "Convergence might be problematic.",
                 UserWarning,
             )
-
         G = asarray(G, float)
+
+        if not is_all_finite(Y):
+            raise ValueError("There are non-finite values in the outcome matrix.")
+
+        if not is_all_finite(A):
+            msg = "There are non-finite values in the trait-by-trait design matrix."
+            raise ValueError(msg)
+
+        if not is_all_finite(X):
+            raise ValueError("There are non-finite values in the covariates matrix.")
+
+        if not is_all_finite(G):
+            raise ValueError("There are non-finite values in the G matrix.")
+
         self._Y = Y
         self._cov = Kron2SumCov(G, Y.shape[1], rank)
         self._mean = KronMean(A, X)

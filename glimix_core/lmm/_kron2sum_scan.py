@@ -156,17 +156,26 @@ class KronFastScanner:
         """
         from numpy import empty
         from numpy.linalg import multi_dot
-        from numpy_sugar import epsilon
+        from numpy_sugar import epsilon, is_all_finite
         from scipy.linalg import cho_solve
 
         A1 = asarray(A1, float)
         X1 = asarray(X1, float)
 
+        if not is_all_finite(A1):
+            raise ValueError("A1 parameter has non-finite elements.")
+
+        if not is_all_finite(X1):
+            raise ValueError("X1 parameter has non-finite elements.")
+
         if A1.shape[1] == 0:
+            beta_se = sqrt(self.null_beta_covariance.diagonal())
             return {
                 "lml": self.null_lml(),
                 "effsizes0": unvec(self.null_beta, (self._ncovariates, -1)),
+                "effsizes0_se": unvec(beta_se, (self._ncovariates, -1)),
                 "effsizes1": empty((0,)),
+                "effsizes1_se": empty((0,)),
                 "scale": self.null_scale,
             }
 

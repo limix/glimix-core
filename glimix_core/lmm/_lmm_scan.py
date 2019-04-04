@@ -248,20 +248,20 @@ class FastScanner(object):
 
             r = self._fast_scan_chunk(M[:, start:stop])
 
-            lmls[start:stop] = r["lmls"]
+            lmls[start:stop] = r["lml"]
             effsizes0[start:stop, :] = r["effsizes0"]
             effsizes0_se[start:stop, :] = r["effsizes0_se"]
             effsizes1[start:stop] = r["effsizes1"]
             effsizes1_se[start:stop] = r["effsizes1_se"]
-            scales[start:stop] = r["scales"]
+            scales[start:stop] = r["scale"]
 
         return {
-            "lmls": lmls,
+            "lml": lmls,
             "effsizes0": effsizes0,
             "effsizes0_se": effsizes0_se,
             "effsizes1": effsizes1,
             "effsizes1_se": effsizes1_se,
-            "scales": scales,
+            "scale": scales,
         }
 
     def scan(self, M):
@@ -285,8 +285,12 @@ class FastScanner(object):
             Optimal scale.
         """
         from numpy_sugar.linalg import ddot
+        from numpy_sugar import is_all_finite
 
         M = asarray(M, float)
+
+        if not is_all_finite(M):
+            raise ValueError("M parameter has non-finite elements.")
 
         MTQ = [dot(M.T, Q) for Q in self._QS[0] if Q.size > 0]
         yTBM = [dot(i, j.T) for (i, j) in zip(self._yTQDi, MTQ)]
@@ -343,12 +347,12 @@ class FastScanner(object):
             self._multicovariate_loop(lmls, effs, scales, yTBM, XTBM, MTBM)
 
         return {
-            "lmls": lmls,
+            "lml": lmls,
             "effsizes0": eff0,
             "effsizes0_se": eff0_se,
             "effsizes1": eff1,
             "effsizes1_se": eff1_se,
-            "scales": scales,
+            "scale": scales,
         }
 
     def _multicovariate_loop(self, lmls, effs, scales, yTBM, XTBM, MTBM):

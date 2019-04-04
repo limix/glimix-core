@@ -129,7 +129,7 @@ def test_glmmexpfam_glmmnormal_get_fast_scanner():
     r = scanner.fast_scan(X, verbose=False)
 
     assert_allclose(
-        r["lmls"],
+        r["lml"],
         [
             3.666664259270515,
             3.6666642592705188,
@@ -162,7 +162,7 @@ def test_glmmexpfam_glmmnormal_get_fast_scanner():
         rtol=1e-6,
     )
     assert_allclose(
-        r["scales"],
+        r["scale"],
         [
             0.07341651661479422,
             0.07341651661479419,
