@@ -1,5 +1,5 @@
 from numpy import asarray, block, clip, inf, kron, sqrt
-from numpy.linalg import inv, pinv
+from numpy.linalg import pinv
 
 from glimix_core._util import rsolve, unvec, vec
 

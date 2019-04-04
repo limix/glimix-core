@@ -1,5 +1,5 @@
 import scipy.stats as st
-from numpy import concatenate, empty, kron, eye
+from numpy import concatenate, empty, kron
 from numpy.random import RandomState
 from numpy.testing import assert_allclose
 from numpy_sugar.linalg import economic_qs
