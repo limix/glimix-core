@@ -27,6 +27,17 @@ def test_lmm():
     _test_lmm(random, y, X, G, _get_mvn_restricted(y, X, G), True)
 
 
+def test_lm():
+    random = RandomState(0)
+
+    (y, X, _) = _full_rank(random)
+    lmm = LMM(y, X)
+    lmm.fit(verbose=False)
+    assert_allclose(lmm.v0, 2.0129061033356781e-16, atol=1e-7)
+    assert_allclose(lmm.v1, 0.9065323176914355)
+    assert_allclose(lmm.beta, [0.24026567104188318, -0.17873180599015123])
+
+
 def test_lmm_beta_covariance():
     random = RandomState(0)
 

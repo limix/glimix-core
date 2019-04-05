@@ -130,10 +130,10 @@ class LMM(Function):
         from numpy_sugar import is_all_finite
         from numpy_sugar.linalg import ddot, economic_svd
 
-        delta = Scalar(0.0)
-        delta.listen(self._delta_update)
-        delta.bounds = (-numbers.logmax, +numbers.logmax)
-        Function.__init__(self, "LMM", logistic=delta)
+        logistic = Scalar(0.0)
+        logistic.listen(self._delta_update)
+        logistic.bounds = (-numbers.logmax, +numbers.logmax)
+        Function.__init__(self, "LMM", logistic=logistic)
 
         y = asarray(y, float).ravel()
         if not is_all_finite(y):
@@ -146,10 +146,10 @@ class LMM(Function):
         self._optimal = {"beta": False, "scale": False}
         if QS is None:
             QS = economic_qs_zeros(len(y))
-            delta.value = 1.0
-            delta.fix()
+            self.delta = 1.0
+            logistic.fix()
         else:
-            delta.value = 0.5
+            self.delta = 0.5
 
         if QS[0][0].shape[0] != len(y):
             msg = "Sample size differs between outcome and covariance decomposition."
@@ -260,7 +260,7 @@ class LMM(Function):
         Returns
         -------
         v0 : float
-            1 - 𝛿.
+            s(1 - 𝛿).
         """
         return self.scale * (1 - self.delta)
 
@@ -272,7 +272,7 @@ class LMM(Function):
         Returns
         -------
         v1 : float
-            𝛿.
+            s𝛿.
         """
         return self.scale * self.delta
 
