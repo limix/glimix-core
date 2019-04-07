@@ -66,9 +66,7 @@ class GLMMExpFam(GLMM):
         After: -13.43
     """
 
-    def __init__(
-        self, y, lik, X, QS=None, n_int=1000, rtol=1.49e-08 * 1000, atol=1.49e-08
-    ):
+    def __init__(self, y, lik, X, QS=None, n_int=1000, rtol=1.49e-05, atol=1.49e-08):
         GLMM.__init__(self, y, lik, X, QS)
 
         self._ep = EPLinearKernel(self._X.shape[0], rtol=rtol, atol=atol)

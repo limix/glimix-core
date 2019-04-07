@@ -558,7 +558,7 @@ def test_glmmexpfam_predict():
     pk = glmm.predictive_covariance(Xtest, ks, kss)
     r = nsuc_test / ntri_test
     assert_(corrcoef([pm, r])[0, 1] > 0.8)
-    assert_allclose(pk[0], 54.26335297363809)
+    assert_allclose(pk[0], 54.26312418253421)
 
 
 def test_glmmexpfam_qs_none():
@@ -591,3 +591,51 @@ def test_glmmexpfam_qs_none():
     glmm.fit(verbose=False)
 
     assert_allclose(glmm.lml(), -19.575736561760586, atol=ATOL, rtol=RTOL)
+
+
+def test_glmmexpfam_poisson():
+    from numpy import ones, stack, exp, zeros
+    from numpy.random import RandomState
+    from numpy_sugar.linalg import economic_qs
+    from pandas import DataFrame
+    from limix.stats import linear_kinship
+
+    random = RandomState(1)
+
+    # sample size
+    n = 100
+
+    # covariates
+    offset = ones(n) * random.randn()
+    age = random.randint(16, 75, n)
+    M = stack((offset, age), axis=1)
+    M = DataFrame(stack([offset, age], axis=1), columns=["offset", "age"])
+    M["sample"] = [f"sample{i}" for i in range(n)]
+    M = M.set_index("sample")
+
+    # genetic variants
+    G = random.randn(n, 4)
+
+    # sampling the phenotype
+    alpha = random.randn(2)
+    beta = random.randn(4)
+    eps = random.randn(n)
+    y = M @ alpha + G @ beta + eps
+
+    # Whole genotype of each sample.
+    X = random.randn(n, 50)
+    # Estimate a kinship relationship between samples.
+    K = linear_kinship(X, verbose=False)
+    # Update the phenotype
+    y += random.multivariate_normal(zeros(n), K)
+
+    z = y.copy()
+    y = random.poisson(exp(z))
+
+    QS = economic_qs(K)
+    glmm = GLMMExpFam(y, "poisson", M, QS)
+    glmm.fit(verbose=False)
+
+    assert_allclose(glmm.scale, 4.063745887964173)
+    assert_allclose(glmm.delta, 0.6836365459648723)
+    assert_allclose(glmm.beta.tolist(), [-1.502794138444775, 0.17460132162733424])

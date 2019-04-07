@@ -89,7 +89,7 @@ class GLMM(Function):
         self._verbose = False
         self.set_variable_bounds("logscale", (log(0.001), 6.0))
 
-        self.set_variable_bounds("logitdelta", (-numbers.logmax, +numbers.logmax))
+        self.set_variable_bounds("logitdelta", (-50, +numbers.logmax))
 
         if lik[0] == "probit":
             self.delta = 0.0

@@ -19,7 +19,7 @@ def dotr(A, B):
 
 
 class EPLinearKernel(EP):
-    def __init__(self, nsites, rtol=1.49e-08 * 1000, atol=1.49e-08):
+    def __init__(self, nsites, rtol=1.49e-05, atol=1.49e-08):
         super(EPLinearKernel, self).__init__(
             nsites, PosteriorLinearKernel, rtol=rtol, atol=atol
         )

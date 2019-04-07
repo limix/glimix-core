@@ -46,8 +46,8 @@ def test_ggp_expfam():
     assert_allclose(ep._check_grad(), 0, atol=1e-4)
     data["cov_left"].fix()
     ep.fit(verbose=False)
-    assert_allclose(data["cov_right"].scale, 0.38162494996579965, atol=1e-5)
-    assert_allclose(data["mean"].offset, 2.8339908366727267, rtol=1e-6)
+    assert_allclose(data["cov_right"].scale, 0.3814398504968659, atol=1e-5)
+    assert_allclose(data["mean"].offset, 2.8339376861729737, rtol=1e-6)
 
 
 def test_ggp_expfam_tobi():

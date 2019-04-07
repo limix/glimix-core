@@ -34,10 +34,7 @@ class EP(object):
         _moments: moments for KL moment matching.
     """
 
-    def __init__(
-        self, nsites, posterior_type=Posterior, rtol=1.49e-08 * 1000, atol=1.49e-08
-    ):
-
+    def __init__(self, nsites, posterior_type=Posterior, rtol=1.49e-05, atol=1.49e-08):
         self._site = Site(nsites)
         self._psite = Site(nsites)
         self._rtol = rtol
@@ -89,6 +86,7 @@ class EP(object):
 
         i = 0
         tol = -inf
+        n1 = norm(self._site.tau)
         while i < MAX_ITERS and norm(self._site.tau - self._psite.tau) > tol:
             self._psite.tau[:] = self._site.tau
             self._psite.eta[:] = self._site.eta
@@ -103,10 +101,12 @@ class EP(object):
 
             self._posterior.update()
 
-            n0 = norm(self._psite.tau)
-            n1 = norm(self._cav["tau"])
-            tol = self._rtol * sqrt(n0 * n1) + self._atol
+            n0 = n1
+            n1 = norm(self._site.tau)
+            tol = self._rtol * min(n0, n1) + self._atol
             i += 1
+            if i % 10 == 9:
+                self._rtol *= 10
 
         if i == MAX_ITERS:
             msg = "Maximum number of EP iterations has" + " been attained."
