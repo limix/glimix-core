@@ -628,6 +628,7 @@ def test_glmmexpfam_poisson():
     K = X_ @ X_.T
     # Update the phenotype
     y += random.multivariate_normal(zeros(n), K)
+    y = (y - y.mean()) / y.std()
 
     z = y.copy()
     y = random.poisson(exp(z))
@@ -636,6 +637,6 @@ def test_glmmexpfam_poisson():
     glmm = GLMMExpFam(y, "poisson", M, QS)
     glmm.fit(verbose=False)
 
-    assert_allclose(glmm.scale, 3.8849108907581007)
-    assert_allclose(glmm.delta, 0.4692084116139557)
-    assert_allclose(glmm.beta, [-1.204434414448795, 0.166713349296253])
+    assert_allclose(glmm.scale, 0.1889331310598134)
+    assert_allclose(glmm.delta, 1.9602454230599427e-08, atol=1e-4)
+    assert_allclose(glmm.beta, [-1.0577503637392807, 0.04518668146802441])
