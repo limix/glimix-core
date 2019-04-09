@@ -294,7 +294,14 @@ class FastScanner(object):
         M = asarray(M, float)
 
         if M.shape[1] == 0:
-            self.null_lml, self.null_beta, empty((0)), self.null_scale
+            return {
+                "lml": self.null_lml(),
+                "effsizes0": self.null_beta,
+                "effsizes0_se": self.null_beta_se,
+                "effsizes1": empty((0)),
+                "effsizes1_se": empty((0)),
+                "scale": self.null_scale,
+            }
 
         if not is_all_finite(M):
             raise ValueError("M parameter has non-finite elements.")
