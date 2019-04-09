@@ -602,7 +602,7 @@ def test_glmmexpfam_poisson():
     random = RandomState(1)
 
     # sample size
-    n = 100
+    n = 300
 
     # covariates
     offset = ones(n) * random.randn()
@@ -625,7 +625,7 @@ def test_glmmexpfam_poisson():
     X = random.randn(n, 50)
     # Estimate a kinship relationship between samples.
     X_ = (X - X.mean(0)) / X.std(0) / sqrt(X.shape[1])
-    K = X_ @ X_.T
+    K = X_ @ X_.T + eye(n) * 0.1
     # Update the phenotype
     y += random.multivariate_normal(zeros(n), K)
     y = (y - y.mean()) / y.std()
@@ -633,10 +633,13 @@ def test_glmmexpfam_poisson():
     z = y.copy()
     y = random.poisson(exp(z))
 
+    M = M - M.mean(0)
     QS = economic_qs(K)
     glmm = GLMMExpFam(y, "poisson", M, QS)
     glmm.fit(verbose=False)
 
-    assert_allclose(glmm.scale, 0.1889331310598134, rtol=1e-1)
-    assert_allclose(glmm.delta, 1.9602454230599427e-08, rtol=1e-1, atol=1e-4)
-    assert_allclose(glmm.beta, [-1.0577503637392807, 0.04518668146802441], rtol=1e-1)
+    assert_allclose(glmm.scale, 0.04697009524460814, rtol=1e-4)
+    assert_allclose(glmm.delta, 0.9999961838242364, rtol=1e-4, atol=1e-4)
+    assert_allclose(
+        glmm.beta, [-2.960516467833773e-13, 0.057288282698884585], rtol=1e-4, atol=1e-4
+    )
