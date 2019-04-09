@@ -279,8 +279,12 @@ class FastScanner(object):
             Log of the marginal likelihood.
         effsizes0 : ndarray
             Covariates fixed-effect sizes.
+        effsizes0_se : ndarray
+            Covariates fixed-effect size standard errors.
         effsizes1 : ndarray
             Candidate set fixed-effect sizes.
+        effsizes1_se : ndarray
+            Candidate fixed-effect size standard errors.
         scale : ndarray
             Optimal scale.
         """
@@ -288,6 +292,9 @@ class FastScanner(object):
         from numpy_sugar import is_all_finite
 
         M = asarray(M, float)
+
+        if M.shape[1] == 0:
+            self.null_lml, self.null_beta, empty((0)), self.null_scale
 
         if not is_all_finite(M):
             raise ValueError("M parameter has non-finite elements.")

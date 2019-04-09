@@ -149,8 +149,12 @@ class KronFastScanner:
             Log of the marginal likelihood for the set.
         effsizes0 : (c, p) ndarray
             Fixed-effect sizes for the covariates.
+        effsizes0_se : (c, p) ndarray
+            Fixed-effect size standard errors for the covariates.
         effsizes1 : (m, e) ndarray
             Fixed-effect sizes for the candidates.
+        effsizes1_se : (m, e) ndarray
+            Fixed-effect size standard errors for the candidates.
         scale : float
             Optimal scale.
         """
