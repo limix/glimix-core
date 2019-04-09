@@ -598,7 +598,6 @@ def test_glmmexpfam_poisson():
     from numpy.random import RandomState
     from numpy_sugar.linalg import economic_qs
     from pandas import DataFrame
-    from limix.stats import linear_kinship
 
     random = RandomState(1)
 
@@ -625,7 +624,8 @@ def test_glmmexpfam_poisson():
     # Whole genotype of each sample.
     X = random.randn(n, 50)
     # Estimate a kinship relationship between samples.
-    K = linear_kinship(X, verbose=False)
+    X_ = (X - X.mean(0)) / X.std(0) / sqrt(X.shape[1])
+    K = X_ @ X_.T
     # Update the phenotype
     y += random.multivariate_normal(zeros(n), K)
 
@@ -636,6 +636,6 @@ def test_glmmexpfam_poisson():
     glmm = GLMMExpFam(y, "poisson", M, QS)
     glmm.fit(verbose=False)
 
-    assert_allclose(glmm.scale, 4.063745887964173)
-    assert_allclose(glmm.delta, 0.6836365459648723)
-    assert_allclose(glmm.beta.tolist(), [-1.502794138444775, 0.17460132162733424])
+    assert_allclose(glmm.scale, 3.8849108907581007)
+    assert_allclose(glmm.delta, 0.4692084116139557)
+    assert_allclose(glmm.beta, [-1.204434414448795, 0.166713349296253])
