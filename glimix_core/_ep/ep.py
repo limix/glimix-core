@@ -1,7 +1,7 @@
 from copy import deepcopy
 from math import fsum
 
-from numpy import dot, empty, inf, isfinite, log, maximum, sqrt, zeros
+from numpy import dot, empty, inf, isfinite, log, maximum, zeros
 from numpy.linalg import norm
 
 from .posterior import Posterior
