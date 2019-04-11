@@ -232,7 +232,7 @@ class KronFastScanner:
         scale = clip(sqrtdot / np, epsilon.tiny, inf)
         lml = self._static_lml() / 2 - np * safe_log(scale) / 2 - np / 2
 
-        effsizes_se = sqrt(scale * pinv(MKiM).diagonal())
+        effsizes_se = sqrt(clip(scale * pinv(MKiM).diagonal(), epsilon.tiny, inf))
         effsizes0_se = unvec(effsizes_se[:cp], (self._ncovariates, self._ntraits))
         effsizes1_se = unvec(effsizes_se[cp:], (X1.shape[1], A1.shape[1]))
 
