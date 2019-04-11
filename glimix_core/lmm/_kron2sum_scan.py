@@ -110,6 +110,19 @@ class KronFastScanner:
 
     @property
     @cache
+    def null_beta_se(self):
+        """
+        Standard errors of the optimal 𝛃.
+
+        Returns
+        -------
+        beta_se : ndarray
+            Square root of the diagonal of the beta covariance.
+        """
+        return sqrt(self.null_beta_covariance.diagonal())
+
+    @property
+    @cache
     def null_scale(self):
         """
         Optimal s according to the marginal likelihood.

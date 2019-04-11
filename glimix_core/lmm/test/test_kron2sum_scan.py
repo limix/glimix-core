@@ -166,5 +166,5 @@ def test_lmm_kron_scan_public_attrs():
     assert_interface(
         KronFastScanner,
         ["null_lml", "scan"],
-        ["null_beta", "null_beta_covariance", "null_scale"],
+        ["null_beta", "null_beta_covariance", "null_beta_se", "null_scale"],
     )
