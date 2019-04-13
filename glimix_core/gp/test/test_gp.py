@@ -1,14 +1,14 @@
 import pytest
-from numpy import inf, nan, zeros
+from numpy import inf, nan, zeros, eye
 from numpy.random import RandomState
 from numpy.testing import assert_allclose
 
-from glimix_core.cov import LinearCov
+from glimix_core.cov import LinearCov, GivenCov, SumCov, EyeCov
 from glimix_core.gp import GP
 from glimix_core.mean import LinearMean, OffsetMean
 
 
-def test_gp_gp_value_1():
+def test_gp_value_1():
     random = RandomState(94584)
     N = 50
     X = random.randn(N, 100)
@@ -27,7 +27,7 @@ def test_gp_gp_value_1():
     assert_allclose(gp.value(), -153.623791551399108)
 
 
-def test_gp_gp_value_2():
+def test_gp_value_2():
     random = RandomState(94584)
     N = 50
     X1 = random.randn(N, 3)
@@ -47,7 +47,7 @@ def test_gp_gp_value_2():
     assert_allclose(gp.value(), -178.273116338)
 
 
-def test_gp_gp_gradient():
+def test_gp_gradient():
     random = RandomState(94584)
     N = 50
     X = random.randn(N, 100)
@@ -67,7 +67,36 @@ def test_gp_gp_gradient():
     assert_allclose(gp._check_grad(), 0, atol=1e-5)
 
 
-def test_gp_gp_maximize():
+def test_gp_gradient2():
+    random = RandomState(94584)
+    N = 10
+    X = random.randn(N, 2)
+
+    K0 = random.randn(N, N + 1)
+    K0 = K0 @ K0.T + eye(N) * 1e-5
+
+    K1 = random.randn(N, N + 1)
+    K1 = K1 @ K1.T + eye(N) * 1e-5
+
+    mean = LinearMean(X)
+    mean.effsizes = [-1.2, +0.9]
+
+    cov0 = GivenCov(K0)
+    cov1 = GivenCov(K1)
+    cov2 = EyeCov(N)
+    cov = SumCov([cov0, cov1, cov2])
+    cov0.scale = 0.1
+    cov1.scale = 2.3
+    cov2.scale = 0.3
+
+    y = random.randn(N)
+
+    gp = GP(y, mean, cov)
+
+    assert_allclose(gp._check_grad(), 0, atol=1e-5)
+
+
+def test_gp_maximize():
     random = RandomState(94584)
     N = 50
     X = random.randn(N, 100)
@@ -89,7 +118,7 @@ def test_gp_gp_maximize():
     assert_allclose(gp.value(), -79.8992122415)
 
 
-def test_gp_gp_nonfinite_phenotype():
+def test_gp_nonfinite_phenotype():
     random = RandomState(94584)
     N = 50
     X = random.randn(N, 100)

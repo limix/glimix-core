@@ -39,9 +39,13 @@ class GivenCov(Function):
         K0 : array_like
             A semi-definite positive matrix.
         """
+        from numpy_sugar.linalg import check_symmetry
+
         self._logscale = Scalar(0.0)
         Function.__init__(self, "GivenCov", logscale=self._logscale)
         self._logscale.bounds = (-20.0, +10)
+        if not check_symmetry(K0):
+            raise ValueError("The provided covariance-matrix is not symmetric.")
         self._K0 = K0
 
     @property

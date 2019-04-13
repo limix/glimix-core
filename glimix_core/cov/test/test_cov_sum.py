@@ -1,3 +1,4 @@
+import pytest
 import numpy as np
 from numpy.testing import assert_allclose
 
@@ -10,6 +11,7 @@ def test_sumcov():
     cov_left = LinearCov(X)
 
     K = random.randn(3, 3)
+    K = K @ K.T
     cov_right = GivenCov(K)
 
     cov = SumCov([cov_left, cov_right])
@@ -17,3 +19,7 @@ def test_sumcov():
     assert_allclose(cov._check_grad(), 0, atol=1e-5)
     cov_left.scale = 0.1
     assert_allclose(cov._check_grad(), 0, atol=1e-5)
+
+    with pytest.raises(ValueError):
+        K = random.randn(3, 3)
+        GivenCov(K)
