@@ -1,18 +1,17 @@
 from numpy import (
     asarray,
     atleast_2d,
-    clip,
     concatenate,
     dot,
-    errstate,
-    exp,
     full,
     log,
     maximum,
     sum as npsum,
     zeros,
 )
+from math import exp
 from numpy.linalg import inv, lstsq, slogdet
+from numpy_sugar import epsilon
 
 from glimix_core._util import cache, log2pi
 from optimix import Function, Scalar
@@ -134,6 +133,7 @@ class LMM(Function):
         logistic.listen(self._delta_update)
         logistic.bounds = (-numbers.logmax, +numbers.logmax)
         Function.__init__(self, "LMM", logistic=logistic)
+        self._logistic = logistic
 
         y = asarray(y, float).ravel()
         if not is_all_finite(y):
@@ -158,6 +158,14 @@ class LMM(Function):
         if y.shape[0] != X.shape[0]:
             msg = "Sample size differs between outcome and covariates."
             raise ValueError(msg)
+
+        self._Darr = []
+        n = y.shape[0]
+        d = self.delta
+        if QS[1].size > 0:
+            self._Darr += [QS[1] * (1 - d) + d]
+        if QS[1].size < n:
+            self._Darr += [full(n - QS[1].size, d)]
 
         self._y = y
         self._QS = QS
@@ -287,7 +295,7 @@ class LMM(Function):
             Defaults to ``True``.
         """
         if not self._isfixed("logistic"):
-            self._maximize_scalar(desc="LMM", verbose=verbose)
+            self._maximize_scalar(desc="LMM", rtol=1e-6, atol=1e-6, verbose=verbose)
 
         if not self._fix["beta"]:
             self._update_beta()
@@ -395,19 +403,21 @@ class LMM(Function):
         """
         Variance ratio between ``K`` and ``I``.
         """
-        from numpy_sugar import epsilon
 
-        v = float(self._variables.get("logistic").value)
-        with errstate(over="ignore", under="ignore"):
+        v = float(self._logistic.value)
+
+        if v > 0.0:
             v = 1 / (1 + exp(-v))
-        return clip(v, epsilon.tiny, 1 - epsilon.tiny)
+        else:
+            v = exp(v)
+            v = v / (v + 1.0)
+
+        return min(max(v, epsilon.tiny), 1 - epsilon.tiny)
 
     @delta.setter
     def delta(self, delta):
-        from numpy_sugar import epsilon
-
-        delta = clip(delta, epsilon.tiny, 1 - epsilon.tiny)
-        self._variables.set(dict(logistic=log(delta / (1 - delta))))
+        delta = min(max(delta, epsilon.tiny), 1 - epsilon.tiny)
+        self._logistic.value = log(delta / (1 - delta))
         self._optimal["beta"] = False
         self._optimal["scale"] = False
 
@@ -472,6 +482,7 @@ class LMM(Function):
     def _delta_update(self):
         self._optimal["beta"] = False
         self._optimal["scale"] = False
+        self._Dcache = None
 
     @cache
     def _logdetXX(self):
@@ -525,11 +536,12 @@ class LMM(Function):
             Log of the marginal likelihood.
         """
         s = self.scale
+        D = self._D
         n = len(self._y)
         lml = -self._df * log2pi - n * log(s)
-        lml -= sum(npsum(log(D)) for D in self._D)
+        lml -= sum(npsum(log(d)) for d in D)
         d = (mTQ - yTQ for (mTQ, yTQ) in zip(self._mTQ, self._yTQ))
-        lml -= sum((i / j) @ i for (i, j) in zip(d, self._D)) / s
+        lml -= sum((i / j) @ i for (i, j) in zip(d, D)) / s
 
         return lml / 2
 
@@ -589,13 +601,19 @@ class LMM(Function):
 
     @property
     def _D(self):
-        D = []
-        n = self._y.shape[0]
-        if self._QS[1].size > 0:
-            D += [self._QS[1] * (1 - self.delta) + self.delta]
-        if self._QS[1].size < n:
-            D += [full(n - self._QS[1].size, self.delta)]
-        return D
+        if self._Dcache is None:
+            i = 0
+            d = self.delta
+            if self._QS[1].size > 0:
+                self._Darr[i][:] = self._QS[1]
+                self._Darr[i] *= 1 - d
+                self._Darr[i] += d
+                i += 1
+            if self._QS[1].size < self._y.shape[0]:
+                self._Darr[i][:] = d
+
+            self._Dcache = self._Darr
+        return self._Dcache
 
     @property
     def _XTQDiQTX(self):

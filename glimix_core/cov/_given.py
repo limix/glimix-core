@@ -53,7 +53,7 @@ class GivenCov(Function):
         """
         Scale parameter, s.
         """
-        return exp(self._logscale.value)
+        return float(exp(self._logscale.value))
 
     @scale.setter
     def scale(self, scale):
