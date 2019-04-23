@@ -1,5 +1,4 @@
 from numpy import add
-
 from optimix import Function
 
 

@@ -1,9 +1,9 @@
 import pytest
-from numpy import inf, nan, zeros, eye
+from numpy import eye, inf, nan, zeros
 from numpy.random import RandomState
 from numpy.testing import assert_allclose
 
-from glimix_core.cov import LinearCov, GivenCov, SumCov, EyeCov
+from glimix_core.cov import EyeCov, GivenCov, LinearCov, SumCov
 from glimix_core.gp import GP
 from glimix_core.mean import LinearMean, OffsetMean
 

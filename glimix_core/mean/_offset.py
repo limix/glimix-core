@@ -1,5 +1,4 @@
 from numpy import full, ones
-
 from optimix import Function, Scalar
 
 

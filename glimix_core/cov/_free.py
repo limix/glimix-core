@@ -1,5 +1,4 @@
 from numpy import diag_indices_from, dot, exp, eye, inf, log, tril_indices_from, zeros
-
 from optimix import Function, Vector
 
 from .._util import format_function
@@ -68,9 +67,17 @@ class FreeFormCov(Function):
         self._Lu.bounds = bounds
         self._cache = {"eig": None}
         self.listen(self._parameters_update)
+        self._nparams = tsize
 
     def _parameters_update(self):
         self._cache["eig"] = None
+
+    @property
+    def nparams(self):
+        """
+        Number of parameters.
+        """
+        return self._nparams
 
     def listen(self, func):
         """

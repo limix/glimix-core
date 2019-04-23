@@ -1,26 +1,25 @@
 import warnings
 
 from numpy import (
-    minimum,
+    abs as npy_abs,
     absolute,
+    arctan2,
+    array,
     atleast_1d,
+    cos,
     divide,
+    errstate,
+    full_like,
+    isfinite,
     logical_and,
     logical_not,
-    isfinite,
-    abs as npy_abs,
-    array,
-    errstate,
     maximum,
+    minimum,
     nan_to_num,
+    sign,
+    sin,
     sqrt,
     zeros,
-    full_like,
-    abs,
-    arctan2,
-    cos,
-    sin,
-    sign,
 )
 from numpy.linalg import LinAlgError, inv, pinv
 from numpy_sugar import is_all_finite

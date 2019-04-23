@@ -13,12 +13,11 @@ from numpy import (
     zeros_like,
 )
 from numpy.linalg import eigh
-
 from optimix import Function
 
+from .._util import format_function, unvec
 from ._free import FreeFormCov
 from ._lrfree import LRFreeFormCov
-from .._util import format_function, unvec
 
 
 class Kron2SumCov(Function):
@@ -123,6 +122,13 @@ class Kron2SumCov(Function):
         self._Lxe = U[:, : S.shape[0]].T
         self._LxGe = self._Lxe @ G
         self._diag_LxGGLxe = dotd(self._LxGe, self._LxGe.T)
+
+    @property
+    def nparams(self):
+        """
+        Number of parameters.
+        """
+        return self._C0.nparams + self._C1.nparams
 
     @property
     @lru_cache(maxsize=None)

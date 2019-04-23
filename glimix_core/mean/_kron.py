@@ -1,7 +1,7 @@
 from numpy import asarray, kron, zeros
+from optimix import Function, Vector
 
 from glimix_core._util import unvec, vec
-from optimix import Function, Vector
 
 
 class KronMean(Function):
@@ -37,7 +37,15 @@ class KronMean(Function):
         self._X = asarray(X, float)
         vecB = zeros((X.shape[1], A.shape[0])).ravel()
         self._vecB = Vector(vecB)
+        self._nparams = vecB.size
         Function.__init__(self, "KronMean", vecB=self._vecB)
+
+    @property
+    def nparams(self):
+        """
+        Number of parameters.
+        """
+        return self._nparams
 
     @property
     def A(self):

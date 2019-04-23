@@ -1,6 +1,5 @@
 from numpy import log, pi
 from numpy.linalg import slogdet, solve
-
 from optimix import Function
 
 

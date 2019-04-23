@@ -3,7 +3,6 @@ import warnings
 from liknorm import LikNormMachine
 from numpy import ascontiguousarray, sign
 from numpy.linalg import LinAlgError
-
 from optimix import Function
 
 from .._ep import EP

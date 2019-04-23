@@ -7,9 +7,9 @@ binomial_sample  Binomial likelihood sampling.
 poisson_sample   Poisson likelihood sampling.
 """
 
+from ._canonical import bernoulli_sample, binomial_sample, poisson_sample
 from ._ggp import GGPSampler
 from ._gp import GPSampler
-from ._canonical import bernoulli_sample, binomial_sample, poisson_sample
 
 __all__ = [
     "GGPSampler",

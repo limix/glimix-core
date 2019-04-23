@@ -2,7 +2,6 @@ from copy import copy
 
 from numpy import asarray, ascontiguousarray, clip, diag, dot, exp, log, zeros
 from numpy.linalg import pinv
-
 from optimix import Function, Scalar, Vector
 
 from .._util import (

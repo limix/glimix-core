@@ -1,11 +1,11 @@
 import pytest
 import scipy.stats as st
-from numpy import concatenate, kron, eye
+from numpy import concatenate, eye, kron
 from numpy.random import RandomState
 from numpy.testing import assert_allclose, assert_equal
 from scipy.optimize import check_grad
 
-from glimix_core._util import assert_interface, vec, unvec, multivariate_normal
+from glimix_core._util import assert_interface, multivariate_normal, unvec, vec
 from glimix_core.lmm import Kron2Sum
 
 
@@ -657,3 +657,15 @@ def test_kron2sum_large_covariance():
     )
     assert_allclose(lmm_large.mean(), lmm.mean(), rtol=1e-2, atol=1e-5)
     assert_allclose(lmm_large.covariance(), lmm.covariance(), rtol=1e-3, atol=1e-5)
+
+
+def test_kron2sum_insufficient_sample_size():
+    random = RandomState(0)
+    n = 2
+    Y = random.randn(n, 2)
+    A = random.randn(2, 2)
+    A = A @ A.T
+    F = random.randn(n, 2)
+    G = random.randn(n, 6)
+    with pytest.warns(UserWarning):
+        Kron2Sum(Y, A, F, G)

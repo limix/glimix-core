@@ -1,5 +1,5 @@
-import pytest
 import numpy as np
+import pytest
 from numpy.testing import assert_allclose
 
 from glimix_core.cov import GivenCov, LinearCov, SumCov

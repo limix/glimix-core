@@ -1,5 +1,6 @@
-from glimix_core.mean import OffsetMean
 from numpy.testing import assert_allclose
+
+from glimix_core.mean import OffsetMean
 
 
 def test_mean_offset():

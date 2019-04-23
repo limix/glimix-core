@@ -1,5 +1,4 @@
 from numpy import exp, log
-
 from optimix import Function, Scalar
 
 from .._util import format_function

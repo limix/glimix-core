@@ -1,3 +1,5 @@
+from math import exp
+
 from numpy import (
     asarray,
     atleast_2d,
@@ -9,12 +11,11 @@ from numpy import (
     sum as npsum,
     zeros,
 )
-from math import exp
 from numpy.linalg import inv, lstsq, slogdet
 from numpy_sugar import epsilon
+from optimix import Function, Scalar
 
 from glimix_core._util import cache, log2pi
-from optimix import Function, Scalar
 
 from .._util import economic_qs_zeros, numbers
 from ._lmm_scan import FastScanner

@@ -1,5 +1,4 @@
 from numpy import asarray, ascontiguousarray, zeros
-
 from optimix import Function, Vector
 
 

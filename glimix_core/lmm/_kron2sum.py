@@ -3,11 +3,11 @@ from functools import reduce
 
 from numpy import asarray, asfortranarray, kron, log, sqrt, tensordot, trace
 from numpy.linalg import inv, matrix_rank, slogdet
+from optimix import Function
 
 from glimix_core._util import cache, log2pi, unvec, vec
 from glimix_core.cov import Kron2SumCov
 from glimix_core.mean import KronMean
-from optimix import Function
 
 from ._kron2sum_scan import KronFastScanner
 
@@ -112,6 +112,12 @@ class Kron2Sum(Function):
         self._restricted = restricted
         composite = [("C0", self._cov.C0), ("C1", self._cov.C1)]
         Function.__init__(self, "Kron2Sum", composite=composite)
+
+        nparams = self._mean.nparams + self._cov.nparams
+        if nparams > Y.size:
+            msg = "The number of parameters is larger than the outcome size."
+            msg += " Convergence is expected to be problematic."
+            warnings.warn(msg, UserWarning)
 
     @property
     def beta_covariance(self):
@@ -360,7 +366,6 @@ class Kron2Sum(Function):
             ``True`` for progress output; ``False`` otherwise.
             Defaults to ``True``.
         """
-        # self._maximize(verbose=verbose, pgtol=1e-5, factr=1e8)
         self._maximize(verbose=verbose)
 
     def _parameters_update(self):

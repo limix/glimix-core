@@ -1,5 +1,4 @@
 from numpy import asarray, dot, ones, zeros
-
 from optimix import Function, Vector
 
 from .._util import format_function
@@ -50,6 +49,13 @@ class LRFreeFormCov(Function):
         self._L = ones((n, m))
         self._Lu = Vector(self._L.ravel())
         Function.__init__(self, "LRFreeFormCov", Lu=self._Lu)
+
+    @property
+    def nparams(self):
+        """
+        Number of parameters.
+        """
+        return self._L.size
 
     def listen(self, func):
         """
