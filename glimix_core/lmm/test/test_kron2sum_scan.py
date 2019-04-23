@@ -149,7 +149,7 @@ def test_lmm_kron_scan_redundant():
     F1 = concatenate([F1, F1], axis=1)
 
     r = scan.scan(A1, F1)
-    assert_allclose(r["scale"], 0.3005376956901813, rtol=1e-3)
+    assert_allclose(r["scale"], 0.30018176560338833, rtol=1e-3)
 
     m = kron(A, F) @ vec(r["effsizes0"]) + kron(A1, F1) @ vec(r["effsizes1"])
 
