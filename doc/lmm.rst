@@ -141,13 +141,13 @@ parameters v₀ and v₁ are held fixed. The v₀ and v₁ values are first foun
     >>> scanner = lmm.get_fast_scanner()
     >>> M = [[1.5, 0.1], [-0.2, 0.4], [0.0, 1.0], [-3.4, 0.6]]
     >>> r = scanner.scan(M)
-    >>> r["lml"]  # doctest: +FLOAT_CMP
+    >>> r["lml"]
     -0.7322976913217882
-    >>> r["effsizes0"]  # doctest: +FLOAT_CMP
+    >>> r["effsizes0"]
     array([-0.42323051])
-    >>> r["effsizes1"]  # doctest: +FLOAT_CMP
+    >>> r["effsizes1"]
     array([-0.05913491,  0.37079162])
-    >>> r["scale"]  # doctest: +FLOAT_CMP
+    >>> r["scale"]
     0.4629376687687552
 
 For the null case (i.e., when there is not candidate set Mⱼ), the log of the marginal
@@ -177,23 +177,13 @@ The parameters 𝚩ⱼ, 𝚨ⱼ, and sⱼ are found via maximum likelihood.
     >>> A = random.randn(2, n)
     >>> X = random.randn(n, 3)
     >>> r = mscanner.scan(A, X)
-    >>> r["lml"]  # doctest: +FLOAT_CMP
+    >>> r["lml"]
     -42.74668875515792
-    >>> r["effsizes0"]  # doctest: +FLOAT_CMP
-    array([[ 0.00277822, -0.01476164],
-           [-0.0005451 ,  0.00290053],
-           [-0.00990904,  0.05266315]])
-    >>> r["effsizes1"]  # doctest: +FLOAT_CMP
-    array([[-0.0127383 , -0.03796125,  0.04740337, -0.04064709, -0.03945676,
-             0.00239382, -0.01167387,  0.06761218,  0.04603321, -0.00731968,
-            -0.05142721,  0.03228656, -0.02494051, -0.06615618,  0.03947441],
-           [-0.03729972, -0.05256696,  0.01844337,  0.00221303,  0.01784714,
-             0.07925216,  0.03037916, -0.0247654 ,  0.04081066, -0.0442502 ,
-            -0.01950785,  0.00037021,  0.0548026 , -0.03010318, -0.02419531],
-           [ 0.01722535,  0.0408958 , -0.04265975,  0.03336806,  0.02959425,
-            -0.01610653,  0.00428473, -0.05174828, -0.04550623,  0.01396271,
-             0.04619166, -0.02688382,  0.01095342,  0.06031332, -0.02847803]])
-    >>> r["scale"]  # doctest: +FLOAT_CMP
+    >>> r["effsizes0"][0, 0]
+    0.0027782236846561684
+    >>> r["effsizes1"][0, 0]
+    -0.012738296905015198
+    >>> r["scale"]
     1.0452327204999015
 
 API
