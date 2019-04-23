@@ -121,7 +121,7 @@ def test_lmm_kron_scan_unrestricted():
 
 def test_lmm_kron_scan_redundant():
     random = RandomState(0)
-    n = 5
+    n = 30
     Y = random.randn(n, 3)
     A = random.randn(3, 3)
     A = A @ A.T
@@ -149,7 +149,7 @@ def test_lmm_kron_scan_redundant():
     F1 = concatenate([F1, F1], axis=1)
 
     r = scan.scan(A1, F1)
-    assert_allclose(r["scale"], 0.30018176560338833, rtol=1e-3)
+    assert_allclose(r["scale"], 0.8843540849467378, rtol=1e-3)
 
     m = kron(A, F) @ vec(r["effsizes0"]) + kron(A1, F1) @ vec(r["effsizes1"])
 

@@ -1,11 +1,11 @@
 import pytest
 import scipy.stats as st
-from numpy import concatenate
+from numpy import concatenate, kron, eye
 from numpy.random import RandomState
 from numpy.testing import assert_allclose, assert_equal
 from scipy.optimize import check_grad
 
-from glimix_core._util import assert_interface, vec
+from glimix_core._util import assert_interface, vec, unvec, multivariate_normal
 from glimix_core.lmm import Kron2Sum
 
 
@@ -599,41 +599,47 @@ def test_kron2sum_fit_C1_well_cond_redundant_Y_unrestricted():
     assert_allclose(lml, -39.59627521826263)
 
 
-# def test_kron2sum_large_outcome():
+def test_kron2sum_large_outcome():
 
-#     random = RandomState(0)
-#     Y = random.randn(5, 3)
-#     A = random.randn(3, 3)
-#     A = A @ A.T
-#     F = random.randn(5, 2)
-#     G = random.randn(5, 4)
-#     scale = 1e4
+    random = RandomState(2)
+    n = 50
+    A = random.randn(3, 3)
+    A = A @ A.T
+    F = random.randn(n, 2)
+    G = random.randn(n, 4)
+    B = random.randn(2, 3)
+    C0 = random.randn(3, 3)
+    C0 = C0 @ C0.T
+    C1 = random.randn(3, 3)
+    C1 = C1 @ C1.T
+    K = kron(C0, (G @ G.T)) + kron(C1, eye(n))
+    y = multivariate_normal(random, kron(A, F) @ vec(B), K)
+    Y = unvec(y, (n, 3))
+    Y = Y / Y.std(0)
 
-#     lmm = Kron2Sum(Y, A, F, G, restricted=False)
-#     lmm.fit(verbose=False)
+    lmm = Kron2Sum(Y, A, F, G, restricted=False)
+    lmm.fit(verbose=False)
 
-#     lmm_large = Kron2Sum(scale * Y, A, F, G, restricted=False)
-#     lmm_large.fit(verbose=False)
-
-#     assert_allclose(lmm_large.lml(), lmm.lml())
-#     assert_allclose(lmm_large.C0, lmm.C0, rtol=1e-3, atol=1e-5)
-#     assert_allclose(lmm_large.C1, lmm.C1, rtol=1e-3, atol=1e-5)
-#     assert_allclose(lmm_large.beta, lmm.beta, rtol=1e-3, atol=1e-5)
-#     assert_allclose(
-#         lmm_large.beta_covariance, lmm.beta_covariance, rtol=1e-3, atol=1e-5
-#     )
-#     assert_allclose(lmm_large.mean(), lmm.mean(), rtol=1e-2, atol=1e-5)
-#     assert_allclose(lmm_large.covariance(), lmm.covariance(), rtol=1e-3, atol=1e-5)
+    assert_allclose(lmm.lml(), -12.163158697588926)
+    assert_allclose(lmm.C0[0, 1], -0.004781646218546575, rtol=1e-3, atol=1e-5)
+    assert_allclose(lmm.C1[0, 1], 0.03454122242999587, rtol=1e-3, atol=1e-5)
+    assert_allclose(lmm.beta[2], -0.02553979383437496, rtol=1e-3, atol=1e-5)
+    assert_allclose(
+        lmm.beta_covariance[0, 1], 0.0051326042358990865, rtol=1e-3, atol=1e-5
+    )
+    assert_allclose(lmm.mean()[3], 0.3442913781854699, rtol=1e-2, atol=1e-5)
+    assert_allclose(lmm.covariance()[0, 1], 0.0010745698663887468, rtol=1e-3, atol=1e-5)
 
 
 def test_kron2sum_large_covariance():
 
     random = RandomState(0)
-    Y = random.randn(5, 3)
+    n = 50
+    Y = random.randn(n, 3)
     A = random.randn(3, 3)
     A = A @ A.T
-    F = random.randn(5, 2)
-    G = random.randn(5, 4)
+    F = random.randn(n, 2)
+    G = random.randn(n, 4)
     scale = 1e4
 
     lmm = Kron2Sum(Y, A, F, G, restricted=False)

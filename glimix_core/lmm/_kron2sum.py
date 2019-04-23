@@ -69,7 +69,7 @@ class Kron2Sum(Function):
         """
         from numpy_sugar import is_all_finite
 
-        Y = asfortranarray(Y, float).copy()
+        Y = asfortranarray(Y, float)
         yrank = matrix_rank(Y)
         if Y.shape[1] > yrank:
             warnings.warn(
@@ -360,7 +360,8 @@ class Kron2Sum(Function):
             ``True`` for progress output; ``False`` otherwise.
             Defaults to ``True``.
         """
-        self._maximize(verbose=verbose, pgtol=1e-5, factr=1e8)
+        # self._maximize(verbose=verbose, pgtol=1e-5, factr=1e8)
+        self._maximize(verbose=verbose)
 
     def _parameters_update(self):
         self._cache["terms"] = None
