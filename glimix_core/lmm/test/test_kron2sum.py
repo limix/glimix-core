@@ -561,3 +561,57 @@ def test_kron2sum_fit_C1_well_cond_redundant_Y_unrestricted():
         lmm = Kron2Sum(Y, A, F, G, restricted=False)
     lml = lmm.lml()
     assert_allclose(lml, -40.5860882514021)
+
+
+# def test_kron2sum_large_outcome():
+
+#     random = RandomState(0)
+#     Y = random.randn(5, 3)
+#     A = random.randn(3, 3)
+#     A = A @ A.T
+#     F = random.randn(5, 2)
+#     G = random.randn(5, 4)
+#     scale = 1e4
+
+#     lmm = Kron2Sum(Y, A, F, G, restricted=False)
+#     lmm.fit(verbose=False)
+
+#     lmm_large = Kron2Sum(scale * Y, A, F, G, restricted=False)
+#     lmm_large.fit(verbose=False)
+
+#     assert_allclose(lmm_large.lml(), lmm.lml())
+#     assert_allclose(lmm_large.C0, lmm.C0, rtol=1e-3, atol=1e-5)
+#     assert_allclose(lmm_large.C1, lmm.C1, rtol=1e-3, atol=1e-5)
+#     assert_allclose(lmm_large.beta, lmm.beta, rtol=1e-3, atol=1e-5)
+#     assert_allclose(
+#         lmm_large.beta_covariance, lmm.beta_covariance, rtol=1e-3, atol=1e-5
+#     )
+#     assert_allclose(lmm_large.mean(), lmm.mean(), rtol=1e-2, atol=1e-5)
+#     assert_allclose(lmm_large.covariance(), lmm.covariance(), rtol=1e-3, atol=1e-5)
+
+
+def test_kron2sum_large_covariance():
+
+    random = RandomState(0)
+    Y = random.randn(5, 3)
+    A = random.randn(3, 3)
+    A = A @ A.T
+    F = random.randn(5, 2)
+    G = random.randn(5, 4)
+    scale = 1e4
+
+    lmm = Kron2Sum(Y, A, F, G, restricted=False)
+    lmm.fit(verbose=False)
+
+    lmm_large = Kron2Sum(Y, A, F, scale * G, restricted=False)
+    lmm_large.fit(verbose=False)
+
+    assert_allclose(lmm_large.lml(), lmm.lml())
+    assert_allclose(lmm_large.C0, lmm.C0 / (scale ** 2), rtol=1e-3, atol=1e-5)
+    assert_allclose(lmm_large.C1, lmm.C1, rtol=1e-3, atol=1e-5)
+    assert_allclose(lmm_large.beta, lmm.beta, rtol=1e-3, atol=1e-5)
+    assert_allclose(
+        lmm_large.beta_covariance, lmm.beta_covariance, rtol=1e-3, atol=1e-5
+    )
+    assert_allclose(lmm_large.mean(), lmm.mean(), rtol=1e-2, atol=1e-5)
+    assert_allclose(lmm_large.covariance(), lmm.covariance(), rtol=1e-3, atol=1e-5)

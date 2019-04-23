@@ -69,7 +69,7 @@ class Kron2Sum(Function):
         """
         from numpy_sugar import is_all_finite
 
-        Y = asfortranarray(Y, float)
+        Y = asfortranarray(Y, float).copy()
         yrank = matrix_rank(Y)
         if Y.shape[1] > yrank:
             warnings.warn(
@@ -87,7 +87,9 @@ class Kron2Sum(Function):
                 + "Convergence might be problematic.",
                 UserWarning,
             )
-        G = asarray(G, float)
+        G = asarray(G, float).copy()
+        self._G_norm = max(G.min(), G.max())
+        G /= self._G_norm
 
         if not is_all_finite(Y):
             raise ValueError("There are non-finite values in the outcome matrix.")
@@ -104,9 +106,9 @@ class Kron2Sum(Function):
 
         self._Y = Y
         self._cov = Kron2SumCov(G, Y.shape[1], rank)
+        self._cov.listen(self._parameters_update)
         self._mean = KronMean(A, X)
         self._cache = {"terms": None}
-        self._cov.listen(self._parameters_update)
         self._restricted = restricted
         composite = [("C0", self._cov.C0), ("C1", self._cov.C1)]
         Function.__init__(self, "Kron2Sum", composite=composite)
@@ -188,7 +190,7 @@ class Kron2Sum(Function):
         C0 : ndarray
             C₀.
         """
-        return self._cov.C0.value()
+        return self._cov.C0.value() / (self._G_norm ** 2)
 
     @property
     def C1(self):
