@@ -11,7 +11,7 @@ from glimix_core.lmm import FastScanner, Kron2Sum, KronFastScanner
 
 def test_lmm_kron_scan():
     random = RandomState(0)
-    n = 5
+    n = 20
     Y = random.randn(n, 3)
     A = random.randn(3, 3)
     A = A @ A.T
@@ -37,7 +37,7 @@ def test_lmm_kron_scan():
     F1 = random.randn(n, 4)
 
     r = scan.scan(A1, F1)
-    assert_allclose(r["scale"], 0.3000748879939645, rtol=1e-3)
+    assert_allclose(r["scale"], 0.7365021111700154, rtol=1e-3)
 
     m = kron(A, F) @ vec(r["effsizes0"]) + kron(A1, F1) @ vec(r["effsizes1"])
 
@@ -50,13 +50,13 @@ def test_lmm_kron_scan():
     assert_allclose(r["lml"], st.multivariate_normal(m, s * K).logpdf(vec(Y)))
 
     r = scan.scan(empty((3, 0)), F1)
-    assert_allclose(r["lml"], -10.96414417860732, rtol=1e-4)
-    assert_allclose(r["scale"], 0.5999931720566452, rtol=1e-3)
+    assert_allclose(r["lml"], -85.36667704747371, rtol=1e-4)
+    assert_allclose(r["scale"], 0.8999995537936586, rtol=1e-3)
     assert_allclose(
         r["effsizes0"],
         [
-            [1.411082677273241, 0.41436234081257045, -1.5337251391408189],
-            [-0.6753042112998789, -0.20299590400182352, 0.6723874047807074],
+            [0.21489119796865844, 0.6412947101778663, -0.7176143380221816],
+            [0.8866722740598517, -0.18731140321348416, -0.26118052682069],
         ],
         rtol=1e-2,
         atol=1e-2,
@@ -66,7 +66,7 @@ def test_lmm_kron_scan():
 
 def test_lmm_kron_scan_with_lmm():
     random = RandomState(0)
-    n = 5
+    n = 15
     Y = random.randn(n, 3)
     A = random.randn(3, 3)
     A = A @ A.T
@@ -105,7 +105,7 @@ def test_lmm_kron_scan_with_lmm():
 
 def test_lmm_kron_scan_unrestricted():
     random = RandomState(0)
-    n = 5
+    n = 15
     Y = random.randn(n, 3)
     A = random.randn(3, 3)
     A = A @ A.T
