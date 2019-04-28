@@ -235,16 +235,11 @@ class FastScanner(object):
         effsizes1_se = empty(p)
         scales = empty(p)
 
-        if verbose:
-            nchunks = min(p, 30)
-        else:
-            nchunks = min(p, 1)
+        chunks = _get_chunks(M)
 
-        chunk_size = (p + nchunks - 1) // nchunks
-
-        for i in tqdm(range(nchunks), desc="Scanning", disable=not verbose):
-            start = i * chunk_size
-            stop = min(start + chunk_size, M.shape[1])
+        start = 0
+        for i in tqdm(chunks, desc="Scanning", disable=not verbose):
+            stop = start + i
 
             r = self._fast_scan_chunk(M[:, start:stop])
 
@@ -254,6 +249,8 @@ class FastScanner(object):
             effsizes1[start:stop] = r["effsizes1"]
             effsizes1_se[start:stop] = r["effsizes1_se"]
             scales[start:stop] = r["scale"]
+
+            start = stop
 
         return {
             "lml": lmls,
@@ -578,3 +575,20 @@ def _bstar_unpack(beta, alpha, yTBy, yTBE, ETBE, bstar):
     MTBM = [j.MTBM for j in ETBE]
     bstar = bstar(beta, alpha, yTBy, yTBX, yTBM, XTBX, XTBM, MTBM)
     return clip(bstar, epsilon.tiny, inf)
+
+
+def _get_chunks(M):
+    chunks = None
+    if hasattr(M, "chunks") and M.chunks is not None:
+        breakpoint()
+        if len(M.chunks) == 2:
+            return M.chunks[1]
+
+    p = M.shape[1]
+    siz = round(p / min(30, p))
+    n = int(p / siz)
+    chunks = [siz] * n
+    if n * siz < p:
+        chunks += [p - n * siz]
+
+    return chunks
