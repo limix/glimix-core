@@ -580,7 +580,6 @@ def _bstar_unpack(beta, alpha, yTBy, yTBE, ETBE, bstar):
 def _get_chunks(M):
     chunks = None
     if hasattr(M, "chunks") and M.chunks is not None:
-        breakpoint()
         if len(M.chunks) == 2:
             return M.chunks[1]
 
