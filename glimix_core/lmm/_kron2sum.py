@@ -366,7 +366,7 @@ class Kron2Sum(Function):
             ``True`` for progress output; ``False`` otherwise.
             Defaults to ``True``.
         """
-        self._maximize(verbose=verbose, factr=1e6, pgtol=1e-7)
+        self._maximize(verbose=verbose, factr=1e7, pgtol=1e-7)
 
     def _parameters_update(self):
         self._cache["terms"] = None
