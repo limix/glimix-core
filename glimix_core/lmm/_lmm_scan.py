@@ -584,7 +584,7 @@ def _get_chunks(M):
             return M.chunks[1]
 
     p = M.shape[1]
-    siz = round(p / min(30, p))
+    siz = round(p / min(50, p))
     n = int(p / siz)
     chunks = [siz] * n
     if n * siz < p:
