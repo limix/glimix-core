@@ -362,8 +362,8 @@ def _check_outcome(y):
         else:
             raise ValueError("Unrecognized number of dimensions of the outcome array.")
     else:
-        if isinstance(y, collections.Sequence):
-            if not hasattr(y[0], "ndim") and not isinstance(y[0], collections.Sequence):
+        if isinstance(y, collections.abc.Sequence):
+            if not hasattr(y[0], "ndim") and not isinstance(y[0], collections.abc.Sequence):
                 y = [asarray(y, float)]
         else:
             y = [y]
@@ -387,9 +387,9 @@ def _check_covariates(X, SVD):
                     "Unrecognized number of dimensions of the covariates array."
                 )
         else:
-            if isinstance(X, collections.Sequence):
+            if isinstance(X, collections.abc.Sequence):
                 if not hasattr(X[0], "ndim") and not isinstance(
-                    X[0], collections.Sequence
+                    X[0], collections.abc.Sequence
                 ):
                     X = [asarray(X, float)]
             else:
