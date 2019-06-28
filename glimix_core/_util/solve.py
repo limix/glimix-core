@@ -207,7 +207,7 @@ def hsvd(a, b, d):
     s22 = (a * St - b * Ct) * Sp + (-b * St + d * Ct) * Cp
 
     U = [[Ct, -St], [St, Ct]]
-    S = [sqrt((s1 + s2) / 2), sqrt((s1 - s2) / 2)]
+    S = [sqrt((s1 + s2) / 2), sqrt(maximum((s1 - s2) / 2, 0.0))]
 
     VT = [[sign(s11) * Cp, sign(s11) * Sp], [-sign(s22) * Sp, sign(s22) * Cp]]
 
