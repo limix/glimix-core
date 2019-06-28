@@ -13,9 +13,9 @@ from numpy import (
 )
 from numpy.linalg import inv, lstsq, slogdet
 from numpy_sugar import epsilon
-from optimix import Function, Scalar
 
 from glimix_core._util import cache, log2pi
+from optimix import Function, Scalar
 
 from .._util import economic_qs_zeros, numbers
 from ._lmm_scan import FastScanner
@@ -139,6 +139,9 @@ class LMM(Function):
         y = asarray(y, float).ravel()
         if not is_all_finite(y):
             raise ValueError("There are non-finite values in the outcome.")
+
+        if len(y) == 0:
+            raise ValueError("The outcome array is empty.")
 
         X = atleast_2d(asarray(X, float).T).T
         if not is_all_finite(X):

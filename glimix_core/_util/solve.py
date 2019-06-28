@@ -59,7 +59,7 @@ def heigvals(a, b, d):
     D = a * d - b * b
 
     t0 = T / 2
-    t1 = sqrt(T * T / 4 - D)
+    t1 = sqrt(maximum(T * T / 4 - D, 0))
     eig0 = t0 + t1
     eig1 = t0 - t1
 
