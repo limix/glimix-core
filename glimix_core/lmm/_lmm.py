@@ -12,10 +12,10 @@ from numpy import (
     zeros,
 )
 from numpy.linalg import inv, lstsq, slogdet
-from numpy_sugar import epsilon
+from optimix import Function, Scalar
 
 from glimix_core._util import cache, log2pi
-from optimix import Function, Scalar
+from numpy_sugar import epsilon
 
 from .._util import economic_qs_zeros, numbers
 from ._lmm_scan import FastScanner
@@ -71,43 +71,30 @@ class LMM(Function):
     -----
     The LMM model can be equivalently written as ::
 
-        𝐲 ∼ 𝓝(X𝜷, s((1-𝛿)K + 𝛿I)),
+        𝐲 ∼ 𝓝(𝚇𝜷, s((1-𝛿)𝙺 + 𝛿𝙸)),
 
     and we thus have v₀ = s (1 - 𝛿) and v₁ = s 𝛿.
-    Consider the economic eigendecomposition of K:
+    Consider the economic eigendecomposition of 𝙺::
 
-    .. math::
-
-        \overbrace{[\mathrm Q₀ \quad \mathrm Q₁]}^{\mathrm Q}
-            \overbrace{\left[\begin{array}{cc}
-                \mathrm S₀ & 𝟎\\
-                        𝟎  & 𝟎
-            \end{array}\right]}^{\mathrm S}
-        \left[\begin{array}{c}
-            \mathrm Q₀ᵀ \\
-            \mathrm Q₁ᵀ
-        \end{array}\right] = \mathrm K
+        𝙺 = [𝚀₀  𝚀₁] [𝚂₀  𝟎] [𝚀₀ᵀ]
+                     [ 𝟎  𝟎] [𝚀₁ᵀ]
 
     and let
 
-    .. math::
-
-        \mathrm D = \left[
-            \begin{array}{cc}
-                (1-𝛿)\mathrm S₀ + 𝛿\mathrm I & 𝟎\\
-                𝟎                            & 𝛿\mathrm I
-            \end{array}
-        \right].
+        𝙳 = [(1-𝛿)𝚂₀ + 𝛿𝙸₀   𝟎 ]
+            [      𝟎        𝛿𝙸₁].
 
     We thus have ::
 
-        ((1-𝛿)K + 𝛿I)⁻¹ = QD⁻¹Qᵀ.
+        ((1-𝛿)𝙺 + 𝛿𝙸)⁻¹ = 𝚀𝙳⁻¹𝚀ᵀ.
 
-    A diagonal covariance-matrix can then be used to define an equivalent
-    marginal likelihood::
+    In order to eliminate the need of 𝚀₁, note that 𝚀𝚀ᵀ = 𝙸 implies that ::
 
-        𝓝(Qᵀ𝐲|QᵀX𝜷, sD).
+        𝚀₁𝚀₁ᵀ = 𝙸 - 𝚀₀𝚀₀ᵀ.
 
+    Let 𝙳₀ = (1-𝛿)S₀ + 𝛿𝙸. We have ::
+
+        ((1-𝛿)𝙺 + 𝛿𝙸)⁻¹ = 𝚀₀𝙳₀⁻¹𝚀₀ᵀ + 𝛿⁻¹(𝙸 - 𝚀₀𝚀₀ᵀ).
     """
 
     def __init__(self, y, X, QS=None, restricted=False):
@@ -179,6 +166,7 @@ class LMM(Function):
         self._scale = 1.0
         self._fix = {"beta": False, "scale": False}
         self._restricted = restricted
+        self._Dcache = None
 
     @property
     def beta(self):
@@ -216,7 +204,7 @@ class LMM(Function):
         Returns
         -------
         beta-covariance : ndarray
-            (Xᵀ(s((1-𝛿)K + 𝛿I))⁻¹X)⁻¹.
+            (Xᵀ(s((1-𝛿)𝙺 + 𝛿𝙸))⁻¹𝚇)⁻¹.
 
         References
         ----------
@@ -366,22 +354,24 @@ class LMM(Function):
         -----
         The log of the marginal likelihood is given by ::
 
-            2⋅log(p(𝐲)) = -n⋅log(2π) - n⋅log(s) - log|D| - (Qᵀ𝐲)ᵀs⁻¹D⁻¹(Qᵀ𝐲)
-                        + (Qᵀ𝐲)ᵀs⁻¹D⁻¹(QᵀX𝜷)/2 - (QᵀX𝜷)ᵀs⁻¹D⁻¹(QᵀX𝜷).
+            2⋅log(p(𝐲)) = -n⋅log(2π) - n⋅log(s) - log|𝙳|
+                -  (𝚀₀ᵀ𝐲)ᵀ(s𝙳₀)⁻¹(𝚀₀ᵀ𝐲)  -  (𝐲)ᵀ(s𝛿)⁻¹(𝐲)  +  (𝚀₀ᵀ𝐲)ᵀ(s𝛿)⁻¹(𝚀₀ᵀ𝐲)
+                - (𝚀₀ᵀ𝚇𝜷)ᵀ(s𝙳₀)⁻¹(𝚀₀ᵀ𝚇𝜷) - (𝚇𝜷)ᵀ(s𝛿)⁻¹(𝚇𝜷) + (𝚀₀ᵀ𝚇𝜷)ᵀ(s𝛿)⁻¹(𝚀₀ᵀ𝚇𝜷)
+                + 2(𝚀₀ᵀ𝐲)ᵀ(s𝙳₀)⁻¹(𝚇𝜷)    + 2(𝐲)ᵀ(s𝛿)⁻¹(𝚇𝜷) - 2(𝚀₀ᵀ𝐲)ᵀ(s𝛿)⁻¹(𝚀₀ᵀ𝚇𝜷)
 
         By using the optimal 𝜷, the log of the marginal likelihood can be rewritten
         as::
 
-            2⋅log(p(𝐲)) = -n⋅log(2π) - n⋅log(s) - log|D| + (Qᵀ𝐲)ᵀs⁻¹D⁻¹Qᵀ(X𝜷-𝐲).
+            2⋅log(p(𝐲)) = -n⋅log(2π) - n⋅log(s) - log|𝙳| + (𝚀₀ᵀ𝐲)ᵀ(s𝙳₀)⁻¹𝚀₀ᵀ(𝚇𝜷 - 𝐲)
+                        + (𝐲)ᵀ(s𝛿)⁻¹(𝚇𝜷 - 𝐲) - (𝚀₀ᵀ𝐲)ᵀ(s𝛿)⁻¹𝚀₀ᵀ(𝚇𝜷 - 𝐲).
 
-
-        In the extreme case where 𝜷 is such that 𝐲 = X𝜷, the maximum is attained as
+        In the extreme case where 𝜷 is such that 𝐲 = 𝚇𝜷, the maximum is attained as
         s→0.
 
         For optimals 𝜷 and s, the log of the marginal likelihood can be further
         simplified to ::
 
-            2⋅log(p(𝐲; 𝜷, s)) = -n⋅log(2π) - n⋅log s - log|D| - n.
+            2⋅log(p(𝐲; 𝜷, s)) = -n⋅log(2π) - n⋅log s - log|𝙳| - n.
         """
         reml = (self._logdetXX() - self._logdetH()) / 2
         if self._optimal["scale"]:
@@ -440,11 +430,11 @@ class LMM(Function):
         Setting the derivative of log(p(𝐲; 𝜷)), for which 𝜷 is optimal, over
         scale equal to zero leads to the maximum ::
 
-            s = n⁻¹(Qᵀ𝐲)ᵀD⁻¹ Qᵀ(𝐲-X𝜷).
+            s = n⁻¹(Qᵀ𝐲)ᵀD⁻¹ Qᵀ(𝐲-𝚇𝜷).
 
         In the case of restricted marginal likelihood ::
 
-            s = (n-c)⁻¹(Qᵀ𝐲)ᵀD⁻¹ Qᵀ(𝐲-X𝜷),
+            s = (n-c)⁻¹(Qᵀ𝐲)ᵀD⁻¹ Qᵀ(𝐲-𝚇𝜷),
 
         where s is the number of covariates.
         """
@@ -459,7 +449,7 @@ class LMM(Function):
         """
         Mean of the prior.
 
-        Formally, 𝐦 = X𝜷.
+        Formally, 𝐦 = 𝚇𝜷.
 
         Returns
         -------
@@ -475,7 +465,7 @@ class LMM(Function):
         Returns
         -------
         covariance : ndarray
-            v₀K + v₁I.
+            v₀𝙺 + v₁𝙸.
         """
         from numpy_sugar.linalg import ddot, sum2diag
 
@@ -559,8 +549,6 @@ class LMM(Function):
         return self.nsamples - self._X["tX"].shape[1]
 
     def _optimal_scale_using_optimal_beta(self):
-        from numpy_sugar import epsilon
-
         assert self._optimal["beta"]
 
         yTQDiQTy = self._yTQDiQTy
@@ -589,8 +577,6 @@ class LMM(Function):
         self._optimal["scale"] = False
 
     def _update_scale(self):
-        from numpy_sugar import epsilon
-
         if self._optimal["beta"]:
             self._scale = self._optimal_scale_using_optimal_beta()
         else:

@@ -563,7 +563,8 @@ def test_kron2sum_fit_C1_well_cond_C0_fullrank_unrestricted():
     A = A @ A.T
     F = random.randn(5, 2)
     G = random.randn(5, 6)
-    lmm = Kron2Sum(Y, A, F, G, rank=2, restricted=False)
+    with pytest.warns(UserWarning):
+        lmm = Kron2Sum(Y, A, F, G, rank=2, restricted=False)
     lml0 = lmm.lml()
     lmm.fit(verbose=False)
     lml1 = lmm.lml()
