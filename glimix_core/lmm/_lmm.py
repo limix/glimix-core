@@ -1,23 +1,14 @@
 from math import exp
 
-from numpy import (
-    asarray,
-    atleast_2d,
-    concatenate,
-    dot,
-    full,
-    log,
-    maximum,
-    sum as npsum,
-    zeros,
-)
-from numpy.linalg import inv, lstsq, slogdet
+from numpy import asarray, atleast_2d, dot, log, maximum, sum as npsum, zeros
+from numpy.linalg import inv, lstsq, multi_dot, slogdet
 from optimix import Function, Scalar
 
 from glimix_core._util import cache, log2pi
 from numpy_sugar import epsilon
+from numpy_sugar.linalg import ddot, sum2diag
 
-from .._util import economic_qs_zeros, numbers
+from .._util import SVD, economic_qs_zeros, numbers
 from ._lmm_scan import FastScanner
 
 
@@ -95,6 +86,12 @@ class LMM(Function):
     Let 𝙳₀ = (1-𝛿)S₀ + 𝛿𝙸. We have ::
 
         ((1-𝛿)𝙺 + 𝛿𝙸)⁻¹ = 𝚀₀𝙳₀⁻¹𝚀₀ᵀ + 𝛿⁻¹(𝙸 - 𝚀₀𝚀₀ᵀ).
+
+    We will use the definition ::
+
+        𝙼 = ((1-𝛿)𝙺 + 𝛿𝙸)⁻¹
+
+    in the implementation to make it easier to read.
     """
 
     def __init__(self, y, X, QS=None, restricted=False):
@@ -115,7 +112,6 @@ class LMM(Function):
             otherwise. Defaults to ``False``.
         """
         from numpy_sugar import is_all_finite
-        from numpy_sugar.linalg import ddot, economic_svd
 
         logistic = Scalar(0.0)
         logistic.listen(self._delta_update)
@@ -150,23 +146,15 @@ class LMM(Function):
             msg = "Sample size differs between outcome and covariates."
             raise ValueError(msg)
 
-        self._Darr = []
-        n = y.shape[0]
-        d = self.delta
-        if QS[1].size > 0:
-            self._Darr += [QS[1] * (1 - d) + d]
-        if QS[1].size < n:
-            self._Darr += [full(n - QS[1].size, d)]
-
         self._y = y
         self._QS = QS
-        SVD = economic_svd(X)
-        self._X = {"X": X, "tX": ddot(SVD[0], SVD[1]), "VT": SVD[2]}
-        self._tbeta = zeros(len(SVD[1]))
+        self._Q0 = QS[0][0]
+        self._S0 = QS[1]
+        self._Xsvd = SVD(X)
+        self._tbeta = zeros(self._Xsvd.rank)
         self._scale = 1.0
         self._fix = {"beta": False, "scale": False}
         self._restricted = restricted
-        self._Dcache = None
 
     @property
     def beta(self):
@@ -187,12 +175,12 @@ class LMM(Function):
         """
         from numpy_sugar.linalg import rsolve
 
-        return rsolve(self._X["VT"], rsolve(self._X["tX"], self.mean()))
+        return rsolve(self._Xsvd.Vt, rsolve(self._Xsvd.US, self.mean()))
 
     @beta.setter
     def beta(self, beta):
         beta = asarray(beta, float).ravel()
-        self._tbeta[:] = self._X["VT"] @ beta
+        self._tbeta[:] = self._Xsvd.Vt @ beta
         self._optimal["beta"] = False
         self._optimal["scale"] = False
 
@@ -211,16 +199,8 @@ class LMM(Function):
         .. Rencher, A. C., & Schaalje, G. B. (2008). Linear models in statistics. John
            Wiley & Sons.
         """
-        from numpy_sugar.linalg import ddot
-
-        tX = self._X["tX"]
-        Q = concatenate(self._QS[0], axis=1)
-        S0 = self._QS[1]
-        D = self.v0 * S0 + self.v1
-        D = D.tolist() + [self.v1] * (len(self._y) - len(D))
-        D = asarray(D)
-        A = inv(tX.T @ (Q @ ddot(1 / D, Q.T @ tX)))
-        VT = self._X["VT"]
+        A = inv(self._tXTMtX) * self.scale
+        VT = self._Xsvd.Vt
         H = lstsq(VT, A, rcond=None)[0]
         return lstsq(VT, H.T, rcond=None)[0]
 
@@ -339,7 +319,7 @@ class LMM(Function):
         """
         Number of covariates, c.
         """
-        return self._X["X"].shape[1]
+        return self._Xsvd.A.shape[1]
 
     def lml(self):
         """
@@ -390,7 +370,7 @@ class LMM(Function):
         X : ndarray
             Covariates.
         """
-        return self._X["X"]
+        return self._Xsvd.A
 
     @property
     def delta(self):
@@ -456,7 +436,7 @@ class LMM(Function):
         mean : ndarray
             Mean of the prior.
         """
-        return self._X["tX"] @ self._tbeta
+        return self._Xsvd.US @ self._tbeta
 
     def covariance(self):
         """
@@ -467,8 +447,6 @@ class LMM(Function):
         covariance : ndarray
             v₀𝙺 + v₁𝙸.
         """
-        from numpy_sugar.linalg import ddot, sum2diag
-
         Q0 = self._QS[0][0]
         S0 = self._QS[1]
         return sum2diag(dot(ddot(Q0, self.v0 * S0), Q0.T), self.v1)
@@ -476,7 +454,6 @@ class LMM(Function):
     def _delta_update(self):
         self._optimal["beta"] = False
         self._optimal["scale"] = False
-        self._Dcache = None
 
     @cache
     def _logdetXX(self):
@@ -486,7 +463,7 @@ class LMM(Function):
         if not self._restricted:
             return 0.0
 
-        ldet = slogdet(self._X["tX"].T @ self._X["tX"])
+        ldet = slogdet(self._Xsvd.US.T @ self._Xsvd.US)
         if ldet[0] != 1.0:
             raise ValueError("The determinant of XᵀX should be positive.")
         return ldet[1]
@@ -497,7 +474,7 @@ class LMM(Function):
         """
         if not self._restricted:
             return 0.0
-        ldet = slogdet(sum(self._XTQDiQTX) / self.scale)
+        ldet = slogdet(self._tXTMtX / self.scale)
         if ldet[0] != 1.0:
             raise ValueError("The determinant of H should be positive.")
         return ldet[1]
@@ -517,7 +494,7 @@ class LMM(Function):
 
         n = len(self._y)
         lml = -self._df * log2pi - self._df - n * log(self.scale)
-        lml -= sum(npsum(log(D)) for D in self._D)
+        lml -= self._logdetD
         return lml / 2
 
     def _lml_arbitrary_scale(self):
@@ -530,12 +507,16 @@ class LMM(Function):
             Log of the marginal likelihood.
         """
         s = self.scale
-        D = self._D
         n = len(self._y)
         lml = -self._df * log2pi - n * log(s)
-        lml -= sum(npsum(log(d)) for d in D)
-        d = (mTQ - yTQ for (mTQ, yTQ) in zip(self._mTQ, self._yTQ))
-        lml -= sum((i / j) @ i for (i, j) in zip(d, D)) / s
+        lml -= self._logdetD
+
+        my = self.mean() - self._y
+        myTQ0 = my.T @ self._Q0
+        t0 = (myTQ0 / self._D0) @ myTQ0.T
+        t1 = (my.T @ my) / self.delta
+        t2 = (myTQ0 @ myTQ0.T) / self.delta
+        lml -= (t0 + t1 - t2) / s
 
         return lml / 2
 
@@ -546,14 +527,11 @@ class LMM(Function):
         """
         if not self._restricted:
             return self.nsamples
-        return self.nsamples - self._X["tX"].shape[1]
+        return self.nsamples - self._Xsvd.rank
 
     def _optimal_scale_using_optimal_beta(self):
         assert self._optimal["beta"]
-
-        yTQDiQTy = self._yTQDiQTy
-        yTQDiQTm = self._yTQDiQTX
-        s = sum(i - j @ self._tbeta for (i, j) in zip(yTQDiQTy, yTQDiQTm))
+        s = self._yTMy - self._yTMtX @ self._tbeta
         return maximum(s / self._df, epsilon.small)
 
     def _update_beta(self):
@@ -563,16 +541,7 @@ class LMM(Function):
         if self._optimal["beta"]:
             return
 
-        yTQDiQTm = list(self._yTQDiQTX)
-        mTQDiQTm = list(self._XTQDiQTX)
-        nominator = yTQDiQTm[0]
-        denominator = mTQDiQTm[0]
-
-        if len(yTQDiQTm) > 1:
-            nominator += yTQDiQTm[1]
-            denominator += mTQDiQTm[1]
-
-        self._tbeta[:] = rsolve(denominator, nominator)
+        self._tbeta[:] = rsolve(self._tXTMtX, self._yTMtX)
         self._optimal["beta"] = True
         self._optimal["scale"] = False
 
@@ -580,62 +549,83 @@ class LMM(Function):
         if self._optimal["beta"]:
             self._scale = self._optimal_scale_using_optimal_beta()
         else:
-            yTQDiQTy = self._yTQDiQTy
-            yTQDiQTm = self._yTQDiQTX
-            b = self._tbeta
-            p0 = sum(i - 2 * j @ b for (i, j) in zip(yTQDiQTy, yTQDiQTm))
-            p1 = sum((b @ i) @ b for i in self._XTQDiQTX)
+            p0 = self._yTMy - 2 * self._yTMtX @ self._tbeta
+            p1 = multi_dot((self._tbeta, self._tXTMtX, self._tbeta))
             self._scale = maximum((p0 + p1) / self._df, epsilon.small)
 
         self._optimal["scale"] = True
 
     @property
-    def _D(self):
-        if self._Dcache is None:
-            i = 0
-            d = self.delta
-            if self._QS[1].size > 0:
-                self._Darr[i][:] = self._QS[1]
-                self._Darr[i] *= 1 - d
-                self._Darr[i] += d
-                i += 1
-            if self._QS[1].size < self._y.shape[0]:
-                self._Darr[i][:] = d
-
-            self._Dcache = self._Darr
-        return self._Dcache
+    def _logdetD(self):
+        v = 0.0
+        d = self.delta
+        rank = self._QS[1].size
+        if rank > 0:
+            v += log((1 - d) * self._QS[1] + d).sum()
+        rankdef = self._y.shape[0] - rank
+        v += rankdef * log(d)
+        return v
 
     @property
-    def _XTQDiQTX(self):
-        return (i / j @ i.T for (i, j) in zip(self._tXTQ, self._D))
+    def _D0(self):
+        d = self.delta
+        return (1 - d) * self._S0 + d
 
     @property
-    def _mTQ(self):
-        return (self.mean().T @ Q for Q in self._QS[0] if Q.size > 0)
+    def _tXTQ0D0iQ0TtX(self):
+        return self._tXTQ0 / self._D0 @ self._tXTQ0.T
 
     @property
-    def _tXTQ(self):
-        return (self._X["tX"].T @ Q for Q in self._QS[0] if Q.size > 0)
+    def _tXTQ0(self):
+        return self._Xsvd.US.T @ self._Q0
 
     @property
-    def _XTQ(self):
-        return (self._X["tX"].T @ Q for Q in self._QS[0] if Q.size > 0)
+    def _yTQ0(self):
+        return self._y.T @ self._Q0
 
     @property
-    def _yTQ(self):
-        return (self._y.T @ Q for Q in self._QS[0] if Q.size > 0)
+    def _yTQ0xQ0Ty(self):
+        return self._yTQ0 ** 2
 
     @property
-    def _yTQQTy(self):
-        return (yTQ ** 2 for yTQ in self._yTQ)
+    def _yTQ0D0iQ0Ty(self):
+        return npsum(self._yTQ0xQ0Ty / self._D0)
 
     @property
-    def _yTQDiQTy(self):
-        return (npsum(i / j) for (i, j) in zip(self._yTQQTy, self._D))
+    def _yTMy(self):
+        return (
+            self._yTQ0D0iQ0Ty
+            + (self._y.T @ self._y - npsum(self._yTQ0xQ0Ty)) / self.delta
+        )
 
     @property
-    def _yTQDiQTX(self):
-        yTQ = self._yTQ
-        D = self._D
-        tXTQ = self._tXTQ
-        return (i / j @ l.T for (i, j, l) in zip(yTQ, D, tXTQ))
+    def _yTMtX(self):
+        return (
+            self._yTQ0D0iQ0TtX
+            + (self._y.T @ self._Xsvd.US - self._yTQ0Q0TtX) / self.delta
+        )
+
+    @property
+    def _tXTMtX(self):
+        return (
+            self._tXTQ0D0iQ0TtX
+            + (self._Xsvd.US.T @ self._Xsvd.US - self._tXTQ0Q0TtX) / self.delta
+        )
+
+    @property
+    def _yTQ0D0iQ0TtX(self):
+        yTQ0 = self._yTQ0
+        D0 = self._D0
+        tXTQ0 = self._tXTQ0
+        return yTQ0 / D0 @ tXTQ0.T
+
+    @property
+    def _yTQ0Q0TtX(self):
+        yTQ0 = self._yTQ0
+        tXTQ0 = self._tXTQ0
+        return yTQ0 @ tXTQ0.T
+
+    @property
+    def _tXTQ0Q0TtX(self):
+        tXTQ0 = self._tXTQ0
+        return tXTQ0 @ tXTQ0.T
