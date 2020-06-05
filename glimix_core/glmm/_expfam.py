@@ -1,6 +1,5 @@
 from copy import copy
 
-from liknorm import LikNormMachine
 from numpy import asarray, dot, exp
 from numpy.linalg import solve
 
@@ -67,6 +66,8 @@ class GLMMExpFam(GLMM):
     """
 
     def __init__(self, y, lik, X, QS=None, n_int=1000, rtol=1.49e-05, atol=1.49e-08):
+        from liknorm import LikNormMachine
+
         GLMM.__init__(self, y, lik, X, QS)
 
         self._ep = EPLinearKernel(self._X.shape[0], rtol=rtol, atol=atol)
