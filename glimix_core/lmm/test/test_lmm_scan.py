@@ -63,8 +63,8 @@ def test_fast_scanner_statsmodel_gls():
     our_beta_se = sqrt(scanner.null_beta_covariance.diagonal())
     # statsmodels scales the covariance matrix we pass, that is why
     # we need to account for it here.
-    assert_allclose(our_beta_se, beta_se / sqrt(gls_results.scale))
-    assert_allclose(scanner.null_beta_se, beta_se / sqrt(gls_results.scale))
+    assert_allclose(our_beta_se, beta_se / sqrt(gls_results.scale), rtol=1e-6)
+    assert_allclose(scanner.null_beta_se, beta_se / sqrt(gls_results.scale), rtol=1e-6)
 
 
 def test_fast_scanner_redundant_candidates():
@@ -191,7 +191,6 @@ def test_fast_scanner_effsizes_se():
     low_rank_K = array([[5.0, 14.0, 23.0], [14.0, 50.0, 86.0], [23.0, 86.0, 149.0]])
     low_rank_QS = economic_qs(low_rank_K)
     _test_fast_scanner_effsizes_se(low_rank_K, low_rank_QS, 0.2)
-    # _test_fast_scanner_effsizes_se(low_rank_K, low_rank_QS, 0.0)
 
 
 def _test_fast_scanner_effsizes_se(K0, QS, v):
@@ -235,9 +234,10 @@ def _test_fast_scanner_effsizes_se(K0, QS, v):
     r = scanner.scan(M)
     K = r["scale"] * (K0 + v * eye(3))
     XM = concatenate((X, M), axis=1)
-    effsizes_se = sqrt(abs(pinv(XM.T @ solve(K, XM)).diagonal()))
+    A = XM.T @ solve(K, XM) + eye(XM.shape[0]) * 1e-9
+    effsizes_se = sqrt(pinv(A, hermitian=True).diagonal())
     se = concatenate((r["effsizes0_se"], r["effsizes1_se"]))
-    assert_allclose(se, effsizes_se, atol=1e-5)
+    assert se.min() >= effsizes_se.max()
 
 
 def test_lmm_scan_difficult_settings_offset():
@@ -415,6 +415,71 @@ def test_lmm_scan_difficult_settings_multicovariates():
     assert_allclose(r["effsizes0"], [[-0.8876088873393126], [0.2377661184233066]])
     assert_allclose(r["effsizes1"], [0.0, 0.8699416429204303])
     assert_allclose(r["scale"], [0.21713469123194049, 0.012134195778553977], atol=1e-6)
+
+
+def test_lmm_scan_very_low_rank():
+    y = array([-1.0449132, 1.15229426, 0.79595129, 2.1])
+    X = array(
+        [
+            [-0.40592765, 1.04348945],
+            [0.92275415, -0.32394197],
+            [-0.98197991, 1.22912219],
+            [-1.0007991, 2.22912219],
+        ]
+    )
+    G = array(
+        [
+            [-0.14505449, -1.1000817],
+            [0.45714984, 1.82214436],
+            [-1.23763742, 1.38771103],
+            [-2.27377329, 0.9577192],
+        ]
+    )
+    K = G @ G.T
+    low_rank_QS = economic_qs(K)
+
+    M = array(
+        [
+            [0.88766985, -1.80940339],
+            [0.00822629, -0.4488265],
+            [0.55807272, -2.00868376],
+            [3.2, 2.1],
+        ]
+    )
+    scanner = FastScanner(y, X, low_rank_QS, 0)
+    r = scanner.fast_scan(M, verbose=False)
+    assert_allclose(
+        r["lml"], [46.512791016862764, 46.512791016862764], atol=1e-6, rtol=1e-6
+    )
+    assert_allclose(
+        r["effsizes0"],
+        [
+            [3.8616635463341358, 0.43233789455471455],
+            [4.534162667593971, 3.573393734139044],
+        ],
+    )
+    assert_allclose(
+        r["effsizes1"], [2.1553245206596263, -0.684698367443129], atol=1e-6, rtol=1e-6
+    )
+    assert_allclose(
+        r["scale"], [5.551115123125783e-17, 2.5326962749261384e-16], atol=1e-6
+    )
+
+    X = ones((4, 1))
+    M = array(
+        [
+            [0.88766985, -1.80940339],
+            [0.00822629, -0.4488265],
+            [0.55807272, -2.00868376],
+            [3.2, 2.1],
+        ]
+    )
+    scanner = FastScanner(y, X, low_rank_QS, 0.75)
+    r = scanner.fast_scan(M, verbose=False)
+    assert_allclose(r["lml"], [-3.988506684733393, -2.852200552237104])
+    assert_allclose(r["effsizes0"], [[-0.4955288599792398], [0.36297469139979893]])
+    assert_allclose(r["effsizes1"], [0.5929013274071214, 0.36216887594630626])
+    assert_allclose(r["scale"], [0.18324637118292808, 0.10382205995195082], atol=1e-6)
 
 
 def _outcome_sample(random, offset, X):

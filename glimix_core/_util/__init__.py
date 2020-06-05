@@ -8,7 +8,7 @@ from .check import check_covariates, check_economic_qs, check_outcome
 from .eigen import economic_qs_zeros
 from .format import format_function
 from .random import multivariate_normal
-from .solve import force_inv, hinv, hsolve, rsolve
+from .solve import hinv, hsolve, nice_inv, rsolve
 
 log2pi = 1.837877066409345339081937709124758839607238769531250
 
@@ -20,11 +20,11 @@ __all__ = [
     "check_economic_qs",
     "check_outcome",
     "economic_qs_zeros",
-    "force_inv",
     "format_function",
     "hinv",
     "hsolve",
     "multivariate_normal",
+    "nice_inv",
     "numbers",
     "rsolve",
     "safe_log",

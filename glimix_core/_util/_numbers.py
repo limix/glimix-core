@@ -1,10 +1,11 @@
-from numpy import finfo as _finfo, log as _log
+from numpy import finfo, log, clip, inf
 
-logmax = _log(_finfo(float).max)
+__all__ = ["logmax", "safe_log"]
+
+logmax = log(finfo(float).max)
 
 
 def safe_log(x):
-    from numpy import log, clip, inf
     from numpy_sugar import epsilon
 
     return log(clip(x, epsilon.small, inf))
