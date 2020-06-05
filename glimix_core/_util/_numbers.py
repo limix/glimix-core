@@ -1,4 +1,4 @@
-from numpy import finfo, log, clip, inf
+from numpy import clip, finfo, inf, log
 
 __all__ = ["logmax", "safe_log"]
 
