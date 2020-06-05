@@ -4,6 +4,7 @@ from numpy import array, concatenate, errstate, exp, eye, inf, nan, ones, sqrt, 
 from numpy.linalg import inv, pinv, solve
 from numpy.random import RandomState
 from numpy.testing import assert_allclose
+from numpy_sugar.linalg import economic_qs, economic_qs_linear
 from scipy.linalg import toeplitz
 from scipy.optimize import minimize
 
@@ -13,7 +14,6 @@ from glimix_core.lik import DeltaProdLik
 from glimix_core.lmm import LMM, FastScanner
 from glimix_core.mean import OffsetMean
 from glimix_core.random import GGPSampler
-from numpy_sugar.linalg import economic_qs, economic_qs_linear
 
 
 def test_fast_scanner_statsmodel_gls():

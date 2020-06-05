@@ -31,6 +31,7 @@ jobs:
       run: |
         flake8 glimix_core
         black --check glimix_core
+        isort --version-number
         isort --recursive --check-only glimix_core
     - name: Test
       run: |

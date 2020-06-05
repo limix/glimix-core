@@ -1,13 +1,13 @@
 from numpy import corrcoef, dot, ones, sqrt
 from numpy.random import RandomState
 from numpy.testing import assert_allclose
+from numpy_sugar.linalg import economic_qs_linear
 
 from glimix_core.cov import EyeCov, LinearCov, SumCov
 from glimix_core.lik import DeltaProdLik
 from glimix_core.lmm import LMM, LMMPredict
 from glimix_core.mean import OffsetMean
 from glimix_core.random import GGPSampler
-from numpy_sugar.linalg import economic_qs_linear
 
 
 def test_lmm_predict():

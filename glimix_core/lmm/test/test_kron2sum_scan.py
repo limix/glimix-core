@@ -3,10 +3,10 @@ from brent_search import minimize
 from numpy import concatenate, empty, kron
 from numpy.random import RandomState
 from numpy.testing import assert_allclose
+from numpy_sugar.linalg import economic_qs
 
 from glimix_core._util import assert_interface, vec
 from glimix_core.lmm import FastScanner, Kron2Sum, KronFastScanner
-from numpy_sugar.linalg import economic_qs
 
 
 def test_lmm_kron_scan():

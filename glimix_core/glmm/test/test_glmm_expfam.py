@@ -6,18 +6,21 @@ from numpy import (
     ascontiguousarray,
     corrcoef,
     dot,
+    exp,
     eye,
     ones,
     sqrt,
+    stack,
     zeros,
 )
 from numpy.random import RandomState
 from numpy.testing import assert_, assert_allclose
+from numpy_sugar.linalg import economic_qs, economic_qs_linear
+from pandas import DataFrame
 
 from glimix_core.example import linear_eye_cov
 from glimix_core.glmm import GLMMExpFam, GLMMNormal
 from glimix_core.random import bernoulli_sample
-from numpy_sugar.linalg import economic_qs, economic_qs_linear
 
 ATOL = 1e-3
 RTOL = 1e-3
@@ -594,11 +597,6 @@ def test_glmmexpfam_qs_none():
 
 
 def test_glmmexpfam_poisson():
-    from numpy import ones, stack, exp, zeros
-    from numpy.random import RandomState
-    from numpy_sugar.linalg import economic_qs
-    from pandas import DataFrame
-
     random = RandomState(1)
 
     # sample size
@@ -639,8 +637,3 @@ def test_glmmexpfam_poisson():
     assert_allclose(glmm.lml(), -52.479557279193585)
     glmm.fit(verbose=False)
     assert_allclose(glmm.lml(), -34.09720756737648)
-    # assert_allclose(glmm.scale, 0.04697009524460814, rtol=1e-4)
-    # assert_allclose(glmm.delta, 0.9999961838242364, rtol=1e-4, atol=1e-4)
-    # assert_allclose(
-    #     glmm.beta, [-2.960516467833773e-13, 0.057288282698884585], rtol=1e-4, atol=1e-4
-    # )

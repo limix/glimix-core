@@ -4,11 +4,11 @@ from numpy import concatenate, exp, eye, log, pi
 from numpy.linalg import slogdet, solve
 from numpy.random import RandomState
 from numpy.testing import assert_allclose, assert_equal
+from numpy_sugar.linalg import ddot, economic_qs_linear, economic_svd
 from scipy.optimize import minimize
 
 from glimix_core._util import assert_interface
 from glimix_core.lmm import LMM
-from numpy_sugar.linalg import ddot, economic_qs_linear, economic_svd
 
 
 def test_lmm():
