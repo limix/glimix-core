@@ -21,17 +21,16 @@ from numpy import (
     sqrt,
     zeros,
 )
-from numpy.linalg import LinAlgError, inv, pinv
-from numpy_sugar import is_all_finite
+from numpy.linalg import LinAlgError, pinv
 
 
-def force_inv(A):
-    return pinv(A)
-    try:
-        Ai = inv(A)
-    except LinAlgError:
-        Ai = pinv(A)
-    return Ai
+def nice_inv(A):
+    """
+    Nice inverse.
+    """
+    from numpy_sugar.linalg import sum2diag
+
+    return pinv(sum2diag(A, 1e-12))
 
 
 def rsolve(A, y):
@@ -122,6 +121,8 @@ def hinv(a, b, d):
 
 
 def _hinv(A00, A01, A11):
+    from numpy_sugar import is_all_finite
+
     rcond = 1e-15
     b = atleast_1d(A01)
     d = atleast_1d(A11)

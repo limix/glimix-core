@@ -5,15 +5,13 @@ from numpy.linalg import inv, lstsq, multi_dot, slogdet
 from optimix import Function, Scalar
 
 from glimix_core._util import cache, log2pi
-from numpy_sugar import epsilon
-from numpy_sugar.linalg import ddot, sum2diag
 
 from .._util import SVD, economic_qs_zeros, numbers
 from ._lmm_scan import FastScanner
 
 
 class LMM(Function):
-    r"""
+    """
     Fast Linear Mixed Models inference via maximum likelihood.
 
     Examples
@@ -377,6 +375,7 @@ class LMM(Function):
         """
         Variance ratio between ``K`` and ``I``.
         """
+        from numpy_sugar import epsilon
 
         v = float(self._logistic.value)
 
@@ -390,6 +389,8 @@ class LMM(Function):
 
     @delta.setter
     def delta(self, delta):
+        from numpy_sugar import epsilon
+
         delta = min(max(delta, epsilon.tiny), 1 - epsilon.tiny)
         self._logistic.value = log(delta / (1 - delta))
         self._optimal["beta"] = False
@@ -447,6 +448,8 @@ class LMM(Function):
         covariance : ndarray
             v₀𝙺 + v₁𝙸.
         """
+        from numpy_sugar.linalg import ddot, sum2diag
+
         Q0 = self._QS[0][0]
         S0 = self._QS[1]
         return sum2diag(dot(ddot(Q0, self.v0 * S0), Q0.T), self.v1)
@@ -530,6 +533,8 @@ class LMM(Function):
         return self.nsamples - self._Xsvd.rank
 
     def _optimal_scale_using_optimal_beta(self):
+        from numpy_sugar import epsilon
+
         assert self._optimal["beta"]
         s = self._yTMy - self._yTMtX @ self._tbeta
         return maximum(s / self._df, epsilon.small)
@@ -546,6 +551,8 @@ class LMM(Function):
         self._optimal["scale"] = False
 
     def _update_scale(self):
+        from numpy_sugar import epsilon
+
         if self._optimal["beta"]:
             self._scale = self._optimal_scale_using_optimal_beta()
         else:
