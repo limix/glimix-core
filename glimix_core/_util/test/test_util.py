@@ -2,10 +2,10 @@ import pytest
 from numpy import array, asarray, block, inf, nan, ones
 from numpy.linalg import inv, pinv, svd
 from numpy.testing import assert_allclose
-from numpy_sugar.linalg import ddot
 
 from glimix_core._util import check_covariates, check_economic_qs, check_outcome, hinv
 from glimix_core._util.solve import heigvals, hsvd
+from numpy_sugar.linalg import ddot
 
 
 def test_util_check_economic_qs():

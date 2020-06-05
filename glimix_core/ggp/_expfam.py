@@ -1,6 +1,5 @@
 import warnings
 
-from liknorm import LikNormMachine
 from numpy import ascontiguousarray, sign
 from numpy.linalg import LinAlgError
 from optimix import Function
@@ -54,6 +53,8 @@ class ExpFamGP(Function):
     """
 
     def __init__(self, y, lik, mean, cov):
+        from liknorm import LikNormMachine
+
         if isinstance(y, tuple):
             n = len(y[0])
         else:
