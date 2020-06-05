@@ -1,10 +1,13 @@
-def multivariate_normal(random, mean, cov):
+from numpy.random import RandomState
+
+
+def multivariate_normal(random: RandomState, mean, cov):
     """
     Draw random samples from a multivariate normal distribution.
 
     Parameters
     ----------
-    random : np.random.RandomState instance
+    random
         Random state.
     mean : array_like
         Mean of the n-dimensional distribution.

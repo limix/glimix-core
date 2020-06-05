@@ -1,11 +1,9 @@
 from numpy import (
-    add,
     all,
     asarray,
     atleast_2d,
     clip,
     copyto,
-    dot,
     empty,
     full,
     inf,
@@ -14,58 +12,68 @@ from numpy import (
     newaxis,
     sqrt,
 )
-from numpy.linalg import pinv
 
-from .._util import cache, hinv, hsolve, log2pi, rsolve, safe_log
+from .._util import cache, hinv, hsolve, log2pi, nice_inv, rsolve, safe_log
 
 
-class FastScanner(object):
+class FastScanner:
     """
     Approximated fast inference over several covariates.
 
     Specifically, it maximizes the marginal likelihood ::
 
-        p(𝐲)ⱼ = 𝓝(𝐲 | X𝜷ⱼ + Mⱼ𝜶ⱼ, sⱼ(K + vI)),
+        p(𝐲)ⱼ = 𝓝(𝐲 | 𝚇𝜷ⱼ + 𝙼ⱼ𝜶ⱼ, 𝑠ⱼ(𝙺 + 𝑣𝙸)),
 
-    over 𝜷ⱼ, 𝜶ⱼ, and sⱼ. Matrix Mⱼ is the candidate set defined by the user. Variance v
+    over 𝜷ⱼ, 𝜶ⱼ, and sⱼ. Matrix Mⱼ is the candidate set defined by the user. Variance 𝑣
     is not optimised for performance reasons. The method assumes the user has provided a
     reasonable value for it.
 
     Parameters
     ----------
-    y : array_like
+    y
         Real-valued outcome.
-    X : array_like
+    X
         Matrix of covariates.
-    QS : tuple
+    QS
         Economic eigendecomposition ``((Q0, Q1), S0)`` of ``K``.
-    v : float
+    v
         Variance due to iid effect.
 
     Notes
     -----
     The implementation requires further explanation as it is somehow obscure. Let
-    QSQᵀ = K, where QSQᵀ is the eigendecomposition of K. We then have ::
+    𝚀𝚂𝚀ᵀ = 𝙺, where 𝚀𝚂𝚀ᵀ is the eigendecomposition of 𝙺. Let 𝙳 = (𝚂 + 𝑣𝙸) and
+    𝙳₀ = (𝚂₀ + 𝑣𝙸₀), where 𝚂₀ is the part of 𝚂 with positive values. Therefore, solving
 
-        p(𝐲)ⱼ =  𝓝(Qᵀ𝐲 | QᵀX𝜷ⱼ + QᵀMⱼ𝜶ⱼ, sⱼ(S + vI)).
+        (𝙺 + 𝑣𝙸)𝐱 = 𝐲
 
-    Let Dᵢ = (Sᵢ + vI), where Sᵢ is the part of S with positive values. Similarly,
-    let Bᵢ = QᵢDᵢ⁻¹Qᵢᵀ for i ϵ {0, 1} and Eⱼ = [X Mⱼ]. The matrix resulted from
-    EⱼᵀBᵢEⱼ is represented by the variable ``ETBE``, and four views of such a matrix are
-    given by the variables ``XTBX``, ``XTBM``, ``MTBX``, and ``MTBM``. Those views
-    represent XᵀBᵢX, XᵀBᵢMⱼ, MⱼᵀBᵢX, and MⱼᵀBᵢMⱼ, respectively.
+     for 𝐱 is equivalent to solving
 
-    Let 𝐛ⱼ = [𝜷ⱼᵀ 𝜶ⱼᵀ]ᵀ. The optimal parameters according to the marginal likelihood
-    are given by ::
+        𝚀₀𝙳₀𝚀₀ᵀ𝐱 + 𝑣𝚀₁𝚀₁ᵀ𝐱 = 𝚀₀𝙳₀𝚀₀ᵀ𝐱 + 𝑣(𝙸 - 𝚀₀𝚀₀ᵀ)𝐱 = 𝐲.
 
-        (EⱼᵀBEⱼ)𝐛ⱼ = EⱼᵀB𝐲
+    for 𝐱. Let
+
+        𝙱 = 𝚀₀𝙳₀⁻¹𝚀₀ᵀ                    if 𝑣=0, and
+        𝙱 = 𝚀₀𝙳₀⁻¹𝚀₀ᵀ + 𝑣⁻¹(𝙸 - 𝚀₀𝚀₀ᵀ)   if 𝑣>0.
+
+    We therefore have
+
+        𝐱 = 𝙱𝐲
+
+    as the solution of (𝙺 + 𝑣𝙸)𝐱 = 𝐲.
+
+    Let 𝐛ⱼ = [𝜷ⱼᵀ 𝜶ⱼᵀ]ᵀ and 𝙴ⱼ = [𝚇 𝙼ⱼ]. The optimal parameters according to the marginal
+    likelihood are given by ::
+
+        (𝙴ⱼᵀ𝙱𝙴ⱼ)𝐛ⱼ = 𝙴ⱼᵀ𝙱𝐲
 
     and ::
 
-        s = n⁻¹𝐲ᵀB(𝐲 - Eⱼ𝐛ⱼ).
+        𝑠 = 𝑛⁻¹𝐲ᵀ𝙱(𝐲 - 𝙴ⱼ𝐛ⱼ).
     """
 
     def __init__(self, y, X, QS, v):
+        from numpy_sugar import epsilon
 
         y = asarray(y, float)
         X = atleast_2d(asarray(X, float).T).T
@@ -82,46 +90,42 @@ class FastScanner(object):
         if not isfinite(v):
             raise ValueError("Variance has to be a finite value..")
 
-        D = []
-        if QS[1].size > 0:
-            D += [QS[1] + v]
-        if QS[1].size < y.shape[0]:
-            D += [full(y.shape[0] - QS[1].size, v)]
-        yTQ = [dot(y.T, Q) for Q in QS[0] if Q.size > 0]
-        XTQ = [dot(X.T, Q) for Q in QS[0] if Q.size > 0]
+        if v <= epsilon.small:
+            v = 0.0
 
-        yTQDi = [l / r for (l, r) in zip(yTQ, D) if r.min() > 0]
-        yTBy = sum([(i * i / j).sum() for (i, j) in zip(yTQ, D) if j.min() > 0])
-        yTBX = [dot(i, j.T) for (i, j) in zip(yTQDi, XTQ)]
-        XTQDi = [i / j for (i, j) in zip(XTQ, D) if j.min() > 0]
+        Q0 = QS[0][0]
+        S0 = QS[1]
+        D0 = S0 + v
+        self._rankdef = y.shape[0] - S0.shape[0]
 
-        self._yTBy = yTBy
-        self._yTBX = yTBX
+        self._B = B(Q0, D0, v)
+
+        By = self._B.dot(y)
+        self._yTBy = y.T @ By
+        self._yTBX = By.T @ X
 
         # Used for performing association scan on single variants
-        self._ETBE = [_ETBE(i, j) for (i, j) in zip(XTQDi, XTQ)]
-        self._yTBE = [_yTBE(i) for i in yTBX]
+        self._ETBE = ETBE(self._B, X)
+        self._yTBE = yTBE(By.T @ X)
 
-        self._XTQ = XTQ
-        self._yTQDi = yTQDi
-        self._XTQDi = XTQDi
-        self._QS = QS
-        self._D = D
+        self._Q0 = Q0
+        self._D0 = D0
         self._X = X
         self._y = y
+        self._v = v
 
     @cache
-    def null_lml(self):
+    def null_lml(self) -> float:
         """
         Log of the marginal likelihood for the null hypothesis.
 
         It is implemented as ::
 
-            2·log(p(Y)) = -n·log(2𝜋s) - log｜D｜ - n,
+            2·log(p(𝐲)) = -𝑛·log(2·𝜋·𝑠) - log|D| - 𝑛.
 
         Returns
         -------
-        lml : float
+        lml
             Log of the marginal likelihood.
         """
         n = self._nsamples
@@ -140,15 +144,10 @@ class FastScanner(object):
 
         Returns
         -------
-        beta : ndarray
+        beta
             Optimal 𝜷.
         """
-        ETBE = self._ETBE
-        yTBX = self._yTBX
-
-        A = sum(i.XTBX for i in ETBE)
-        b = sum(yTBX)
-        return rsolve(A, b)
+        return rsolve(self._ETBE.XTBX, self._yTBX)
 
     @property
     @cache
@@ -158,11 +157,10 @@ class FastScanner(object):
 
         Returns
         -------
-        beta_covariance : ndarray
+        beta_covariance
             (Xᵀ(s(K + vI))⁻¹X)⁻¹.
         """
-        A = sum(i @ j.T for (i, j) in zip(self._XTQDi, self._XTQ))
-        return self.null_scale * pinv(A)
+        return self.null_scale * nice_inv(self._X.T @ self._B.dot(self._X))
 
     @property
     @cache
@@ -172,14 +170,14 @@ class FastScanner(object):
 
         Returns
         -------
-        beta_se : ndarray
+        beta_se
             Square root of the diagonal of the beta covariance.
         """
         return sqrt(self.null_beta_covariance.diagonal())
 
     @property
     @cache
-    def null_scale(self):
+    def null_scale(self) -> float:
         """
         Optimal s according to the marginal likelihood.
 
@@ -191,15 +189,15 @@ class FastScanner(object):
 
         Returns
         -------
-        scale : float
+        scale
             Optimal scale.
         """
         n = self._nsamples
         beta = self.null_beta
-        sqrdot = self._yTBy - dot(sum(self._yTBX), beta)
-        return sqrdot / n
+        sqrdot2 = self._yTBy - self._yTBX @ beta
+        return sqrdot2 / n
 
-    def fast_scan(self, M, verbose=True):
+    def fast_scan(self, M, verbose: bool = True):
         """
         LMLs, fixed-effect sizes, and scales for single-marker scan.
 
@@ -207,19 +205,19 @@ class FastScanner(object):
         ----------
         M : array_like
             Matrix of fixed-effects across columns.
-        verbose : bool, optional
+        verbose
             ``True`` for progress information; ``False`` otherwise.
             Defaults to ``True``.
 
         Returns
         -------
-        lmls : ndarray
+        lmls
             Log of the marginal likelihoods.
-        effsizes0 : ndarray
+        effsizes0
             Covariate fixed-effect sizes.
-        effsizes1 : ndarray
+        effsizes1
             Candidate set fixed-effect sizes.
-        scales : ndarray
+        scales
             Scales.
         """
         from tqdm import tqdm
@@ -229,13 +227,13 @@ class FastScanner(object):
         p = M.shape[1]
 
         lmls = empty(p)
-        effsizes0 = empty((p, self._XTQ[0].shape[0]))
-        effsizes0_se = empty((p, self._XTQ[0].shape[0]))
+        effsizes0 = empty((p, self._X.shape[1]))
+        effsizes0_se = empty((p, self._X.shape[1]))
         effsizes1 = empty(p)
         effsizes1_se = empty(p)
         scales = empty(p)
 
-        chunks = _get_chunks(M)
+        chunks = get_chunks(M)
 
         start = 0
         for i in tqdm(chunks, desc="Scanning", disable=not verbose):
@@ -285,7 +283,6 @@ class FastScanner(object):
         scale : ndarray
             Optimal scale.
         """
-        from numpy_sugar.linalg import ddot
         from numpy_sugar import is_all_finite
 
         M = asarray(M, float)
@@ -303,17 +300,16 @@ class FastScanner(object):
         if not is_all_finite(M):
             raise ValueError("M parameter has non-finite elements.")
 
-        MTQ = [dot(M.T, Q) for Q in self._QS[0] if Q.size > 0]
-        yTBM = [dot(i, j.T) for (i, j) in zip(self._yTQDi, MTQ)]
-        XTBM = [dot(i, j.T) for (i, j) in zip(self._XTQDi, MTQ)]
-        D = self._D
-        MTBM = [ddot(i, 1 / j) @ i.T for i, j in zip(MTQ, D) if j.min() > 0]
+        BM = self._B.dot(M)
+        yTBM = self._y.T @ BM
+        XTBM = self._X.T @ BM
+        MTBM = M.T @ BM
 
         return self._multicovariate_set(yTBM, XTBM, MTBM)
 
     @property
     def _nsamples(self):
-        return self._QS[0][0].shape[0]
+        return self._y.shape[0]
 
     @property
     def _ncovariates(self):
@@ -321,13 +317,21 @@ class FastScanner(object):
 
     @cache
     def _static_lml(self):
+        """
+        Static part of the marginal likelihood.
+
+        It is defined by ::
+
+            -𝑛·log(2·𝜋) - 𝑛 - log|D|.
+        """
         n = self._nsamples
         static_lml = -n * log2pi - n
-        static_lml -= sum(safe_log(D).sum() for D in self._D)
+        static_lml -= safe_log(self._D0).sum()
+        static_lml -= self._rankdef * safe_log(self._v)
         return static_lml
 
     def _fast_scan_chunk(self, M):
-        from numpy import sum
+        from numpy_sugar import dotd
 
         M = asarray(M, float)
 
@@ -337,15 +341,14 @@ class FastScanner(object):
         if not all(isfinite(M)):
             raise ValueError("One or more variants have non-finite value.")
 
-        MTQ = [dot(M.T, Q) for Q in self._QS[0] if Q.size > 0]
-        yTBM = [dot(i, j.T) for (i, j) in zip(self._yTQDi, MTQ)]
-        XTBM = [dot(i, j.T) for (i, j) in zip(self._XTQDi, MTQ)]
-        D = self._D
-        MTBM = [sum(i / j * i, 1) for i, j in zip(MTQ, D) if j.min() > 0]
+        BM = self._B.dot(M)
+        yTBM = self._y.T @ BM
+        XTBM = self._X.T @ BM
+        dMTBM = dotd(M.T, BM)
 
         lmls = full(M.shape[1], self._static_lml())
-        eff0 = empty((M.shape[1], self._XTQ[0].shape[0]))
-        eff0_se = empty((M.shape[1], self._XTQ[0].shape[0]))
+        eff0 = empty((M.shape[1], self._X.shape[1]))
+        eff0_se = empty((M.shape[1], self._X.shape[1]))
         eff1 = empty((M.shape[1]))
         eff1_se = empty((M.shape[1]))
         scales = empty(M.shape[1])
@@ -353,9 +356,9 @@ class FastScanner(object):
         effs = {"eff0": eff0, "eff0_se": eff0_se, "eff1": eff1, "eff1_se": eff1_se}
 
         if self._ncovariates == 1:
-            self._1covariate_loop(lmls, effs, scales, yTBM, XTBM, MTBM)
+            self._1covariate_loop(lmls, effs, scales, yTBM, XTBM, dMTBM)
         else:
-            self._multicovariate_loop(lmls, effs, scales, yTBM, XTBM, MTBM)
+            self._multicovariate_loop(lmls, effs, scales, yTBM, XTBM, dMTBM)
 
         return {
             "lml": lmls,
@@ -366,26 +369,25 @@ class FastScanner(object):
             "scale": scales,
         }
 
-    def _multicovariate_loop(self, lmls, effs, scales, yTBM, XTBM, MTBM):
+    def _multicovariate_loop(self, lmls, effs, scales, yTBM, XTBM, diagMTBM):
         ETBE = self._ETBE
         yTBE = self._yTBE
-        tuple_size = len(yTBE)
 
-        for i in range(XTBM[0].shape[1]):
+        for i in range(XTBM.shape[1]):
 
-            for j in range(tuple_size):
-                yTBE[j].set_yTBM(yTBM[j][i])
-                ETBE[j].set_XTBM(XTBM[j][:, [i]])
-                ETBE[j].set_MTBM(MTBM[j][i])
+            yTBE.set_yTBM(yTBM[i])
+            ETBE.set_XTBM(XTBM[:, [i]])
+            ETBE.set_MTBM(diagMTBM[i])
 
-            left = add.reduce([j.value for j in ETBE])
-            right = add.reduce([j.value for j in yTBE])
+            left = ETBE.value
+            right = yTBE.value
             x = rsolve(left, right)
             beta = x[:-1][:, newaxis]
             alpha = x[-1:]
-            bstar = _bstar_unpack(beta, alpha, self._yTBy, yTBE, ETBE, _bstar_1effect)
+            bstar = _bstar_unpack(beta, alpha, self._yTBy, yTBE, ETBE, bstar_1effect)
 
-            se = sqrt(pinv(left).diagonal())
+            se = sqrt(nice_inv(left).diagonal())
+
             scales[i] = bstar / self._nsamples
             lmls[i] -= self._nsamples * safe_log(scales[i])
             effs["eff0"][i, :] = beta.T
@@ -397,24 +399,22 @@ class FastScanner(object):
 
     def _multicovariate_set(self, yTBM, XTBM, MTBM):
 
-        yTBE = [_yTBE(i, j.shape[0]) for (i, j) in zip(self._yTBX, yTBM)]
-        for a, b in zip(yTBE, yTBM):
-            a.set_yTBM(b)
+        yBE = yTBE(self._yTBX, yTBM.shape[0])
+        yBE.set_yTBM(yTBM)
 
-        set_size = yTBM[0].shape[0]
-        ETBE = [_ETBE(i, j, set_size) for (i, j) in zip(self._XTQDi, self._XTQ)]
+        set_size = yTBM.shape[0]
+        EBE = ETBE(self._B, self._X, set_size)
 
-        for a, b, c in zip(ETBE, XTBM, MTBM):
-            a.set_XTBM(b)
-            a.set_MTBM(c)
+        EBE.set_XTBM(XTBM)
+        EBE.set_MTBM(MTBM)
 
-        left = add.reduce([j.value for j in ETBE])
-        right = add.reduce([j.value for j in yTBE])
+        left = EBE.value
+        right = yBE.value
         x = rsolve(left, right)
 
         beta = x[:-set_size]
         alpha = x[-set_size:]
-        bstar = _bstar_unpack(beta, alpha, self._yTBy, yTBE, ETBE, _bstar_set)
+        bstar = _bstar_unpack(beta, alpha, self._yTBy, yBE, EBE, bstar_set)
 
         lml = self._static_lml()
 
@@ -422,7 +422,7 @@ class FastScanner(object):
         lml -= self._nsamples * safe_log(scale)
         lml /= 2
 
-        effsizes_se = sqrt(scale * pinv(left).diagonal())
+        effsizes_se = sqrt(scale * nice_inv(left).diagonal())
         beta_se = effsizes_se[:-set_size]
         alpha_se = effsizes_se[-set_size:]
 
@@ -435,23 +435,23 @@ class FastScanner(object):
             "scale": scale,
         }
 
-    def _1covariate_loop(self, lmls, effs, scales, yTBM, XTBM, MTBM):
+    def _1covariate_loop(self, lmls, effs, scales, yTBM, XTBM, diagMTBM):
         ETBE = self._ETBE
         yTBX = self._yTBX
-        XTBX = [i.XTBX for i in ETBE]
+        XTBX = ETBE.XTBX
         yTBy = self._yTBy
 
-        A00 = add.reduce([i.XTBX[0, 0] for i in ETBE])
-        A01 = add.reduce([i[0, :] for i in XTBM])
-        A11 = add.reduce([i for i in MTBM])
+        A00 = ETBE.XTBX[0, 0]
+        A01 = XTBM[0, :]
+        A11 = diagMTBM
 
-        b0 = add.reduce([i[0] for i in yTBX])
-        b1 = add.reduce([i for i in yTBM])
+        b0 = yTBX[0]
+        b1 = yTBM
 
         x = hsolve(A00, A01, A11, b0, b1)
         beta = x[0][newaxis, :]
         alpha = x[1]
-        bstar = _bstar_1effect(beta, alpha, yTBy, yTBX, yTBM, XTBX, XTBM, MTBM)
+        bstar = bstar_1effect(beta, alpha, yTBy, yTBX, yTBM, XTBX, XTBM, diagMTBM)
 
         scales[:] = bstar / self._nsamples
         lmls -= self._nsamples * safe_log(scales)
@@ -459,20 +459,16 @@ class FastScanner(object):
         effs["eff0"][:] = beta.T
         effs["eff1"][:] = alpha
 
-        def jinv(A):
-            from numpy import eye
-            from numpy.linalg import inv
-
-            A = asarray(A, float)
-            return inv(A + eye(A.shape[0]) * 1e-7)
-
         A00i, _, A11i = hinv(A00, A01, A11)
         effs["eff0_se"][:, 0] = sqrt(scales * A00i)
         effs["eff1_se"][:] = sqrt(scales * A11i)
-        pass
 
 
-class _yTBE:
+class yTBE:
+    """
+    Represent 𝐲ᵀ𝙱𝙴 where 𝙴 = [𝚇 𝙼].
+    """
+
     def __init__(self, yTBX, set_size=1):
         n = yTBX.shape[0] + set_size
         self._data = empty((n,))
@@ -495,11 +491,16 @@ class _yTBE:
         copyto(self.yTBM, yTBM)
 
 
-class _ETBE:
-    def __init__(self, XTQDi, XTQ, set_size=1):
-        n = XTQDi.shape[0] + set_size
+class ETBE:
+    """
+    Represent 𝙴ᵀ𝙱𝙴 where 𝙴 = [𝚇 𝙼].
+    """
+
+    def __init__(self, B, X, set_size=1):
+        n = X.shape[1] + set_size
+        BX = B.dot(X)
         self._data = empty((n, n))
-        self._data[:-set_size, :-set_size] = dot(XTQDi, XTQ.T)
+        self._data[:-set_size, :-set_size] = X.T @ BX
         self._m = set_size
 
     @property
@@ -530,54 +531,51 @@ class _ETBE:
         copyto(self.MTBM, MTBM)
 
 
-def _bstar_1effect(beta, alpha, yTBy, yTBX, yTBM, XTBX, XTBM, MTBM):
+def bstar_1effect(beta, alpha, yTBy, yTBX, yTBM, XTBX, XTBM, MTBM):
     """
-    Same as :func:`_bstar_set` but for single-effect.
+    Same as :func:`bstar_set` but for single-effect.
     """
-    from numpy_sugar import epsilon
     from numpy_sugar.linalg import dotd
-    from numpy import sum
+    from numpy_sugar import epsilon
 
-    r = full(MTBM[0].shape[0], yTBy)
-    r -= 2 * add.reduce([dot(i, beta) for i in yTBX])
-    r -= 2 * add.reduce([i * alpha for i in yTBM])
-    r += add.reduce([dotd(beta.T, dot(i, beta)) for i in XTBX])
-    r += add.reduce([dotd(beta.T, i * alpha) for i in XTBM])
-    r += add.reduce([sum(alpha * i * beta, axis=0) for i in XTBM])
-    r += add.reduce([alpha * i.ravel() * alpha for i in MTBM])
+    r = full(MTBM.shape[0], yTBy)
+    r -= 2 * yTBX @ beta
+    r -= 2 * yTBM * alpha
+    r += dotd(beta.T, XTBX @ beta)
+    r += dotd(beta.T, XTBM * alpha)
+    r += (alpha * XTBM * beta).sum(axis=0)
+    r += alpha * MTBM.ravel() * alpha
     return clip(r, epsilon.tiny, inf)
 
 
-def _bstar_set(beta, alpha, yTBy, yTBX, yTBM, XTBX, XTBM, MTBM):
+def bstar_set(beta, alpha, yTBy, yTBX, yTBM, XTBX, XTBM, MTBM):
     """
-    Compute -2𝐲ᵀBEⱼ𝐛ⱼ + (𝐛ⱼEⱼ)ᵀBEⱼ𝐛ⱼ.
+    Compute 𝐲ᵀ𝙱𝐲 - 2𝐲ᵀ𝙱𝙴ⱼ𝐛ⱼ + 𝐛ⱼᵀ𝙴ⱼᵀ𝙱𝙴ⱼ𝐛ⱼ.
 
     For 𝐛ⱼ = [𝜷ⱼᵀ 𝜶ⱼᵀ]ᵀ.
     """
-    from numpy_sugar import epsilon
-
     r = yTBy
-    r -= 2 * add.reduce([i @ beta for i in yTBX])
-    r -= 2 * add.reduce([i @ alpha for i in yTBM])
-    r += add.reduce([beta.T @ i @ beta for i in XTBX])
-    r += 2 * add.reduce([beta.T @ i @ alpha for i in XTBM])
-    r += add.reduce([alpha.T @ i @ alpha for i in MTBM])
-    return clip(r, epsilon.tiny, inf)
+    r -= 2 * yTBX @ beta
+    r -= 2 * yTBM @ alpha
+    r += beta.T @ XTBX @ beta
+    r += 2 * beta.T @ XTBM @ alpha
+    r += alpha.T @ MTBM @ alpha
+    return r
 
 
 def _bstar_unpack(beta, alpha, yTBy, yTBE, ETBE, bstar):
     from numpy_sugar import epsilon
 
-    yTBX = [j.yTBX for j in yTBE]
-    yTBM = [j.yTBM for j in yTBE]
-    XTBX = [j.XTBX for j in ETBE]
-    XTBM = [j.XTBM for j in ETBE]
-    MTBM = [j.MTBM for j in ETBE]
+    yTBX = yTBE.yTBX
+    yTBM = yTBE.yTBM
+    XTBX = ETBE.XTBX
+    XTBM = ETBE.XTBM
+    MTBM = ETBE.MTBM
     bstar = bstar(beta, alpha, yTBy, yTBX, yTBM, XTBX, XTBM, MTBM)
     return clip(bstar, epsilon.tiny, inf)
 
 
-def _get_chunks(M):
+def get_chunks(M):
     chunks = None
     if hasattr(M, "chunks") and M.chunks is not None:
         if len(M.chunks) == 2:
@@ -591,3 +589,38 @@ def _get_chunks(M):
         chunks += [p - n * siz]
 
     return chunks
+
+
+class B:
+    """
+    Definition:
+
+        𝙱 = 𝚀₀𝙳₀⁻¹𝚀₀ᵀ                    if 𝑣=0, and
+        𝙱 = 𝚀₀𝙳₀⁻¹𝚀₀ᵀ + 𝑣⁻¹(𝙸 - 𝚀₀𝚀₀ᵀ)   if 𝑣>0.
+
+    Parameters
+    ----------
+    Q0
+        𝚀₀.
+    D0
+        𝙳₀.
+    v
+        𝑣.
+    """
+
+    def __init__(self, Q0, D0, v):
+
+        self._Q0 = Q0
+        self._D0 = D0
+        self._Q0D0i = Q0 / D0
+        self._v = v
+
+    def dot(self, y):
+        """
+        Compute 𝙱𝐲.
+        """
+        Q0ty = self._Q0.T @ y
+        x = self._Q0D0i @ Q0ty
+        if self._v > 0:
+            x += (y - self._Q0 @ Q0ty) / self._v
+        return x

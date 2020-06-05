@@ -1,6 +1,3 @@
-from numpy_sugar.linalg import ddot, economic_svd
-
-
 class SVD:
     """
     Represents a SVD decomposition with some useful methods.
@@ -20,6 +17,8 @@ class SVD:
     """
 
     def __init__(self, A=None, USVt=None):
+        from numpy_sugar.linalg import ddot, economic_svd
+
         if A is None and USVt is None:
             raise ValueError("Both `A` and `USVt` cannot be `None`.")
 
