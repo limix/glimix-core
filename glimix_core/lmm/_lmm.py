@@ -7,6 +7,7 @@ from optimix import Function, Scalar
 from glimix_core._util import cache, log2pi
 
 from .._util import SVD, economic_qs_zeros, numbers
+from ._b import B
 from ._lmm_scan import FastScanner
 
 

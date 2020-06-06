@@ -14,6 +14,7 @@ from numpy import (
 )
 
 from .._util import cache, hinv, hsolve, log2pi, nice_inv, rsolve, safe_log
+from ._b import B
 
 
 class FastScanner:
@@ -98,7 +99,7 @@ class FastScanner:
         D0 = S0 + v
         self._rankdef = y.shape[0] - S0.shape[0]
 
-        self._B = B(Q0, D0, v)
+        self._B = B(Q0, S0, 1.0, v)
 
         By = self._B.dot(y)
         self._yTBy = y.T @ By
@@ -589,38 +590,3 @@ def get_chunks(M):
         chunks += [p - n * siz]
 
     return chunks
-
-
-class B:
-    """
-    Definition:
-
-        𝙱 = 𝚀₀𝙳₀⁻¹𝚀₀ᵀ                    if 𝑣=0, and
-        𝙱 = 𝚀₀𝙳₀⁻¹𝚀₀ᵀ + 𝑣⁻¹(𝙸 - 𝚀₀𝚀₀ᵀ)   if 𝑣>0.
-
-    Parameters
-    ----------
-    Q0
-        𝚀₀.
-    D0
-        𝙳₀.
-    v
-        𝑣.
-    """
-
-    def __init__(self, Q0, D0, v):
-
-        self._Q0 = Q0
-        self._D0 = D0
-        self._Q0D0i = Q0 / D0
-        self._v = v
-
-    def dot(self, y):
-        """
-        Compute 𝙱𝐲.
-        """
-        Q0ty = self._Q0.T @ y
-        x = self._Q0D0i @ Q0ty
-        if self._v > 0:
-            x += (y - self._Q0 @ Q0ty) / self._v
-        return x
