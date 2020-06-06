@@ -509,6 +509,8 @@ class LMM(Function):
         lml : float
             Log of the marginal likelihood.
         """
+        from numpy_sugar import epsilon
+
         s = self.scale
         n = len(self._y)
         lml = -self._df * log2pi - n * log(s)
@@ -517,8 +519,13 @@ class LMM(Function):
         my = self.mean() - self._y
         myTQ0 = my.T @ self._Q0
         t0 = (myTQ0 / self._D0) @ myTQ0.T
-        t1 = (my.T @ my) / self.delta
-        t2 = (myTQ0 @ myTQ0.T) / self.delta
+        # TODO: encapsulate this in a class,
+        # like I did in FastScanner
+        if self.delta <= epsilon.small:
+            t1 = t2 = 0.0
+        else:
+            t1 = (my.T @ my) / self.delta
+            t2 = (myTQ0 @ myTQ0.T) / self.delta
         lml -= (t0 + t1 - t2) / s
 
         return lml / 2
@@ -600,24 +607,30 @@ class LMM(Function):
 
     @property
     def _yTMy(self):
-        return (
-            self._yTQ0D0iQ0Ty
-            + (self._y.T @ self._y - npsum(self._yTQ0xQ0Ty)) / self.delta
-        )
+        from numpy_sugar import epsilon
+
+        tmp = self._yTQ0D0iQ0Ty
+        if self.delta > epsilon.small:
+            tmp += (self._y.T @ self._y - npsum(self._yTQ0xQ0Ty)) / self.delta
+        return tmp
 
     @property
     def _yTMtX(self):
-        return (
-            self._yTQ0D0iQ0TtX
-            + (self._y.T @ self._Xsvd.US - self._yTQ0Q0TtX) / self.delta
-        )
+        from numpy_sugar import epsilon
+
+        tmp = self._yTQ0D0iQ0TtX
+        if self.delta > epsilon.small:
+            tmp += (self._y.T @ self._Xsvd.US - self._yTQ0Q0TtX) / self.delta
+        return tmp
 
     @property
     def _tXTMtX(self):
-        return (
-            self._tXTQ0D0iQ0TtX
-            + (self._Xsvd.US.T @ self._Xsvd.US - self._tXTQ0Q0TtX) / self.delta
-        )
+        from numpy_sugar import epsilon
+
+        tmp = self._tXTQ0D0iQ0TtX
+        if self.delta > epsilon.small:
+            tmp += (self._Xsvd.US.T @ self._Xsvd.US - self._tXTQ0Q0TtX) / self.delta
+        return tmp
 
     @property
     def _yTQ0D0iQ0TtX(self):
