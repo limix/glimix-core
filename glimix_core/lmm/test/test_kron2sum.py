@@ -86,8 +86,8 @@ def test_kron2sum_restricted():
     assert_equal(lmm.name, "KronSum")
     lmm.fit(verbose=False)
     grad = lmm.gradient()
-    assert_allclose(grad["C0.Lu"], [0], atol=1e-4)
-    assert_allclose(grad["C1.Lu"], [0], atol=1e-4)
+    assert_allclose(grad["C0.Lu"], [0], atol=1e-3)
+    assert_allclose(grad["C1.Lu"], [0], atol=1e-3)
     assert_allclose(lmm.lml(), -0.6930197328322949, rtol=1e-5)
 
     A = lmm.beta_covariance
@@ -186,8 +186,8 @@ def test_kron2sum_unrestricted():
     assert_equal(lmm.name, "KronSum")
     lmm.fit(verbose=False)
     grad = lmm.gradient()
-    assert_allclose(grad["C0.Lu"], [0], atol=1e-4)
-    assert_allclose(grad["C1.Lu"], [0], atol=1e-4)
+    assert_allclose(grad["C0.Lu"], [0], atol=1e-3)
+    assert_allclose(grad["C1.Lu"], [0], atol=1e-3)
     assert_allclose(lmm.lml(), 2.3394131683065957, rtol=1e-5)
 
     A = [
