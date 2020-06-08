@@ -97,8 +97,8 @@ def test_kron2sum_restricted():
             [4.831901045051292, -2.1320785310203645],
             [-2.1320785310203645, 0.9438229054009741],
         ],
-        atol=1e-5,
-        rtol=1e-5,
+        atol=1e-4,
+        rtol=1e-4,
     )
 
 
@@ -188,13 +188,13 @@ def test_kron2sum_unrestricted():
     grad = lmm.gradient()
     assert_allclose(grad["C0.Lu"], [0], atol=1e-3)
     assert_allclose(grad["C1.Lu"], [0], atol=1e-3)
-    assert_allclose(lmm.lml(), 2.3394131683065957, rtol=1e-5)
+    assert_allclose(lmm.lml(), 2.3394131683065957, rtol=1e-4)
 
     A = [
         [3.621700765362852, -1.5979882078099437],
         [-1.5979882078099474, 0.7081144405074323],
     ]
-    assert_allclose(lmm.beta_covariance, A, atol=1e-5, rtol=1e-5)
+    assert_allclose(lmm.beta_covariance, A, atol=1e-4, rtol=1e-4)
 
 
 def test_kron2sum_unrestricted_lml():
