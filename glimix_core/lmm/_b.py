@@ -45,6 +45,8 @@ class B:
         self._v0S0 = self._v0 * self._S0
         D0 = self._v0S0 + self._v1
         self._Q0D0i = self._Q0 / D0
+        self._update_v0 = False
+        self._update_v1 = False
 
     @property
     def v0(self) -> float:
@@ -58,20 +60,32 @@ class B:
         if v0 != self._v0:
             self._v0 = v0
             self._v1 = v1
-            self._v0S0[:] = self._v0 * self._S0
-            D0 = self._v0S0 + self._v1
-            self._Q0D0i[:] = self._Q0 / D0
+            self._update_v0 = True
+            self._update_v1 = True
         elif v1 != self._v1:
             self._v1 = v1
-            D0 = self._v0S0 + self._v1
-            self._Q0D0i[:] = self._Q0 / D0
+            self._update_v1 = True
 
     def dot(self, y):
         """
         Compute 𝙱𝐲.
         """
+        from numpy_sugar import epsilon
+
+        if self._update_v0:
+            self._v0S0[:] = self._v0 * self._S0
+            D0 = self._v0S0 + self._v1
+            self._Q0D0i[:] = self._Q0 / D0
+            self._update_v0 = self._update_v1 = False
+
+        elif self._update_v1:
+            D0 = self._v0S0 + self._v1
+            self._Q0D0i[:] = self._Q0 / D0
+            self._update_v1 = False
+
         Q0ty = self._Q0.T @ y
         x = self._Q0D0i @ Q0ty
-        if self._v1 > 0:
+        # TODO: I should check whether self._v0 is also too small
+        if self._v1 > epsilon.small:
             x += (y - self._Q0 @ Q0ty) / self._v1
         return x

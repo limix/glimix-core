@@ -56,7 +56,7 @@ class SVD:
         return self._Vt
 
     @property
-    def rank(self):
+    def rank(self) -> int:
         """
         Get the diagonal size of matrix 𝚂.
         """

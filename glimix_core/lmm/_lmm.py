@@ -1,12 +1,10 @@
 from math import exp
 
-from numpy import asarray, atleast_2d, dot, log, maximum, sum as npsum, zeros
-from numpy.linalg import inv, lstsq, multi_dot, slogdet
+from numpy import asarray, atleast_2d, dot, log, maximum, zeros, ndarray
+from numpy.linalg import multi_dot, slogdet
 from optimix import Function, Scalar
 
-from glimix_core._util import cache, log2pi
-
-from .._util import SVD, economic_qs_zeros, numbers
+from .._util import SVD, cache, economic_qs_zeros, log2pi, nice_inv, numbers, rsolve
 from ._b import B
 from ._lmm_scan import FastScanner
 
@@ -61,10 +59,10 @@ class LMM(Function):
     -----
     The LMM model can be equivalently written as ::
 
-        𝐲 ∼ 𝓝(𝚇𝜷, s((1-𝛿)𝙺 + 𝛿𝙸)),
+        𝐲 ∼ 𝓝(𝚇𝜷, 𝑠((1-𝛿)𝙺 + 𝛿𝙸)),
 
-    and we thus have v₀ = s (1 - 𝛿) and v₁ = s 𝛿.
-    Consider the economic eigendecomposition of 𝙺::
+    and we thus have v₀ = s (1 - 𝛿) and v₁ = s 𝛿. Consider the economic
+    eigendecomposition of 𝙺::
 
         𝙺 = [𝚀₀  𝚀₁] [𝚂₀  𝟎] [𝚀₀ᵀ]
                      [ 𝟎  𝟎] [𝚀₁ᵀ]
@@ -74,23 +72,19 @@ class LMM(Function):
         𝙳 = [(1-𝛿)𝚂₀ + 𝛿𝙸₀   𝟎 ]
             [      𝟎        𝛿𝙸₁].
 
-    We thus have ::
-
-        ((1-𝛿)𝙺 + 𝛿𝙸)⁻¹ = 𝚀𝙳⁻¹𝚀ᵀ.
-
     In order to eliminate the need of 𝚀₁, note that 𝚀𝚀ᵀ = 𝙸 implies that ::
 
         𝚀₁𝚀₁ᵀ = 𝙸 - 𝚀₀𝚀₀ᵀ.
 
-    Let 𝙳₀ = (1-𝛿)S₀ + 𝛿𝙸. We have ::
+    We will need to solve ((1-𝛿)𝙺 + 𝛿𝙸)𝐱 = 𝐮 for 𝐱. Let 𝙳₀ = ((1-𝛿)𝚂₀ + 𝛿𝙸₀) and let us
+    define ::
 
-        ((1-𝛿)𝙺 + 𝛿𝙸)⁻¹ = 𝚀₀𝙳₀⁻¹𝚀₀ᵀ + 𝛿⁻¹(𝙸 - 𝚀₀𝚀₀ᵀ).
+        𝙱 = 𝚀₀𝙳₀⁻¹𝚀₀ᵀ                   if 𝛿=0, and
+        𝙱 = 𝚀₀𝙳₀⁻¹𝚀₀ᵀ + 𝛿⁻¹(𝙸 - 𝚀₀𝚀₀ᵀ)  if 𝛿>0.
 
-    We will use the definition ::
+    We therefore have ::
 
-        𝙼 = ((1-𝛿)𝙺 + 𝛿𝙸)⁻¹
-
-    in the implementation to make it easier to read.
+        𝐱 = 𝙱𝐮.
     """
 
     def __init__(self, y, X, QS=None, restricted=False):
@@ -104,7 +98,7 @@ class LMM(Function):
         X : array_like
             Covariates as a two-dimensional array.
         QS : tuple
-            Economic eigendecompositon in form of ``((Q0, Q1), S0)`` of a
+            Economic eigendecompositon in form of ``((Q0, ), S0)`` of a
             covariance matrix ``K``.
         restricted : bool
             ``True`` for restricted maximum likelihood optimization; ``False``
@@ -132,9 +126,11 @@ class LMM(Function):
         self._optimal = {"beta": False, "scale": False}
         if QS is None:
             QS = economic_qs_zeros(len(y))
+            self._B = B(QS[0][0], QS[1], 0.0, 1.0)
             self.delta = 1.0
             logistic.fix()
         else:
+            self._B = B(QS[0][0], QS[1], 0.5, 0.5)
             self.delta = 0.5
 
         if QS[0][0].shape[0] != len(y):
@@ -146,7 +142,6 @@ class LMM(Function):
             raise ValueError(msg)
 
         self._y = y
-        self._QS = QS
         self._Q0 = QS[0][0]
         self._S0 = QS[1]
         self._Xsvd = SVD(X)
@@ -156,13 +151,13 @@ class LMM(Function):
         self._restricted = restricted
 
     @property
-    def beta(self):
+    def beta(self) -> ndarray:
         """
         Fixed-effect sizes.
 
         Returns
         -------
-        effect-sizes : numpy.ndarray
+        effect-sizes
             Optimal fixed-effect sizes.
 
         Notes
@@ -170,10 +165,8 @@ class LMM(Function):
         Setting the derivative of log(p(𝐲)) over effect sizes equal
         to zero leads to solutions 𝜷 from equation ::
 
-            (QᵀX)ᵀD⁻¹(QᵀX)𝜷 = (QᵀX)ᵀD⁻¹(Qᵀ𝐲).
+            𝚇ᵀ𝙱𝚇𝜷 = 𝚇ᵀ𝙱𝐲
         """
-        from numpy_sugar.linalg import rsolve
-
         return rsolve(self._Xsvd.Vt, rsolve(self._Xsvd.US, self.mean()))
 
     @beta.setter
@@ -191,25 +184,25 @@ class LMM(Function):
         Returns
         -------
         beta-covariance : ndarray
-            (Xᵀ(s((1-𝛿)𝙺 + 𝛿𝙸))⁻¹𝚇)⁻¹.
+            𝑠(𝚇ᵀ𝙱𝚇)⁻¹.
 
         References
         ----------
         .. Rencher, A. C., & Schaalje, G. B. (2008). Linear models in statistics. John
            Wiley & Sons.
         """
-        A = inv(self._tXTMtX) * self.scale
+        A = nice_inv(self._tXTBtX)
         VT = self._Xsvd.Vt
-        H = lstsq(VT, A, rcond=None)[0]
-        return lstsq(VT, H.T, rcond=None)[0]
+        H = rsolve(VT, A)
+        return rsolve(VT, H.T) * self.scale
 
-    def fix(self, param):
+    def fix(self, param: str):
         """
         Disable parameter optimization.
 
         Parameters
         ----------
-        param : str
+        param
             Possible values are ``"delta"``, ``"beta"``, and ``"scale"``.
         """
         if param == "delta":
@@ -217,13 +210,13 @@ class LMM(Function):
         else:
             self._fix[param] = True
 
-    def unfix(self, param):
+    def unfix(self, param: str):
         """
         Enable parameter optimization.
 
         Parameters
         ----------
-        param : str
+        param
             Possible values are ``"delta"``, ``"beta"``, and ``"scale"``.
         """
         if param == "delta":
@@ -244,13 +237,13 @@ class LMM(Function):
         return self.scale * (1 - self.delta)
 
     @property
-    def v1(self):
+    def v1(self) -> float:
         """
         Second variance.
 
         Returns
         -------
-        v1 : float
+        v1
             s𝛿.
         """
         return self.scale * self.delta
@@ -274,21 +267,21 @@ class LMM(Function):
         if not self._fix["scale"]:
             self._update_scale()
 
-    def get_fast_scanner(self):
+    def get_fast_scanner(self) -> FastScanner:
         """
         Return :class:`.FastScanner` for association scan.
 
         Returns
         -------
-        fast-scanner : :class:`.FastScanner`
+        fast-scanner
             Instance of a class designed to perform very fast association scan.
         """
         v0 = self.v0
         v1 = self.v1
-        QS = (self._QS[0], v0 * self._QS[1])
+        QS = ((self._Q0,), v0 * self._S0)
         return FastScanner(self._y, self.X, QS, v1)
 
-    def value(self):
+    def value(self) -> float:
         """
         Internal use only.
         """
@@ -307,26 +300,26 @@ class LMM(Function):
         raise NotImplementedError
 
     @property
-    def nsamples(self):
+    def nsamples(self) -> int:
         """
-        Number of samples, n.
+        Number of samples.
         """
         return len(self._y)
 
     @property
-    def ncovariates(self):
+    def ncovariates(self) -> int:
         """
-        Number of covariates, c.
+        Number of covariates.
         """
         return self._Xsvd.A.shape[1]
 
-    def lml(self):
+    def lml(self) -> float:
         """
         Log of the marginal likelihood.
 
         Returns
         -------
-        lml : float
+        lml
             Log of the marginal likelihood.
 
         Notes
@@ -372,7 +365,7 @@ class LMM(Function):
         return self._Xsvd.A
 
     @property
-    def delta(self):
+    def delta(self) -> float:
         """
         Variance ratio between ``K`` and ``I``.
         """
@@ -398,7 +391,7 @@ class LMM(Function):
         self._optimal["scale"] = False
 
     @property
-    def scale(self):
+    def scale(self) -> float:
         """
         Scaling factor.
 
@@ -451,13 +444,15 @@ class LMM(Function):
         """
         from numpy_sugar.linalg import ddot, sum2diag
 
-        Q0 = self._QS[0][0]
-        S0 = self._QS[1]
+        Q0 = self._Q0
+        S0 = self._S0
         return sum2diag(dot(ddot(Q0, self.v0 * S0), Q0.T), self.v1)
 
     def _delta_update(self):
         self._optimal["beta"] = False
         self._optimal["scale"] = False
+        delta = self.delta
+        self._B.set_variances(1 - delta, delta)
 
     @cache
     def _logdetXX(self):
@@ -478,7 +473,7 @@ class LMM(Function):
         """
         if not self._restricted:
             return 0.0
-        ldet = slogdet(self._tXTMtX / self.scale)
+        ldet = slogdet(self._tXTBtX / self.scale)
         if ldet[0] != 1.0:
             raise ValueError("The determinant of H should be positive.")
         return ldet[1]
@@ -510,25 +505,12 @@ class LMM(Function):
         lml : float
             Log of the marginal likelihood.
         """
-        from numpy_sugar import epsilon
-
         s = self.scale
         n = len(self._y)
         lml = -self._df * log2pi - n * log(s)
         lml -= self._logdetD
-
         my = self.mean() - self._y
-        myTQ0 = my.T @ self._Q0
-        t0 = (myTQ0 / self._D0) @ myTQ0.T
-        # TODO: encapsulate this in a class,
-        # like I did in FastScanner
-        if self.delta <= epsilon.small:
-            t1 = t2 = 0.0
-        else:
-            t1 = (my.T @ my) / self.delta
-            t2 = (myTQ0 @ myTQ0.T) / self.delta
-        lml -= (t0 + t1 - t2) / s
-
+        lml -= my.T @ self._B.dot(my) / s
         return lml / 2
 
     @property
@@ -544,17 +526,15 @@ class LMM(Function):
         from numpy_sugar import epsilon
 
         assert self._optimal["beta"]
-        s = self._yTMy - self._yTMtX @ self._tbeta
+        s = self._yTBy - self._yTBtX @ self._tbeta
         return maximum(s / self._df, epsilon.small)
 
     def _update_beta(self):
-        from numpy_sugar.linalg import rsolve
-
         assert not self._fix["beta"]
         if self._optimal["beta"]:
             return
 
-        self._tbeta[:] = rsolve(self._tXTMtX, self._yTMtX)
+        self._tbeta[:] = rsolve(self._tXTBtX, self._yTBtX)
         self._optimal["beta"] = True
         self._optimal["scale"] = False
 
@@ -564,8 +544,8 @@ class LMM(Function):
         if self._optimal["beta"]:
             self._scale = self._optimal_scale_using_optimal_beta()
         else:
-            p0 = self._yTMy - 2 * self._yTMtX @ self._tbeta
-            p1 = multi_dot((self._tbeta, self._tXTMtX, self._tbeta))
+            p0 = self._yTBy - 2 * self._yTBtX @ self._tbeta
+            p1 = multi_dot((self._tbeta, self._tXTBtX, self._tbeta))
             self._scale = maximum((p0 + p1) / self._df, epsilon.small)
 
         self._optimal["scale"] = True
@@ -574,79 +554,21 @@ class LMM(Function):
     def _logdetD(self):
         v = 0.0
         d = self.delta
-        rank = self._QS[1].size
+        rank = self._S0.size
         if rank > 0:
-            v += log((1 - d) * self._QS[1] + d).sum()
+            v += log((1 - d) * self._S0 + d).sum()
         rankdef = self._y.shape[0] - rank
         v += rankdef * log(d)
         return v
 
     @property
-    def _D0(self):
-        d = self.delta
-        return (1 - d) * self._S0 + d
+    def _yTBy(self):
+        return self._y.T @ self._B.dot(self._y)
 
     @property
-    def _tXTQ0D0iQ0TtX(self):
-        return self._tXTQ0 / self._D0 @ self._tXTQ0.T
+    def _yTBtX(self):
+        return self._y.T @ self._B.dot(self._Xsvd.US)
 
     @property
-    def _tXTQ0(self):
-        return self._Xsvd.US.T @ self._Q0
-
-    @property
-    def _yTQ0(self):
-        return self._y.T @ self._Q0
-
-    @property
-    def _yTQ0xQ0Ty(self):
-        return self._yTQ0 ** 2
-
-    @property
-    def _yTQ0D0iQ0Ty(self):
-        return npsum(self._yTQ0xQ0Ty / self._D0)
-
-    @property
-    def _yTMy(self):
-        from numpy_sugar import epsilon
-
-        tmp = self._yTQ0D0iQ0Ty
-        if self.delta > epsilon.small:
-            tmp += (self._y.T @ self._y - npsum(self._yTQ0xQ0Ty)) / self.delta
-        return tmp
-
-    @property
-    def _yTMtX(self):
-        from numpy_sugar import epsilon
-
-        tmp = self._yTQ0D0iQ0TtX
-        if self.delta > epsilon.small:
-            tmp += (self._y.T @ self._Xsvd.US - self._yTQ0Q0TtX) / self.delta
-        return tmp
-
-    @property
-    def _tXTMtX(self):
-        from numpy_sugar import epsilon
-
-        tmp = self._tXTQ0D0iQ0TtX
-        if self.delta > epsilon.small:
-            tmp += (self._Xsvd.US.T @ self._Xsvd.US - self._tXTQ0Q0TtX) / self.delta
-        return tmp
-
-    @property
-    def _yTQ0D0iQ0TtX(self):
-        yTQ0 = self._yTQ0
-        D0 = self._D0
-        tXTQ0 = self._tXTQ0
-        return yTQ0 / D0 @ tXTQ0.T
-
-    @property
-    def _yTQ0Q0TtX(self):
-        yTQ0 = self._yTQ0
-        tXTQ0 = self._tXTQ0
-        return yTQ0 @ tXTQ0.T
-
-    @property
-    def _tXTQ0Q0TtX(self):
-        tXTQ0 = self._tXTQ0
-        return tXTQ0 @ tXTQ0.T
+    def _tXTBtX(self):
+        return self._Xsvd.US.T @ self._B.dot(self._Xsvd.US)
