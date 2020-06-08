@@ -1,6 +1,6 @@
 from math import exp
 
-from numpy import asarray, atleast_2d, dot, log, maximum, zeros, ndarray
+from numpy import asarray, atleast_2d, dot, log, maximum, ndarray, zeros
 from numpy.linalg import multi_dot, slogdet
 from optimix import Function, Scalar
 
