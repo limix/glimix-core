@@ -48,7 +48,7 @@ Here it is a very simple example to get you started:
 >>> from glimix_core.lmm import LMM
 >>>
 >>> X = array([[1, 2], [3, -1], [1.1, 0.5], [0.5, -0.4]], float)
->>> QS = economic_qs_linear(X)
+>>> QS = economic_qs_linear(X, False)
 >>> X = ones((4, 1))
 >>> y = array([-1, 2, 0.3, 0.5])
 >>> lmm = LMM(y, X, QS)
