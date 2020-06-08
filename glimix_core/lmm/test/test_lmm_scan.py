@@ -39,7 +39,7 @@ def test_fast_scanner_statsmodel_gls():
     scanner = lmm.get_fast_scanner()
     best_beta_se = _lstsq(data.exog.T @ _lstsq(lmm.covariance(), data.exog), eye(7))
     best_beta_se = sqrt(best_beta_se.diagonal())
-    assert_allclose(scanner.null_beta_se, best_beta_se, atol=1e-5)
+    assert_allclose(scanner.null_beta_se, best_beta_se, atol=1e-4)
 
     endog = data.endog.copy()
     endog -= endog.mean(0)
