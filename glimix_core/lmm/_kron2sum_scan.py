@@ -3,7 +3,7 @@ from numpy.linalg import pinv
 
 from glimix_core._util import rsolve, unvec, vec
 
-from .._util import cache, log2pi, safe_log
+from .._util import cached_property, log2pi, safe_log
 
 
 class KronFastScanner:
@@ -56,8 +56,11 @@ class KronFastScanner:
         self._MRiy = terms["MRiy"]
         self._MRiXZiXRiy = terms["MRiXZiXRiy"]
 
-    @cache
     def null_lml(self):
+        return self._null_lml
+
+    @cached_property
+    def _null_lml(self):
         """
         Log of the marginal likelihood for the null hypothesis.
 
@@ -74,10 +77,9 @@ class KronFastScanner:
         """
         np = self._nsamples * self._ntraits
         scale = self.null_scale
-        return self._static_lml() / 2 - np * safe_log(scale) / 2 - np / 2
+        return self._static_lml / 2 - np * safe_log(scale) / 2 - np / 2
 
-    @property
-    @cache
+    @cached_property
     def null_beta(self):
         """
         Optimal 𝛃 according to the marginal likelihood.
@@ -95,8 +97,7 @@ class KronFastScanner:
         """
         return rsolve(self._MKiM, self._MKiy)
 
-    @property
-    @cache
+    @cached_property
     def null_beta_covariance(self):
         """
         Covariance of the optimal 𝛃 according to the marginal likelihood.
@@ -108,8 +109,7 @@ class KronFastScanner:
         """
         return self.null_scale * pinv(self._H)
 
-    @property
-    @cache
+    @cached_property
     def null_beta_se(self):
         """
         Standard errors of the optimal 𝛃.
@@ -121,8 +121,7 @@ class KronFastScanner:
         """
         return sqrt(self.null_beta_covariance.diagonal())
 
-    @property
-    @cache
+    @cached_property
     def null_scale(self):
         """
         Optimal s according to the marginal likelihood.
@@ -188,7 +187,7 @@ class KronFastScanner:
         if A1.shape[1] == 0:
             beta_se = sqrt(self.null_beta_covariance.diagonal())
             return {
-                "lml": self.null_lml(),
+                "lml": self._null_lml,
                 "effsizes0": unvec(self.null_beta, (self._ncovariates, -1)),
                 "effsizes0_se": unvec(beta_se, (self._ncovariates, -1)),
                 "effsizes1": empty((0,)),
@@ -230,7 +229,7 @@ class KronFastScanner:
         np = self._nsamples * self._ntraits
         sqrtdot = self._yKiy - mKiy
         scale = clip(sqrtdot / np, epsilon.tiny, inf)
-        lml = self._static_lml() / 2 - np * safe_log(scale) / 2 - np / 2
+        lml = self._static_lml / 2 - np * safe_log(scale) / 2 - np / 2
 
         effsizes_se = sqrt(clip(scale * pinv(MKiM).diagonal(), epsilon.tiny, inf))
         effsizes0_se = unvec(effsizes_se[:cp], (self._ncovariates, self._ntraits))
@@ -245,7 +244,7 @@ class KronFastScanner:
             "effsizes1_se": effsizes1_se,
         }
 
-    @cache
+    @cached_property
     def _static_lml(self):
         np = self._nsamples * self._ntraits
         static_lml = -np * log2pi - self._logdetK
@@ -263,12 +262,10 @@ class KronFastScanner:
     def _ncovariates(self):
         return self._X.shape[1]
 
-    @property
-    @cache
+    @cached_property
     def _MKiM(self):
         return self._MRiM - self._XRiM.T @ self._ZiXRiM
 
-    @property
-    @cache
+    @cached_property
     def _MKiy(self):
         return self._MRiy - self._XRiM.T @ self._ZiXRiy

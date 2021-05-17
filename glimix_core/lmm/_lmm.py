@@ -4,7 +4,7 @@ from numpy import asarray, atleast_2d, dot, log, maximum, ndarray, zeros
 from numpy.linalg import multi_dot, slogdet
 from optimix import Function, Scalar
 
-from .._util import SVD, cache, economic_qs_zeros, log2pi, nice_inv, numbers, rsolve
+from .._util import SVD, cached_property, economic_qs_zeros, log2pi, nice_inv, numbers, rsolve
 from ._b import B
 from ._lmm_scan import FastScanner
 
@@ -345,7 +345,7 @@ class LMM(Function):
 
             2⋅log(p(𝐲; 𝜷, s)) = -n⋅log(2π) - n⋅log s - log|𝙳| - n.
         """
-        reml = (self._logdetXX() - self._logdetH()) / 2
+        reml = (self._logdetXX - self._logdetH()) / 2
         if self._optimal["scale"]:
             lml = self._lml_optimal_scale()
         else:
@@ -454,7 +454,7 @@ class LMM(Function):
         delta = self.delta
         self._B.set_variances(1 - delta, delta)
 
-    @cache
+    @cached_property
     def _logdetXX(self):
         """
         log(｜XᵀX｜).

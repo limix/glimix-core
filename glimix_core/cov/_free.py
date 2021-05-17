@@ -1,5 +1,6 @@
 from numpy import diag_indices_from, dot, exp, eye, inf, log, tril_indices_from, zeros
 from optimix import Function, Vector
+from typing import Any, Dict
 
 from .._util import format_function
 
@@ -65,7 +66,7 @@ class FreeFormCov(Function):
         bounds = [(-inf, +inf)] * (tsize - dim)
         bounds += [(log(epsilon.small * 1000), +11)] * dim
         self._Lu.bounds = bounds
-        self._cache = {"eig": None}
+        self._cache: Dict[str, Any] = {"eig": None}
         self.listen(self._parameters_update)
         self._nparams = tsize
 

@@ -5,7 +5,7 @@ from numpy import asarray, asfortranarray, kron, log, sqrt, tensordot, trace
 from numpy.linalg import inv, matrix_rank, slogdet
 from optimix import Function
 
-from glimix_core._util import cache, log2pi, unvec, vec
+from glimix_core._util import cached_property, log2pi, unvec, vec
 from glimix_core.cov import Kron2SumCov
 from glimix_core.mean import KronMean
 
@@ -371,60 +371,49 @@ class Kron2Sum(Function):
     def _parameters_update(self):
         self._cache["terms"] = None
 
-    @property
-    @cache
+    @cached_property
     def _GY(self):
         return self._cov.Ge.T @ self._Y
 
-    @property
-    @cache
+    @cached_property
     def _GG(self):
         return self._cov.Ge.T @ self._cov.Ge
 
-    @property
-    @cache
+    @cached_property
     def _trGG(self):
         from numpy_sugar.linalg import trace2
 
         return trace2(self._cov.Ge, self._cov.Ge.T)
 
-    @property
-    @cache
+    @cached_property
     def _GGGG(self):
         return self._GG @ self._GG
 
-    @property
-    @cache
+    @cached_property
     def _GGGY(self):
         return self._GG @ self._GY
 
-    @property
-    @cache
+    @cached_property
     def _XX(self):
         return self._mean.X.T @ self._mean.X
 
-    @property
-    @cache
+    @cached_property
     def _GX(self):
         return self._cov.Ge.T @ self._mean.X
 
-    @property
-    @cache
+    @cached_property
     def _XGGG(self):
         return self._GX.T @ self._GG
 
-    @property
-    @cache
+    @cached_property
     def _XGGY(self):
         return self._GX.T @ self._GY
 
-    @property
-    @cache
+    @cached_property
     def _XGGX(self):
         return self._GX.T @ self._GX
 
-    @property
-    @cache
+    @cached_property
     def _XY(self):
         return self._mean.X.T @ self._Y
 
@@ -690,8 +679,7 @@ class Kron2Sum(Function):
 
         return grad
 
-    @property
-    @cache
+    @cached_property
     def _logdet_MM(self):
         if not self._restricted:
             return 0.0
@@ -740,10 +728,6 @@ def _dot(a, b):
 
 def _mdot(*args):
     return reduce(_dot, args)
-
-
-def _sum(a):
-    return a.sum(axis=(0, 1))
 
 
 def _mkron(a, b):

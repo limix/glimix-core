@@ -3,7 +3,7 @@ from ._array import unvec, vec
 from ._assert import assert_interface
 from ._numbers import safe_log
 from ._svd import SVD
-from .cache import cache
+from .cache import cached_property
 from .check import check_covariates, check_economic_qs, check_outcome
 from .eigen import economic_qs_zeros
 from .format import format_function

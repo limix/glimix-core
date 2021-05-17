@@ -1,7 +1,8 @@
 from copy import copy
 
-from numpy import asarray, dot, exp
+from numpy import asarray, dot, exp, diag
 from numpy.linalg import solve
+from numpy.linalg import pinv
 
 from glimix_core._ep import EPLinearKernel
 
@@ -125,6 +126,23 @@ class GLMMExpFam(GLMM):
         GLMM.fix(self, var_name)
         self.set_update_approx()
 
+    def posteriori_mean(self):
+        r"""Mean of the estimated posteriori.
+
+        This is also the maximum a posteriori estimation of the latent variable.
+        """
+        from numpy_sugar.linalg import rsolve
+
+        Sigma = self.posteriori_covariance()
+        eta = self._ep._posterior.eta
+        return dot(Sigma, eta + rsolve(GLMM.covariance(self), self.mean()))
+
+    def posteriori_covariance(self):
+        r"""Covariance of the estimated posteriori."""
+        K = GLMM.covariance(self)
+        tau = self._ep._posterior.tau
+        return pinv(pinv(K) + diag(1 / tau))
+
     def gradient(self):
         r"""Gradient of the log of the marginal likelihood.
 
@@ -147,8 +165,8 @@ class GLMMExpFam(GLMM):
         return grad
 
     @property
-    def logitdelta(self):
-        return GLMM.logitdelta.fget(self)
+    def logitdelta(_):
+        return super().logitdelta
 
     @logitdelta.setter
     def logitdelta(self, v):
@@ -156,8 +174,8 @@ class GLMMExpFam(GLMM):
         self.set_update_approx()
 
     @property
-    def logscale(self):
-        return GLMM.logscale.fget(self)
+    def logscale(_):
+        return super().logscale
 
     @logscale.setter
     def logscale(self, v):

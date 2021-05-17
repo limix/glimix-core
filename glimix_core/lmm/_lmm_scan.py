@@ -13,7 +13,7 @@ from numpy import (
     sqrt,
 )
 
-from .._util import cache, hinv, hsolve, log2pi, nice_inv, rsolve, safe_log
+from .._util import cached_property, hinv, hsolve, log2pi, nice_inv, rsolve, safe_log
 from ._b import B
 
 
@@ -115,8 +115,11 @@ class FastScanner:
         self._y = y
         self._v = v
 
-    @cache
     def null_lml(self) -> float:
+        return self._null_lml
+
+    @cached_property
+    def _null_lml(self) -> float:
         """
         Log of the marginal likelihood for the null hypothesis.
 
@@ -131,10 +134,9 @@ class FastScanner:
         """
         n = self._nsamples
         scale = self.null_scale
-        return (self._static_lml() - n * log(scale)) / 2
+        return (self._static_lml - n * log(scale)) / 2
 
-    @property
-    @cache
+    @cached_property
     def null_beta(self):
         """
         Optimal 𝜷 according to the marginal likelihood.
@@ -150,8 +152,7 @@ class FastScanner:
         """
         return rsolve(self._ETBE.XTBX, self._yTBX)
 
-    @property
-    @cache
+    @cached_property
     def null_beta_covariance(self):
         """
         Covariance of the optimal 𝜷 according to the marginal likelihood.
@@ -163,8 +164,7 @@ class FastScanner:
         """
         return self.null_scale * nice_inv(self._X.T @ self._B.dot(self._X))
 
-    @property
-    @cache
+    @cached_property
     def null_beta_se(self):
         """
         Standard errors of the optimal 𝜷.
@@ -176,8 +176,7 @@ class FastScanner:
         """
         return sqrt(self.null_beta_covariance.diagonal())
 
-    @property
-    @cache
+    @cached_property
     def null_scale(self) -> float:
         """
         Optimal s according to the marginal likelihood.
@@ -290,7 +289,7 @@ class FastScanner:
 
         if M.shape[1] == 0:
             return {
-                "lml": self.null_lml(),
+                "lml": self._null_lml,
                 "effsizes0": self.null_beta,
                 "effsizes0_se": self.null_beta_se,
                 "effsizes1": empty((0)),
@@ -316,7 +315,7 @@ class FastScanner:
     def _ncovariates(self):
         return self._X.shape[1]
 
-    @cache
+    @cached_property
     def _static_lml(self):
         """
         Static part of the marginal likelihood.
@@ -347,7 +346,7 @@ class FastScanner:
         XTBM = self._X.T @ BM
         dMTBM = dotd(M.T, BM)
 
-        lmls = full(M.shape[1], self._static_lml())
+        lmls = full(M.shape[1], self._static_lml)
         eff0 = empty((M.shape[1], self._X.shape[1]))
         eff0_se = empty((M.shape[1], self._X.shape[1]))
         eff1 = empty((M.shape[1]))
@@ -417,7 +416,7 @@ class FastScanner:
         alpha = x[-set_size:]
         bstar = _bstar_unpack(beta, alpha, self._yTBy, yBE, EBE, bstar_set)
 
-        lml = self._static_lml()
+        lml = self._static_lml
 
         scale = bstar / self._nsamples
         lml -= self._nsamples * safe_log(scale)

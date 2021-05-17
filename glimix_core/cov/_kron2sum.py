@@ -1,5 +1,3 @@
-from functools import lru_cache
-
 from numpy import (
     asarray,
     atleast_2d,
@@ -12,10 +10,11 @@ from numpy import (
     tensordot,
     zeros_like,
 )
+from typing import Any, Dict
 from numpy.linalg import eigh
 from optimix import Function
 
-from .._util import format_function, unvec
+from .._util import format_function, unvec, cached_property
 from ._free import FreeFormCov
 from ._lrfree import LRFreeFormCov
 
@@ -82,7 +81,7 @@ class Kron2SumCov(Function):
             Maximum rank of the C₁ matrix.
         """
 
-        self._cache = {"LhD": None}
+        self._cache: Dict[str, Any] = {"LhD": None}
         self._C0 = LRFreeFormCov(dim, rank)
         self._C0.name = "C₀"
         self._C1 = FreeFormCov(dim)
@@ -130,8 +129,7 @@ class Kron2SumCov(Function):
         """
         return self._C0.nparams + self._C1.nparams
 
-    @property
-    @lru_cache(maxsize=None)
+    @cached_property
     def Ge(self):
         """
         Result of US from the SVD decomposition G = USVᵀ.
@@ -145,13 +143,11 @@ class Kron2SumCov(Function):
             return ddot(U, S)
         return self._G
 
-    @property
-    @lru_cache(maxsize=None)
+    @cached_property
     def _GG(self):
         return self._G @ self._G.T
 
-    @property
-    @lru_cache(maxsize=None)
+    @cached_property
     def _I(self):
         return eye(self._G.shape[0])
 
@@ -175,12 +171,10 @@ class Kron2SumCov(Function):
         """
         Lₓ.
         """
-
         self._init_svd()
         return self._Lx
 
-    @property
-    @lru_cache(maxsize=None)
+    @cached_property
     def _X(self):
         return self.G @ self.G.T
 
@@ -201,7 +195,7 @@ class Kron2SumCov(Function):
         self._init_svd()
         if self._cache["LhD"] is not None:
             return self._cache["LhD"]
-        S1, U1 = self.C1.eigh()
+        S1, U1 = self._C1.eigh()
         U1S1 = ddot(U1, 1 / sqrt(S1))
         Sh, Uh = eigh(U1S1.T @ self.C0.value() @ U1S1)
         self._cache["LhD"] = {
@@ -385,7 +379,7 @@ class Kron2SumCov(Function):
 
         return {"C0.Lu": grad_C0, "C1.Lu": grad_C1}
 
-    def LdKL_dot(self, v, v1=None):
+    def LdKL_dot(self, v):
         """
         Implements L(∂K)Lᵀv.
 
