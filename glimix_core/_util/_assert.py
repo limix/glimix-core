@@ -1,10 +1,14 @@
 def assert_interface(cls, callables, properties):
+    from .cache import cached_property
+
     attrs = dir(cls)
     private = set(a for a in attrs if a.startswith("_"))
     public = set(attrs) - private
 
     public_methods = [a for a in public if callable(getattr(cls, a))]
-    public_props = [a for a in public if isinstance(getattr(cls, a), property)]
+    public_props = [
+        a for a in public if isinstance(getattr(cls, a), (property, cached_property))
+    ]
 
     _assert_callables(set(public_methods), callables)
     _assert_properties(set(public_props), properties)
