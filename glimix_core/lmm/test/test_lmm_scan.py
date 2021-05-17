@@ -1,6 +1,18 @@
 import pytest
 import scipy.stats as st
-from numpy import array, concatenate, errstate, exp, eye, inf, nan, ones, sqrt, zeros
+from numpy import (
+    array,
+    concatenate,
+    errstate,
+    exp,
+    eye,
+    inf,
+    nan,
+    ones,
+    sqrt,
+    zeros,
+    reshape,
+)
 from numpy.linalg import inv, pinv, solve
 from numpy.random import RandomState
 from numpy.testing import assert_allclose
@@ -17,35 +29,174 @@ from glimix_core.random import GGPSampler
 
 
 def test_fast_scanner_statsmodel_gls():
-    import statsmodels.api as sm
     from numpy.linalg import lstsq
 
     def _lstsq(A, B):
         return lstsq(A, B, rcond=None)[0]
 
-    data = sm.datasets.longley.load()
-    data.exog = sm.add_constant(data.exog)
-    ols_resid = sm.OLS(data.endog, data.exog).fit().resid
-    resid_fit = sm.OLS(ols_resid[1:], sm.add_constant(ols_resid[:-1])).fit()
-    rho = resid_fit.params[1]
-    order = toeplitz(range(len(ols_resid)))
+    # data = sm.datasets.longley.load()
+    # data.exog = sm.add_constant(data.exog)
+    # ols_resid = sm.OLS(data.endog, data.exog).fit().resid
+    # resid_fit = sm.OLS(ols_resid[1:], sm.add_constant(ols_resid[:-1])).fit()
+    # rho = resid_fit.params[1]
+    rho = -0.3634294908774683
+    # order = toeplitz(range(len(ols_resid)))
+    order = toeplitz(range(16))
     sigma = rho ** order
 
     QS = economic_qs(sigma)
-    lmm = LMM(data.endog, data.exog, QS)
+    endog = reshape(
+        [
+            60323.0,
+            61122.0,
+            60171.0,
+            61187.0,
+            63221.0,
+            63639.0,
+            64989.0,
+            63761.0,
+            66019.0,
+            67857.0,
+            68169.0,
+            66513.0,
+            68655.0,
+            69564.0,
+            69331.0,
+            70551.0,
+        ],
+        (16,),
+    )
+    exog = reshape(
+        [
+            1.0,
+            83.0,
+            234289.0,
+            2356.0,
+            1590.0,
+            107608.0,
+            1947.0,
+            1.0,
+            88.5,
+            259426.0,
+            2325.0,
+            1456.0,
+            108632.0,
+            1948.0,
+            1.0,
+            88.2,
+            258054.0,
+            3682.0,
+            1616.0,
+            109773.0,
+            1949.0,
+            1.0,
+            89.5,
+            284599.0,
+            3351.0,
+            1650.0,
+            110929.0,
+            1950.0,
+            1.0,
+            96.2,
+            328975.0,
+            2099.0,
+            3099.0,
+            112075.0,
+            1951.0,
+            1.0,
+            98.1,
+            346999.0,
+            1932.0,
+            3594.0,
+            113270.0,
+            1952.0,
+            1.0,
+            99.0,
+            365385.0,
+            1870.0,
+            3547.0,
+            115094.0,
+            1953.0,
+            1.0,
+            100.0,
+            363112.0,
+            3578.0,
+            3350.0,
+            116219.0,
+            1954.0,
+            1.0,
+            101.2,
+            397469.0,
+            2904.0,
+            3048.0,
+            117388.0,
+            1955.0,
+            1.0,
+            104.6,
+            419180.0,
+            2822.0,
+            2857.0,
+            118734.0,
+            1956.0,
+            1.0,
+            108.4,
+            442769.0,
+            2936.0,
+            2798.0,
+            120445.0,
+            1957.0,
+            1.0,
+            110.8,
+            444546.0,
+            4681.0,
+            2637.0,
+            121950.0,
+            1958.0,
+            1.0,
+            112.6,
+            482704.0,
+            3813.0,
+            2552.0,
+            123366.0,
+            1959.0,
+            1.0,
+            114.2,
+            502601.0,
+            3931.0,
+            2514.0,
+            125368.0,
+            1960.0,
+            1.0,
+            115.7,
+            518173.0,
+            4806.0,
+            2572.0,
+            127852.0,
+            1961.0,
+            1.0,
+            116.9,
+            554894.0,
+            4007.0,
+            2827.0,
+            130081.0,
+            1962.0,
+        ],
+        (16, 7),
+    )
+    lmm = LMM(endog, exog, QS)
     lmm.fit(verbose=False)
 
     sigma = lmm.covariance()
     scanner = lmm.get_fast_scanner()
-    best_beta_se = _lstsq(data.exog.T @ _lstsq(lmm.covariance(), data.exog), eye(7))
+    best_beta_se = _lstsq(exog.T @ _lstsq(lmm.covariance(), exog), eye(7))
     best_beta_se = sqrt(best_beta_se.diagonal())
     assert_allclose(scanner.null_beta_se, best_beta_se, atol=1e-4)
 
-    endog = data.endog.copy()
+    endog = endog.copy()
     endog -= endog.mean(0)
     endog /= endog.std(0)
 
-    exog = data.exog.copy()
+    exog = exog.copy()
     exog -= exog.mean(0)
     with errstate(invalid="ignore", divide="ignore"):
         exog /= exog.std(0)
@@ -57,14 +208,27 @@ def test_fast_scanner_statsmodel_gls():
     sigma = lmm.covariance()
     scanner = lmm.get_fast_scanner()
 
-    gls_model = sm.GLS(endog, exog, sigma=sigma)
-    gls_results = gls_model.fit()
-    beta_se = gls_results.bse
+    # gls_model = sm.GLS(endog, exog, sigma=sigma)
+    # gls_results = gls_model.fit()
+    # scale = gls_results.scale
+    scale = 1.7777777777782937
+    # beta_se = gls_results.bse
+    beta_se = array(
+        [
+            0.014636888951505144,
+            0.21334653097414055,
+            0.7428559936739378,
+            0.10174713767252333,
+            0.032745906589939845,
+            0.3494488802468581,
+            0.4644879873404213,
+        ]
+    )
     our_beta_se = sqrt(scanner.null_beta_covariance.diagonal())
     # statsmodels scales the covariance matrix we pass, that is why
     # we need to account for it here.
-    assert_allclose(our_beta_se, beta_se / sqrt(gls_results.scale), rtol=1e-6)
-    assert_allclose(scanner.null_beta_se, beta_se / sqrt(gls_results.scale), rtol=1e-6)
+    assert_allclose(our_beta_se, beta_se / sqrt(scale), rtol=1e-6)
+    assert_allclose(scanner.null_beta_se, beta_se / sqrt(scale), rtol=1e-6)
 
 
 def test_fast_scanner_redundant_candidates():

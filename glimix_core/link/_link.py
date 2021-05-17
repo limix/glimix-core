@@ -43,7 +43,8 @@ class IdentityLink(object):
         return asarray(x, float)
 
     @_inv_doc
-    def inv(self, x):
+    @staticmethod
+    def inv(x):
         return asarray(x, float)
 
 
@@ -57,7 +58,8 @@ class LogitLink(object):
         return asarray(log(x / (1 - x)), float)
 
     @_inv_doc
-    def inv(self, x):
+    @staticmethod
+    def inv(x):
         return asarray(1 / (1 + exp(-x)), float)
 
 
@@ -71,7 +73,8 @@ class ProbitLink(object):
         return asarray(_normal_icdf(asarray(x, float)), float)
 
     @_inv_doc
-    def inv(self, x):
+    @staticmethod
+    def inv(x):
         return asarray(_normal_cdf(asarray(x, float)), float)
 
 
@@ -85,7 +88,8 @@ class LogLink(object):
         return asarray(log(x), float)
 
     @_inv_doc
-    def inv(self, x):
+    @staticmethod
+    def inv(x):
         return asarray(exp(x), float)
 
 

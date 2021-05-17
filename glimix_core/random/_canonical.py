@@ -1,4 +1,4 @@
-from numpy import ascontiguousarray, atleast_2d, sqrt, std
+from numpy import ascontiguousarray, atleast_1d, atleast_2d, sqrt, std
 
 from ..cov import EyeCov, LinearCov, SumCov
 from ..lik import BernoulliProdLik, BinomialProdLik, PoissonProdLik
@@ -145,7 +145,7 @@ def poisson_sample(
 
 
 def _causal_mean(causal_variants, causal_variance, random):
-    causal_variants = atleast_2d(causal_variants)
+    causal_variants = atleast_2d(atleast_1d(causal_variants).T).T
     causal_variants = _stdnorm(causal_variants, axis=0)
     causal_variants /= sqrt(causal_variants.shape[1])
     p = causal_variants.shape[1]
@@ -179,9 +179,10 @@ def _mean_cov(offset, G, heritability, causal_variants, causal_variance, random_
     cov1.scale = heritability - causal_variance
     cov2.scale = 1 - heritability - causal_variance
 
-    means = [mean1]
+    means = []
+    means.append(mean1)
     if causal_variants is not None:
-        means += [_causal_mean(causal_variants, causal_variance, random_state)]
+        means.append(_causal_mean(causal_variants, causal_variance, random_state))
 
     mean = SumMean(means)
 

@@ -45,7 +45,7 @@ class DeltaProdLik(object):
         self._outcome = None
 
     @property
-    def name(self):
+    def name(_):
         r"""Get the name of this likelihood."""
         return "Delta"
 
@@ -58,17 +58,20 @@ class DeltaProdLik(object):
     def outcome(self, v):
         self._outcome = _aca(v)
 
-    def mean(self, x):
+    @staticmethod
+    def mean(x):
         r"""Outcome mean."""
         return x
 
     @_sample_doc
-    def sample(self, x, random_state=None):
+    @staticmethod
+    def sample(x, *_):
         return _aca(x)
 
     @property
     def sample_size(self):
         r"""Get the number of samples."""
+        assert self.outcome is not None
         return len(self.outcome)
 
 
@@ -98,7 +101,7 @@ class BernoulliProdLik(object):
         self._outcome = None
 
     @property
-    def name(self):
+    def name(_):
         r"""Get the name of this likelihood."""
         return "Bernoulli"
 
@@ -125,6 +128,7 @@ class BernoulliProdLik(object):
     @property
     def sample_size(self):
         r"""Get the number of samples."""
+        assert self.outcome is not None
         return len(self.outcome)
 
 
@@ -158,7 +162,7 @@ class BinomialProdLik(object):
         self._ntrials = _aca(ntrials)
 
     @property
-    def name(self):
+    def name(_):
         r"""Get the name of this likelihood."""
         return "Binomial"
 
@@ -191,6 +195,7 @@ class BinomialProdLik(object):
     @property
     def sample_size(self):
         r"""Get the number of samples."""
+        assert self.nsuccesses is not None
         return len(self.nsuccesses)
 
 
@@ -212,7 +217,7 @@ class PoissonProdLik(object):
         self._noccurrences = None
 
     @property
-    def name(self):
+    def name(_):
         r"""Get the name of this likelihood."""
         return "Poisson"
 
@@ -239,6 +244,7 @@ class PoissonProdLik(object):
     @property
     def sample_size(self):
         r"""Get the number of samples."""
+        assert self.noccurrences is not None
         return len(self.noccurrences)
 
 
