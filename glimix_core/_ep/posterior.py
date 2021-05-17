@@ -112,8 +112,8 @@ class Posterior(object):
             \mathrm B = \mathrm Q^{\intercal}\tilde{\mathrm{T}}\mathrm Q
                 + \mathrm{S}^{-1}
         """
-        from scipy.linalg import cho_factor
         from numpy_sugar.linalg import ddot, sum2diag
+        from scipy.linalg import cho_factor
 
         if self._L_cache is not None:
             return self._L_cache

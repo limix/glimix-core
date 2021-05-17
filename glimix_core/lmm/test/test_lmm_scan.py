@@ -9,9 +9,9 @@ from numpy import (
     inf,
     nan,
     ones,
+    reshape,
     sqrt,
     zeros,
-    reshape,
 )
 from numpy.linalg import inv, pinv, solve
 from numpy.random import RandomState

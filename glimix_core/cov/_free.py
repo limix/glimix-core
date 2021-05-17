@@ -1,6 +1,7 @@
+from typing import Any, Dict
+
 from numpy import diag_indices_from, dot, exp, eye, inf, log, tril_indices_from, zeros
 from optimix import Function, Vector
-from typing import Any, Dict
 
 from .._util import format_function
 

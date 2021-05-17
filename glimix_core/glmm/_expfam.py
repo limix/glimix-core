@@ -1,8 +1,7 @@
 from copy import copy
 
-from numpy import asarray, dot, exp, diag
-from numpy.linalg import solve
-from numpy.linalg import pinv
+from numpy import asarray, diag, dot, exp
+from numpy.linalg import pinv, solve
 
 from glimix_core._ep import EPLinearKernel
 

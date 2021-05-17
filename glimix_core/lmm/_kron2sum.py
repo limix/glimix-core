@@ -419,8 +419,8 @@ class Kron2Sum(Function):
 
     @property
     def _terms(self):
-        from scipy.linalg import cho_factor, cho_solve
         from numpy_sugar.linalg import ddot, sum2diag
+        from scipy.linalg import cho_factor, cho_solve
 
         if self._cache["terms"] is not None:
             return self._cache["terms"]

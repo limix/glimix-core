@@ -14,6 +14,7 @@ def offset_mean():
 def linear_eye_cov():
     from numpy import sqrt
     from numpy.random import RandomState
+
     from glimix_core.cov import EyeCov, LinearCov, SumCov
 
     random = RandomState(458)

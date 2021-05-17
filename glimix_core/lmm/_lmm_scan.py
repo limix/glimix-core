@@ -535,8 +535,8 @@ def bstar_1effect(beta, alpha, yTBy, yTBX, yTBM, XTBX, XTBM, MTBM):
     """
     Same as :func:`bstar_set` but for single-effect.
     """
-    from numpy_sugar.linalg import dotd
     from numpy_sugar import epsilon
+    from numpy_sugar.linalg import dotd
 
     r = full(MTBM.shape[0], yTBy)
     r -= 2 * yTBX @ beta

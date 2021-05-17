@@ -1,3 +1,5 @@
+from typing import Any, Dict
+
 from numpy import (
     asarray,
     atleast_2d,
@@ -10,11 +12,10 @@ from numpy import (
     tensordot,
     zeros_like,
 )
-from typing import Any, Dict
 from numpy.linalg import eigh
 from optimix import Function
 
-from .._util import format_function, unvec, cached_property
+from .._util import cached_property, format_function, unvec
 from ._free import FreeFormCov
 from ._lrfree import LRFreeFormCov
 
@@ -105,8 +106,8 @@ class Kron2SumCov(Function):
         self._C1.listen(self._parameters_update)
 
     def _init_svd(self):
-        from scipy.linalg import svd
         from numpy_sugar.linalg import dotd
+        from scipy.linalg import svd
 
         if self._Lx is not None:
             return
@@ -135,8 +136,8 @@ class Kron2SumCov(Function):
         Result of US from the SVD decomposition G = USVᵀ.
         """
 
-        from scipy.linalg import svd
         from numpy_sugar.linalg import ddot
+        from scipy.linalg import svd
 
         U, S, _ = svd(self._G, full_matrices=False, check_finite=False)
         if U.shape[1] < self._G.shape[1]:

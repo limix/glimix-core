@@ -4,7 +4,15 @@ from numpy import asarray, atleast_2d, dot, log, maximum, ndarray, zeros
 from numpy.linalg import multi_dot, slogdet
 from optimix import Function, Scalar
 
-from .._util import SVD, cached_property, economic_qs_zeros, log2pi, nice_inv, numbers, rsolve
+from .._util import (
+    SVD,
+    cached_property,
+    economic_qs_zeros,
+    log2pi,
+    nice_inv,
+    numbers,
+    rsolve,
+)
 from ._b import B
 from ._lmm_scan import FastScanner
 
