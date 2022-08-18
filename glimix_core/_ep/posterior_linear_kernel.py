@@ -1,5 +1,6 @@
 from numpy import dot
 
+from .._util import lu_factor
 from .posterior import Posterior
 
 
@@ -64,7 +65,6 @@ class PosteriorLinearKernel(Posterior):
                 + \mathrm{S}^{-1}
         """
         from numpy_sugar.linalg import ddot, sum2diag
-        from scipy.linalg import lu_factor
 
         if self._LU_cache is not None:
             return self._LU_cache

@@ -3,7 +3,7 @@ from numpy.linalg import pinv
 
 from glimix_core._util import rsolve, unvec, vec
 
-from .._util import cached_property, log2pi, safe_log
+from .._util import cached_property, log2pi, lu_solve, safe_log
 
 
 class KronFastScanner:
@@ -173,7 +173,6 @@ class KronFastScanner:
         from numpy import empty
         from numpy.linalg import multi_dot
         from numpy_sugar import epsilon, is_all_finite
-        from numpy_sugar.linalg import lu_solve
 
         A1 = asarray(A1, float)
         X1 = asarray(X1, float)

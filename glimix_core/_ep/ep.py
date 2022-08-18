@@ -4,6 +4,7 @@ from math import fsum
 from numpy import dot, empty, inf, isfinite, log, maximum, zeros
 from numpy.linalg import norm
 
+from .._util import lu_solve
 from .posterior import Posterior
 from .site import Site
 
@@ -122,7 +123,7 @@ class EP(object):
         return self._cav
 
     def lml(self):
-        from numpy_sugar.linalg import lu_slogdet, lu_solve
+        from numpy_sugar.linalg import lu_slogdet
 
         if self._cache["lml"] is not None:
             return self._cache["lml"]
@@ -141,7 +142,7 @@ class EP(object):
         TS = ttau + ctau
 
         lml = [
-            -lu_slogdet(LU)[1],
+            -0.5 * lu_slogdet(LU)[1],
             -0.5 * sum(log(S)),
             # lml += 0.5 * sum(log(ttau)),
             +0.5 * dot(teta, dot(Q, lu_solve(LU, dot(Q.T, teta)))),
@@ -163,7 +164,7 @@ class EP(object):
         return lml
 
     def lml_derivative_over_cov(self, dQS):
-        from numpy_sugar.linalg import ddot, dotd, lu_solve
+        from numpy_sugar.linalg import ddot, dotd
 
         self._update()
 
@@ -189,7 +190,6 @@ class EP(object):
         return dlml
 
     def lml_derivative_over_mean(self, dm):
-        from numpy_sugar.linalg import lu_solve
 
         self._update()
 

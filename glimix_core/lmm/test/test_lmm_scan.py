@@ -42,7 +42,7 @@ def test_fast_scanner_statsmodel_gls():
     rho = -0.3634294908774683
     # order = toeplitz(range(len(ols_resid)))
     order = toeplitz(range(16))
-    sigma = rho ** order
+    sigma = rho**order
 
     QS = economic_qs(sigma)
     endog = reshape(

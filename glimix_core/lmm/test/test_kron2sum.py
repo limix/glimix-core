@@ -650,7 +650,7 @@ def test_kron2sum_large_covariance():
     lmm_large.fit(verbose=False)
 
     assert_allclose(lmm_large.lml(), lmm.lml())
-    assert_allclose(lmm_large.C0, lmm.C0 / (scale ** 2), rtol=1e-3, atol=1e-5)
+    assert_allclose(lmm_large.C0, lmm.C0 / (scale**2), rtol=1e-3, atol=1e-5)
     assert_allclose(lmm_large.C1, lmm.C1, rtol=1e-3, atol=1e-5)
     assert_allclose(lmm_large.beta, lmm.beta, rtol=1e-3, atol=1e-5)
     assert_allclose(

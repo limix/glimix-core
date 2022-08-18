@@ -51,7 +51,7 @@ class EPLinearKernel(EP):
         dif = 2 * A * teta - A * ttau * m
 
         lml = [
-            -lu_slogdet(LU)[1],
+            -0.5 * lu_slogdet(LU)[1],
             -0.5 * sum(log(s * S)),
             +0.5 * sum(log(A)),
             # lml += 0.5 * sum(log(ttau)),

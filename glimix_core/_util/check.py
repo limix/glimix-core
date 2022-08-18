@@ -1,6 +1,7 @@
 import warnings
 
-from numpy import all as npall, ascontiguousarray, clip, isfinite
+from numpy import all as npall
+from numpy import ascontiguousarray, clip, isfinite
 
 
 def check_economic_qs(QS):

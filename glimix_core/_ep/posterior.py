@@ -1,6 +1,8 @@
 from numpy import dot, empty, empty_like, sqrt
 from numpy import sum as npsum
 
+from .._util import lu_factor, lu_solve
+
 
 class Posterior(object):
     r"""EP posterior.
@@ -114,7 +116,6 @@ class Posterior(object):
                 + \mathrm{S}^{-1}
         """
         from numpy_sugar.linalg import ddot, sum2diag
-        from scipy.linalg import lu_factor
 
         if self._LU_cache is not None:
             return self._LU_cache
@@ -127,15 +128,13 @@ class Posterior(object):
         return self._LU_cache
 
     def LQt(self):
-        from numpy_sugar.linalg import lu_solve
-
         if self._LQt_cache is not None:
             return self._LQt_cache
 
-        L = self.L()
+        LU = self.LU()
         Q = self._cov["QS"][0][0]
 
-        self._LQt_cache = lu_solve(L, Q.T)
+        self._LQt_cache = lu_solve(LU, Q.T)
         return self._LQt_cache
 
     def QS(self):

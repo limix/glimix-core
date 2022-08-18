@@ -1,7 +1,7 @@
 import warnings
 
+from numpy import abs as npy_abs
 from numpy import (
-    abs as npy_abs,
     absolute,
     arctan2,
     array,
@@ -22,6 +22,24 @@ from numpy import (
     zeros,
 )
 from numpy.linalg import LinAlgError, pinv
+
+
+def lu_solve(A, b, *args, **kwargs):
+    from scipy.linalg import lu_solve
+
+    if A[0].shape[1] == 0 and b.shape[0] == 0:
+        return zeros((A[0].shape[0], b.shape[-1]))
+
+    return lu_solve(A, b, *args, **kwargs)
+
+
+def lu_factor(A, *args, **kwargs):
+    from scipy.linalg import lu_factor
+
+    if sum(A.shape) == 0:
+        return (zeros((0, 0)), zeros((0,), dtype="int32"))
+
+    return lu_factor(A, *args, **kwargs)
 
 
 def nice_inv(A):
@@ -193,7 +211,7 @@ def hsvd(a, b, d):
 
     e = aa - dd
     s1 = aa + 2 * bb + dd
-    s2 = sqrt(e ** 2 + 4 * (ab + bd) ** 2)
+    s2 = sqrt(e**2 + 4 * (ab + bd) ** 2)
 
     t = 2 * ab + 2 * bd
     theta = arctan2(t, e) / 2

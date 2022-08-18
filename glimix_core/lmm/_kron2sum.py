@@ -9,6 +9,7 @@ from glimix_core._util import cached_property, log2pi, unvec, vec
 from glimix_core.cov import Kron2SumCov
 from glimix_core.mean import KronMean
 
+from .._util import lu_factor, lu_solve
 from ._kron2sum_scan import KronFastScanner
 
 
@@ -419,8 +420,7 @@ class Kron2Sum(Function):
 
     @property
     def _terms(self):
-        from numpy_sugar.linalg import ddot, lu_solve, sum2diag
-        from scipy.linalg import lu_factor
+        from numpy_sugar.linalg import ddot, lu_slogdet, sum2diag
 
         if self._cache["terms"] is not None:
             return self._cache["terms"]
@@ -471,7 +471,7 @@ class Kron2Sum(Function):
         mRiy = b.T @ MRiy
         mRim = b.T @ MRiM @ b
 
-        logdetK = log(Lz[0].diagonal()).sum() * 2
+        logdetK = lu_slogdet(Lz)[1]
         logdetK -= 2 * log(S).sum() * self.nsamples
 
         mKiy = mRiy - XRim.T @ ZiXRiy
@@ -700,11 +700,13 @@ class Kron2Sum(Function):
 
     @property
     def _logdetK(self):
+        from numpy_sugar.linalg import lu_slogdet
+
         terms = self._terms
         S = terms["S"]
         Lz = terms["Lz"]
 
-        cov_logdet = log(Lz[0].diagonal()).sum() * 2
+        cov_logdet = lu_slogdet(Lz)[1]
         cov_logdet -= 2 * log(S).sum() * self.nsamples
         return cov_logdet
 
