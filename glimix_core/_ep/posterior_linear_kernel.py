@@ -3,13 +3,6 @@ from numpy import dot
 from .posterior import Posterior
 
 
-def _cho_factor(B):
-    from scipy.linalg import cho_factor
-
-    B = cho_factor(B, overwrite_a=True, lower=True, check_finite=False)[0]
-    return B
-
-
 class PosteriorLinearKernel(Posterior):
     """
     EP posterior.
@@ -62,8 +55,8 @@ class PosteriorLinearKernel(Posterior):
         self._QSQtATQLQtA_cache = dotd(QS, dot(dot(ddot(AQ.T, T), Q), LQtA))
         return self._QSQtATQLQtA_cache
 
-    def L(self):
-        r"""Cholesky decomposition of :math:`\mathrm B`.
+    def LU(self):
+        r"""LU factor of :math:`\mathrm B`.
 
         .. math::
 
@@ -71,9 +64,10 @@ class PosteriorLinearKernel(Posterior):
                 + \mathrm{S}^{-1}
         """
         from numpy_sugar.linalg import ddot, sum2diag
+        from scipy.linalg import lu_factor
 
-        if self._L_cache is not None:
-            return self._L_cache
+        if self._LU_cache is not None:
+            return self._LU_cache
 
         s = self._cov["scale"]
         d = self._cov["delta"]
@@ -84,8 +78,8 @@ class PosteriorLinearKernel(Posterior):
         B = dot(Q.T, self._NxR, out=self._RxR)
         B *= 1 - d
         sum2diag(B, 1.0 / S / s, out=B)
-        self._L_cache = _cho_factor(B)
-        return self._L_cache
+        self._LU_cache = lu_factor(B, overwrite_a=True, check_finite=False)
+        return self._LU_cache
 
     def update(self):
         from numpy_sugar.linalg import ddot, dotd

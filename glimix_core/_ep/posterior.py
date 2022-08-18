@@ -1,4 +1,5 @@
-from numpy import dot, empty, empty_like, sqrt, sum as npsum
+from numpy import dot, empty, empty_like, sqrt
+from numpy import sum as npsum
 
 
 class Posterior(object):
@@ -23,7 +24,7 @@ class Posterior(object):
         self._NxR_data = None
         self._RxN_data = None
         self._RxR_data = None
-        self._L_cache = None
+        self._LU_cache = None
         self._LQt_cache = None
         self._QS_cache = None
         self._AQ_cache = None
@@ -53,7 +54,7 @@ class Posterior(object):
         return self._RxR_data
 
     def _flush_cache(self):
-        self._L_cache = None
+        self._LU_cache = None
         self._LQt_cache = None
         self._QS_cache = None
         self._AQ_cache = None
@@ -104,8 +105,8 @@ class Posterior(object):
         self._initialize()
         self._cov = v
 
-    def L(self):
-        r"""Cholesky decomposition of :math:`\mathrm B`.
+    def LU(self):
+        r"""LU factor of :math:`\mathrm B`.
 
         .. math::
 
@@ -113,20 +114,20 @@ class Posterior(object):
                 + \mathrm{S}^{-1}
         """
         from numpy_sugar.linalg import ddot, sum2diag
-        from scipy.linalg import cho_factor
+        from scipy.linalg import lu_factor
 
-        if self._L_cache is not None:
-            return self._L_cache
+        if self._LU_cache is not None:
+            return self._LU_cache
 
         Q = self._cov["QS"][0][0]
         S = self._cov["QS"][1]
         B = dot(Q.T, ddot(self._site.tau, Q, left=True))
         sum2diag(B, 1.0 / S, out=B)
-        self._L_cache = cho_factor(B, lower=True)[0]
-        return self._L_cache
+        self._LU_cache = lu_factor(B, overwrite_a=True, check_finite=False)
+        return self._LU_cache
 
     def LQt(self):
-        from numpy_sugar.linalg import cho_solve
+        from numpy_sugar.linalg import lu_solve
 
         if self._LQt_cache is not None:
             return self._LQt_cache
@@ -134,7 +135,7 @@ class Posterior(object):
         L = self.L()
         Q = self._cov["QS"][0][0]
 
-        self._LQt_cache = cho_solve(L, Q.T)
+        self._LQt_cache = lu_solve(L, Q.T)
         return self._LQt_cache
 
     def QS(self):

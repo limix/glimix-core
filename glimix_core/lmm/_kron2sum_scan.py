@@ -173,7 +173,7 @@ class KronFastScanner:
         from numpy import empty
         from numpy.linalg import multi_dot
         from numpy_sugar import epsilon, is_all_finite
-        from scipy.linalg import cho_solve
+        from numpy_sugar.linalg import lu_solve
 
         A1 = asarray(A1, float)
         X1 = asarray(X1, float)
@@ -206,7 +206,7 @@ class KronFastScanner:
 
         M1Riy = vec(multi_dot([X1.T, self._Y, A1W.T]))
         XRiM1 = kron(self._WL0.T @ A1, GX1)
-        ZiXRiM1 = cho_solve(self._Lz, XRiM1)
+        ZiXRiM1 = lu_solve(self._Lz, XRiM1)
 
         MRiXZiXRiM1 = self._XRiM.T @ ZiXRiM1
         M1RiXZiXRiM1 = XRiM1.T @ ZiXRiM1

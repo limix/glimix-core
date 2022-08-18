@@ -196,7 +196,7 @@ class Kron2Sum(Function):
         C0 : ndarray
             C₀.
         """
-        return self._cov.C0.value() / (self._G_norm ** 2)
+        return self._cov.C0.value() / (self._G_norm**2)
 
     @property
     def C1(self):
@@ -419,8 +419,8 @@ class Kron2Sum(Function):
 
     @property
     def _terms(self):
-        from numpy_sugar.linalg import ddot, sum2diag
-        from scipy.linalg import cho_factor, cho_solve
+        from numpy_sugar.linalg import ddot, lu_solve, sum2diag
+        from scipy.linalg import lu_factor
 
         if self._cache["terms"] is not None:
             return self._cache["terms"]
@@ -439,7 +439,7 @@ class Kron2Sum(Function):
 
         Z = kron(L0.T @ WL0, self._GG)
         Z = sum2diag(Z, 1)
-        Lz = cho_factor(Z, lower=True)
+        Lz = lu_factor(Z, check_finite=False)
 
         # 𝐲ᵀR⁻¹𝐲 = vec(YW)ᵀ𝐲
         yRiy = (YW * self._Y).sum()
@@ -452,8 +452,8 @@ class Kron2Sum(Function):
         # MᵀR⁻¹𝐲 = vec(XᵀYWA)
         MRiy = vec(self._XY @ WA)
 
-        ZiXRiM = cho_solve(Lz, XRiM)
-        ZiXRiy = cho_solve(Lz, XRiy)
+        ZiXRiM = lu_solve(Lz, XRiM)
+        ZiXRiy = lu_solve(Lz, XRiy)
 
         MRiXZiXRiy = ZiXRiM.T @ XRiy
         MRiXZiXRiM = XRiM.T @ ZiXRiM
@@ -461,8 +461,8 @@ class Kron2Sum(Function):
         yKiy = yRiy - XRiy @ ZiXRiy
         MKiy = MRiy - MRiXZiXRiy
         H = MRiM - MRiXZiXRiM
-        Lh = cho_factor(H)
-        b = cho_solve(Lh, MKiy)
+        Lh = lu_factor(H, check_finite=False)
+        b = lu_solve(Lh, MKiy)
         B = unvec(b, (self.ncovariates, -1))
         self._mean.B = B
         XRim = XRiM @ b
@@ -571,7 +571,7 @@ class Kron2Sum(Function):
         C1.Lu : ndarray
             Gradient of the log of the marginal likelihood over C₁ parameters.
         """
-        from scipy.linalg import cho_solve
+        from numpy_sugar.linalg import lu_solve
 
         terms = self._terms
         dC0 = self._cov.C0.gradient()["Lu"]
@@ -621,10 +621,10 @@ class Kron2Sum(Function):
         yR0y = vec(_mdot(self._GY, WdC0)).T @ vec(self._GY @ W)
         yR1y = (YW.T * _mdot(self._Y, WdC1).T).T.sum(axis=(0, 1))
 
-        ZiXR0X = cho_solve(Lz, XR0X)
-        ZiXR1X = cho_solve(Lz, XR1X)
-        ZiXR0y = cho_solve(Lz, XR0y)
-        ZiXR1y = cho_solve(Lz, XR1y)
+        ZiXR0X = lu_solve(Lz, XR0X)
+        ZiXR1X = lu_solve(Lz, XR1X)
+        ZiXR0y = lu_solve(Lz, XR0y)
+        ZiXR1y = lu_solve(Lz, XR1y)
 
         # Mᵀ𝕂y = Mᵀ𝓡𝐲 - (MᵀR⁻¹X)Z⁻¹(Xᵀ𝓡𝐲) - (Mᵀ𝓡X)Z⁻¹(XᵀR⁻¹𝐲)
         #       + (MᵀR⁻¹X)Z⁻¹(Xᵀ𝓡X)Z⁻¹(XᵀR⁻¹𝐲)
@@ -655,7 +655,7 @@ class Kron2Sum(Function):
         XRim = XRiM @ b
         MRim = MRiM @ b
 
-        db = {"C0.Lu": cho_solve(Lh, MK0m - MK0y), "C1.Lu": cho_solve(Lh, MK1m - MK1y)}
+        db = {"C0.Lu": lu_solve(Lh, MK0m - MK0y), "C1.Lu": lu_solve(Lh, MK1m - MK1y)}
 
         grad = {
             "C0.Lu": -trace(WdC0) * self._trGG + trace(ZiXR0X),
@@ -663,8 +663,8 @@ class Kron2Sum(Function):
         }
 
         if self._restricted:
-            grad["C0.Lu"] += cho_solve(Lh, MK0M).diagonal().sum(1)
-            grad["C1.Lu"] += cho_solve(Lh, MK1M).diagonal().sum(1)
+            grad["C0.Lu"] += lu_solve(Lh, MK0M).diagonal().sum(1)
+            grad["C1.Lu"] += lu_solve(Lh, MK1M).diagonal().sum(1)
 
         mKiM = MRim.T - XRim.T @ ZiXRiM
         yKiM = MRiy.T - XRiy.T @ ZiXRiM

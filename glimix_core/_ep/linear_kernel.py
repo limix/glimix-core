@@ -25,12 +25,14 @@ class EPLinearKernel(EP):
         )
 
     def lml(self):
+        from numpy_sugar.linalg import lu_slogdet
+
         if self._cache["lml"] is not None:
             return self._cache["lml"]
 
         self._update()
 
-        L = self._posterior.L()
+        LU = self._posterior.LU()
         LQt = self._posterior.LQt()
         cov = self._posterior.cov
         Q = cov["QS"][0][0]
@@ -49,7 +51,7 @@ class EPLinearKernel(EP):
         dif = 2 * A * teta - A * ttau * m
 
         lml = [
-            -log(L.diagonal()).sum(),
+            -lu_slogdet(LU)[1],
             -0.5 * sum(log(s * S)),
             +0.5 * sum(log(A)),
             # lml += 0.5 * sum(log(ttau)),

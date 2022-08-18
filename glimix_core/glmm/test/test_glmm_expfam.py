@@ -16,7 +16,6 @@ from numpy import (
 from numpy.random import RandomState
 from numpy.testing import assert_, assert_allclose
 from numpy_sugar.linalg import economic_qs, economic_qs_linear
-from pandas import DataFrame
 
 from glimix_core.example import linear_eye_cov
 from glimix_core.glmm import GLMMExpFam, GLMMNormal
@@ -606,9 +605,6 @@ def test_glmmexpfam_poisson():
     offset = ones(n) * random.randn()
     age = random.randint(16, 75, n)
     M = stack((offset, age), axis=1)
-    M = DataFrame(stack([offset, age], axis=1), columns=["offset", "age"])
-    M["sample"] = [f"sample{i}" for i in range(n)]
-    M = M.set_index("sample")
 
     # genetic variants
     G = random.randn(n, 4)

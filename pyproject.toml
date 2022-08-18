@@ -1,0 +1,44 @@
+[tool.poetry]
+name = "glimix-core"
+version = "3.1.13"
+description = "Fast inference over mean and covariance parameters for Generalised Linear Mixed Models"
+
+license = "MIT"
+
+authors = ["Danilo Horta <danilo.horta@pm.me>"]
+
+readme = "README.md"
+
+repository = "https://github.com/limix/glimix-core"
+homepage = "https://github.com/limix/glimix-core"
+
+keywords = ["glmm", "lmm"]
+
+classifiers = ["License :: OSI Approved :: MIT License"]
+
+[tool.poetry.dependencies]
+brent-search = "*"
+liknorm = ">=1.2.7"
+ndarray-listener = "*"
+numpy = "*"
+numpy-sugar = "*"
+optimix = "*"
+pytest = "*"
+pytest-doctestplus = "*"
+python = ">=3.7,<3.11"
+scipy = "*"
+tqdm = "*"
+
+[tool.poetry.dev-dependencies]
+black = "*"
+isort = "*"
+pyright = "*"
+pytest = "*"
+pytest-doctestplus = "*"
+
+[build-system]
+requires = ["poetry_core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.isort]
+profile = "black"

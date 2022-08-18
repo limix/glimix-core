@@ -122,14 +122,14 @@ class EP(object):
         return self._cav
 
     def lml(self):
-        from numpy_sugar.linalg import cho_solve
+        from numpy_sugar.linalg import lu_slogdet, lu_solve
 
         if self._cache["lml"] is not None:
             return self._cache["lml"]
 
         self._update()
 
-        L = self._posterior.L()
+        LU = self._posterior.LU()
         Q, S = self._posterior.cov["QS"]
         Q = Q[0]
         ttau = self._site.tau
@@ -141,13 +141,13 @@ class EP(object):
         TS = ttau + ctau
 
         lml = [
-            -log(L.diagonal()).sum(),
+            -lu_slogdet(LU)[1],
             -0.5 * sum(log(S)),
             # lml += 0.5 * sum(log(ttau)),
-            +0.5 * dot(teta, dot(Q, cho_solve(L, dot(Q.T, teta)))),
+            +0.5 * dot(teta, dot(Q, lu_solve(LU, dot(Q.T, teta)))),
             -0.5 * dot(teta, teta / TS),
             +dot(m, teta) - 0.5 * dot(m, ttau * m),
-            -0.5 * dot(m * ttau, dot(Q, cho_solve(L, dot(Q.T, 2 * teta - ttau * m)))),
+            -0.5 * dot(m * ttau, dot(Q, lu_solve(LU, dot(Q.T, 2 * teta - ttau * m)))),
             +sum(self._moments["log_zeroth"]),
             +0.5 * sum(log(TS)),
             # lml -= 0.5 * sum(log(ttau)),
@@ -163,11 +163,11 @@ class EP(object):
         return lml
 
     def lml_derivative_over_cov(self, dQS):
-        from numpy_sugar.linalg import cho_solve, ddot, dotd
+        from numpy_sugar.linalg import ddot, dotd, lu_solve
 
         self._update()
 
-        L = self._posterior.L()
+        LU = self._posterior.LU()
         Q = self._posterior.cov["QS"][0][0]
         ttau = self._site.tau
         teta = self._site.eta
@@ -175,7 +175,7 @@ class EP(object):
         diff = teta - ttau * self._posterior.mean
 
         v0 = dot(dQS[0][0], dQS[1] * dot(dQS[0][0].T, diff))
-        v1 = ttau * dot(Q, cho_solve(L, dot(Q.T, diff)))
+        v1 = ttau * dot(Q, lu_solve(LU, dot(Q.T, diff)))
         dlml = 0.5 * dot(diff, v0)
         dlml -= dot(v0, v1)
         dlml += 0.5 * dot(v1, dot(dQS[0][0], dQS[1] * dot(dQS[0][0].T, v1)))
@@ -183,17 +183,17 @@ class EP(object):
         diag = dotd(dQS[0][0], dqs)
         dlml -= 0.5 * sum(ttau * diag)
 
-        tmp = cho_solve(L, dot(ddot(Q.T, ttau, left=False), dQS[0][0]))
+        tmp = lu_solve(LU, dot(ddot(Q.T, ttau, left=False), dQS[0][0]))
         dlml += 0.5 * sum(ttau * dotd(Q, dot(tmp, dqs)))
 
         return dlml
 
     def lml_derivative_over_mean(self, dm):
-        from numpy_sugar.linalg import cho_solve
+        from numpy_sugar.linalg import lu_solve
 
         self._update()
 
-        L = self._posterior.L()
+        LU = self._posterior.LU()
         Q = self._posterior.cov["QS"][0][0]
         ttau = self._site.tau
         teta = self._site.eta
@@ -201,7 +201,7 @@ class EP(object):
         diff = teta - ttau * self._posterior.mean
 
         dlml = dot(diff, dm)
-        dlml -= dot(diff, dot(Q, cho_solve(L, dot(Q.T, (ttau * dm.T).T))))
+        dlml -= dot(diff, dot(Q, lu_solve(LU, dot(Q.T, (ttau * dm.T).T))))
 
         return dlml
 
