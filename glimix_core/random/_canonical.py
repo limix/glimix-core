@@ -132,7 +132,7 @@ def poisson_sample(
         >>> offset = -0.5
         >>> G = [[0.5, -1], [2, 1]]
         >>> poisson_sample(offset, G, random_state=RandomState(0))
-        array([0, 6])
+        array([0., 6.])
     """
     mean, cov = _mean_cov(
         offset, G, heritability, causal_variants, causal_variance, random_state
