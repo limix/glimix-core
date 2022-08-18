@@ -18,14 +18,14 @@ classifiers = ["License :: OSI Approved :: MIT License"]
 
 [tool.poetry.dependencies]
 brent-search = "*"
-liknorm = ">=1.2.7"
+liknorm = ">=1.2.8"
 ndarray-listener = "*"
 numpy = "*"
 numpy-sugar = "*"
 optimix = "*"
 pytest = "*"
 pytest-doctestplus = "*"
-python = ">=3.7,<3.11"
+python = ">=3.8,<3.11"
 scipy = "*"
 tqdm = "*"
 
@@ -37,7 +37,7 @@ pytest = "*"
 pytest-doctestplus = "*"
 
 [build-system]
-requires = ["poetry_core>=1.0.0"]
+requires = ["poetry-core>=1.0.8"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.isort]
