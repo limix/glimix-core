@@ -239,7 +239,7 @@ class PoissonProdLik(object):
         import scipy.stats as st
 
         lam = self.mean(x)
-        return st.poisson(mu=lam).rvs(random_state=random_state)
+        return _aca(st.poisson(mu=lam).rvs(random_state=random_state))
 
     @property
     def sample_size(self):
