@@ -1,4 +1,5 @@
 from copy import copy
+from math import log
 
 from numpy import asarray, diag, dot, exp
 from numpy.linalg import pinv, solve
@@ -118,8 +119,36 @@ class GLMMExpFam(GLMM):
 
     def fit(self, verbose=True, factr=1e5, pgtol=1e-7):
         self._ep.verbose = verbose
-        super(GLMMExpFam, self).fit(verbose=verbose, factr=factr, pgtol=pgtol)
+
+        variables = self._variables
+        initial_beta = variables["beta"].value.copy()
+        initial_logscale = variables["logscale"].value.copy()
+        initial_logitdelta = variables["logitdelta"].value.copy()
+        bounds = [
+            variables["logscale"].bounds,
+            (log(0.001), log(400.0)),
+            (log(0.001), log(300.0)),
+            (log(0.001), log(200.0)),
+            (log(0.01), log(100.0)),
+        ]
+        found = False
+        for bound in bounds:
+            try:
+                self._variables["logscale"].bounds = bound
+                self._variables["beta"].value = initial_beta
+                self._variables["logscale"].value = initial_logscale
+                self._variables["logitdelta"].value = initial_logitdelta
+                super(GLMMExpFam, self).fit(verbose=verbose, factr=factr, pgtol=pgtol)
+                found = True
+                break
+            except ValueError as excp:
+                print(f"It seems to have failed to converge: {excp}.")
+                self._ep.reset()
+                continue
+
         self._ep.verbose = False
+        if not found:
+            raise RuntimeError("Too many convergence failures. Giving up!")
 
     def fix(self, var_name):
         GLMM.fix(self, var_name)
@@ -197,6 +226,7 @@ class GLMMExpFam(GLMM):
         self.set_update_approx()
 
     def value(self):
+        print(f"logscale: {self.logscale}, logitdelta: {self.logitdelta}")
         self._update_approx()
         return self._ep.lml()
 

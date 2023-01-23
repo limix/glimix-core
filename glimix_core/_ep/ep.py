@@ -51,8 +51,24 @@ class EP(object):
         }
 
         self._need_update = True
-        self._compute_moments = None
         self._cache = dict(lml=None, grad=None)
+        self.verbose = False
+
+    def reset(self):
+        self._site.reset()
+        self._psite.reset()
+
+        self._cav["tau"][:] = 0
+        self._cav["eta"][:] = 0
+        self._posterior.reset()
+
+        self._moments["log_zeroth"][:] = 0
+        self._moments["mean"][:] = 0
+        self._moments["variance"][:] = 0
+
+        self._need_update = True
+        self._cache["lml"] = None
+        self._cache["grad"] = None
         self.verbose = False
 
     def __copy__(self):
@@ -80,19 +96,22 @@ class EP(object):
         return ep
 
     def _update(self):
+        from numpy_sugar import epsilon
+
         if not self._need_update:
             return
 
         self._posterior.update()
 
         i = 0
+        tiny = epsilon.tiny
         tol = -inf
         n1 = norm(self._site.tau)
         while i < MAX_ITERS and norm(self._site.tau - self._psite.tau) > tol:
             self._psite.tau[:] = self._site.tau
             self._psite.eta[:] = self._site.eta
 
-            self._cav["tau"][:] = maximum(self._posterior.tau - self._site.tau, 0)
+            self._cav["tau"][:] = maximum(self._posterior.tau - self._site.tau, tiny)
             self._cav["eta"][:] = self._posterior.eta - self._site.eta
             self._compute_moments(self._cav["eta"], self._cav["tau"], self._moments)
 

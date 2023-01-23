@@ -33,6 +33,12 @@ class Posterior(object):
         self._TAQ_cache = None
         self._QSQtATQLQtA_cache = None
 
+    def reset(self):
+        self.tau[:] = 0
+        self.eta[:] = 0
+        self._site.reset()
+        self._flush_cache()
+
     @property
     def _NxR(self):
         if self._NxR_data is None:

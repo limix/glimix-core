@@ -84,7 +84,7 @@ class GLMM(Function):
         self._factr = 1e5
         self._pgtol = 1e-6
         self._verbose = False
-        self.set_variable_bounds("logscale", (log(0.001), 6.0))
+        self.set_variable_bounds("logscale", (log(0.001), log(400.0)))
 
         self.set_variable_bounds("logitdelta", (-50, +15))
 
