@@ -226,7 +226,6 @@ class GLMMExpFam(GLMM):
         self.set_update_approx()
 
     def value(self):
-        print(f"logscale: {self.logscale}, logitdelta: {self.logitdelta}")
         self._update_approx()
         return self._ep.lml()
 
