@@ -59,7 +59,7 @@ class Kron2Sum(Function):
         ----------
         Y : (n, p) array_like
             Outcome matrix.
-        A : (n, n) array_like
+        A : (p, p) array_like
             Trait-by-trait design matrix.
         X : (n, c) array_like
             Covariates design matrix.
