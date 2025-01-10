@@ -20,6 +20,8 @@ from numpy import (
     sin,
     sqrt,
     zeros,
+    equal,
+    hypot,
 )
 from numpy.linalg import LinAlgError, pinv
 
@@ -198,7 +200,7 @@ def _hinv(A00, A01, A11):
     return ai, bi, di
 
 
-def hsvd(a, b, d):
+def hsvd_old(a, b, d):
     a = atleast_1d(a)
     b = atleast_1d(b)
     d = atleast_1d(d)
@@ -231,6 +233,55 @@ def hsvd(a, b, d):
     VT = [[sign(s11) * Cp, sign(s11) * Sp], [-sign(s22) * Sp, sign(s22) * Cp]]
 
     # U S V.T
+    return U, S, VT
+
+
+def hsvd(a, b, d):
+    a = atleast_1d(a)
+    b = atleast_1d(b)
+    d = atleast_1d(d)
+    y1, x1 = 2 * b, (a - d)
+    y2, x2 = 0, (a + d)
+
+    h1 = hypot(y1, x1)
+    h2 = hypot(y2, x2)
+
+    with errstate(invalid="ignore", divide="ignore"):
+        t1 = x1 / h1
+        t2 = x2 / h2
+
+    t1[equal(y1, 0)] = 1.0
+    t2[equal(y2, 0)] = 1.0
+
+    cc = sqrt((1 + t1) * (1 + t2))
+    ss = sqrt((1 - t1) * (1 - t2))
+    cs = sqrt((1 + t1) * (1 - t2))
+    sc = sqrt((1 - t1) * (1 + t2))
+
+    c1, s1 = (
+        (cc - ss) / 2,
+        (sc + cs) / 2,
+    )
+    U = [[c1, -s1], [s1, c1]]
+
+    S = [(h1 + h2) / 2, (h1 - h2) / 2]
+
+    VT = [[c1 * a + s1 * b, c1 * b + s1 * d], [-s1 * a + c1 * b, -s1 * b + c1 * d]]
+
+    with errstate(invalid="ignore", divide="ignore"):
+        VT[0][0] /= S[0]
+        VT[0][1] /= S[0]
+        VT[1][0] /= S[1]
+        VT[1][1] /= S[1]
+
+    eq = equal(h1 + h2, 0)
+    VT[0][0][eq] = 0
+    VT[0][1][eq] = 0
+
+    eq = equal(h1, h2)
+    VT[1][0][eq] = 0
+    VT[1][1][eq] = 0
+
     return U, S, VT
 
 

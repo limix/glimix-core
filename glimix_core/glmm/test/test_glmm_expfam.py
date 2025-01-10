@@ -560,7 +560,7 @@ def test_glmmexpfam_predict():
     pk = glmm.predictive_covariance(Xtest, ks, kss)
     r = nsuc_test / ntri_test
     assert_(corrcoef([pm, r])[0, 1] > 0.8)
-    assert_allclose(pk[0], 54.263705682514846)
+    assert_allclose(pk[0], 54.263705682514846, rtol=1e-6)
 
 
 def test_glmmexpfam_qs_none():

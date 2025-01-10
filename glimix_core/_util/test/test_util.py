@@ -9,7 +9,6 @@ from glimix_core._util.solve import heigvals, hsvd
 
 
 def test_util_check_economic_qs():
-
     A = ones((3, 2))
     B = ones((3, 1))
     C = ones(2)
@@ -78,7 +77,6 @@ def test_util_check_poisson_outcome():
 
 
 def test_hsvd():
-
     A = asarray([[1.2, -0.2], [-0.2, 1.1]])
     SVD0 = hsvd(A[0, 0], A[0, 1], A[1, 1])
     SVD0 = [block(i) for i in SVD0]

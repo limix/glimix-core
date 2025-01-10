@@ -1,3 +1,4 @@
+from numpy.linalg import pinv
 from numpy import (
     all,
     asarray,
@@ -572,7 +573,7 @@ def _bstar_unpack(beta, alpha, yTBy, yTBE, ETBE, bstar):
     XTBM = ETBE.XTBM
     MTBM = ETBE.MTBM
     bstar = bstar(beta, alpha, yTBy, yTBX, yTBM, XTBX, XTBM, MTBM)
-    return clip(bstar, epsilon.tiny, inf)
+    return clip(bstar, epsilon.tiny, inf).flat[0]
 
 
 def get_chunks(M):
