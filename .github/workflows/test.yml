@@ -1,20 +1,30 @@
-name: Test it using poetry
+name: 🧪 Test
 
 on: [push, pull_request]
 
 jobs:
   test:
-    name: Test on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
 
-      - name: Test it
+      - name: Run image
+        uses: abatilo/actions-poetry@v4
+        with:
+          poetry-version: "latest"
+
+      - name: install make
+        run: choco install -y make
+        if: runner.os == 'Windows'
+
+      - name: Run tests
         run: |
-          pipx install poetry
           poetry install
           poetry run pytest
