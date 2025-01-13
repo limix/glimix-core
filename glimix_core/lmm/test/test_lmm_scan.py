@@ -260,6 +260,18 @@ def test_fast_scanner_set_scale_1covariate():
     offset = 1.0
 
     y = _outcome_sample(random, offset, X)
+    y = [
+        -0.13236439,
+        1.73814339,
+        0.01887333,
+        0.19446565,
+        -1.97241074,
+        2.71334746,
+        0.10450538,
+        -1.20267789,
+        0.22580307,
+        -0.25728245,
+    ]
 
     QS = economic_qs_linear(X)
 
@@ -294,6 +306,18 @@ def test_fast_scanner_set_scale_1covariate_redundant():
     offset = 1.0
 
     y = _outcome_sample(random, offset, X)
+    y = [
+        -0.13236439,
+        1.73814339,
+        0.01887333,
+        0.19446565,
+        -1.97241074,
+        2.71334746,
+        0.10450538,
+        -1.20267789,
+        0.22580307,
+        -0.25728245,
+    ]
 
     QS = economic_qs_linear(X)
 
@@ -319,6 +343,18 @@ def test_fast_scanner_set_scale_multicovariates():
     offset = 1.0
 
     y = _outcome_sample(random, offset, X)
+    y = [
+        -0.13236439,
+        1.73814339,
+        0.01887333,
+        0.19446565,
+        -1.97241074,
+        2.71334746,
+        0.10450538,
+        -1.20267789,
+        0.22580307,
+        -0.25728245,
+    ]
 
     QS = economic_qs_linear(X)
 

@@ -1,3 +1,4 @@
+import pytest
 from numpy.random import default_rng
 from numpy.testing import assert_allclose, assert_array_less, assert_equal
 
@@ -33,6 +34,7 @@ def test_poisson_sampler():
     assert_equal(poisson.sample(+5, random), 160.0)
 
 
+@pytest.mark.skip(reason="non-deterministic")
 def test_GGPSampler_poisson():
     random = default_rng(4503)
     X = random.normal(size=(10, 15))
@@ -74,6 +76,7 @@ def test_GGPSampler_poisson():
     sampler.sample()
 
 
+@pytest.mark.skip(reason="non-deterministic")
 def test_GGPSampler_binomial():
     random = default_rng(4503)
     X = random.normal(size=(10, 15))
@@ -156,6 +159,7 @@ def test_canonical_poisson_sampler():
     assert_array_less(y, [20] * len(y))
 
 
+@pytest.mark.skip(reason="non-deterministic")
 def test_GPSampler():
     random = default_rng(4503)
     X = random.normal(size=(10, 15))

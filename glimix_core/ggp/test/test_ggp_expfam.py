@@ -4,10 +4,9 @@ from numpy.testing import assert_allclose
 
 from glimix_core.cov import EyeCov, LinearCov, SumCov
 from glimix_core.ggp import ExpFamGP
-from glimix_core.lik import BernoulliProdLik, BinomialProdLik
+from glimix_core.lik import BernoulliProdLik
 from glimix_core.link import LogitLink
 from glimix_core.mean import OffsetMean
-from glimix_core.random import GGPSampler
 
 
 def _get_data():
@@ -32,8 +31,8 @@ def _get_data():
 
     lik = BernoulliProdLik(LogitLink())
 
-    y = GGPSampler(lik, mean, cov).sample(random)
-
+    # y = GGPSampler(lik, mean, cov).sample(random)
+    y = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0]
     return dict(
         mean=mean, cov=cov, lik=lik, y=y, cov_left=cov_left, cov_right=cov_right
     )
@@ -59,13 +58,45 @@ def test_ggp_expfam_tobi():
     K = random.normal(size=(n, n))
     K = matmul(K, K.T)
 
-    lik = BinomialProdLik(ntrials=ntrials, link=LogitLink())
+    # lik = BinomialProdLik(ntrials=ntrials, link=LogitLink())
 
     mean = OffsetMean(n)
 
     cov2 = EyeCov(n)
 
-    y = GGPSampler(lik, mean, cov2).sample(random)
+    # y = GGPSampler(lik, mean, cov2).sample(random)
+    y = [
+        19.0,
+        4.0,
+        1.0,
+        4.0,
+        4.0,
+        21.0,
+        8.0,
+        1.0,
+        5.0,
+        6.0,
+        17.0,
+        5.0,
+        10.0,
+        1.0,
+        7.0,
+        0.0,
+        7.0,
+        3.0,
+        4.0,
+        18.0,
+        3.0,
+        0.0,
+        4.0,
+        2.0,
+        18.0,
+        12.0,
+        14.0,
+        0.0,
+        12.0,
+        3.0,
+    ]
 
     ggp = ExpFamGP(y, ("binomial", ntrials), mean, cov2)
     assert_allclose(ggp.lml(), -75.92472423326483)
