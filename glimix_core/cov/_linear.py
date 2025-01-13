@@ -18,9 +18,9 @@ class LinearCov(Function):
 
         >>> from glimix_core.cov import LinearCov
         >>> from numpy import dot
-        >>> from numpy.random import RandomState
+        >>> from numpy.random import default_rng
         >>>
-        >>> X = RandomState(0).randn(2, 3)
+        >>> X = default_rng(0).randn(2, 3)
         >>> cov = LinearCov(X)
         >>> cov.scale = 1.3
         >>> cov.name = "K"

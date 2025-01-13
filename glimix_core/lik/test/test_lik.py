@@ -1,6 +1,6 @@
 from __future__ import unicode_literals
 
-from numpy.random import RandomState
+from numpy.random import default_rng
 from numpy.testing import assert_, assert_allclose
 
 from glimix_core.lik import (
@@ -13,7 +13,7 @@ from glimix_core.link import ProbitLink
 
 
 def test_delta_prod_lik():
-    random = RandomState(0)
+    random = default_rng(0)
 
     lik = DeltaProdLik(ProbitLink())
 
@@ -29,7 +29,7 @@ def test_delta_prod_lik():
 
 
 def test_bernoulli_prod_lik():
-    random = RandomState(0)
+    random = default_rng(0)
 
     lik = BernoulliProdLik(ProbitLink())
 
@@ -40,11 +40,11 @@ def test_bernoulli_prod_lik():
 
     assert_(lik.sample_size == 3)
     assert_allclose(lik.mean([-1, 0, 0.5]), [0.15865525, 0.5, 0.69146246])
-    assert_allclose(lik.sample([-10, 0, 0.5], random), [0, 1, 1])
+    assert_allclose(lik.sample([-10, 0, 0.5], random), [0.0, 0.0, 1.0])
 
 
 def test_binomial_prod_lik():
-    random = RandomState(0)
+    random = default_rng(0)
 
     lik = BinomialProdLik([6, 2, 3], ProbitLink())
     assert_allclose(lik.ntrials, [6, 2, 3])
@@ -56,11 +56,11 @@ def test_binomial_prod_lik():
 
     assert_(lik.sample_size == 3)
     assert_allclose(lik.mean([-1, 0, 0.5]), [0.15865525, 0.5, 0.69146246])
-    assert_allclose(lik.sample([-10, 0, 0.5], random), [0, 1, 2])
+    assert_allclose(lik.sample([-10, 0, 0.5], random), [0.0, 1.0, 3.0])
 
 
 def test_poisson_prod_lik():
-    random = RandomState(0)
+    random = default_rng(0)
 
     lik = PoissonProdLik(ProbitLink())
 
@@ -71,7 +71,7 @@ def test_poisson_prod_lik():
 
     assert_(lik.sample_size == 3)
     assert_allclose(lik.mean([-1, 0, 0.5]), [0.15865525, 0.5, 0.69146246])
-    assert_allclose(lik.sample([-10, 0, 0.5], random), [0, 1, 1])
+    assert_allclose(lik.sample([-10, 0, 0.5], random), [0.0, 0.0, 0.0])
 
     lik = PoissonProdLik()
 
@@ -84,4 +84,4 @@ def test_poisson_prod_lik():
     assert_allclose(
         lik.mean([-1, 0, 0.5]), [0.36787944117144233, 1.0, 1.6487212707001282]
     )
-    assert_allclose(lik.sample([-10, 0, 0.5], random), [0, 3, 4])
+    assert_allclose(lik.sample([-10, 0, 0.5], random), [0.0, 3.0, 3.0])

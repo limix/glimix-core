@@ -37,17 +37,17 @@ class GLMMExpFam(GLMM):
     .. doctest::
 
         >>> from numpy import dot, sqrt, zeros
-        >>> from numpy.random import RandomState
+        >>> from numpy.random import default_rng
         >>>
         >>> from numpy_sugar.linalg import economic_qs
         >>>
         >>> from glimix_core.glmm import GLMMExpFam
         >>>
-        >>> random = RandomState(0)
+        >>> random = default_rng(0)
         >>> nsamples = 10
         >>>
-        >>> X = random.randn(nsamples, 2)
-        >>> G = random.randn(nsamples, 100)
+        >>> X = random.normal(size=(nsamples, 2))
+        >>> G = random.normal(size=(nsamples, 100))
         >>> K = dot(G, G.T)
         >>> ntrials = random.randint(1, 100, nsamples)
         >>> z = dot(G, random.randn(100)) / sqrt(100)

@@ -1,4 +1,4 @@
-from numpy.random import RandomState
+from numpy.random import default_rng
 from numpy.testing import assert_allclose, assert_array_less, assert_equal
 
 from glimix_core.cov import EyeCov, LinearCov, SumCov
@@ -15,27 +15,27 @@ from glimix_core.random import (
 
 
 def test_binomial_sampler():
-    random = RandomState(4503)
+    random = default_rng(4503)
     link = LogitLink()
     binom = BinomialProdLik(12, link)
-    assert_equal(binom.sample(0, random), 7)
+    assert_equal(binom.sample(0, random), 4.0)
 
 
 def test_poisson_sampler():
-    random = RandomState(4503)
+    random = default_rng(4503)
     link = LogLink()
     poisson = PoissonProdLik(link)
-    assert_equal(poisson.sample(0, random), 1)
-    assert_equal(poisson.sample(0, random), 0)
-    assert_equal(poisson.sample(0, random), 2)
-    assert_equal(poisson.sample(0, random), 0)
-    assert_equal(poisson.sample(-10, random), 0)
-    assert_equal(poisson.sample(+5, random), 158)
+    assert_equal(poisson.sample(0, random), 0.0)
+    assert_equal(poisson.sample(0, random), 1.0)
+    assert_equal(poisson.sample(0, random), 2.0)
+    assert_equal(poisson.sample(0, random), 2.0)
+    assert_equal(poisson.sample(-10, random), 0.0)
+    assert_equal(poisson.sample(+5, random), 160.0)
 
 
 def test_GGPSampler_poisson():
-    random = RandomState(4503)
-    X = random.randn(10, 15)
+    random = default_rng(4503)
+    X = random.normal(size=(10, 15))
     link = LogLink()
     lik = PoissonProdLik(link)
 
@@ -43,7 +43,9 @@ def test_GGPSampler_poisson():
     mean.offset = 1.2
     cov = LinearCov(X)
     sampler = GGPSampler(lik, mean, cov)
-    assert_equal(sampler.sample(random), [0, 289, 0, 11, 0, 0, 176, 0, 228, 82])
+    assert_equal(
+        sampler.sample(random), [1.0, 0.0, 0.0, 10.0, 2.0, 618.0, 17.0, 3.0, 20.0, 9.0]
+    )
 
     mean = OffsetMean(10)
     mean.offset = 0.0
@@ -59,18 +61,22 @@ def test_GGPSampler_poisson():
 
     sampler = GGPSampler(lik, mean, cov)
 
-    assert_equal(sampler.sample(random), [2, 0, 1, 2, 1, 1, 1, 2, 0, 0])
+    assert_equal(
+        sampler.sample(random), [2.0, 2.0, 0.0, 3.0, 0.0, 7.0, 1.0, 1.0, 1.0, 1.0]
+    )
 
     cov2.scale = 20.0
     sampler = GGPSampler(lik, mean, cov)
-    assert_equal(sampler.sample(random), [0, 0, 0, 2, 0, 0, 1, 22, 0, 0])
+    assert_equal(
+        sampler.sample(random), [12.0, 0.0, 29.0, 0.0, 0.0, 0.0, 38.0, 5.0, 0.0, 0.0]
+    )
 
     sampler.sample()
 
 
 def test_GGPSampler_binomial():
-    random = RandomState(4503)
-    X = random.randn(10, 15)
+    random = default_rng(4503)
+    X = random.normal(size=(10, 15))
     link = LogitLink()
     lik = BinomialProdLik(5, link)
 
@@ -78,10 +84,14 @@ def test_GGPSampler_binomial():
     mean.offset = 1.2
     cov = LinearCov(X)
     sampler = GGPSampler(lik, mean, cov)
-    assert_equal(sampler.sample(random), [0, 5, 0, 5, 1, 1, 5, 0, 5, 5])
+    assert_equal(
+        sampler.sample(random), [2.0, 1.0, 3.0, 5.0, 4.0, 5.0, 5.0, 4.0, 5.0, 5.0]
+    )
 
     mean.offset = 0.0
-    assert_equal(sampler.sample(random), [5, 4, 1, 0, 0, 1, 4, 5, 5, 0])
+    assert_equal(
+        sampler.sample(random), [0.0, 3.0, 1.0, 0.0, 5.0, 4.0, 0.0, 4.0, 1.0, 1.0]
+    )
 
     mean = OffsetMean(10)
     mean.offset = 0.0
@@ -97,24 +107,30 @@ def test_GGPSampler_binomial():
 
     lik = BinomialProdLik(100, link)
     sampler = GGPSampler(lik, mean, cov)
-    assert_equal(sampler.sample(random), [56, 56, 55, 51, 59, 45, 47, 43, 51, 38])
+    assert_equal(
+        sampler.sample(random),
+        [40.0, 39.0, 50.0, 47.0, 56.0, 61.0, 54.0, 54.0, 50.0, 52.0],
+    )
 
     cov2.scale = 100.0
     sampler = GGPSampler(lik, mean, cov)
-    assert_equal(sampler.sample(random), [99, 93, 99, 75, 77, 0, 0, 100, 99, 12])
+    assert_equal(
+        sampler.sample(random),
+        [98.0, 0.0, 100.0, 44.0, 100.0, 90.0, 100.0, 99.0, 22.0, 16.0],
+    )
 
 
 def test_canonical_bernoulli_sampler():
-    random = RandomState(9)
-    G = random.randn(10, 5)
+    random = default_rng(9)
+    G = random.normal(size=(10, 5))
 
     y = bernoulli_sample(0.1, G, random_state=random)
     assert_array_less(y, [2] * 10)
 
 
 def test_canonical_binomial_sampler():
-    random = RandomState(9)
-    G = random.randn(10, 5)
+    random = default_rng(9)
+    G = random.normal(size=(10, 5))
 
     y = binomial_sample(5, 0.1, G, random_state=random)
     assert_array_less(y, [5 + 1] * 10)
@@ -123,26 +139,26 @@ def test_canonical_binomial_sampler():
     y = binomial_sample(ntrials, -0.1, G, random_state=random)
     assert_array_less(y, [i + 1 for i in ntrials])
 
-    X = random.randn(len(ntrials))
+    X = random.normal(size=len(ntrials))
     y = binomial_sample(ntrials, -0.1, G, causal_variants=X, random_state=random)
     assert_array_less(y, [i + 1 for i in ntrials])
 
-    X = random.randn(len(ntrials), 2)
+    X = random.normal(size=(len(ntrials), 2))
     y = binomial_sample(ntrials, -0.1, G, causal_variants=X, random_state=random)
     assert_array_less(y, [i + 1 for i in ntrials])
 
 
 def test_canonical_poisson_sampler():
-    random = RandomState(10)
-    G = random.randn(10, 5)
+    random = default_rng(10)
+    G = random.normal(size=(10, 5))
 
     y = poisson_sample(0.1, G, random_state=random)
     assert_array_less(y, [20] * len(y))
 
 
 def test_GPSampler():
-    random = RandomState(4503)
-    X = random.randn(10, 15)
+    random = default_rng(4503)
+    X = random.normal(size=(10, 15))
 
     mean = OffsetMean(10)
     mean.offset = 1.2
@@ -150,16 +166,16 @@ def test_GPSampler():
     sampler = GPSampler(mean, cov)
 
     x = [
-        -1.34664027,
-        5.68720656,
-        -6.01941814,
-        2.70860707,
-        -1.81883975,
-        0.21338045,
-        5.16462597,
-        -2.23134206,
-        5.49661095,
-        4.38526077,
+        -0.9328779739,
+        -1.997157809,
+        0.5276438923,
+        2.3730973762,
+        1.2032887445,
+        6.4469744126,
+        2.7004521738,
+        0.5853558975,
+        2.8682819171,
+        2.2248157174,
     ]
     assert_allclose(sampler.sample(random), x)
     sampler.sample()

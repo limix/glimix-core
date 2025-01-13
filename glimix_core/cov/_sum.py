@@ -12,9 +12,9 @@ class SumCov(Function):
     .. doctest::
 
         >>> from glimix_core.cov import LinearCov, SumCov
-        >>> from numpy.random import RandomState
+        >>> from numpy.random import default_rng
         >>>
-        >>> random = RandomState(0)
+        >>> random = default_rng(0)
         >>> cov_left = LinearCov(random.randn(4, 20))
         >>> cov_right = LinearCov(random.randn(4, 15))
         >>> cov_left.scale = 0.5

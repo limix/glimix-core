@@ -27,7 +27,7 @@ class ExpFamGP(Function):
 
     .. doctest::
 
-        >>> from numpy.random import RandomState
+        >>> from numpy.random import default_rng
         >>>
         >>> from glimix_core.example import offset_mean
         >>> from glimix_core.example import linear_eye_cov
@@ -36,7 +36,7 @@ class ExpFamGP(Function):
         >>> from glimix_core.link import LogitLink
         >>> from glimix_core.random import GGPSampler
         >>>
-        >>> random = RandomState(1)
+        >>> random = default_rng(1)
         >>>
         >>> lik = BernoulliProdLik(LogitLink())
         >>> mean = offset_mean()

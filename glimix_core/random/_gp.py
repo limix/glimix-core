@@ -1,4 +1,4 @@
-from numpy.random import RandomState
+from numpy.random import default_rng
 
 
 class GPSampler(object):
@@ -23,13 +23,13 @@ class GPSampler(object):
 
     .. doctest::
 
-        >>> from numpy.random import RandomState
+        >>> from numpy.random import default_rng
         >>>
         >>> from glimix_core.example import offset_mean
         >>> from glimix_core.example import linear_eye_cov
         >>> from glimix_core.random import GPSampler
         >>>
-        >>> random = RandomState(1)
+        >>> random = default_rng(1)
         >>>
         >>> mean = offset_mean()
         >>> cov = linear_eye_cov()
@@ -61,7 +61,7 @@ class GPSampler(object):
         from numpy_sugar.random import multivariate_normal
 
         if random_state is None:
-            random_state = RandomState()
+            random_state = default_rng()
 
         m = self._mean.value()
         K = self._cov.value().copy()

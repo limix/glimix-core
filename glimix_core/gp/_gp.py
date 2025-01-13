@@ -20,14 +20,14 @@ class GP(Function):
 
     .. doctest::
 
-        >>> from numpy.random import RandomState
+        >>> from numpy.random import default_rng
         >>>
         >>> from glimix_core.example import offset_mean
         >>> from glimix_core.example import linear_eye_cov
         >>> from glimix_core.gp import GP
         >>> from glimix_core.random import GPSampler
         >>>
-        >>> random = RandomState(94584)
+        >>> random = default_rng(94584)
         >>>
         >>> mean = offset_mean()
         >>> cov = linear_eye_cov()

@@ -1,6 +1,6 @@
 from numpy import array, concatenate, eye, kron
 from numpy.linalg import slogdet
-from numpy.random import RandomState
+from numpy.random import default_rng
 from numpy.testing import assert_allclose
 from scipy.optimize import check_grad
 
@@ -36,10 +36,10 @@ def test_kron2sumcov():
         D = cov.logdet_gradient()
         return concatenate((D["C0.Lu"], D["C1.Lu"]))
 
-    random = RandomState(0)
-    assert_allclose(check_grad(func, grad, random.randn(5)), 0, atol=1e-5)
+    random = default_rng(0)
+    assert_allclose(check_grad(func, grad, random.normal(size=5)), 0, atol=1e-5)
 
-    V = random.randn(3, 2)
+    V = random.normal(size=(3, 2))
 
     g = cov.C0.gradient()["Lu"]
     g0 = cov.gradient_dot(vec(V))["C0.Lu"]
@@ -51,7 +51,7 @@ def test_kron2sumcov():
     for i in range(3):
         assert_allclose(g0[..., i], kron(g[..., i], eye(3)) @ vec(V))
 
-    V = random.randn(3, 2, 4)
+    V = random.normal(size=(3, 2, 4))
 
     g = cov.C0.gradient()["Lu"]
     g0 = cov.gradient_dot(vec(V))["C0.Lu"]
@@ -65,7 +65,7 @@ def test_kron2sumcov():
         for j in range(4):
             assert_allclose(g0[j, ..., i], kron(g[..., i], eye(3)) @ vec(V[..., j]))
 
-    M = random.randn(2 * G.shape[0], 2 * 4)
+    M = random.normal(size=(2 * G.shape[0], 2 * 4))
 
     R = cov.LdKL_dot(M)
     dK = cov.gradient()
@@ -83,7 +83,6 @@ def test_kron2sumcov():
 
 
 def test_kron2sumcov_g_full_col_rank():
-
     G = array([[-1.5, 1.0, 0.2, 0.5], [1.0, -0.25, -1.5, 1.0], [-0.1, -0.20, -2.5, 0]])
     Lr = array([[3], [2]], float)
     Ln = array([[1, 0], [2, 1]], float)

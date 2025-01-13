@@ -17,9 +17,9 @@ class GivenCov(Function):
 
         >>> from glimix_core.cov import GivenCov
         >>> from numpy import dot
-        >>> from numpy.random import RandomState
+        >>> from numpy.random import default_rng
         >>>
-        >>> G = RandomState(0).randn(5, 3)
+        >>> G = default_rng(0).randn(5, 3)
         >>> K0 = dot(G, G.T)
         >>> cov = GivenCov(K0)
         >>> cov.scale = 1.3

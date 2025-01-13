@@ -1,5 +1,5 @@
 from numpy import corrcoef, dot, ones, sqrt
-from numpy.random import RandomState
+from numpy.random import default_rng
 from numpy.testing import assert_allclose
 from numpy_sugar.linalg import economic_qs_linear
 
@@ -11,10 +11,10 @@ from glimix_core.random import GGPSampler
 
 
 def test_lmm_predict():
-    random = RandomState(9458)
+    random = default_rng(9458)
     n = 30
 
-    X = random.randn(n, n + 1)
+    X = random.normal(size=(n, n + 1))
     X -= X.mean(0)
     X /= X.std(0)
     X /= sqrt(X.shape[1])
@@ -46,4 +46,4 @@ def test_lmm_predict():
 
     K = dot(X, X.T)
     pm = plmm.predictive_mean(ones((n, 1)), K, K.diagonal())
-    assert_allclose(corrcoef(y, pm)[0, 1], 0.8358820971891354)
+    assert_allclose(corrcoef(y, pm)[0, 1], 0.966467656)

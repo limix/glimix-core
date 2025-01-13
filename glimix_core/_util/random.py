@@ -1,7 +1,7 @@
-from numpy.random import RandomState
+from numpy.random import Generator
 
 
-def multivariate_normal(random: RandomState, mean, cov):
+def multivariate_normal(random: Generator, mean, cov):
     """
     Draw random samples from a multivariate normal distribution.
 
@@ -23,4 +23,4 @@ def multivariate_normal(random: RandomState, mean, cov):
     from numpy.linalg import cholesky
 
     L = cholesky(cov)
-    return L @ random.randn(L.shape[0]) + mean
+    return L @ random.normal(size=L.shape[0]) + mean

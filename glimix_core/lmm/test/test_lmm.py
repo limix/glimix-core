@@ -2,7 +2,7 @@ import pytest
 import scipy.stats as st
 from numpy import concatenate, exp, eye, log, pi
 from numpy.linalg import slogdet, solve
-from numpy.random import RandomState
+from numpy.random import Generator, default_rng
 from numpy.testing import assert_allclose, assert_equal
 from numpy_sugar.linalg import ddot, economic_qs_linear, economic_svd
 from scipy.optimize import minimize
@@ -12,7 +12,7 @@ from glimix_core.lmm import LMM
 
 
 def test_lmm():
-    random = RandomState(12)
+    random = default_rng(12)
 
     (y, X, G) = _full_rank(random)
     _test_lmm(random, y, X, G, _get_mvn(y, X, G), False)
@@ -28,39 +28,33 @@ def test_lmm():
 
 
 def test_lm():
-    random = RandomState(0)
+    random = default_rng(0)
 
     (y, X, _) = _full_rank(random)
     lmm = LMM(y, X)
     lmm.fit(verbose=False)
     assert_allclose(lmm.v0, 2.0129061033356781e-16, atol=1e-7)
-    assert_allclose(lmm.v1, 0.9065323176914355)
-    assert_allclose(lmm.beta, [0.24026567104188318, -0.17873180599015123])
+    assert_allclose(lmm.v1, 0.8108150965)
+    assert_allclose(lmm.beta, [0.3225896208, -0.2917152789])
 
 
 def test_lmm_beta_covariance():
-    random = RandomState(0)
+    random = default_rng(0)
 
     (y, X, G) = _full_rank(random)
     QS = economic_qs_linear(G)
     lmm = LMM(y, X, QS)
     lmm.fit(verbose=False)
 
-    A = [
-        [0.015685784760937037, 0.006509918649859495],
-        [0.006509918649859495, 0.007975242272006645],
-    ]
-    assert_allclose(lmm.beta_covariance, A)
+    A = [[0.0016815025, -0.0001486849], [-0.0001486849, 0.0023484078]]
+    assert_allclose(lmm.beta_covariance, A, rtol=1e-6)
 
     (y, X, G) = _low_rank(random)
     QS = economic_qs_linear(G)
     lmm = LMM(y, X[:, :2], QS)
     lmm.fit(verbose=False)
 
-    A = [
-        [0.002763268929325623, 0.0006651810010328699],
-        [0.0006651810010328708, 0.0016910004907565248],
-    ]
+    A = [[0.0037514935, -0.00114132], [-0.00114132, 0.006491444]]
     assert_allclose(lmm.beta_covariance, A)
 
     (y, X, G) = _low_rank(random)
@@ -69,30 +63,10 @@ def test_lmm_beta_covariance():
     lmm.fit(verbose=False)
 
     A = [
-        [
-            0.003892850639339253,
-            0.0012112513279299796,
-            0.003892850639339256,
-            0.0012112513279299794,
-        ],
-        [
-            0.0012112513279299794,
-            0.009340423857663259,
-            0.0012112513279299833,
-            0.009340423857663257,
-        ],
-        [
-            0.0038928506393392562,
-            0.0012112513279299835,
-            0.003892850639339259,
-            0.0012112513279299833,
-        ],
-        [
-            0.0012112513279299794,
-            0.009340423857663257,
-            0.0012112513279299833,
-            0.009340423857663257,
-        ],
+        [0.0042288753, 0.0016227908, 0.0042288753, 0.0016227908],
+        [0.0016227908, 0.0080978309, 0.0016227908, 0.0080978309],
+        [0.0042288753, 0.0016227908, 0.0042288753, 0.0016227908],
+        [0.0016227908, 0.0080978309, 0.0016227908, 0.0080978309],
     ]
     assert_allclose(lmm.beta_covariance, A)
 
@@ -125,11 +99,15 @@ def test_lmm_public_attrs():
 
 
 def test_lmm_interface():
-    random = RandomState(1)
+    random = default_rng(1)
     n = 3
-    G = random.randn(n, n + 1)
-    X = random.randn(n, 2)
-    y = X @ random.randn(2) + G @ random.randn(G.shape[1]) + random.randn(n)
+    G = random.normal(size=(n, n + 1))
+    X = random.normal(size=(n, 2))
+    y = (
+        X @ random.normal(size=2)
+        + G @ random.normal(size=G.shape[1])
+        + random.normal(size=n)
+    )
     y -= y.mean(0)
     y /= y.std(0)
 
@@ -141,51 +119,48 @@ def test_lmm_interface():
     assert_allclose(
         lmm.covariance(),
         [
-            [0.436311031439718, 2.6243891396439837e-16, 2.0432156171727483e-16],
-            [2.6243891396439837e-16, 0.4363110314397185, 4.814313140426306e-16],
-            [2.0432156171727483e-16, 4.814313140426305e-16, 0.43631103143971817],
+            [1.0454767788, -0.1024992983, -0.1347709001],
+            [-0.1024992983, 0.6609585597, 0.3069073261],
+            [-0.1347709001, 0.3069073261, 0.2085936602],
         ],
         atol=1e-7,
     )
     assert_allclose(
         lmm.mean(),
-        [0.6398184791042468, -0.8738254794097052, 0.7198112606871158],
+        [-0.259134127, -1.4618988298, 0.5657654358],
         atol=1e-7,
     )
-    assert_allclose(lmm.lml(), -3.012715726960625, atol=1e-7)
+    assert_allclose(lmm.lml(), -2.6467351496, atol=1e-7)
     assert_allclose(lmm.value(), lmm.lml(), atol=1e-7)
-    assert_allclose(lmm.lml(), -3.012715726960625, atol=1e-7)
+    assert_allclose(lmm.lml(), -2.6467351496, atol=1e-7)
     assert_allclose(
         lmm.X,
         [
-            [-0.3224172040135075, -0.38405435466841564],
-            [1.1337694423354374, -1.0998912673140309],
-            [-0.17242820755043575, -0.8778584179213718],
+            [-0.736454087, -0.162909948],
+            [-0.4821193127, 0.5988462126],
+            [0.0397221075, -0.292456751],
         ],
         atol=1e-7,
     )
-    assert_allclose(lmm.beta, [-1.3155159120000266, -0.5615702941530938], atol=1e-7)
+    assert_allclose(lmm.beta, [0.757055469, -1.8317019366], atol=1e-7)
     assert_allclose(
         lmm.beta_covariance,
-        [
-            [0.44737305797088345, 0.20431961864892412],
-            [0.20431961864892412, 0.29835835133251526],
-        ],
+        [[1.2672251036, 0.4685773896], [0.4685773896, 0.3343485385]],
         atol=1e-7,
     )
-    assert_allclose(lmm.delta, 0.9999999999999998, atol=1e-7)
+    assert_allclose(lmm.delta, 2.2204460493e-16, atol=1e-7)
     assert_equal(lmm.ncovariates, 2)
     assert_equal(lmm.nsamples, 3)
-    assert_allclose(lmm.scale, 0.43631103143971767, atol=1e-7)
-    assert_allclose(lmm.v0, 9.688051060046502e-17, atol=1e-7)
-    assert_allclose(lmm.v1, 0.43631103143971756, atol=1e-7)
+    assert_allclose(lmm.scale, 0.4018140195, atol=1e-7)
+    assert_allclose(lmm.v0, 0.4018140195, atol=1e-7)
+    assert_allclose(lmm.v1, 8.9220635204e-17, atol=1e-7)
     assert_equal(lmm.name, "lmm")
 
     with pytest.raises(NotImplementedError):
         lmm.gradient()
 
 
-def _test_lmm(random, y, X, G, mvn, restricted):
+def _test_lmm(random: Generator, y, X, G, mvn, restricted):
     c = X.shape[1]
     QS = economic_qs_linear(G)
     lmm = LMM(y, X, QS, restricted=restricted)
@@ -196,29 +171,29 @@ def _test_lmm(random, y, X, G, mvn, restricted):
     K0 = G @ G.T
     assert_allclose(lmm.lml(), mvn(beta, v0, v1, y, X, K0))
 
-    beta = random.randn(c)
+    beta = random.normal(size=c)
     lmm.beta = beta
     assert_allclose(lmm.lml(), mvn(beta, v0, v1, y, X, K0))
 
-    delta = random.rand(1).item()
+    delta = random.uniform(size=1).item()
     lmm.delta = delta
     v0 = lmm.v0
     v1 = lmm.v1
     assert_allclose(lmm.lml(), mvn(beta, v0, v1, y, X, K0))
 
-    scale = random.rand(1).item()
+    scale = random.random(size=1).item()
     lmm.scale = scale
     v0 = lmm.v0
     v1 = lmm.v1
     assert_allclose(lmm.lml(), mvn(beta, v0, v1, y, X, K0))
 
-    def fun(x):
+    def fun0(x):
         beta = x[:c]
         v0 = exp(x[c])
         v1 = exp(x[c + 1])
         return -mvn(beta, v0, v1, y, X, K0)
 
-    res = minimize(fun, [0] * c + [0, 0])
+    res = minimize(fun0, [0] * c + [0, 0])
     lmm.fit(verbose=False)
     assert_allclose(lmm.lml(), -res.fun, rtol=1e-3, atol=1e-6)
     assert_allclose(lmm.beta, res.x[:c], rtol=1e-3, atol=1e-6)
@@ -226,58 +201,58 @@ def _test_lmm(random, y, X, G, mvn, restricted):
     assert_allclose(lmm.v1, exp(res.x[c + 1]), rtol=1e-3, atol=1e-6)
 
     lmm = LMM(y, X, QS, restricted=restricted)
-    beta = random.randn(c)
+    beta = random.normal(size=c)
     lmm.beta = beta
-    lmm.delta = random.rand(1).item()
-    lmm.scale = random.rand(1).item()
+    lmm.delta = random.random(size=1).item()
+    lmm.scale = random.random(size=1).item()
     lmm.fix("beta")
 
-    def fun(x):
+    def fun1(x):
         v0 = exp(x[0])
         v1 = exp(x[1])
         return -mvn(beta, v0, v1, y, X, K0)
 
-    res = minimize(fun, [0, 0])
+    res = minimize(fun1, [0, 0])
     lmm.fit(verbose=False)
     assert_allclose(lmm.lml(), -res.fun, rtol=1e-3, atol=1e-6)
     assert_allclose(lmm.v0, exp(res.x[0]), rtol=1e-3, atol=1e-6)
     assert_allclose(lmm.v1, exp(res.x[1]), rtol=1e-3, atol=1e-6)
 
     lmm = LMM(y, X, QS, restricted=restricted)
-    lmm.beta = random.randn(c)
-    delta = random.rand(1).item()
+    lmm.beta = random.normal(size=c)
+    delta = random.random(size=1).item()
     lmm.delta = delta
-    lmm.scale = random.rand(1).item()
+    lmm.scale = random.random(size=1).item()
     lmm.fix("delta")
 
-    def fun(x):
+    def fun2(x):
         beta = x[:c]
         scale = exp(x[c])
         v0 = scale * (1 - delta)
         v1 = scale * delta
         return -mvn(beta, v0, v1, y, X, K0)
 
-    res = minimize(fun, [0] * c + [0])
+    res = minimize(fun2, [0] * c + [0])
     lmm.fit(verbose=False)
     assert_allclose(lmm.lml(), -res.fun, rtol=1e-5, atol=1e-6)
     assert_allclose(lmm.beta, res.x[:c], rtol=1e-5, atol=1e-6)
     assert_allclose(lmm.scale, exp(res.x[c]), rtol=1e-5, atol=1e-6)
 
     lmm = LMM(y, X, QS, restricted=restricted)
-    lmm.beta = random.randn(c)
-    lmm.delta = random.rand(1).item()
-    scale = random.rand(1).item()
+    lmm.beta = random.normal(size=c)
+    lmm.delta = random.random(size=1).item()
+    scale = random.random(size=1).item()
     lmm.scale = scale
     lmm.fix("scale")
 
-    def fun(x):
+    def fun3(x):
         beta = x[:c]
         delta = 1 / (1 + exp(-x[c]))
         v0 = scale * (1 - delta)
         v1 = scale * delta
         return -mvn(beta, v0, v1, y, X, K0)
 
-    res = minimize(fun, [0] * c + [0])
+    res = minimize(fun3, [0] * c + [0])
     lmm.fit(verbose=False)
     assert_allclose(lmm.lml(), -res.fun, rtol=1e-5, atol=1e-6)
     assert_allclose(lmm.beta, res.x[:c], rtol=1e-3, atol=1e-6)
@@ -312,9 +287,13 @@ def _get_mvn_restricted(y, X, G):
 
 def _full_rank(random):
     n = 30
-    G = random.randn(n, n + 1)
-    X = random.randn(n, 2)
-    y = X @ random.randn(2) + G @ random.randn(G.shape[1]) + random.randn(n)
+    G = random.normal(size=(n, n + 1))
+    X = random.normal(size=(n, 2))
+    y = (
+        X @ random.normal(size=2)
+        + G @ random.normal(size=G.shape[1])
+        + random.normal(size=n)
+    )
     y -= y.mean(0)
     y /= y.std(0)
 
@@ -323,10 +302,14 @@ def _full_rank(random):
 
 def _low_rank(random):
     n = 30
-    G = random.randn(n, 5)
-    X = random.randn(n, 2)
+    G = random.normal(size=(n, 5))
+    X = random.normal(size=(n, 2))
     X = concatenate((X, X), axis=1)
-    y = X @ random.randn(4) + G @ random.randn(G.shape[1]) + random.randn(n)
+    y = (
+        X @ random.normal(size=4)
+        + G @ random.normal(size=G.shape[1])
+        + random.normal(size=n)
+    )
     y -= y.mean(0)
     y /= y.std(0)
     return (y, X, G)

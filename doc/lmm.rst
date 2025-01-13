@@ -102,18 +102,18 @@ B, C₀, and C₁.
 
 .. doctest::
 
-    >>> from numpy.random import RandomState
+    >>> from numpy.random import default_rng
     >>> from glimix_core.lmm import Kron2Sum
     >>>
-    >>> random = RandomState(0)
+    >>> random = default_rng(0)
     >>> n = 15
     >>> p = 2
     >>> c = 3
-    >>> Y = random.randn(n, p)
-    >>> A = random.randn(p, p)
+    >>> Y = random.normal(size=(n, p))
+    >>> A = random.normal(size=(p, p))
     >>> A = A.dot(A.T)
-    >>> X = random.randn(n, c)
-    >>> G = random.randn(n, 4)
+    >>> X = random.normal(size=(n, c))
+    >>> G = random.normal(size=(n, 4))
     >>>
     >>> mlmm = Kron2Sum(Y, A, X, G, restricted=False)
     >>> mlmm.fit(verbose=False)
@@ -174,8 +174,8 @@ The parameters 𝚩ⱼ, 𝚨ⱼ, and sⱼ are found via maximum likelihood.
 .. doctest::
 
     >>> mscanner = mlmm.get_fast_scanner()
-    >>> A = random.randn(2, n)
-    >>> X = random.randn(n, 3)
+    >>> A = random.normal(size=(2, n))
+    >>> X = random.normal(size=(n, 3))
     >>> r = mscanner.scan(A, X)
     >>> r["lml"]
     -42.74668875515792

@@ -1,5 +1,5 @@
 from numpy import asarray, eye, zeros
-from numpy.random import RandomState
+from numpy.random import default_rng
 from numpy.testing import assert_allclose
 from numpy_sugar.linalg import economic_qs
 
@@ -13,13 +13,13 @@ RTOL = 1e-2
 def test_glmmnormal_copy():
     nsamples = 10
 
-    random = RandomState(0)
+    random = default_rng(0)
 
-    X = random.randn(nsamples, 5)
+    X = random.normal(size=(nsamples, 5))
     QS = economic_qs(linear_eye_cov().value())
 
-    eta = random.randn(nsamples)
-    tau = random.rand(nsamples) * 10
+    eta = random.normal(size=nsamples)
+    tau = random.uniform(size=nsamples) * 10
 
     glmm0 = GLMMNormal(eta, tau, X, QS)
 
@@ -27,7 +27,7 @@ def test_glmmnormal_copy():
 
     glmm0.fit(verbose=False)
 
-    v = -4.758450057194982
+    v = -3.833065156
     assert_allclose(glmm0.lml(), v, atol=ATOL, rtol=RTOL)
 
     glmm1 = glmm0.copy()
@@ -35,7 +35,7 @@ def test_glmmnormal_copy():
 
     glmm1.scale = 0.92
     assert_allclose(glmm0.lml(), v, atol=ATOL, rtol=RTOL)
-    assert_allclose(glmm1.lml(), -10.986014936977927, atol=ATOL, rtol=RTOL)
+    assert_allclose(glmm1.lml(), -10.6251452034, atol=ATOL, rtol=RTOL)
 
     glmm0.fit(verbose=False)
     glmm1.fit(verbose=False)
@@ -175,43 +175,39 @@ def test_glmmnormal_copy():
 def test_glmmnormal():
     nsamples = 10
 
-    random = RandomState(0)
-    X = random.randn(nsamples, 5)
-    M = random.randn(nsamples, 3)
+    random = default_rng(0)
+    X = random.normal(size=(nsamples, 5))
+    M = random.normal(size=(nsamples, 3))
     K = linear_eye_cov().value()
     QS = economic_qs(K)
 
-    eta = random.randn(nsamples)
-    tau = 10 * random.rand(nsamples)
+    eta = random.normal(size=nsamples)
+    tau = 10 * random.uniform(size=nsamples)
 
     glmm = GLMMNormal(eta, tau, X, QS)
     glmm.beta = asarray([1.0, 0, 0.5, 0.1, 0.4])
 
-    assert_allclose(glmm.lml(), -19.284378946701814)
+    assert_allclose(glmm.lml(), -15.2839030659)
 
     assert_allclose(glmm._check_grad(), 0, atol=1e-3, rtol=RTOL)
 
     flmm = glmm.get_fast_scanner()
     r = flmm.fast_scan(M, verbose=False)
 
-    assert_allclose(r["lml"], [9.64605678059, 9.17041834, 9.56927990771])
-    assert_allclose(
-        r["effsizes1"], [-0.0758297759308, 0.0509863368859, 0.0876858800519]
-    )
-    assert_allclose(
-        r["scale"], [0.0053192483818597395, 0.005850105527002988, 0.00540155776161286]
-    )
+    assert_allclose(r["lml"], [1.2555887417, 1.873750964, 2.6767993609])
+    assert_allclose(r["effsizes1"], [0.0062654154, 0.0972938542, 0.1201640538])
+    assert_allclose(r["scale"], [0.0238031841, 0.0210349831, 0.0179139051])
 
 
 def test_glmmnormal_qs_zeros():
     nsamples = 10
 
-    random = RandomState(0)
+    random = default_rng(0)
 
-    X = random.randn(nsamples, 5)
+    X = random.normal(size=(nsamples, 5))
 
-    eta = random.randn(nsamples)
-    tau = random.rand(nsamples) * 10
+    eta = random.normal(size=nsamples)
+    tau = random.uniform(size=nsamples) * 10
 
     glmm = GLMMNormal(eta, tau, X)
 
@@ -222,7 +218,7 @@ def test_glmmnormal_qs_zeros():
 
     glmm.fit(verbose=False)
 
-    v = -4.742404032562819
+    v = -3.8142246447
     assert_allclose(glmm.lml(), v, atol=ATOL, rtol=RTOL)
 
     K = zeros((len(eta), len(eta)))

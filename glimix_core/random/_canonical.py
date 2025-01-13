@@ -52,10 +52,10 @@ def bernoulli_sample(
     .. doctest::
 
         >>> from glimix_core.random import bernoulli_sample
-        >>> from numpy.random import RandomState
+        >>> from numpy.random import default_rng
         >>> offset = 5
         >>> G = [[1, -1], [2, 1]]
-        >>> bernoulli_sample(offset, G, random_state=RandomState(0))
+        >>> bernoulli_sample(offset, G, random_state=default_rng(0))
         array([1., 1.])
     """
     link = LogitLink()
@@ -90,11 +90,11 @@ def binomial_sample(
     .. doctest::
 
         >>> from glimix_core.random import binomial_sample
-        >>> from numpy.random import RandomState
+        >>> from numpy.random import default_rng
         >>> ntrials = [5, 15]
         >>> offset = 0.5
         >>> G = [[1, -1], [2, 1]]
-        >>> binomial_sample(ntrials, offset, G, random_state=RandomState(0))
+        >>> binomial_sample(ntrials, offset, G, random_state=default_rng(0))
         array([ 2., 14.])
     """
     link = LogitLink()
@@ -128,10 +128,10 @@ def poisson_sample(
     .. doctest::
 
         >>> from glimix_core.random import poisson_sample
-        >>> from numpy.random import RandomState
+        >>> from numpy.random import default_rng
         >>> offset = -0.5
         >>> G = [[0.5, -1], [2, 1]]
-        >>> poisson_sample(offset, G, random_state=RandomState(0))
+        >>> poisson_sample(offset, G, random_state=default_rng(0))
         array([0., 6.])
     """
     mean, cov = _mean_cov(
@@ -149,7 +149,7 @@ def _causal_mean(causal_variants, causal_variance, random):
     causal_variants = _stdnorm(causal_variants, axis=0)
     causal_variants /= sqrt(causal_variants.shape[1])
     p = causal_variants.shape[1]
-    directions = random.randn(p)
+    directions = random.normal(size=p)
     directions[directions < 0.5] = -1
     directions[directions >= 0.5] = +1
     s = std(directions)
