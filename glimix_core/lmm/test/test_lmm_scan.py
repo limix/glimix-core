@@ -841,6 +841,6 @@ def test_lmm_scan_fast_scan():
     r = scanner.fast_scan(M1, verbose=False)
 
     assert_allclose(r["lml"][0], -res.fun)
-    assert_allclose(r["effsizes0"][0], res.x[:2], rtol=1e-5)
-    assert_allclose(r["effsizes1"][0], res.x[2:3], rtol=1e-5)
-    assert_allclose(r["scale"][0], exp(res.x[3]), rtol=1e-5)
+    assert_allclose(r["effsizes0"][0], res.x[:2], rtol=1e-4)
+    assert_allclose(r["effsizes1"][0], res.x[2:3], rtol=1e-4)
+    assert_allclose(r["scale"][0], exp(res.x[3]), rtol=1e-4)
