@@ -15,28 +15,11 @@ data sets with thousands of samples and millions of covariates.
 
 ## Install
 
-There are two main ways of installing it.
 Via [pip](https://pypi.python.org/pypi/pip):
 
 ```bash
 pip install glimix-core
 ```
-
-Or via [conda](http://conda.pydata.org/docs/index.html):
-
-```bash
-conda install -c conda-forge glimix-core
-```
-
-## Running the tests
-
-After installation, you can test it
-
-```bash
-python -c "import glimix_core; glimix_core.test()"
-```
-
-as long as you have [pytest](https://docs.pytest.org/en/latest/).
 
 ## Usage
 
