@@ -423,7 +423,7 @@ def test_kron2sum_interface():
 
 
 def test_kron2sum_gradient_unrestricted():
-    random = default_rng(1)
+    random = default_rng(5)
     Y = random.normal(size=(5, 3))
     A = random.normal(size=(3, 3))
     A = A @ A.T

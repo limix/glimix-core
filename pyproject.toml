@@ -1,29 +1,34 @@
-[tool.poetry]
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
 name = "glimix-core"
 version = "3.1.14"
 description = "Fast inference over mean and covariance parameters for Generalised Linear Mixed Models"
-license = "MIT"
-authors = ["Danilo Horta <danilo.horta@pm.me>"]
+authors = [{ name = "Danilo Horta", email = "danilo.horta@pm.me" }]
+requires-python = "~=3.10"
 readme = "README.md"
-repository = "https://github.com/limix/glimix-core"
-homepage = "https://github.com/limix/glimix-core"
-keywords = ["glmm", "lmm"]
+license = "MIT"
+keywords = [
+    "glmm",
+    "lmm",
+]
 classifiers = ["License :: OSI Approved :: MIT License"]
+dependencies = [
+    "brent-search>=2.0.2,<3",
+    "ndarray-listener>=2.0.2,<3",
+    "numpy~=2.1",
+    "numpy-sugar>=1.5.5,<2",
+    "optimix>=3.0.6,<4",
+    "scipy>=1.15.0,<2",
+    "tqdm>=4.67.1,<5",
+    "liknorm>=2.0.0,<3",
+]
 
-[tool.poetry.dependencies]
-python = "^3.10"
-brent-search = "^2.0.2"
-ndarray-listener = "^2.0.2"
-numpy = "^2.1"
-numpy-sugar = "^1.5.5"
-optimix = "^3.0.6"
-scipy = "^1.15.0"
-tqdm = "^4.67.1"
-liknorm = "^2.0.0"
+[project.urls]
+Homepage = "https://github.com/limix/glimix-core"
+Repository = "https://github.com/limix/glimix-core"
 
-[tool.poetry.group.dev.dependencies]
-pytest = "^8.3.4"
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+[dependency-groups]
+dev = ["pytest>=8.3.4,<9"]
