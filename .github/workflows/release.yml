@@ -31,7 +31,6 @@ jobs:
       run: |
         uv sync --all-extras --dev
         uv build
-        uv publish
 
     - uses: pypa/gh-action-pypi-publish@release/v1
       with:
